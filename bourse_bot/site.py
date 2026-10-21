@@ -14,7 +14,7 @@ from . import backtest, config, fondamentaux, seo
 from .indicators import NOMS_CHANDELIERS
 from .scoring import propre
 
-INDICES = [("^FCHI", "CAC 40"), ("SPY", "S&P 500"), ("QQQ", "Nasdaq 100"), ("BTC-USD", "Bitcoin")]
+INDICES = [("^FCHI", "CAC 40"), ("^STOXX50E", "Euro Stoxx 50"), ("SPY", "S&P 500"), ("QQQ", "Nasdaq 100"), ("BTC-USD", "Bitcoin")]
 JOURS_GRAPHIQUE = 400   # ~1 an et demi de bougies dans chaque graphique
 Z_80 = 1.2816           # fourchette « 8 chances sur 10 » (quantiles 10 % et 90 %)
 
@@ -43,7 +43,46 @@ def _serie(d: pd.DataFrame, jours: int = JOURS_GRAPHIQUE) -> dict:
                 ("rsi", "rsi"))}}
 
 
+def _trajectoire(prix, q, k, horizon):
+    """Prix bas / central / haut après k séances, à partir des scénarios de l'IA à l'horizon."""
+    b, m, h = q
+    f = k / horizon
+    centre = m * f
+    return (prix * np.exp(centre - (m - b) * np.sqrt(f)), prix * np.exp(centre),
+            prix * np.exp(centre + (h - m) * np.sqrt(f)))
+
+
 def _cone(a, d: pd.DataFrame, rendement: float, horizon: int) -> dict | None:
+    """Fourchette de prix pour les prochaines séances. Priorité aux scénarios appris par l'IA
+    (quantiles corrigés pour tenir 8 fois sur 10) ; sinon, estimation par la volatilité."""
+    crypto = a.ticker.endswith("-USD")
+    dates = pd.date_range(d.index[-1], periods=horizon + 1, freq="D" if crypto else "B")
+    if len(a.quantiles) == 3:
+        pts = [_trajectoire(a.prix, a.quantiles, k, horizon) for k in range(horizon + 1)]
+        a.fourchette = (float(pts[-1][0]), float(pts[-1][2]))
+        return {"t": [f"{x:%Y-%m-%d}" for x in dates], "source": "ia",
+                "bas": [_arrondi(p[0]) for p in pts], "mediane": [_arrondi(p[1]) for p in pts],
+                "haut": [_arrondi(p[2]) for p in pts]}
+    return _cone_volatilite(a, d, rendement, horizon)
+
+
+def _previsions(a, horizon: int) -> dict | None:
+    """Estimations à 1 semaine, 2 semaines et 1 mois (pour l'espace simulation).
+    Actions : 5, 10 et 20 séances. Cryptos (cotées 7 j/7) : 7, 14 et 30 jours."""
+    if len(a.quantiles) != 3:
+        return None
+    pas = (7, 14, 30) if a.ticker.endswith("-USD") else (5, 10, horizon)
+    out = {}
+    for nom, k in zip(("1s", "2s", "1m"), pas):
+        b, m, h = _trajectoire(a.prix, a.quantiles, k, horizon)
+        out[nom] = {"bas": _arrondi(b), "centre": _arrondi(m), "haut": _arrondi(h)}
+        if len(a.extremes) == 2:   # scénarios extrêmes (1 chance sur 20 de chaque côté), mode risque
+            eb, _, eh = _trajectoire(a.prix, (a.extremes[0], a.quantiles[1], a.extremes[1]), k, horizon)
+            out[nom]["ext_bas"], out[nom]["ext_haut"] = _arrondi(eb), _arrondi(eh)
+    return out
+
+
+def _cone_volatilite(a, d: pd.DataFrame, rendement: float, horizon: int) -> dict | None:
     """Prévision : trajectoire médiane (rendement historique observé pour cette probabilité)
     entourée d'une fourchette à 80 % tirée de la volatilité réelle du titre."""
     vol_an = a.perf.get("volatilité annuelle")
@@ -86,7 +125,22 @@ def _backtest(ticker: str, d: pd.DataFrame) -> dict | None:
             "drawdown_bot": r.stats_strategie["pire baisse (drawdown)"]}
 
 
-def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, actus_marche=None) -> dict:
+def _dernier_entrainement():
+    """Dernier entraînement approfondi lancé sur le PC (entrainement_ia.py), pour l'afficher sur le site."""
+    try:
+        from .model import _lire_fichier_modele
+        liste = [e for e in ((_lire_fichier_modele() or {}).get("entrainements") or []) if not e.get("demo")]
+        if not liste:
+            return None
+        e = liste[-1]
+        return {k: e.get(k) for k in ("date", "mode", "nb_titres", "nb_lignes", "retenu", "en_place", "change_methode",
+                                      "raison", "series_economiques", "examen_donnees", "precision", "ic_precision")}
+    except Exception:
+        return None
+
+
+def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, actus_marche=None,
+               qualite=None) -> dict:
     horizon = config.HORIZON_PREDICTION
     titres = []
     for a in sorted(analyses, key=lambda a: a.score, reverse=True):
@@ -94,24 +148,32 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
         if evaluation is not None and a.proba_hausse == a.proba_hausse:
             a.rendement_attendu = evaluation.rendement_attendu(a.proba_hausse)
         rend = a.rendement_attendu if a.rendement_attendu == a.rendement_attendu else 0.0
+        if len(a.quantiles) == 3:   # rendement central appris par l'IA
+            a.rendement_attendu = float(np.expm1(a.quantiles[1]))
+            rend = a.rendement_attendu
         item = a.to_dict()
         item["cone"] = _cone(a, d, rend, horizon)
+        item["previsions"] = _previsions(a, horizon)
         item["fourchette"] = list(a.fourchette)
         item["serie"] = _serie(d)
         item["niveaux"] = _niveaux(d)
-        fig = d["chandelier"].iloc[-120:]
+        fig = d["chandelier"].iloc[-30:]   # seulement les figures récentes, pour garder un graphique lisible
         item["chandeliers"] = [{"t": f"{dt:%Y-%m-%d}", "code": c, "nom": NOMS_CHANDELIERS[c][0],
                                 "sens": NOMS_CHANDELIERS[c][1]}
                                for dt, c in fig.items() if c and c != "doji" and c in NOMS_CHANDELIERS]
         item["backtest"] = _backtest(a.ticker, d)
         item["prev_close"] = float(d["Close"].iloc[-2]) if len(d) > 1 else None
-        item["spark"] = [_arrondi(v) for v in d["Close"].iloc[-63:]]
+        q = (qualite or {}).get("details", {}).get(a.ticker)
+        item["qualite_ok"] = True if q is None else q["ok"]
+        item["spark"] = [float(f"{v:.4g}") for v in d["Close"].iloc[-63:] if np.isfinite(v)]
         # rendements quotidiens réels (3 dernières années) pour le simulateur Monte-Carlo du site
         lr = np.log(d["Close"]).diff().dropna().iloc[-750:]
         item["rendements"] = [round(float(v), 5) for v in lr if np.isfinite(v)]
         item["jours_an"] = 365 if a.ticker.endswith("-USD") else 252
         x = d.iloc[-1]
         item["au_dessus_200"] = bool(x["Close"] > x["sma200"]) if x["sma200"] == x["sma200"] else None
+        item["indice_nom"] = config.NOM_BENCHMARK.get(a.indice_ref, a.indice_ref)
+        item["perf_an"] = _arrondi(float(d["Close"].iloc[-1] / d["Close"].iloc[-min(len(d), 253)] - 1)) if len(d) > 200 else None
         titres.append(item)
 
     indices = []
@@ -122,7 +184,7 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
         c = d["Close"]
         indices.append({"ticker": t, "nom": nom, "prix": float(c.iloc[-1]),
                         "var_jour": float(c.iloc[-1] / c.iloc[-2] - 1),
-                        "devise": "€" if t == "^FCHI" else "$",
+                        "devise": "€" if t in ("^FCHI", "^STOXX50E") else "$",
                         "prev_close": float(c.iloc[-2]),
                         "spark": [_arrondi(v) for v in c.iloc[-60:]]})
 
@@ -153,6 +215,8 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
             usd_eur = 1 / dernier
 
     date_max = max(a.date_cours for a in analyses)
+    suivi = dict(suivi or {})
+    resultats = suivi.pop("toutes", [])
     return propre({
         "genere_le": datetime.now().isoformat(timespec="seconds"),
         "date_donnees": date_max, "demo": demo, "horizon": horizon,
@@ -163,8 +227,16 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
         "legal": {"editeur": config.EDITEUR, "contact": config.CONTACT, "conflits": config.CONFLITS},
         "contexte": contexte,
         "usd_eur": usd_eur,
+        "stats": bool(config.GOATCOUNTER) and not demo,
+        "qualite": None if not qualite else {
+            "resume": qualite["resume"],
+            "a_verifier": [{"ticker": t, "problemes": v["problemes"]} for t, v in qualite["details"].items() if not v["ok"]],
+            "demo": demo},
         "telegram": config.TELEGRAM_CHAINE.lstrip("@") if config.TELEGRAM_CHAINE else "",
         "fondamentaux_libelles": fondamentaux.libelles(),
+        "resultats": resultats,   # liste complète des prédictions vérifiées (page « résultats » seulement)
+        "elargissement_resultats": fondamentaux.ELARGISSEMENT_RESULTATS,
+        "entrainement": _dernier_entrainement(),
     })
 
 
@@ -177,7 +249,7 @@ def _json_sur(payload: dict) -> str:
 
 CHAMPS_DETAIL = ("serie", "rendements", "cone", "chandeliers", "backtest", "niveaux", "actus",
                  "fondamentaux", "raisons_pour", "raisons_contre")
-TOUJOURS_COMPLETS = {"^FCHI", "SPY", "QQQ", "BTC-USD"}  # utilisés par le graphique de l'accueil
+TOUJOURS_COMPLETS = {"^FCHI"}  # premier graphique de l'accueil : affiché tout de suite (les autres sont chargés au clic)
 
 
 def _decouper(payload: dict, dossier: str) -> dict:
@@ -206,8 +278,10 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
     decouper = not pour_artifact and (os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("RADAR_DECOUPER") == "1")
     if os.path.isdir(os.path.join(dossier, "donnees")):
         shutil.rmtree(os.path.join(dossier, "donnees"))
-    page = gabarit.replace("/*__DATA__*/null", _json_sur(_decouper(payload, dossier) if decouper else payload))
+    pour_page = {k: v for k, v in payload.items() if k != "resultats"}
+    page = gabarit.replace("/*__DATA__*/null", _json_sur(_decouper(pour_page, dossier) if decouper else pour_page))
     tete, corps = page.split("<!--__CORPS__-->", 1)
+    corps = corps.replace("<!--__FAQ__-->", seo.html_faq(), 1)
     if pour_artifact:  # aperçu Claude : bibliothèque depuis un CDN autorisé, pas de CSP propre
         lib = '<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>'
         html = tete.replace("<!--__LIB__-->", lib) + corps
@@ -216,12 +290,16 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
         # balises de référencement complètes à la place des balises minimales de l'aperçu
         debut, fin = tete.index("<!--META-->"), tete.index("<!--/META-->") + len("<!--/META-->")
         tete = (tete[:debut] + seo.balises_tete(seo.url_site(), f"{seo.NOM} : prévisions boursières à un mois, actions et cryptos",
-                                                 seo.DESCRIPTION, "", jsonld=seo.jsonld_accueil()) + tete[fin:])
+                                                 seo.DESCRIPTION, "", jsonld=seo.jsonld_accueil(),
+                                                 alternates={"fr": "", "en": "en/index.html", "x-default": ""}) + tete[fin:])
+        faq = json.dumps(seo.jsonld_faq(), ensure_ascii=False).replace("</", "<\\/")
+        tete = tete.replace("<!--__LIB__-->", f'<script type="application/ld+json">{faq}</script>\n<!--__LIB__-->', 1)
         tete = tete.replace("<title>Radar Bourse</title>",
                             f"<title>{seo.NOM} : prévisions boursières à un mois, actions et cryptos</title>", 1)
         corps = corps.replace("<!--__LIENS_SEO__-->", seo.liens_accueil(payload), 1)
-        securite = (f'<meta http-equiv="Content-Security-Policy" content="{CSP}">\n'
-                    '<meta name="referrer" content="strict-origin-when-cross-origin">\n')
+        securite = (f'<meta http-equiv="Content-Security-Policy" content="{seo.csp_avec_stats(CSP)}">\n'
+                    '<meta name="referrer" content="strict-origin-when-cross-origin">\n'
+                    + seo.script_stats() + "\n")
         html = ("<!doctype html>\n<html lang=\"fr\">\n<head>\n<meta charset=\"utf-8\">\n"
                 "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
                 + securite + tete.replace("<!--__LIB__-->", lib) + "\n</head>\n<body>\n" + corps
@@ -239,6 +317,12 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
         with open(os.path.join(dossier, "version.json"), "w", encoding="utf-8") as f:
             json.dump({"genere_le": payload["genere_le"]}, f)
         seo.generer(payload, dossier, CSP)
+        cname = os.path.join(dossier, "CNAME")
+        if config.DOMAINE:
+            with open(cname, "w", encoding="utf-8") as f:
+                f.write(config.DOMAINE + "\n")
+        elif os.path.exists(cname):
+            os.remove(cname)
         ancien = os.path.join(dossier, "donnees.json")
         if os.path.exists(ancien):
             os.remove(ancien)

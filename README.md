@@ -44,7 +44,7 @@ Le site s'ouvre tout seul dans ton navigateur (`site/index.html`). Il faut Inter
 - **Météo du marché** : part des titres en tendance haussière, probabilité moyenne, signaux d'achat
   et de vente, nombre de configurations de décollage.
 
-- **Bandeau des marchés** : CAC 40, S&P 500, Nasdaq, Bitcoin, avec la variation du jour.
+- **Bandeau des marchés** : CAC 40, Euro Stoxx 50, S&P 500, Nasdaq, Bitcoin, avec la variation du jour.
 - **Ce que le radar prévoit** : les plus fortes probabilités de hausse et les « configurations de décollage »
   (cours proche du plus haut annuel, volatilité comprimée, volumes en hausse, tendance haussière…).
 - **Peut-on lui faire confiance ?** : précision du modèle testé sur des périodes qu'il n'a jamais vues,
@@ -87,8 +87,23 @@ Quand la page est ouverte, elle reçoit les prix en direct : cryptos via Binance
 actions US via Finnhub si une clé est configurée (`FINNHUB_KEY`). Les actions françaises n'ont pas de
 source gratuite en temps réel : elles sont rafraîchies à chaque mise à jour du site.
 
+## Espace simulation (à combien dans un mois ?)
+
+Pour chaque action et crypto : un **scénario bas, central et haut** à 1 semaine, 2 semaines et
+1 mois, sur une barre visuelle. Les fourchettes sont **apprises par l'IA** (modèles de quantiles),
+puis **corrigées automatiquement** (méthode conformale) pour contenir le vrai prix 8 fois sur 10.
+Le taux réellement obtenu sur des cas jamais vus est affiché en gros, avec un avertissement très
+visible : environ 2 fois sur 10, le prix sort de la fourchette.
+Le **défi pronostic** permet de parier (sans argent) contre le radar et de comparer les scores.
+
 ## Pour les visiteurs
 
+- **Carte du marché** colorée (jour, mois, 3 mois), graphiques avec filigrane, curseur aimanté,
+  zones en dégradé et **mode ligne** pour les débutants.
+- **Dates de résultats** : un avertissement apparaît quand une entreprise publie ses résultats
+  dans les 30 jours (forte volatilité possible).
+- **Mise à jour automatique** : la page se recharge seule quand de nouvelles prévisions arrivent,
+  si le visiteur n'est pas en train de lire une fiche.
 - **Portefeuille virtuel** : 10 000 € fictifs pour s'entraîner sans risque (gardé dans le navigateur).
 - **Favoris**, bouton **Partager**, installation sur téléphone.
 - **Apprendre la Bourse** : 8 mini-cours illustrés avec un quiz (actions, cryptos, bougies, tendances,
@@ -96,9 +111,92 @@ source gratuite en temps réel : elles sont rafraîchies à chaque mise à jour 
 - **Alertes Telegram** (facultatif) : chaque soir, le robot publie les signaux forts sur ta chaîne.
   Pour l'activer plus tard : double-clique sur `alertes_telegram.bat`.
 
+## Entraînement approfondi de l'IA (sur ton PC)
+
+Double-clique sur **`entrainement_ia.bat`** (20 à 60 min) ou **`entrainement_ia_complet.bat`** (1 à 3 h,
+plus de réglages testés). L'IA :
+
+1. étudie **jusqu'à 20 ans** d'historique sur **près de 300 actions, ETF et cryptos** (France, Europe,
+   États-Unis, cryptos) et des **indicateurs économiques** : peur des marchés (VIX), taux longs et
+   courts, courbe des taux, dollar, or, pétrole, cuivre, prime de risque du crédit, tension
+   financière, inscriptions au chômage (Réserve fédérale de Saint-Louis). Chaque chiffre économique
+   est décalé de son délai de publication : l'IA ne « voit » jamais une donnée avant sa sortie ;
+2. passe deux examens sur des années qu'elle n'a jamais vues : plus de titres d'apprentissage
+   aident-ils vraiment ? quelle façon de prévoir est la meilleure ?
+3. ne remplace l'IA du site **que si le progrès est prouvé** (marge d'erreur à 95 %) ;
+4. écrit un rapport clair (dossier `rapports`) et, si elle a progressé, **envoie la nouvelle recette
+   sur GitHub** : le site se met à jour tout seul en 15 à 30 minutes.
+
+Le résultat du dernier entraînement est affiché sur le site, rubrique « Peut-on lui faire confiance ? ».
+Ces données économiques sont aussi utilisées par les mises à jour automatiques en ligne.
+
+## Nouveautés de la version 14 (fiabilité et clarté)
+
+- **Deux IA qui se vérifient** : IA n°1 (gradient boosting + régression) et IA n°2 (forêt d'arbres),
+  construites différemment. Le site affiche si elles sont d'accord ; un signal fort exige leur accord.
+  Sur l'historique, leurs désaccords ne font pas mieux que le hasard : le radar le dit au lieu de trancher.
+- **Champion / challenger** : chaque soir, plusieurs méthodes sont comparées, mais la méthode en place
+  n'est remplacée que si une autre fait mieux de façon prouvée (bootstrap par mois, 95 %).
+- **Contrôles avant chaque publication** (probabilités valides et variées, fourchettes cohérentes, pas de
+  saut brutal) : si un contrôle important échoue, rien n'est publié et l'ancienne version reste en ligne.
+- **Statistiques honnêtes** : marges d'erreur calculées en tirant des mois entiers (sinon on se croit plus
+  précis qu'on ne l'est), score de Brier, verdict « prouvé / possible / aucun ».
+- **Actualités en garde-fou** : un signal fort est suspendu si les actus récentes sont nettement négatives,
+  et une contradiction entre l'IA et l'actu est signalée (elles n'entrent pas dans la probabilité, faute
+  d'historique pour mesurer leur effet).
+- **Pour les débutants** : « Par où commencer », boutons « ? » qui expliquent chaque mot, grille de
+  100 points (« sur 100 situations comme celle-ci, 56 ont monté »), langage simple partout.
+- **Accessibilité** : taille du texte, contraste renforcé, texte aéré, sans animation (bouton « AA »).
+- **Mode scénarios extrêmes** : montre les cas à 1 chance sur 20 dans les deux sens, après une
+  confirmation explicite (3 cases) à chaque activation.
+- **Mises à jour toutes les heures, 7 jours sur 7**, et les fourchettes suivent le prix en direct.
+
+## Nouveautés de la version 13
+
+- **Menu fixe** en haut (Prévisions, Simulation, Portefeuille, Fiabilité…) et **recherche** : tape
+  « Apple » ou « BTC » et la fiche s'ouvre. Sur téléphone, l'en-tête se replie quand on descend.
+- **Mode Simple / Expert** : le mode simple (par défaut) cache les indicateurs techniques et montre une
+  courbe au lieu des bougies ; le mode expert affiche tout.
+- **« Mieux que son marché ? »** : un second modèle estime la probabilité qu'un titre fasse mieux que
+  son indice (CAC 40, Euro Stoxx 50, S&P 500 ou Bitcoin). Sa fiabilité est mesurée et affichée à part.
+- **Fourchettes élargies de 30 %** (règle de prudence) quand une entreprise publie ses résultats avant
+  l'échéance.
+- **Plus de titres** : 16 grandes actions européennes (SAP, ASML, Ferrari…), 6 cryptos de plus,
+  des ETF thématiques (or, semi-conducteurs, énergie propre, robotique et IA, pétrole) et l'Euro Stoxx 50.
+- **Page « Résultats réels »** (`resultats.html`) : chaque prévision vérifiée après coup, mois par mois,
+  par type de titre, fourchettes, signaux forts, avec un verdict honnête.
+- **Image du jour** (`image-du-jour.png`, format portrait) prête à poster sur Instagram, TikTok, X.
+- **Version anglaise** (`en/`) : une page par titre pour le référencement international.
+- **Comparer deux titres** : courbes base 100 et tableau côte à côte.
+- **Sauvegarde dans un fichier** du portefeuille virtuel, des favoris et des paris (pour changer d'appareil).
+- **Alertes favoris** : en revenant, le visiteur voit ce qui a changé sur ses favoris.
+- **Accessibilité** : contrastes conformes WCAG AA (thème clair et sombre), navigation au clavier,
+  lien « Aller au contenu », fenêtres qui gardent le focus.
+- **Nom de domaine** (facultatif) : double-clique sur `nom_de_domaine.bat`.
+
+## Statistiques de visites (visibles par toi seule)
+
+Le site peut compter ses visiteurs avec **GoatCounter** : gratuit pour un usage non commercial,
+sans cookie, sans pistage. Le script `mettre_en_ligne.bat` (étape 9) ou `statistiques.bat` te guide.
+Ton tableau de bord privé montre : visiteurs par jour, pages et fiches les plus vues, provenance
+(Google, Reddit…), pays et type d'appareil. Le site n'a pas de comptes utilisateurs : on compte des
+**visites**, pas des personnes « connectées ».
+
+## Visibilité
+
+- **Le point du jour** : chaque soir, une page « Bourse du 21 octobre : ce qu'il faut retenir » est
+  rédigée automatiquement et archivée (`point.html`). Du contenu frais tous les jours, idéal pour Google.
+- **FAQ** sur la page d'accueil, avec les données structurées que Google affiche dans ses résultats.
+- **IndexNow** : chaque soir, les nouvelles pages sont signalées à Bing et Yandex.
+- Voir **`PROMOTION.md`** pour les textes prêts à publier (Reddit, TikTok, Discord).
+
 ## Fiabilité et surveillance
 
-- À chaque mise à jour, le radar **teste 3 façons de prévoir** (modèle unique avec tous les
+- L'IA apprend sur **10 ans d'historique** et sur **~110 titres** (dont une cinquantaine utilisés
+  uniquement pour l'apprentissage) : plus de situations vues, moins de pièges du hasard.
+- **Contrôle qualité** de chaque titre à chaque mise à jour (fraîcheur, trous, sauts anormaux,
+  comparaison Yahoo / Binance pour les cryptos). Un titre douteux est exclu des signaux forts.
+- Le soir, le radar **teste 3 façons de prévoir** (modèle unique avec tous les
   indicateurs, modèle unique avec les indicateurs de base, un modèle par marché) sur des périodes
   jamais vues, et garde la meilleure. Le résultat est affiché dans « Peut-on lui faire confiance ? ».
 - **Sources de secours** si Yahoo ne répond pas : Binance pour les cryptos, Stooq pour le reste.

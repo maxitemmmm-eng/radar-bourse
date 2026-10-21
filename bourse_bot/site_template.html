@@ -14,8 +14,8 @@
 /* Layout : un « pupitre de marché » — bandeau des indices, prédictions du jour, fiabilité, puis la liste complète ; chaque titre s'ouvre dans un panneau de détail. */
 :root{
   --bg:#eef1f5; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#0f1b2d; --muted:#5a6a80; --line:#d9e0e8;
-  --accent:#1d4fd8; --accent-soft:#e3eafc; --up:#0b8a4f; --up-soft:#dcf2e6; --down:#c9352f; --down-soft:#fbe3e1;
-  --warn:#9a6b0a; --warn-soft:#fbf0d6; --cone:#1d4fd8;
+  --accent:#1d4fd8; --accent-soft:#e3eafc; --up:#07743f; --up-soft:#dcf2e6; --down:#b42a25; --down-soft:#fbe3e1;
+  --warn:#855c08; --warn-soft:#fbf0d6; --cone:#1d4fd8; --sur-couleur:#ffffff;
   --f-display:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
@@ -24,11 +24,11 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0a111d; --surface:#111a29; --surface-2:#162133; --ink:#e4ebf5; --muted:#8c9bb0; --line:#22314a;
   --accent:#7398ff; --accent-soft:#1a2747; --up:#35c27d; --up-soft:#11301f; --down:#ff6b62; --down-soft:#3a1716;
-  --warn:#e5b453; --warn-soft:#33270d; --cone:#7398ff; color-scheme:dark}}
+  --warn:#e5b453; --warn-soft:#33270d; --cone:#7398ff; --sur-couleur:#0a111d; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0a111d; --surface:#111a29; --surface-2:#162133; --ink:#e4ebf5; --muted:#8c9bb0; --line:#22314a;
   --accent:#7398ff; --accent-soft:#1a2747; --up:#35c27d; --up-soft:#11301f; --down:#ff6b62; --down-soft:#3a1716;
-  --warn:#e5b453; --warn-soft:#33270d; --cone:#7398ff; color-scheme:dark}
+  --warn:#e5b453; --warn-soft:#33270d; --cone:#7398ff; --sur-couleur:#0a111d; color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -49,7 +49,8 @@ button{font:inherit;color:inherit}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
 .top .wrap{display:flex;align-items:center;gap:16px;padding-block:12px;flex-wrap:wrap}
 .brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
-.brand h1{font-size:22px;font-weight:800}
+.brand h1{font-size:22px;font-weight:800;white-space:nowrap}
+@media (max-width:520px){.brand{flex-wrap:wrap;row-gap:0}.brand .stamp{flex-basis:100%;margin-left:19px}}
 .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--up);display:inline-block;box-shadow:0 0 0 3px var(--up-soft)}
 .stamp{font-size:13px;color:var(--muted)}
 .demo{background:var(--warn-soft);color:var(--warn);border-bottom:1px solid var(--line);font-size:13.5px}
@@ -102,7 +103,7 @@ section{margin-top:36px}
 /* Filtres + tableau */
 .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .chip{border:1px solid var(--line);background:var(--surface);padding:6px 12px;border-radius:99px;cursor:pointer;font-size:13.5px}
-.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.chip[aria-pressed="true"],.chip[aria-selected="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .search{flex:1 1 200px;max-width:280px;padding:7px 12px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px}
 .tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
 table{width:100%;border-collapse:collapse;font-size:14px}
@@ -141,8 +142,8 @@ tbody tr:last-child td{border-bottom:0}
 .bulle::after{content:"";position:absolute;left:50%;bottom:-5px;width:10px;height:10px;background:inherit;transform:translateX(-50%) rotate(45deg);border-radius:2px}
 .bulle.g{transform:translate(calc(-100% - 12px),-50%)}
 .bulle.g::after{left:auto;right:-5px;bottom:auto;top:50%;transform:translateY(-50%) rotate(45deg)}
-.bulle.up{background:var(--up);color:#fff}.bulle.down{background:var(--down);color:#fff}
-.bulle.acc{background:var(--accent);color:#fff}.bulle.warn{background:var(--warn);color:#fff}
+.bulle.up{background:var(--up);color:var(--sur-couleur)}.bulle.down{background:var(--down);color:var(--sur-couleur)}
+.bulle.acc{background:var(--accent);color:var(--sur-couleur)}.bulle.warn{background:var(--warn);color:var(--sur-couleur)}
 @media (max-width:700px){.bulle{font-size:11px;padding:4px 7px}.bulle small{display:none}}
 .sep{position:absolute;top:0;bottom:0;border-left:2px dashed var(--ink);opacity:.55}
 .sep-lab{position:absolute;top:10px;font:700 11px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--ink);background:var(--surface);padding:3px 7px;border-radius:5px;border:1px solid var(--line);white-space:nowrap}
@@ -165,6 +166,7 @@ tbody tr:last-child td{border-bottom:0}
 .etoile{color:var(--warn);margin-right:4px}
 .sheet-head .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .sheet-head .close{margin-left:0}
+.sheet-head > .close{margin-left:auto}
 .note-flash{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:50;background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;font-weight:600;box-shadow:0 8px 24px rgba(5,10,20,.25)}
 
 /* Portefeuille virtuel */
@@ -182,6 +184,49 @@ tbody tr:last-child td{border-bottom:0}
 
 .hero-liens{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
 .hero-liens .btn{text-decoration:none;display:inline-block}
+
+/* FAQ */
+.faq-liste{display:grid;gap:0;padding:4px 16px}
+.faq{border-bottom:1px solid var(--line)}
+.faq:last-child{border-bottom:0}
+.faq summary{cursor:pointer;padding:14px 0;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";color:var(--accent);font-weight:800}
+.faq[open] summary::after{content:"–"}
+.faq p{margin:0 0 14px;color:var(--muted);max-width:75ch}
+
+/* Espace simulation */
+.alerte-sim{display:grid;gap:4px;padding:14px 16px;border-radius:var(--r);background:var(--warn-soft);border:2px solid var(--warn);color:var(--ink);margin-bottom:14px;font-size:14.5px}
+.alerte-sim b{color:var(--warn);font-size:15.5px}
+.sim-filtres{align-items:center}
+.sim-liste{display:grid;gap:8px}
+.sim-ligne{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,2.4fr) auto;gap:16px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+@media (max-width:760px){.sim-ligne{grid-template-columns:1fr}}
+.sim-ligne .nom b{display:block}.sim-ligne .nom span{font-size:12.5px;color:var(--muted)}
+.plage{position:relative;height:46px}
+.plage .rail{position:absolute;left:0;right:0;top:20px;height:6px;border-radius:3px;background:var(--line)}
+.plage .zone{position:absolute;top:16px;height:14px;border-radius:7px;background:linear-gradient(90deg,var(--down-soft),var(--accent-soft) 50%,var(--up-soft))}
+.plage .act{position:absolute;top:10px;width:2px;height:26px;background:var(--ink);opacity:.7}
+.plage .ctr{position:absolute;top:15px;width:16px;height:16px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);transform:translateX(-50%)}
+.plage .lab{position:absolute;top:34px;font:500 11.5px var(--f-mono);white-space:nowrap;color:var(--muted)}
+.plage .lab.g{transform:translateX(0)}.plage .lab.d{transform:translateX(-100%)}
+.plage .lab.min{color:var(--down)}.plage .lab.max{color:var(--up)}
+.plage .tete{position:absolute;top:0;font:600 11.5px var(--f-body);white-space:nowrap;color:var(--accent);transform:translateX(-50%)}
+.sim-btns{display:flex;gap:6px;flex-wrap:wrap}
+.badge-res{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--warn-soft);color:var(--warn);margin-left:6px}
+.defi-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 0 2px;grid-column:1/-1}
+.defi-score{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px}
+.defi-score div{font-family:var(--f-display);font-size:22px;font-weight:800}
+.defi-score span{display:block;font:500 12px var(--f-body);color:var(--muted)}
+
+/* Carte du marché */
+.carte-marche{display:grid;gap:14px}
+.carte-groupe .label{margin-bottom:6px;display:block}
+.tuiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:4px}
+.tuile{border:0;border-radius:6px;padding:10px 8px;cursor:pointer;text-align:left;display:grid;gap:2px;min-height:58px;color:var(--ink)}
+.tuile b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tuile span{font:500 12.5px var(--f-mono)}
+.tuile:hover{outline:2px solid var(--ink);outline-offset:-2px}
 
 /* Contexte économique */
 .ctx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
@@ -241,8 +286,8 @@ tbody tr:last-child td{border-bottom:0}
 
 /* Lecture du radar (prévision écrite) */
 .lecture{display:grid;gap:4px;max-width:900px}
-.lecture h4{font-family:var(--f-display);font-size:16px;margin:14px 0 2px}
-.lecture h4:first-child{margin-top:0}
+.lecture h3{font-family:var(--f-display);font-size:16px;margin:14px 0 2px}
+.lecture h3:first-child{margin-top:0}
 .lecture p{margin:0;font-size:15px;line-height:1.6;max-width:72ch}
 .scen{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
 @media (max-width:640px){.scen{grid-template-columns:1fr}}
@@ -376,26 +421,216 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .legal h4{font-family:var(--f-display);font-size:16px;margin:22px 0 6px}
 .legal p,.legal ul{margin:0 0 10px}
 .legal .maj{font-size:12.5px;color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .note-pred{font-size:12.5px;color:var(--muted);margin:10px 0 0}
 @media (prefers-reduced-motion:no-preference){.pick,.rk,tbody tr td{transition:background .15s,border-color .15s}}
+
+/* Accès direct au contenu (clavier, lecteurs d'écran) */
+.skip{position:absolute;left:12px;top:-60px;z-index:60;background:var(--ink);color:var(--surface);padding:8px 14px;border-radius:8px;font-weight:600;text-decoration:none}
+.skip:focus{top:12px}
+
+/* Menu des sections (collé en haut) */
+.nav-sec{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-bottom:10px;margin-top:-4px}
+.nav-sec::-webkit-scrollbar{display:none}
+.nav-sec a{flex:none;text-decoration:none;color:var(--muted);font-size:13.5px;font-weight:600;padding:6px 11px;border-radius:99px;border:1px solid transparent;white-space:nowrap}
+.nav-sec a:hover{color:var(--ink);border-color:var(--line)}
+.nav-sec a[aria-current="true"]{color:var(--surface);background:var(--ink)}
+.nav-sec .ext::after{content:" ↗";font-weight:400}
+.top .nav-sec{gap:4px;padding-block:0 10px;flex-wrap:nowrap;margin-top:-4px}
+section[id],[id^="h-"]{scroll-margin-top:calc(var(--tete,118px) + 10px)}
+@media (max-width:640px){
+  .top .wrap{gap:8px 10px;padding-block:10px}
+  .top .live{display:none}
+  .brand{flex:1 1 0;min-width:0}
+  .brand h1{font-size:20px}
+  .brand .stamp{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;font-size:12px}
+  .mode button{padding:5px 8px}
+  html.defile .top .wrap:first-child{display:none}
+  html.defile .top .nav-sec{padding-top:10px}
+}
+
+/* Recherche globale */
+.recherche{position:relative;flex:1 1 220px;max-width:360px}
+.recherche input{width:100%;padding:7px 12px 7px 34px;border-radius:99px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font:inherit;font-size:14px}
+.recherche svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.resultats-rech{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(5,10,20,.18);padding:4px;margin:0;list-style:none;max-height:min(60vh,420px);overflow-y:auto}
+.resultats-rech li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 10px;border-radius:7px;cursor:pointer}
+.resultats-rech li[aria-selected="true"],.resultats-rech li:hover{background:var(--accent-soft)}
+.resultats-rech li span{font-size:12.5px;color:var(--muted)}
+.resultats-rech li b{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:640px){.recherche{order:5;flex-basis:100%;max-width:none}}
+
+/* Mode simple / expert */
+.mode{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.mode button{border:0;background:var(--surface);color:var(--muted);padding:5px 10px;font-size:12.5px;font-weight:600;cursor:pointer}
+.mode button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+html.simple .expert{display:none!important}
+
+/* Alertes sur les favoris */
+.alerte-fav{margin-top:18px;border:2px solid var(--accent);background:var(--accent-soft);border-radius:var(--r);padding:12px 14px;display:grid;gap:6px}
+.alerte-fav ul{margin:0;padding-left:18px;font-size:14px;display:grid;gap:2px}
+.alerte-fav .ferme{justify-self:start}
+
+/* Comparaison de deux titres */
+.cmp-choix{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.cmp-choix select{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;max-width:100%}
+.cmp-graph{height:clamp(300px,48vh,520px)}
+.cmp-tab td,.cmp-tab th{white-space:nowrap}
+.cmp-tab td:first-child{color:var(--muted);white-space:normal}
+.cmp-tab th{cursor:default;position:static}
+.cmp-tab .mieux{font-weight:700}
+.cle-a,.cle-b{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.cle-a{background:var(--accent)}.cle-b{background:var(--warn)}
+.badge-marche{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line)}
+
+/* Grille de 100 points : « sur 100 situations comme celle-ci… » */
+.points100{display:grid;grid-template-columns:repeat(20,minmax(0,1fr));gap:3px;width:min(260px,100%)}
+.freq{width:100%;justify-items:center}
+.points100 i{aspect-ratio:1;border-radius:50%;background:var(--down-soft);border:1px solid var(--down)}
+.points100 i.h{background:var(--up);border-color:var(--up)}
+.freq{display:grid;gap:8px}
+.freq .phrase{font-size:15px;margin:0}
+.freq .phrase b{font-size:18px}
+
+/* Accord des deux IA */
+.accord{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:3px 9px;border-radius:99px}
+.accord.oui{background:var(--up-soft);color:var(--up)}
+.accord.non{background:var(--warn-soft);color:var(--warn)}
+.duo-ia{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}
+.duo-ia .fact b{font-family:var(--f-mono);font-size:18px;font-weight:500}
+
+/* Statistiques avec marge d'erreur */
+.stat-barres{display:grid;gap:10px;margin-top:6px}
+.sb{display:grid;grid-template-columns:minmax(120px,1.1fr) 3fr 64px;gap:10px;align-items:center;font-size:13.5px}
+.sb .piste{position:relative;height:14px;border-radius:7px;background:var(--surface-2);border:1px solid var(--line)}
+.sb .piste i{position:absolute;top:0;bottom:0;left:0;border-radius:7px;background:var(--accent)}
+.sb .piste i.ref{background:var(--muted);opacity:.55}
+.sb .piste .err{position:absolute;top:-4px;bottom:-4px;border-left:2px solid var(--ink);border-right:2px solid var(--ink)}
+.sb .piste .err::after{content:"";position:absolute;left:0;right:0;top:50%;border-top:2px solid var(--ink)}
+.sb .piste .mi{position:absolute;top:-6px;bottom:-6px;left:50%;border-left:1.5px dashed var(--muted)}
+.niveau{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;font-weight:700}
+.niveau.prouve{background:var(--up-soft);color:var(--up)}.niveau.possible{background:var(--warn-soft);color:var(--warn)}.niveau.aucun{background:var(--down-soft);color:var(--down)}
+.controles{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px;font-size:13.5px}
+.controles li{display:grid;grid-template-columns:22px 1fr;gap:4px}
+.cartes-conf{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:14px}
+.cartes-conf .panel{display:grid;gap:6px;align-content:start}
+.cartes-conf .sb{grid-template-columns:1fr;gap:4px}.cartes-conf .sb b{justify-self:start}
+.cartes-conf h3{font-size:16px}
+
+/* Définitions au clic */
+.def{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font:700 12px var(--f-body);cursor:pointer;vertical-align:1px;margin-left:4px;padding:0;line-height:1}
+.def[aria-expanded="true"]{background:var(--accent);color:var(--surface)}
+.bulle-def{position:absolute;z-index:70;max-width:min(320px,calc(100vw - 32px));background:var(--ink);color:var(--surface);padding:10px 12px;border-radius:10px;font-size:14px;line-height:1.45;box-shadow:0 10px 30px rgba(5,10,20,.3)}
+.bulle-def b{display:block;margin-bottom:2px}
+
+/* Par où commencer */
+.depart{margin-top:18px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:16px}
+.depart ol{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.depart li{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start;padding:12px;border-radius:10px;background:var(--surface-2)}
+.depart li > span{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800}
+.depart li p{margin:2px 0 0;font-size:13.5px;color:var(--muted)}
+.depart .bas{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+
+/* Réglages d'accessibilité */
+.acces{position:relative}
+.panneau-acces{position:absolute;right:0;top:calc(100% + 8px);z-index:40;width:min(300px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(5,10,20,.18);padding:14px;display:grid;gap:12px}
+.panneau-acces .ligne{display:grid;gap:6px}
+.panneau-acces .choix{display:flex;gap:4px;flex-wrap:wrap}
+.panneau-acces .choix button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:5px 10px;cursor:pointer;font-weight:600}
+.panneau-acces .choix button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+/* Grand texte : agrandit toute la page sur ordinateur ; les graphiques gardent leur échelle pour que
+   le curseur reste précis. Sur téléphone, seul le texte grossit (la page garde la largeur de l'écran). */
+@media (min-width:700px){
+  html.texte-115{zoom:1.15}html.texte-130{zoom:1.3}
+  html.texte-115 .chart,html.texte-115 .bulles{zoom:calc(1/1.15)}html.texte-130 .chart,html.texte-130 .bulles{zoom:calc(1/1.3)}
+}
+@media (max-width:699px){
+  html.texte-115 body{font-size:17px}html.texte-130 body{font-size:19px}
+  html.texte-115 :is(p,li,label,.sentence,.lecture p){font-size:1.07em!important}
+  html.texte-130 :is(p,li,label,.sentence,.lecture p){font-size:1.15em!important}
+}
+html.contraste{--muted:#2f3b4c;--line:#8795a8}
+@media (prefers-color-scheme: dark){html.contraste:not([data-theme="light"]){--muted:#c3cede;--line:#4b5d78}}
+html.contraste[data-theme="dark"]{--muted:#c3cede;--line:#4b5d78}
+html.contraste .panel,html.contraste .chip,html.contraste .tick{border-width:2px}
+html.lisible body{letter-spacing:.02em;word-spacing:.08em;line-height:1.7}
+html.calme *{animation:none!important;transition:none!important}
+
+/* Mode scénarios extrêmes */
+.btn-risque{border:2px solid var(--down);background:var(--surface);color:var(--down);border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
+.bandeau-risque{position:sticky;top:calc(var(--tete,118px) + 4px);z-index:4;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between;background:var(--down);color:var(--sur-couleur);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-weight:600}
+.bandeau-risque button{background:var(--sur-couleur);color:var(--down);border:0;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer}
+.plage .ext{position:absolute;top:18px;height:10px;border-radius:5px;background:repeating-linear-gradient(135deg,var(--down-soft) 0 4px,var(--down) 4px 6px);opacity:.75}
+.plage .ext.h{background:repeating-linear-gradient(135deg,var(--up-soft) 0 4px,var(--up) 4px 6px)}
+.plage.avec-ext{height:62px}
+.plage .lab.emin{top:48px;color:var(--down);font-weight:600}.plage .lab.emax{top:48px;color:var(--up);font-weight:600}
+.risque-liste{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-bottom:14px}
+.rcarte{border:2px solid var(--down-soft);border-radius:10px;padding:12px;background:var(--surface);display:grid;gap:4px;text-align:left;cursor:pointer;color:var(--ink)}
+.rcarte .deux{display:flex;justify-content:space-between;gap:8px;font-family:var(--f-mono);font-size:17px}
+.modal-risque{position:fixed;inset:0;z-index:80;background:rgba(5,10,20,.6);display:grid;place-items:center;padding:16px}
+.modal-risque[hidden]{display:none!important}
+.modal-risque .boite{background:var(--surface);color:var(--ink);border:3px solid var(--down);border-radius:14px;max-width:620px;width:100%;max-height:calc(100vh - 32px);overflow-y:auto;padding:20px;display:grid;gap:12px}
+.modal-risque h2{color:var(--down);font-size:22px}
+.modal-risque ul{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14.5px}
+.modal-risque label{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;font-size:14.5px;cursor:pointer}
+.modal-risque input[type=checkbox]{width:18px;height:18px;margin-top:2px;accent-color:var(--down)}
+.modal-risque .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.modal-risque .btn.danger{background:var(--down);color:var(--sur-couleur)}
+.modal-risque .btn.danger:disabled{opacity:.4;cursor:not-allowed}
 </style>
 <!--__CORPS__-->
 
+<a class="skip" href="#contenu">Aller au contenu</a>
 <header class="top gutter"><div class="wrap">
   <div class="brand"><span class="dot" aria-hidden="true"></span><h1>Radar Bourse</h1><span class="stamp" id="stamp"></span></div>
+  <div class="recherche" role="search">
+    <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.6 3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <input id="rech" type="search" placeholder="Chercher une action, une crypto…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="rech-liste" aria-label="Chercher un titre">
+    <ul class="resultats-rech" id="rech-liste" role="listbox" hidden></ul>
+  </div>
   <span class="live" id="live" title="État des cours en direct"><i></i><span>Cours différés</span></span>
+  <div class="mode" role="group" aria-label="Niveau de détail"><button data-mode="simple" aria-pressed="true" title="Moins d'indicateurs, explications simples">Simple</button><button data-mode="expert" aria-pressed="false" title="Tous les indicateurs techniques">Expert</button></div>
+  <div class="acces"><button class="theme-btn" id="acces-btn" aria-label="Réglages d'accessibilité : taille du texte, contraste" aria-expanded="false" aria-controls="acces-panneau" title="Taille du texte, contraste…"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><text x="1" y="13" font-size="11" font-weight="700" fill="currentColor" font-family="Arial">A</text><text x="8" y="13" font-size="15" font-weight="700" fill="currentColor" font-family="Arial">A</text></svg></button>
+    <div class="panneau-acces" id="acces-panneau" hidden role="group" aria-label="Réglages d'accessibilité">
+      <div class="ligne"><span class="label">Taille du texte</span><div class="choix"><button data-taille="100">Normale</button><button data-taille="115">Grande</button><button data-taille="130">Très grande</button></div></div>
+      <div class="ligne"><span class="label">Lecture</span><div class="choix"><button data-opt="contraste">Contraste renforcé</button><button data-opt="lisible">Texte plus aéré</button><button data-opt="calme">Sans animation</button></div></div>
+    </div></div>
   <button class="theme-btn" id="theme" aria-label="Changer de thème" title="Thème clair / sombre"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg></button>
-</div></header>
-<div class="demo gutter" id="demo" hidden><div class="wrap">Données fictives de démonstration. Lance <span class="num">python -m bourse_bot site</span> sur ton PC pour afficher les vrais cours.</div></div>
+</div>
+<nav class="wrap nav-sec" id="nav-sec" aria-label="Sections du site">
+  <a href="#previsions">Prévisions</a><a href="#simulation">Simulation</a><a href="#portefeuille">Portefeuille</a>
+  <a href="#signaux">Signaux forts</a><a href="#carte-sec">Carte du marché</a><a href="#confiance">Fiabilité</a>
+  <a href="#tous">Tous les titres</a><a href="resultats.html" class="ext lien-site">Résultats réels</a>
+  <a href="point.html" class="ext lien-site">Point du jour</a><a href="apprendre.html" class="ext lien-site">Apprendre</a>
+</nav></header>
+<div class="demo gutter" id="demo" hidden role="region" aria-label="Avertissement : données de démonstration"><div class="wrap">Données fictives de démonstration. Lance <span class="num">python -m bourse_bot site</span> sur ton PC pour afficher les vrais cours.</div></div>
 
-<main class="gutter"><div class="wrap">
+<main class="gutter" id="contenu" tabindex="-1"><div class="wrap">
   <div class="hero">
     <h2>Les marchés, lus par les chiffres.</h2>
-    <p>Prévisions statistiques à un mois, signaux forts mesurés sur l'historique, actualités et simulateur pour chaque titre. Un projet éducatif : les chiffres aident à réfléchir, ils ne décident pas à ta place.</p>
-    <div class="hero-liens"><a class="btn" href="#portefeuille">Essayer le portefeuille virtuel</a><a class="btn ghost" href="apprendre.html" id="lien-apprendre">Apprendre la Bourse</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
+    <p>Chaque heure, deux intelligences artificielles estiment les chances de hausse et de baisse de plus de 80 actions et cryptos pour le mois qui vient. Elles se trompent souvent : ici, on te montre exactement combien. Un projet éducatif et gratuit, pas un conseil.</p>
+    <div class="hero-liens"><a class="btn" href="#simulation">À combien dans un mois ?</a><a class="btn ghost" href="#portefeuille">Portefeuille virtuel</a><a class="btn ghost lien-site" href="resultats.html">Résultats réels</a><a class="btn ghost lien-site" href="apprendre.html">Apprendre la Bourse</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
+  </div>
+  <div class="alerte-fav" id="alerte-fav" hidden role="status"></div>
+  <div class="depart" id="depart" hidden>
+    <h2 style="font-size:18px">Nouveau ? Par où commencer</h2>
+    <ol>
+      <li><span aria-hidden="true">1</span><div><b>Regarde la météo du marché</b><p>Juste en dessous : en un coup d'œil, est-ce que les marchés montent ou baissent en ce moment ?</p></div></li>
+      <li><span aria-hidden="true">2</span><div><b>Cherche une action ou une crypto</b><p>Tape son nom en haut (Apple, Bitcoin, LVMH…). Sa fiche explique tout avec des mots simples.</p></div></li>
+      <li><span aria-hidden="true">3</span><div><b>Entraîne-toi sans risque</b><p>Le portefeuille virtuel te donne 10 000 € fictifs pour tester tes idées sans perdre un centime.</p></div></li>
+    </ol>
+    <div class="bas"><span class="muted" style="font-size:13.5px">Les petits boutons <span class="def" aria-hidden="true" style="pointer-events:none">?</span> expliquent chaque mot compliqué. <b>Rien n'est sûr</b> : ce site t'aide à comprendre, pas à deviner l'avenir.</span>
+      <button class="btn ghost" id="depart-ok">J'ai compris, masquer</button></div>
   </div>
   <div class="tape" id="tape" aria-label="Marchés"></div>
   <div class="mood panel" id="mood" aria-label="Météo du marché"></div>
+
+  <section aria-labelledby="h-carte" id="carte-sec">
+    <div class="sec-head"><h2 id="h-carte">La carte du marché</h2>
+      <div class="per" role="group" aria-label="Période de la carte"><button data-carte="1 jour" aria-pressed="true">Jour</button><button data-carte="1 mois" aria-pressed="false">Mois</button><button data-carte="3 mois" aria-pressed="false">3 mois</button></div></div>
+    <div class="carte-marche" id="carte"></div>
+    <p class="muted" style="font-size:12.5px;margin:8px 0 0">Vert : en hausse, rouge : en baisse. Plus la couleur est forte, plus le mouvement est grand. Clique sur une case pour ouvrir la fiche.</p>
+  </section>
 
   <section aria-labelledby="h-ctx">
     <div class="sec-head"><h2 id="h-ctx">Le contexte économique</h2>
@@ -414,17 +649,17 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     </div>
   </section>
 
-  <section aria-labelledby="h-pred">
+  <section aria-labelledby="h-pred" id="previsions">
     <div class="sec-head"><h2 id="h-pred">Ce que le radar prévoit</h2>
       <p id="pred-sub"></p></div>
-    <div class="duo">
-      <div class="panel"><div class="label" style="margin-bottom:10px">Plus forte probabilité de hausse</div><div class="picks" id="picks"></div></div>
-      <div class="panel"><div class="label" style="margin-bottom:10px">Configurations de décollage</div><div class="rocket-list" id="rockets"></div></div>
+    <div class="duo" id="duo-pred">
+      <div class="panel"><div class="label" style="margin-bottom:10px">Plus fortes chances de hausse</div><div class="picks" id="picks"></div></div>
+      <div class="panel expert"><div class="label" style="margin-bottom:10px">Configurations de décollage</div><div class="rocket-list" id="rockets"></div></div>
     </div>
     <p class="note-pred">Calculs statistiques automatiques, identiques pour tout le monde. Ce ne sont pas des recommandations d'achat ou de vente. <button class="lnk" data-legal="risques">Lire l'avertissement sur les risques</button></p>
   </section>
 
-  <section aria-labelledby="h-fort">
+  <section aria-labelledby="h-fort" id="signaux">
     <div class="sec-head"><h2 id="h-fort">Signaux forts</h2>
       <p>Le modèle est confiant (probabilité calibrée d'au moins 55 %) <b>et</b> la tendance technique est haussière. C'est plus rare, et c'est là que le radar a été le plus juste sur l'historique.</p></div>
     <div class="panel fort-panel">
@@ -439,45 +674,95 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <div class="panel" id="pf"></div>
   </section>
 
+  <section aria-labelledby="h-sim" id="simulation">
+    <div class="sec-head"><h2 id="h-sim">Espace simulation : à combien dans un mois ?</h2>
+      <p>Pour chaque action et crypto, l'IA estime où le prix pourrait se trouver : un scénario bas, un scénario central et un scénario haut.</p></div>
+    <div class="alerte-sim" role="note">
+      <b>⚠️ Ce ne sont pas des certitudes.</b>
+      <span id="sim-avert-txt">Ces fourchettes sont des estimations statistiques. Le prix réel peut en sortir, parfois très largement (annonce surprise, krach, résultats). Ne prends jamais de décision sur cette seule base.</span>
+    </div>
+    <div class="bandeau-risque" id="bandeau-risque" hidden role="status"><span>⚠️ MODE SCÉNARIOS EXTRÊMES ACTIF · 1 chance sur 20 de chaque côté · rien n'est sûr, perte totale possible</span><button id="risque-off">Désactiver</button></div>
+    <div id="risque-zone" hidden></div>
+    <p style="margin:0 0 12px" id="risque-intro"><button class="btn-risque" id="risque-on">⚠️ Mode scénarios extrêmes</button> <span class="muted" style="font-size:13px">Montre aussi les cas très improbables (1 chance sur 20), dans les deux sens. Demande une confirmation à chaque activation.</span></p>
+    <div class="filters sim-filtres" role="group" aria-label="Réglages de l'espace simulation">
+      <span class="label">Horizon :</span>
+      <button class="chip" data-h="1s" aria-pressed="false">1 semaine</button>
+      <button class="chip" data-h="2s" aria-pressed="false">2 semaines</button>
+      <button class="chip" data-h="1m" aria-pressed="true">1 mois</button>
+      <select class="search" id="sim-marche" aria-label="Marché" style="max-width:170px">
+        <option value="all">Tous les marchés</option><option value="fr">France</option><option value="eu">Europe</option><option value="us">États-Unis</option>
+        <option value="crypto">Crypto</option><option value="etf">ETF / indices</option><option value="tendances">En tendance</option>
+      </select>
+      <select class="search" id="sim-tri" aria-label="Trier" style="max-width:220px">
+        <option value="centre">Meilleur scénario central</option><option value="haut">Plus haut scénario max</option>
+        <option value="largeur">Le plus incertain</option><option value="nom">Ordre alphabétique</option>
+        <option value="ext_haut" class="opt-risque" hidden>Plus gros gain extrême</option><option value="ext_bas" class="opt-risque" hidden>Plus grosse perte extrême</option>
+      </select>
+      <input class="search" id="sim-q" type="search" placeholder="Chercher…" aria-label="Chercher un titre">
+    </div>
+    <div class="sim-liste" id="sim-liste"></div>
+    <div style="text-align:center;margin-top:10px"><button class="btn ghost" id="sim-plus" hidden>Voir plus</button></div>
+
+    <div class="panel" style="margin-top:18px">
+      <div class="sec-head" style="margin-bottom:8px"><h3 style="font-size:18px">Défi pronostic : toi contre le radar</h3>
+        <p>Parie (sans argent) sur la hausse ou la baisse d'un titre. À l'échéance, le site compare ton pronostic à celui du radar. Tout reste dans ton navigateur.</p></div>
+      <div id="defis"></div>
+    </div>
+  </section>
+
   <section aria-labelledby="h-news">
     <div class="sec-head"><h2 id="h-news">L'actu du marché</h2>
       <p>Derniers titres de presse sur les grands indices et le Bitcoin, avec leur tonalité estimée automatiquement.</p></div>
     <div class="news-grid" id="news-marche"></div>
   </section>
 
-  <section aria-labelledby="h-trust">
+  <section aria-labelledby="h-trust" id="confiance">
     <div class="sec-head"><h2 id="h-trust">Peut-on lui faire confiance ?</h2>
-      <p>Le modèle est testé uniquement sur des périodes qu'il n'a jamais vues, puis chaque prédiction publiée ici est vérifiée une fois l'échéance passée.</p></div>
+      <p>Les IA sont testées chaque soir sur des années qu'elles n'ont jamais vues, et contrôlées à chaque mise à jour. Chaque prévision publiée est ensuite vérifiée un mois plus tard.</p></div>
     <div class="panel">
-      <div class="trust" id="trust"></div>
+      <div id="conf-simple"></div>
+      <div class="cartes-conf" id="conf-cartes"></div>
+      <details class="expert" style="margin-top:16px" open><summary class="label" style="cursor:pointer">Chiffres détaillés (mode expert)</summary>
+      <div class="trust" id="trust" style="margin-top:10px"></div>
       <div class="verdict" id="verdict"></div>
       <div class="trust-grid">
-        <div><div class="label">Calibration : prévu vs réellement monté</div><div class="calib" id="calib"></div></div>
-        <div><div class="label">Suivi en conditions réelles</div><div id="suivi" style="margin-top:8px"></div></div>
+        <div><div class="label">Calibration : prévu vs réellement monté</div><div class="calib" id="calib"></div>
+          <p class="muted" style="font-size:12.5px;margin:6px 0 0">Chaque barre : quand le radar annonçait cette probabilité, à quelle fréquence le cours a vraiment monté. Bleu : promesse tenue. Rouge : écart de plus de 10 points.</p></div>
+        <div><div class="label">Suivi en conditions réelles</div><div id="suivi" style="margin-top:8px"></div>
+          <p style="margin:10px 0 0"><a class="lien-site" href="resultats.html">Voir tous les résultats réels, mois par mois →</a></p></div>
       </div>
+      </details>
+      <div style="margin-top:20px"><div class="label">Qualité des données</div><div id="qualite" style="margin-top:8px"></div></div>
     </div>
   </section>
 
-  <section aria-labelledby="h-all">
-    <div class="sec-head"><h2 id="h-all">Tous les titres</h2><p>Clique sur une ligne pour voir le graphique, la prévision et les raisons du signal.</p></div>
+  <section aria-labelledby="h-all" id="tous">
+    <div class="sec-head"><h2 id="h-all">Tous les titres</h2><p>Clique sur une ligne pour voir le graphique, la prévision et les raisons du signal.</p>
+      <button class="btn ghost" id="cmp-ouvrir">Comparer deux titres</button></div>
     <div class="filters" role="group" aria-label="Filtres">
       <button class="chip" data-m="all" aria-pressed="true">Tout</button>
       <button class="chip" data-m="fr" aria-pressed="false">France</button>
+      <button class="chip" data-m="eu" aria-pressed="false">Europe</button>
       <button class="chip" data-m="us" aria-pressed="false">États-Unis</button>
       <button class="chip" data-m="crypto" aria-pressed="false">Crypto</button>
       <button class="chip" data-m="etf" aria-pressed="false">ETF / indices</button>
       <button class="chip" data-m="tendances" aria-pressed="false">En tendance</button>
       <button class="chip" data-m="fav" aria-pressed="false">★ Mes favoris</button>
       <button class="chip" data-m="fort" aria-pressed="false">Signaux forts</button>
-      <button class="chip" data-m="rocket" aria-pressed="false">Décollage</button>
+      <button class="chip expert" data-m="rocket" aria-pressed="false">Décollage</button>
       <input class="search" id="q" type="search" placeholder="Rechercher un titre…" aria-label="Rechercher un titre">
     </div>
     <div class="tablewrap"><table>
       <thead><tr>
-        <th data-k="ticker">Titre</th><th data-k="prix">Cours</th><th data-k="j1">1 jour</th><th data-k="m1">1 mois</th><th data-k="m3">3 mois</th>
-        <th data-k="score" aria-sort="descending">Score</th><th data-k="signal">Signal</th>
-        <th data-k="proba">Proba de hausse</th><th data-k="actus">Actus</th><th data-k="risque">Risque</th><th data-k="rocket"></th>
+        <th data-k="ticker" scope="col">Titre</th><th data-k="prix" scope="col">Cours</th><th data-k="j1" scope="col">1 jour</th><th data-k="m1" scope="col">1 mois</th><th data-k="m3" scope="col">3 mois</th>
+        <th data-k="score" aria-sort="descending" scope="col" class="expert">Score</th><th data-k="signal" scope="col">Signal</th>
+        <th data-k="proba" scope="col">Chances de hausse</th><th data-k="marche" scope="col" title="Probabilité de faire mieux que son indice de référence">Mieux que l'indice</th><th data-k="actus" scope="col" class="expert">Actus</th><th data-k="risque" scope="col">Risque</th><th data-k="rocket" scope="col" class="expert"><span class="sr">Décollage</span></th>
       </tr></thead><tbody id="rows"></tbody></table></div>
+  </section>
+
+  <section aria-labelledby="h-faq">
+    <div class="sec-head"><h2 id="h-faq">Questions fréquentes</h2></div>
+    <div class="panel faq-liste"><!--__FAQ__--></div>
   </section>
 
   <section aria-labelledby="h-prev" id="prevention">
@@ -505,6 +790,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <button class="lnk" data-legal="methodologie">Méthodologie et conflits d'intérêts</button>
       <button class="lnk" data-legal="mentions">Mentions légales</button>
       <button class="lnk" data-legal="confidentialite">Confidentialité</button>
+      <a class="lien-site" href="resultats.html">Résultats réels</a>
+      <a class="lien-site" href="en/index.html" hreflang="en" lang="en">English version</a>
     </nav>
     <!--__LIENS_SEO__-->
     <p class="disclaimer" id="sources-txt"></p>
@@ -515,8 +802,19 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="d-title">
   <div class="sheet-in">
     <div class="sheet-head gutter"><div><h3 id="d-title"></h3><div class="stamp" id="d-sub"></div></div>
-      <div class="actions"><button class="fav" id="pf-btn">Investir (virtuel)</button><button class="fav" id="fav" aria-pressed="false">☆ Suivre</button><button class="share" id="share">Partager</button><button class="close" id="close">Fermer</button></div></div>
+      <div class="actions"><button class="fav" id="pf-btn">Investir (virtuel)</button><button class="share" id="cmp-btn">Comparer</button><button class="fav" id="fav" aria-pressed="false">☆ Suivre</button><button class="share" id="share">Partager</button><button class="close" id="close">Fermer</button></div></div>
     <div class="sheet-body gutter" id="d-body"></div>
+  </div>
+</div>
+
+<div class="sheet" id="cmp" style="z-index:30" hidden role="dialog" aria-modal="true" aria-labelledby="cmp-title">
+  <div class="sheet-in">
+    <div class="sheet-head gutter"><h3 id="cmp-title">Comparer deux titres</h3><button class="close" id="cmp-close">Fermer</button></div>
+    <div class="sheet-body gutter">
+      <div class="cmp-choix"><label class="label" for="cmp-a">Titre 1</label><select id="cmp-a"></select>
+        <label class="label" for="cmp-b">Titre 2</label><select id="cmp-b"></select></div>
+      <div id="cmp-corps"></div>
+    </div>
   </div>
 </div>
 
@@ -592,6 +890,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         </ul>
         <p>Les performances passées, les backtests, les simulations et les scénarios ne préjugent en rien des performances futures.</p>
 
+        <h4>Article 7 bis – Mode « scénarios extrêmes »</h4>
+        <p>Le mode « scénarios extrêmes » affiche des scénarios statistiques très improbables (environ une chance sur vingt chacun), favorables comme défavorables. Il n'est accessible qu'après une confirmation explicite, renouvelée à chaque activation, par laquelle l'Utilisateur reconnaît le caractère hautement spéculatif de ces informations, l'absence de toute responsabilité de l'Éditeur et sa majorité. Ces scénarios ne sont ni des objectifs, ni des prévisions, ni des incitations à investir ; ils peuvent être dépassés dans un sens comme dans l'autre.</p>
+
         <h4>Article 8 – Responsabilité de l'Utilisateur</h4>
         <p>L'Utilisateur est <b>seul responsable</b> de l'usage qu'il fait des Contenus et des décisions qu'il prend, ainsi que de leurs conséquences. Avant toute décision, il lui appartient de vérifier les informations auprès de sources officielles, d'évaluer sa propre situation et, si nécessaire, de consulter un professionnel agréé. Il s'engage à ne jamais investir de sommes dont il pourrait avoir besoin ni de sommes empruntées. Les décisions d'investissement sont réservées aux personnes majeures et capables.</p>
 
@@ -633,7 +934,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         <p>Contenus produits automatiquement par un programme conçu par <span class="leg-editeur"></span>, particulier, sans qualification professionnelle en conseil en investissement.</p>
         <h4>Sources de données</h4>
         <ul>
-          <li>Cours historiques quotidiens des actions, ETF, indices, cryptos, du VIX, des taux, du dollar et de l'or : Yahoo Finance.</li>
+          <li>Cours historiques quotidiens des actions, ETF, indices, cryptos, du VIX, des taux, du dollar et de l'or : Yahoo Finance, avec Binance et Stooq en secours. Chaque titre passe un contrôle qualité automatique (fraîcheur, trous, sauts invraisemblables, comparaison entre deux sources pour les cryptos).</li>
           <li>Cours en direct des cryptos : Binance. Cours en direct des actions américaines et actualités des entreprises américaines : Finnhub.</li>
           <li>Cryptos en tendance : CoinGecko. Indice Fear &amp; Greed crypto : alternative.me. Autres actualités et données fondamentales : Yahoo Finance.</li>
         </ul>
@@ -641,10 +942,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         <ul>
           <li><b>Indicateurs techniques</b> : moyennes mobiles simples et exponentielles, RSI, MACD, ADX, bandes de Bollinger, ATR, stochastique, Ichimoku, Supertrend, Aroon, canal de Donchian, MFI, Chaikin Money Flow, OBV, VWAP sur 20 séances, divergences du RSI, figures de chandeliers japonais, supports et résistances.</li>
           <li><b>Score technique</b> (0 à 100) : somme pondérée de règles publiques (tendance 35 %, élan 30 %, volumes 15 %, risque 20 %), chaque point étant justifié par une phrase dans la fiche du titre.</li>
-          <li><b>Probabilité de hausse à 20 séances</b> : moyenne de deux modèles statistiques (gradient boosting et régression logistique) entraînés sur environ cinq ans d'historique, avec des variables de contexte (VIX, taux, dollar, sentiment crypto). Les probabilités sont recalées (calibration isotonique) sur les fréquences réellement observées.</li>
+          <li><b>Probabilité de hausse à 20 séances</b> : deux IA de conception différente, entraînées sur environ dix ans d'historique avec des variables de contexte (VIX, taux, dollar, sentiment crypto). IA n°1 : gradient boosting et régression logistique. IA n°2 : forêt d'arbres aléatoires. La probabilité publiée combine les deux, recalée (calibration de Platt) sur les fréquences réellement observées. L'accord ou le désaccord des deux IA est affiché ; un signal fort exige leur accord.</li>
+          <li><b>Choix de la méthode</b> : chaque soir, trois façons de prévoir sont comparées sur des périodes jamais vues. La méthode en place n'est remplacée que si une autre fait mieux de façon statistiquement prouvée (bootstrap par mois, 95 %).</li>
+          <li><b>Marges d'erreur</b> : calculées en tirant au hasard des mois entiers (bootstrap par blocs), car les jours d'un même mois se ressemblent. Le site indique si l'avantage sur le hasard est prouvé, seulement possible, ou absent.</li>
+          <li><b>Contrôles avant publication</b> : à chaque mise à jour, des contrôles de cohérence sont effectués (probabilités valides et variées, fourchettes cohérentes, absence de changement brutal inexpliqué). Si un contrôle important échoue, rien n'est publié.</li>
+          <li><b>Actualités</b> : elles n'entrent pas dans la probabilité (pas d'historique fiable pour mesurer leur effet), mais servent de garde-fou : un signal fort est suspendu quand les actualités récentes sont nettement négatives, et une contradiction entre l'IA et l'actualité est signalée.</li>
+          <li><b>Probabilité de faire mieux que son marché</b> : un second modèle, construit de la même façon, estime la probabilité qu'un titre fasse mieux que son indice de référence (CAC 40, Euro Stoxx 50, S&amp;P 500 ou Bitcoin) sur la même période. Sa fiabilité est mesurée et affichée séparément.</li>
           <li><b>Validation</b> : le modèle est testé uniquement sur des périodes qu'il n'a jamais vues (validation « walk-forward » avec purge). La précision obtenue est affichée sur le Site.</li>
-          <li><b>Scénarios et simulations</b> : trajectoire médiane issue de l'historique du modèle, fourchette à 80 % calculée à partir de la volatilité réelle du titre, simulations par tirage de journées passées (Monte-Carlo).</li>
-          <li><b>Actualités</b> : tonalité estimée automatiquement à partir des titres d'articles. Elle est affichée à titre d'information et n'entre pas dans les probabilités. Les données fondamentales sont affichées sans être utilisées par le modèle.</li>
+          <li><b>Scénarios et fourchettes</b> : le modèle apprend directement les scénarios bas (10 %), central (50 %) et haut (90 %) ; une correction automatique (dite « conformale ») élargit ensuite la fourchette pour qu'elle contienne réellement le prix final environ 8 fois sur 10 sur des périodes jamais vues. Quand une entreprise publie ses résultats avant l'échéance, la fourchette est encore élargie de 30 % par prudence (règle fixe). Simulations par tirage de journées passées (Monte-Carlo).</li>
+          <li><b>Tonalité des actualités</b> : estimée automatiquement à partir des titres d'articles. Les données fondamentales sont affichées sans être utilisées par le modèle.</li>
         </ul>
         <h4>Limites connues</h4>
         <p>Les marchés réagissent à des événements imprévisibles (annonces, crises, décisions politiques) qu'aucun indicateur ne capte. Un modèle qui a fonctionné sur le passé peut cesser de fonctionner. La précision mesurée reste proche du hasard, ce qui est normal pour ce type d'exercice. Les données gratuites peuvent comporter des erreurs ou des retards.</p>
@@ -666,7 +972,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <article class="legal" data-pane="confidentialite" hidden>
         <h4>Confidentialité</h4>
         <p>Le site ne demande aucun compte, ne collecte aucune donnée personnelle et n'utilise aucun cookie publicitaire ni outil de mesure d'audience.</p>
-        <p>Ton navigateur garde seulement en mémoire locale le fait que tu as lu l'avertissement, pour ne pas te le réafficher. Tu peux l'effacer en vidant les données du site.</p>
+        <p>Ton navigateur garde seulement en mémoire locale le fait que tu as lu l'avertissement, tes favoris, ton thème, ton mode d'affichage, tes paris du défi et ton portefeuille virtuel. Le bouton « Sauvegarder dans un fichier » crée un fichier sur ton appareil : rien n'est envoyé. Ces informations ne quittent jamais ton appareil ; tu peux les effacer en vidant les données du site.</p>
+        <p id="conf-stats" hidden><b>Mesure d'audience :</b> le site compte les visites avec GoatCounter, un outil respectueux de la vie privée : aucun cookie, aucun suivi d'un site à l'autre, pas de profil. Seuls des chiffres agrégés sont conservés (nombre de visites, pages vues, pays, type d'appareil) ; l'adresse IP n'est pas enregistrée. Cette mesure sert uniquement à savoir si le site est utile.</p>
         <p>Pour afficher la page, ton navigateur se connecte à des services tiers (Google Fonts pour les polices, Binance et éventuellement Finnhub pour les cours en direct). Ces services reçoivent ton adresse IP, comme pour toute page web, selon leurs propres politiques de confidentialité.</p>
       </article>
     </div>
@@ -681,13 +988,31 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   </div>
 </div>
 
+<div class="modal-risque" id="modal-risque" hidden role="dialog" aria-modal="true" aria-labelledby="mr-titre">
+  <div class="boite">
+    <h2 id="mr-titre">⚠️ Mode scénarios extrêmes : à lire avant d'activer</h2>
+    <p style="margin:0">Ce mode affiche, pour chaque titre, ce qui pourrait arriver <b>dans les cas les plus extrêmes</b> : le scénario très favorable et le scénario très défavorable qui n'arrivent qu'environ <b>1 fois sur 20</b> chacun.</p>
+    <ul>
+      <li>Ce ne sont <b>pas des objectifs ni des promesses</b>. Pour chaque gain extrême affiché, une perte extrême est tout aussi possible.</li>
+      <li>Même ces scénarios extrêmes sont dépassés environ <b>1 fois sur 10</b> : le prix peut aller encore plus loin, dans un sens ou dans l'autre.</li>
+      <li>Investir en visant ces scénarios, c'est <b>jouer au casino</b> : la plupart des personnes qui le font perdent de l'argent, parfois tout.</li>
+      <li>Radar Bourse et son éditeur ne donnent <b>aucun conseil</b> et ne sont <b>en rien responsables</b> de ce que tu fais de ces chiffres.</li>
+    </ul>
+    <label><input type="checkbox" class="mr-case"><span>Je comprends que ces scénarios sont <b>très improbables</b> et que je peux <b>perdre tout l'argent investi</b>.</span></label>
+    <label><input type="checkbox" class="mr-case"><span>Je comprends que <b>Radar Bourse n'a rien à voir avec mes décisions</b> et que j'en suis seul·e responsable.</span></label>
+    <label><input type="checkbox" class="mr-case"><span>J'ai <b>18 ans ou plus</b>.</span></label>
+    <p class="muted" style="margin:0;font-size:13px">Besoin d'aide face au jeu ou au trading : Joueurs Info Service, 09 74 75 13 13 (anonyme).</p>
+    <div class="actions"><button class="btn ghost" id="mr-non">Non merci, rester en mode normal</button><button class="btn danger" id="mr-oui" disabled>Activer le mode extrême</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast" hidden role="status"><span>Nouvelles prévisions disponibles</span><button id="reload">Actualiser</button></div>
 
 <script>
 const DATA = /*__DATA__*/null;
 const $ = s => document.querySelector(s);
 const H = DATA.horizon;
-const NOM_MARCHE = {fr:"France",us:"États-Unis",crypto:"Crypto",etf:"ETF / indice",tendances:"En tendance"};
+const NOM_MARCHE = {fr:"France",eu:"Europe",us:"États-Unis",crypto:"Crypto",etf:"ETF / indice",tendances:"En tendance"};
 const SIG = {"ACHAT FORT":"s-af","ACHAT":"s-a","NEUTRE":"s-n","VENTE":"s-v","VENTE FORTE":"s-vf"};
 const LIB = {"ACHAT FORT":"Haussier fort","ACHAT":"Haussier","NEUTRE":"Neutre","VENTE":"Baissier","VENTE FORTE":"Baissier fort"};
 const RISK = {"Faible":1,"Moyen":2,"Élevé":3,"Très élevé":4};
@@ -702,6 +1027,19 @@ const px = (v, cur) => {
 };
 const token = t => t.replace(/[^A-Za-z0-9._-]/g, "");
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+/* Mode d'affichage : « simple » (par défaut, pour tout le monde) ou « expert » (tous les indicateurs) */
+let MODE = "simple";
+try{ if(localStorage.getItem("radar-mode") === "expert") MODE = "expert"; }catch(e){}
+document.documentElement.classList.toggle("simple", MODE === "simple");
+/* Réglages d'accessibilité mémorisés (taille du texte, contraste, texte aéré, sans animation) */
+let ACCES = {taille: "100", contraste: false, lisible: false, calme: false};
+try{ ACCES = {...ACCES, ...(JSON.parse(localStorage.getItem("radar-acces") || "{}") || {})}; }catch(e){}
+function appliquerAcces(){
+  const h = document.documentElement;
+  h.classList.toggle("texte-115", ACCES.taille === "115"); h.classList.toggle("texte-130", ACCES.taille === "130");
+  ["contraste", "lisible", "calme"].forEach(k => h.classList.toggle(k, !!ACCES[k]));
+}
+appliquerAcces();
 
 function spark(vals, w=90, h=32){
   if(!vals || vals.length<2) return "";
@@ -711,9 +1049,40 @@ function spark(vals, w=90, h=32){
   const last = pts.split(" ").at(-1).split(",");
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="${last[0]}" cy="${last[1]}" r="2.4" fill="${col}"/></svg>`;
 }
-function gauge(p){
+function gauge(p, accord){
   if(p==null) return `<span class="muted">–</span>`;
-  return `<div style="display:flex;align-items:center;gap:8px"><div class="gauge ${p<0.5?'lo':''}" style="width:80px"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span class="num">${Math.round(p*100)} %</span></div>`;
+  const desaccord = accord === false ? ` <span title="Les deux IA ne sont pas d'accord : avis peu fiable" role="img" aria-label="Les deux IA ne sont pas d'accord" style="color:var(--warn);font-weight:700">⚠</span>` : "";
+  return `<div style="display:flex;align-items:center;gap:8px"><div class="gauge ${p<0.5?'lo':''}" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span class="num">${Math.round(p*100)} %</span>${desaccord}</div>`;
+}
+
+/* ---------- Définitions des mots compliqués (bouton « ? ») ---------- */
+const DEFS = {
+  proba: ["Chances de hausse", "Sur 100 situations passées qui ressemblaient à celle d'aujourd'hui, combien de fois le prix était plus haut un mois après. 50 % = pile ou face : le radar ne sait pas."],
+  fourchette: ["Fourchette", "L'écart de prix entre un scénario bas et un scénario haut. Testée sur le passé, elle a contenu le vrai prix final environ 8 fois sur 10. Donc 2 fois sur 10, le prix en sort."],
+  central: ["Scénario central", "Le prix « du milieu » : il y a autant de chances de finir au-dessus qu'en dessous. Ce n'est pas une promesse."],
+  fort: ["Signal fort", "Quand les deux IA sont d'accord, qu'elles donnent au moins 55 % de chances de hausse et que la tendance du prix va dans le même sens. C'est plus rare, et ça a été un peu plus souvent juste. Un signal fort peut quand même se tromper."],
+  accord: ["Accord des deux IA", "Le radar utilise deux IA construites différemment. Quand elles disent la même chose, leurs prévisions ont été un peu plus souvent justes. Quand elles ne sont pas d'accord, elles n'ont pas fait mieux que le hasard : il vaut mieux ne pas en tenir compte."],
+  marge: ["Marge d'erreur", "Les statistiques sont calculées sur un nombre limité d'années. La marge indique entre quelles valeurs se trouve probablement le vrai chiffre (95 chances sur 100). Si la marge contient 50 %, on ne peut pas dire que le radar fait mieux que le hasard."],
+  volatilite: ["Volatilité", "À quel point le prix bouge, en moyenne, sur un an. 20 % : assez calme. 60 % ou plus : de très grosses variations, dans les deux sens."],
+  risque: ["Risque", "Déduit de la volatilité : plus le prix bouge fort et souvent, plus le risque est élevé. Une crypto est presque toujours « risque élevé »."],
+  marche: ["Mieux que son marché", "Les chances que ce titre monte plus (ou baisse moins) que son indice de référence : le CAC 40, l'Euro Stoxx 50, le S&P 500 ou le Bitcoin."],
+  hasard: ["Référence (hasard)", "Ce qu'on obtiendrait sans aucune intelligence, en répondant toujours « ça va monter ». Un radar utile doit faire mieux que ça."],
+  score: ["Score technique", "Note de 0 à 100 calculée à partir d'indicateurs (moyennes, élan, volumes, risque). Au-dessus de 60 : tendance plutôt haussière. Ce n'est pas une probabilité."],
+  extreme: ["Scénario extrême", "Ce qui n'arrive qu'environ 1 fois sur 20 : un scénario très favorable ou très défavorable. Même lui peut être dépassé."],
+};
+const aide = cle => DEFS[cle] ? `<button class="def" data-def="${cle}" aria-label="C'est quoi : ${esc(DEFS[cle][0])} ?" aria-expanded="false">?</button>` : "";
+/* Grille de 100 points : la façon la plus claire de lire une probabilité */
+function points100(p){
+  const n = Math.round(p * 100);
+  return `<div class="points100" role="img" aria-label="${n} points verts sur 100">${Array.from({length:100}, (_, i) => `<i class="${i < n ? "h" : ""}"></i>`).join("")}</div>`;
+}
+const marge = ic => ic && ic[0] != null ? ` <span class="muted">(marge : ${Math.round(ic[0]*100)} à ${Math.round(ic[1]*100)})</span>` : "";
+/* Barre horizontale avec sa marge d'erreur (0 à 100 %) */
+function barreStat(lib, v, ic, ref = false){
+  if(v == null) return "";
+  const g = x => Math.max(0, Math.min(100, x * 100)).toFixed(1) + "%";
+  return `<div class="sb"><span>${lib}</span><div class="piste" role="img" aria-label="${lib} : ${Math.round(v*100)} sur 100${ic ? `, marge ${Math.round(ic[0]*100)} à ${Math.round(ic[1]*100)}` : ""}">
+    <i class="${ref ? "ref" : ""}" style="width:${g(v)}"></i>${ic ? `<span class="err" style="left:${g(ic[0])};width:calc(${g(ic[1])} - ${g(ic[0])})"></span>` : ""}<span class="mi"></span></div><b class="num">${Math.round(v*100)} %</b></div>`;
 }
 
 /* ---------- En-tête ---------- */
@@ -725,11 +1094,11 @@ rendreTape();
 
 /* ---------- Prédictions ---------- */
 const T = DATA.titres;
-$("#pred-sub").textContent = `Probabilité, selon le modèle, que le cours soit plus haut dans ${H} séances (environ un mois). 50 % = pile ou face.`;
+$("#pred-sub").innerHTML = `Les chances, selon les deux IA, que le prix soit plus haut dans ${H} séances (environ un mois). 50 % = pile ou face. ${aide("proba")}`;
 const avecProba = T.filter(t => t.proba_hausse!=null).sort((a,b)=>b.proba_hausse-a.proba_hausse);
 $("#picks").innerHTML = avecProba.slice(0,7).map(t => `<button class="pick" data-t="${esc(t.ticker)}">
   <span style="min-width:0"><span class="t">${esc(t.nom)}</span><span class="s">${esc(t.ticker)} · ${NOM_MARCHE[t.marche]||""}</span></span>
-  <span class="pick-mid">${spark(t.spark,64,22)}${gauge(t.proba_hausse)}</span>
+  <span class="pick-mid">${spark(t.spark,64,22)}${gauge(t.proba_hausse, t.accord_ia)}</span>
   <span class="pill ${SIG[t.signal]}">${esc(LIB[t.signal] || t.signal)}</span></button>`).join("") || `<div class="empty">Le modèle n'a pas pu être entraîné (pas assez de données).</div>`;
 const rockets = T.filter(t => t.potentiel_hausse).sort((a,b)=>b.score-a.score);
 $("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t="${esc(t.ticker)}">
@@ -823,13 +1192,63 @@ function pfAfficher(){
     ${PF.historique.length ? `<details style="margin-top:12px"><summary class="muted" style="cursor:pointer">Dernières opérations (${PF.historique.length})</summary><ul style="font-size:13.5px;margin:8px 0 0;padding-left:18px">
       ${PF.historique.slice(0, 10).map(h => `<li>${new Date(h.date).toLocaleDateString("fr-FR")} · ${h.sens === "achat" ? "Achat" : "Vente"} de ${fmtQ(h.qte)} ${esc(h.nom || h.ticker)} à ${px(h.prix, h.devise || "€")}${h.gain != null ? ` (${pct(h.gain)})` : ""}</li>`).join("")}</ul></details>` : ""}
     <div class="pf-actions"><span class="muted" style="font-size:12.5px">Argent fictif · sans frais · cours en $ convertis en € au taux du jour. Entraînement uniquement.</span>
+      <button class="mini-btn" id="pf-export" title="Crée un fichier sur ton appareil avec ton portefeuille, tes favoris et tes paris">Sauvegarder dans un fichier</button>
+      <label class="mini-btn" style="display:inline-block">Restaurer un fichier<input type="file" id="pf-import" accept=".json,application/json" class="sr"></label>
       <span id="pf-raz-zone"><button class="mini-btn danger" id="pf-raz">Recommencer à zéro</button></span></div>`;
+  $("#pf-export").onclick = exporterSauvegarde;
+  $("#pf-import").onchange = e => { const f = e.target.files && e.target.files[0]; if(f) importerSauvegarde(f); e.target.value = ""; };
   el.querySelectorAll("[data-vendre]").forEach(b => b.onclick = () => { pfVendre(b.dataset.vendre); flash("Position vendue (virtuellement)"); });
   $("#pf-raz").onclick = () => {
     $("#pf-raz-zone").innerHTML = `Tout effacer ? <button class="mini-btn danger" id="pf-oui">Oui, recommencer</button> <button class="mini-btn" id="pf-non">Non</button>`;
     $("#pf-oui").onclick = () => { PF = {cash: DEPART_PF, positions: {}, historique: [], debut: new Date().toISOString()}; pfSauver(); pfAfficher(); flash("Portefeuille remis à 10 000 €"); };
     $("#pf-non").onclick = pfAfficher;
   };
+}
+/* Sauvegarde dans un fichier (pour changer de téléphone ou d'ordinateur) : rien n'est envoyé sur Internet */
+function exporterSauvegarde(){
+  const contenu = {format: "radar-bourse-sauvegarde", version: 1, cree: new Date().toISOString(),
+    portefeuille: PF, favoris: [...FAV], defis: DEFIS};
+  const blob = new Blob([JSON.stringify(contenu, null, 1)], {type: "application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = `radar-bourse-sauvegarde-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  flash("Fichier de sauvegarde créé");
+}
+function pfValide(p){
+  if(!p || typeof p !== "object" || typeof p.cash !== "number" || !isFinite(p.cash) || p.cash < 0 || p.cash > 1e9) return null;
+  const positions = {};
+  for(const [tk, pos] of Object.entries(p.positions || {})){
+    if(!/^[A-Za-z0-9.^=_-]{1,20}$/.test(tk) || !pos || typeof pos.qte !== "number" || !(pos.qte > 0) || typeof pos.prixMoyen !== "number" || !(pos.prixMoyen > 0)) continue;
+    positions[tk] = {qte: pos.qte, prixMoyen: pos.prixMoyen, dernier: +pos.dernier || pos.prixMoyen, taux: +pos.taux || 1,
+                     nom: String(pos.nom || tk).slice(0, 80), devise: pos.devise === "€" ? "€" : "$"};
+  }
+  const historique = Array.isArray(p.historique) ? p.historique.slice(0, 50).filter(h => h && typeof h === "object").map(h => ({
+    date: String(h.date || ""), ticker: String(h.ticker || "").slice(0, 20), nom: String(h.nom || "").slice(0, 80),
+    sens: h.sens === "vente" ? "vente" : "achat", qte: +h.qte || 0, prix: +h.prix || 0, devise: h.devise === "€" ? "€" : "$",
+    ...(h.gain != null && isFinite(+h.gain) ? {gain: +h.gain} : {})})) : [];
+  return {cash: p.cash, positions, historique, debut: String(p.debut || new Date().toISOString())};
+}
+function importerSauvegarde(fichier){
+  if(fichier.size > 2e6){ flash("Fichier trop gros : ce n'est pas une sauvegarde Radar Bourse"); return; }
+  const lecteur = new FileReader();
+  lecteur.onload = () => {
+    try{
+      const d = JSON.parse(lecteur.result);
+      if(!d || d.format !== "radar-bourse-sauvegarde") throw new Error("format");
+      const pf = pfValide(d.portefeuille); if(!pf) throw new Error("portefeuille");
+      PF = pf; pfSauver();
+      if(Array.isArray(d.favoris)){ FAV = new Set(d.favoris.filter(x => typeof x === "string" && x.length <= 20)); sauverFav(); }
+      if(Array.isArray(d.defis)){ DEFIS = d.defis.filter(x => x && typeof x.ticker === "string" && typeof x.echeance === "string").slice(0, 40)
+        .map(x => ({ticker: x.ticker.slice(0, 20), nom: String(x.nom || x.ticker).slice(0, 80), devise: x.devise === "€" ? "€" : "$",
+          depart: +x.depart || 0, sens: x.sens === "baisse" ? "baisse" : "hausse", radar: x.radar === "baisse" ? "baisse" : "hausse",
+          h: String(x.h || "1m"), cree: String(x.cree || ""), echeance: x.echeance, ...(isFinite(+x.fin) && +x.fin > 0 ? {fin: +x.fin} : {})}));
+        sauverDefis(); rendreDefis(); }
+      pfAfficher(); rendre(); flash("Sauvegarde restaurée");
+    }catch(e){ flash("Ce fichier n'est pas une sauvegarde Radar Bourse valide"); }
+  };
+  lecteur.onerror = () => flash("Lecture du fichier impossible");
+  lecteur.readAsText(fichier);
 }
 function pfFormulaire(t){
   const pos = PF.positions[t.ticker];
@@ -846,11 +1265,183 @@ function pfFormulaire(t){
   if(pos) $("#pf-vendre").onclick = () => { pfVendre(t.ticker); flash("Position vendue (virtuellement)"); zone.remove(); };
   $("#pf-montant").focus();
 }
-setInterval(() => { if(!document.hidden) pfAfficher(); }, 5000);
+// rafraîchit la valeur du portefeuille avec les cours en direct, sauf si le visiteur est en train d'agir dedans
+setInterval(() => { const el = $("#pf"); if(!document.hidden && el && !el.contains(document.activeElement) && !$("#pf-oui")) pfAfficher(); }, 5000);
 
 /* Liens de l'accroche : Telegram si configuré, cours seulement sur le vrai site */
 if(DATA.telegram && /^[A-Za-z0-9_]{4,40}$/.test(DATA.telegram)){ const l = $("#lien-tg"); l.href = "https://t.me/" + DATA.telegram; l.hidden = false; }
-if(!SITE_PUBLIE) $("#lien-apprendre").hidden = true;
+if(!SITE_PUBLIE) document.querySelectorAll(".lien-site").forEach(a => a.hidden = true);
+
+/* ---------- Espace simulation ---------- */
+const HORIZONS = {"1s": "1 semaine", "2s": "2 semaines", "1m": "1 mois"};
+const JOURS_H = {"1s": 7, "2s": 14, "1m": 30};
+let SIM = {h: "1m", n: 15};
+function simAvertissement(){
+  const F = DATA.modele && DATA.modele.fourchette;
+  if(F && F.couverture != null){
+    $("#sim-avert-txt").innerHTML = `Ces fourchettes sont des estimations statistiques. Testées sur ${F.nb.toLocaleString("fr-FR")} cas passés jamais vus par l'IA, elles ont contenu le vrai prix <b>${Math.round(F.couverture*100)} fois sur 100</b> à un mois : <b>environ ${Math.round((1-F.couverture)*10)} fois sur 10, le prix en est sorti</b>, parfois très largement (annonce surprise, krach, résultats). Ne prends jamais de décision sur cette seule base.`;
+  }
+}
+let RISQUE = false;   // mode scénarios extrêmes (jamais mémorisé : confirmation à chaque activation)
+/* Prévision ramenée au prix en direct : les scénarios sont des variations en %, on les applique au cours actuel */
+function prevDirect(t, h){
+  const p = t.previsions && t.previsions[h]; if(!p) return null;
+  const f = t.prix_base ? t.prix / t.prix_base : 1;
+  const o = {}; for(const [k, v] of Object.entries(p)) o[k] = v == null ? null : v * f;
+  return o;
+}
+function plage(t, p){
+  const ext = RISQUE && p.ext_bas != null && p.ext_haut != null;
+  const lo = Math.min(ext ? p.ext_bas : p.bas, t.prix), hi = Math.max(ext ? p.ext_haut : p.haut, t.prix), mg = (hi - lo) * 0.04 || 1;
+  const a = lo - mg, b = hi + mg, x = v => ((v - a) / (b - a) * 100).toFixed(1) + "%";
+  const v = q => (q / t.prix - 1 >= 0 ? "+" : "") + ((q / t.prix - 1) * 100).toFixed(0) + " %";
+  return `<div class="plage${ext ? " avec-ext" : ""}" role="img" aria-label="Aujourd'hui ${px(t.prix, t.devise)}. Scénario bas ${px(p.bas, t.devise)}, central ${px(p.centre, t.devise)}, haut ${px(p.haut, t.devise)}${ext ? `. Extrêmes, 1 chance sur 20 chacun : ${px(p.ext_bas, t.devise)} et ${px(p.ext_haut, t.devise)}` : ""}">
+    <div class="rail"></div>
+    ${ext ? `<div class="ext" style="left:${x(p.ext_bas)};width:calc(${x(p.bas)} - ${x(p.ext_bas)})"></div><div class="ext h" style="left:${x(p.haut)};width:calc(${x(p.ext_haut)} - ${x(p.haut)})"></div>
+      <div class="lab emin g" style="left:${x(p.ext_bas)}">extrême ${v(p.ext_bas)}</div><div class="lab emax d" style="left:${x(p.ext_haut)}">extrême ${v(p.ext_haut)}</div>` : ""}
+    <div class="zone" style="left:${x(p.bas)};width:calc(${x(p.haut)} - ${x(p.bas)})"></div>
+    <div class="act" style="left:${x(t.prix)}" title="Aujourd'hui"></div>
+    <div class="ctr" style="left:${x(p.centre)}" title="Scénario central"></div>
+    <div class="tete" style="left:${x(p.centre)}">≈ ${px(p.centre, t.devise)} (${(p.centre / t.prix - 1 >= 0 ? "+" : "") + ((p.centre / t.prix - 1) * 100).toFixed(1).replace(".", ",")} %)</div>
+    <div class="lab min g" style="left:${x(p.bas)}">min ${px(p.bas, t.devise)}</div>
+    <div class="lab max d" style="left:${x(p.haut)}">max ${px(p.haut, t.devise)}</div>
+  </div>`;
+}
+function rendreSim(){
+  const el = $("#sim-liste"); if(!el) return;
+  const q = $("#sim-q").value.trim().toLowerCase(), m = $("#sim-marche").value, tri = $("#sim-tri").value;
+  let L = T.filter(t => t.previsions && t.previsions[SIM.h] && (!tri.startsWith("ext") || t.previsions[SIM.h].ext_bas != null))
+           .filter(t => m === "all" || t.marche === m)
+           .filter(t => !q || t.nom.toLowerCase().includes(q) || t.ticker.toLowerCase().includes(q));
+  const v = t => { const p = t.previsions[SIM.h], b = t.prix_base || t.prix;
+    return {centre: p.centre / b, haut: p.haut / b, largeur: (p.haut - p.bas) / b, ext_haut: (p.ext_haut || 0) / b, ext_bas: -(p.ext_bas || b) / b}; };
+  L.sort((a, b) => tri === "nom" ? a.nom.localeCompare(b.nom) : v(b)[tri] - v(a)[tri]);
+  if(!L.length){ el.innerHTML = `<div class="empty">Aucune estimation disponible pour ces critères.</div>`; $("#sim-plus").hidden = true; return; }
+  el.innerHTML = L.slice(0, SIM.n).map(t => `<div class="sim-ligne" data-sim="${esc(t.ticker)}">
+      <div class="nom"><b>${esc(t.nom)}${t.resultats_le ? `<span class="badge-res" title="Publication de résultats : forte volatilité possible${t.fourchette_elargie ? " ; fourchette élargie de 30 % par prudence" : ""}">résultats le ${new Date(t.resultats_le + "T12:00").toLocaleDateString("fr-FR", {day:"numeric", month:"short"})}${t.fourchette_elargie ? " · fourchette élargie" : ""}</span>` : ""}${t.qualite_ok === false ? ' <span title="Données à vérifier" style="color:var(--warn)">⚠</span>' : ""}</b>
+        <span>${esc(t.ticker)} · aujourd'hui <span class="num" data-px="${esc(t.ticker)}">${px(t.prix, t.devise)}</span></span></div>
+      ${plage(t, prevDirect(t, SIM.h))}
+      <div class="sim-btns"><button class="mini-btn" data-simuler="${esc(t.ticker)}">Simuler</button><button class="mini-btn" data-parier="${esc(t.ticker)}">Je parie</button></div>
+    </div>`).join("");
+  $("#sim-plus").hidden = L.length <= SIM.n;
+  el.querySelectorAll("[data-simuler]").forEach(b => b.onclick = () => ouvrirOnglet(b.dataset.simuler, "sim"));
+  el.querySelectorAll("[data-parier]").forEach(b => b.onclick = () => formulaireDefi(b.dataset.parier, b.closest(".sim-ligne")));
+}
+document.querySelectorAll(".sim-filtres .chip").forEach(c => c.onclick = () => {
+  document.querySelectorAll(".sim-filtres .chip").forEach(x => x.setAttribute("aria-pressed", x === c));
+  SIM.h = c.dataset.h; rendreSim(); });
+["sim-q", "sim-marche", "sim-tri"].forEach(id => $("#" + id).addEventListener("input", () => { SIM.n = 15; rendreSim(); }));
+$("#sim-plus").onclick = () => { SIM.n += 15; rendreSim(); };
+
+/* ---------- Défi pronostic (toi contre le radar) ---------- */
+const CLE_DEFIS = "radar-bourse-defis-v1";
+let DEFIS = [];
+try{ DEFIS = JSON.parse(localStorage.getItem(CLE_DEFIS) || "[]"); }catch(e){}
+function sauverDefis(){ try{ localStorage.setItem(CLE_DEFIS, JSON.stringify(DEFIS)); }catch(e){} }
+function formulaireDefi(tk, ligne){
+  const t = T.find(x => x.ticker === tk); if(!t) return;
+  const ancien = document.querySelector(".defi-form"); if(ancien) ancien.remove();
+  const f = document.createElement("div"); f.className = "defi-form";
+  f.innerHTML = `<span>Dans ${HORIZONS[SIM.h]}, ${esc(t.nom)} sera…</span>
+    <button class="btn" data-sens="hausse">plus haut ↑</button><button class="btn ghost" data-sens="baisse">plus bas ↓</button>
+    <span class="muted" style="font-size:12.5px">qu'aujourd'hui (${px(t.prix, t.devise)})</span>`;
+  ligne.appendChild(f);
+  f.querySelectorAll("[data-sens]").forEach(b => b.onclick = () => {
+    const p = prevDirect(t, SIM.h);
+    DEFIS.unshift({ticker: t.ticker, nom: t.nom, devise: t.devise, depart: t.prix, sens: b.dataset.sens,
+      radar: p.centre >= t.prix ? "hausse" : "baisse", h: SIM.h,
+      cree: new Date().toISOString(), echeance: new Date(Date.now() + JOURS_H[SIM.h] * 86400000).toISOString()});
+    DEFIS = DEFIS.slice(0, 40); sauverDefis(); f.remove(); rendreDefis();
+    flash(`Pari enregistré : résultat le ${new Date(DEFIS[0].echeance).toLocaleDateString("fr-FR")}`);
+  });
+}
+function rendreDefis(){
+  const el = $("#defis"); if(!el) return;
+  if(!DEFIS.length){ el.innerHTML = `<p class="muted" style="margin:0">Aucun pari pour l'instant. Clique « Je parie » sur un titre ci-dessus.</p>`; return; }
+  let toi = 0, radar = 0, finis = 0;
+  const lignes = DEFIS.map(d => {
+    const t = T.find(x => x.ticker === d.ticker), fini = Date.now() >= new Date(d.echeance);
+    if(!fini) return `<li>${esc(d.nom)} : tu as dit <b>${d.sens}</b>, le radar <b>${d.radar}</b> · résultat le ${new Date(d.echeance).toLocaleDateString("fr-FR")}</li>`;
+    if(!d.fin && t) d.fin = t.prix;
+    if(!d.fin) return `<li>${esc(d.nom)} : résultat indisponible (titre plus suivi)</li>`;
+    const reel = d.fin >= d.depart ? "hausse" : "baisse";
+    finis++; if(d.sens === reel) toi++; if(d.radar === reel) radar++;
+    return `<li>${esc(d.nom)} : ${reel === "hausse" ? "a monté" : "a baissé"} (${pct(d.fin / d.depart - 1)}) · toi ${d.sens === reel ? "✅" : "❌"} · radar ${d.radar === reel ? "✅" : "❌"}</li>`;
+  });
+  sauverDefis();
+  el.innerHTML = `${finis ? `<div class="defi-score"><div>${toi}<span>tes bons pronostics</span></div><div>${radar}<span>bons pronostics du radar</span></div><div>${finis}<span>défis terminés</span></div></div>` : ""}
+    <ul style="margin:0;padding-left:18px;font-size:14px;display:grid;gap:4px">${lignes.slice(0, 12).join("")}</ul>
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Jeu sans argent. Même le radar se trompe souvent : c'est justement ce que ce défi permet de voir.</p>`;
+}
+simAvertissement(); rendreSim(); rendreDefis();
+$("#h-sim").insertAdjacentHTML("beforeend", aide("fourchette"));
+// les fourchettes suivent le prix en direct (toutes les 30 s, sauf si le visiteur est en train d'agir dans la liste)
+setInterval(() => { const z = $("#simulation"); if(!document.hidden && !z.contains(document.activeElement) && !document.querySelector(".defi-form")) rendreSim(); }, 30000);
+
+/* ---------- Mode scénarios extrêmes (confirmation obligatoire à chaque activation) ---------- */
+function rendreRisque(){
+  const z = $("#risque-zone");
+  if(!RISQUE){ z.hidden = true; z.innerHTML = ""; return; }
+  const F = DATA.modele && DATA.modele.fourchette;
+  const L = T.filter(t => t.previsions && t.previsions["1m"] && t.previsions["1m"].ext_haut != null && t.marche !== "etf")
+    .map(t => { const p = prevDirect(t, "1m"); return {t, g: p.ext_haut / t.prix - 1, pe: p.ext_bas / t.prix - 1}; })
+    .sort((a, b) => b.g - a.g).slice(0, 8);
+  z.innerHTML = `<div class="alerte-sim" style="border-color:var(--down);background:var(--down-soft)"><b style="color:var(--down)">Les plus explosifs à un mois… dans les deux sens</b>
+    <span>Pour chaque titre : le gain extrême ET la perte extrême, chacun environ 1 chance sur 20. ${F && F.couverture_extreme != null ? `Mesuré sur le passé : le prix est resté entre ces extrêmes ${Math.round(F.couverture_extreme*100)} fois sur 100, donc il les a dépassés environ ${Math.round((1 - F.couverture_extreme)*10)} fois sur 10.` : ""} Ce n'est pas une liste d'achats.</span></div>
+    <div class="risque-liste">${L.map(({t, g, pe}) => `<button class="rcarte" data-t="${esc(t.ticker)}"><b>${esc(t.nom)}</b><span class="deux"><span class="up">${g >= 0 ? "+" : ""}${Math.round(g*100)} %</span><span class="muted">ou</span><span class="down">${Math.round(pe*100)} %</span></span><span class="muted" style="font-size:12.5px">${esc(t.ticker)} · risque ${esc(t.risque.toLowerCase())}</span></button>`).join("")}</div>`;
+  z.hidden = false;
+}
+function changerRisque(on){
+  RISQUE = on;
+  $("#bandeau-risque").hidden = !on; $("#risque-intro").hidden = on;
+  document.querySelectorAll(".opt-risque").forEach(o => o.hidden = !on);
+  if(!on && $("#sim-tri").value.startsWith("ext")) $("#sim-tri").value = "centre";
+  rendreRisque(); rendreSim();
+}
+(function(){
+  const modal = $("#modal-risque"), cases = [...modal.querySelectorAll(".mr-case")], oui = $("#mr-oui");
+  let retour = null;
+  const fermerModal = () => { modal.hidden = true; document.body.style.overflow = document.querySelector(".sheet:not([hidden])") ? "hidden" : ""; if(retour) retour.focus(); };
+  $("#risque-on").onclick = () => {
+    retour = document.activeElement;
+    cases.forEach(c => c.checked = false); oui.disabled = true;
+    modal.hidden = false; document.body.style.overflow = "hidden"; $("#mr-non").focus();
+  };
+  cases.forEach(c => c.onchange = () => { oui.disabled = !cases.every(x => x.checked); });
+  $("#mr-non").onclick = fermerModal;
+  oui.onclick = () => { if(!cases.every(x => x.checked)) return; fermerModal(); changerRisque(true); flash("Mode scénarios extrêmes activé : rien n'est sûr"); };
+  $("#risque-off").onclick = () => { changerRisque(false); flash("Retour au mode normal"); $("#risque-on").focus(); };
+  modal.addEventListener("keydown", e => {
+    if(e.key === "Escape"){ e.stopPropagation(); fermerModal(); return; }
+    if(e.key !== "Tab") return;
+    const f = [...modal.querySelectorAll("input,button:not([disabled])")];
+    if(e.shiftKey && document.activeElement === f[0]){ e.preventDefault(); f.at(-1).focus(); }
+    else if(!e.shiftKey && document.activeElement === f.at(-1)){ e.preventDefault(); f[0].focus(); }
+  });
+})();
+
+/* ---------- Carte du marché ---------- */
+let PERIODE_CARTE = "1 jour";
+function rendreCarte(){
+  const el = $("#carte"); if(!el) return;
+  const surf = css("--surface"), up = css("--up"), down = css("--down");
+  const groupes = [["fr","France"],["eu","Europe"],["us","États-Unis"],["crypto","Cryptos"],["etf","ETF et indices"]];
+  const echelle = {"1 jour": .03, "1 mois": .12, "3 mois": .25}[PERIODE_CARTE];
+  el.innerHTML = groupes.map(([m, nom]) => {
+    const L = T.filter(t => t.marche === m && t.perf && t.perf[PERIODE_CARTE] != null)
+               .sort((a, b) => b.perf[PERIODE_CARTE] - a.perf[PERIODE_CARTE]);
+    if(!L.length) return "";
+    return `<div class="carte-groupe"><span class="label">${nom}</span><div class="tuiles">${L.map(t => {
+      const v = t.perf[PERIODE_CARTE], f = Math.min(1, Math.abs(v) / echelle);
+      const fond = melange(surf, v >= 0 ? up : down, .12 + .6 * f);
+      return `<button class="tuile" data-t="${esc(t.ticker)}" style="background:${fond};color:${texteLisible(fond)}" title="${esc(t.nom)}" aria-label="${esc(t.nom)} : ${(v >= 0 ? "+" : "") + (v * 100).toFixed(1).replace(".", ",")} %"><b>${esc(t.ticker.replace(/-USD$|\.(PA|DE|AS|MC|MI)$|^\^/, ""))}</b><span>${(v >= 0 ? "+" : "") + (v * 100).toFixed(1).replace(".", ",")} %</span></button>`;
+    }).join("")}</div></div>`;
+  }).join("");
+}
+document.querySelectorAll("[data-carte]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("[data-carte]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  PERIODE_CARTE = b.dataset.carte; rendreCarte(); });
+rendreCarte();
 
 /* ---------- Tonalité des actus ---------- */
 function ton(v){
@@ -878,12 +1469,12 @@ $("#news-marche").innerHTML = (DATA.actus_marche||[]).map(n => carteActu(n)).joi
   if(sf && sf.precision != null){
     const lift = sf.precision - sf.base;
     $("#fort-stats").innerHTML = `
-      <div><div class="label">Réussite mesurée de ces signaux</div><div class="big num">${Math.round(sf.precision*100)} %</div></div>
+      <div><div class="label">Réussite mesurée de ces signaux ${aide("fort")}</div><div class="big num">${Math.round(sf.precision*100)} %</div></div>
       <div class="cmp">
         <div><span>Signaux forts</span><i style="width:${Math.round(sf.precision*100)}%"></i><span class="num">${Math.round(sf.precision*100)} %</span></div>
         <div class="b"><span>Tous les titres</span><i style="width:${Math.round(sf.base*100)}%"></i><span class="num">${Math.round(sf.base*100)} %</span></div>
       </div>
-      <p>Part des cas où le cours était plus haut ${H} séances après un signal fort, sur ${sf.nb.toLocaleString('fr-FR')} cas jamais vus par le modèle (${esc(DATA.modele.periode)}). ${lift > 0.02 ? `C'est ${Math.round(lift*100)} points de mieux que la moyenne.` : `C'est à peine mieux que la moyenne : prudence.`} Un signal fort se trompe quand même régulièrement.</p>`;
+      <p>Sur ${sf.nb.toLocaleString('fr-FR')} signaux forts passés, jamais vus par les IA (${esc(DATA.modele.periode)}), le prix était plus haut un mois après <b>${Math.round(sf.precision*100)} fois sur 100</b>${sf.ic ? ` (marge d'erreur : ${Math.round(sf.ic[0]*100)} à ${Math.round(sf.ic[1]*100)})` : ""}. ${sf.ic && sf.ic[0] > sf.base ? `C'est mieux que la moyenne de façon prouvée, mais` : `L'écart avec la moyenne n'est pas prouvé :`} un signal fort se trompe quand même régulièrement.</p>`;
   } else {
     $("#fort-stats").innerHTML = `<p>Pas assez de cas dans l'historique pour mesurer la réussite des signaux forts.</p>`;
   }
@@ -896,6 +1487,56 @@ $("#news-marche").innerHTML = (DATA.actus_marche||[]).map(n => carteActu(n)).joi
 
 /* ---------- Fiabilité ---------- */
 const M = DATA.modele;
+/* Version claire pour tout le monde : fréquences sur 100, marges d'erreur, accord des IA, contrôles */
+(function(){
+  const el = $("#conf-simple"), cartes = $("#conf-cartes");
+  if(!M || M.precision == null){ el.innerHTML = `<div class="empty">Les IA n'ont pas encore pu être testées.</div>`; return; }
+  const niv = M.niveau_preuve || "aucun", ic = M.ic || {};
+  const titre = {prouve: "✓ Un peu mieux que le hasard (prouvé)", possible: "≈ Peut-être un peu mieux que le hasard (pas prouvé)", aucun: "✗ Pas mieux que le hasard"}[niv];
+  el.innerHTML = `<div style="display:grid;gap:10px">
+      <div><span class="niveau ${niv}">${titre}</span></div>
+      <p style="margin:0;font-size:15.5px;max-width:75ch">Sur <b>100 prévisions</b> testées sur des années que les IA n'avaient jamais vues, elles ont trouvé la bonne direction (hausse ou baisse) <b>${Math.round(M.precision*100)} fois</b>${marge(ic.precision)}. En répondant toujours la même chose, on aurait eu raison ${Math.round(M.precision_base*100)} fois ${aide("hasard")}. ${niv === "prouve" ? "L'écart est petit mais il résiste à la marge d'erreur." : "La marge d'erreur ne permet pas d'affirmer que le radar fait mieux."} ${aide("marge")}</p>
+      <div class="stat-barres">
+        ${barreStat("Les IA du radar", M.precision, ic.precision)}
+        ${barreStat("Toujours la même réponse", M.precision_base, null, true)}
+      </div>
+      <p class="muted" style="margin:0;font-size:12.5px">Trait noir : marge d'erreur (95 chances sur 100 que le vrai chiffre soit dedans). Pointillés : 50 %, pile ou face. Calculé sur ${(M.nb_tests||0).toLocaleString("fr-FR")} prévisions${ic.nb_mois ? ` réparties sur ${ic.nb_mois} mois` : ""} (${esc(M.periode || "")}).</p>
+    </div>`;
+  const A = M.accord || {}, I = M.ia || {}, F = M.fourchette || {}, C = M.controles || [], CH = M.champion || {};
+  const blocs = [];
+  if(A.precision_accord != null){
+    blocs.push(`<div class="panel"><h3>Deux IA qui se vérifient ${aide("accord")}</h3>
+      <p style="margin:0;font-size:14px">Les deux IA sont construites différemment. Elles sont d'accord ${Math.round(A.part*100)} fois sur 100.</p>
+      ${barreStat("Quand elles sont d'accord", A.precision_accord, A.ic_accord)}
+      ${A.precision_desaccord != null ? barreStat("Quand elles ne le sont pas", A.precision_desaccord, A.ic_desaccord, true) : ""}
+      <p class="muted" style="margin:0;font-size:13px">${A.ic_desaccord && A.ic_desaccord[0] <= .5 && A.ic_desaccord[1] >= .5 ? "Quand elles ne sont pas d'accord, elles ne font pas mieux que pile ou face : le radar l'affiche clairement et ne donne alors jamais de signal fort." : "Le radar affiche toujours si elles sont d'accord ou non."}</p></div>`);
+  }
+  if(F.couverture != null){
+    blocs.push(`<div class="panel"><h3>Les fourchettes tiennent-elles ? ${aide("fourchette")}</h3>
+      <p style="margin:0;font-size:14px">Promesse : le prix final reste dans la fourchette 80 fois sur 100.</p>
+      ${barreStat("Résultat mesuré", F.couverture, F.ic)}
+      ${F.couverture_extreme != null ? barreStat("Scénarios extrêmes (promis 90)", F.couverture_extreme, F.ic_extreme) : ""}
+      <p class="muted" style="margin:0;font-size:13px">Mesuré sur ${(F.nb||0).toLocaleString("fr-FR")} cas jamais vus. Donc environ ${Math.round((1 - F.couverture)*10)} fois sur 10, le prix sort de la fourchette.</p></div>`);
+  }
+  if(C.length){
+    const ok = C.filter(c => c.ok).length;
+    blocs.push(`<div class="panel"><h3>Contrôles de cette mise à jour</h3>
+      <p style="margin:0;font-size:14px">${ok} contrôle${ok > 1 ? "s" : ""} réussi${ok > 1 ? "s" : ""} sur ${C.length}. Si un contrôle important échoue, le site n'est pas mis à jour : l'ancienne version reste affichée.</p>
+      <ul class="controles">${C.map(c => `<li><span aria-hidden="true">${c.ok ? "✅" : "⚠️"}</span><span><b>${esc(c.nom)}</b> <span class="muted">· ${esc(c.detail)}</span></span></li>`).join("")}</ul></div>`);
+  }
+  if(CH.actuel){
+    blocs.push(`<div class="panel"><h3>Quand le radar change-t-il de méthode ?</h3>
+      <p style="margin:0;font-size:14px">Chaque soir, plusieurs façons de prévoir sont comparées. Le radar ne change que si la nouvelle fait mieux <b>de façon prouvée</b>, jamais sur un coup de chance.</p>
+      <p class="muted" style="margin:0;font-size:13px">Méthode actuelle : ${esc(CH.actuel)}. ${esc(CH.raison || "")}${M.date_evaluation ? ` Dernier test complet : ${new Date(M.date_evaluation).toLocaleString("fr-FR", {day:"numeric", month:"long", hour:"2-digit", minute:"2-digit"})}.` : ""}</p></div>`);
+  }
+  const E = DATA.entrainement;
+  if(E && E.date){
+    blocs.push(`<div class="panel"><h3>Dernier entraînement approfondi</h3>
+      <p style="margin:0;font-size:14px">Le ${new Date(E.date).toLocaleDateString("fr-FR", {day:"numeric", month:"long", year:"numeric"})}, l'IA a étudié <b>${(E.nb_titres||0).toLocaleString("fr-FR")} titres</b> et <b>${(E.nb_lignes||0).toLocaleString("fr-FR")} situations de marché</b>${E.series_economiques && E.series_economiques.length ? `, avec ${E.series_economiques.length} indicateurs économiques` : ""}.</p>
+      <p class="muted" style="margin:0;font-size:13px">${E.change_methode ? `Résultat : une nouvelle façon de prévoir a fait mieux de façon prouvée et a été adoptée (${esc(E.retenu || "")}).` : "Résultat : aucune nouvelle méthode n'a fait mieux de façon prouvée, l'IA en place est confirmée."}${E.examen_donnees && E.examen_donnees.decision ? " Des titres d'apprentissage en plus ont été ajoutés car ils amélioraient les prévisions de façon prouvée." : ""}</p></div>`);
+  }
+  cartes.innerHTML = blocs.join("");
+})();
 if(M && M.precision!=null){
   const adv = M.precision - M.precision_base;
   $("#trust").innerHTML = `
@@ -904,17 +1545,38 @@ if(M && M.precision!=null){
    <div class="kpi"><div class="label">Avantage</div><div class="v num ${adv>0?'up':'down'}">${adv>0?'+':''}${(adv*100).toFixed(1).replace('.',',')} pts</div><div class="d">au-dessus de la référence</div></div>
    <div class="kpi"><div class="label">AUC</div><div class="v num">${M.auc.toFixed(3).replace('.',',')}</div><div class="d">0,500 = hasard · 1 = parfait</div></div>`;
   const vd = $("#verdict"); vd.textContent = M.verdict;
+  if(M.ia && M.ia.ia1){
+    const ip = document.createElement("p");
+    ip.className = "muted"; ip.style.cssText = "font-size:13.5px;margin:10px 0 0";
+    const f = v => v == null ? "–" : v.toFixed(3).replace(".", ",");
+    ip.innerHTML = `<b>Les deux IA :</b> IA n°1 (gradient boosting + régression) AUC ${f(M.ia.ia1.auc)} · IA n°2 (forêt d'arbres) AUC ${f(M.ia.ia2 && M.ia.ia2.auc)} · combinées AUC ${f(M.ia.commun && M.ia.commun.auc)}${M.ia.mode === "commun" ? " (retenu)" : " (IA n°1 seule retenue)"}.${M.ic && M.ic.auc ? ` Marge d'erreur de l'AUC : ${f(M.ic.auc[0])} à ${f(M.ic.auc[1])}.` : ""}${M.brier && M.brier.progres != null ? ` Score de Brier ${f(M.brier.brier)} (référence ${f(M.brier.reference)}, progrès ${(M.brier.progres*100).toFixed(1).replace(".", ",")} %).` : ""}`;
+    vd.after(ip);
+  }
+  if(M.fourchette && M.fourchette.couverture != null){
+    const fp = document.createElement("p");
+    fp.className = "muted"; fp.style.cssText = "font-size:13.5px;margin:10px 0 0";
+    fp.innerHTML = `<b>Fourchettes de prix :</b> les scénarios bas et haut de l'IA ont encadré le vrai prix à un mois <b>${Math.round(M.fourchette.couverture*100)} % du temps</b> (objectif ${Math.round(M.fourchette.cible*100)} %, mesuré sur ${M.fourchette.nb.toLocaleString("fr-FR")} cas jamais vus). Avant correction automatique : ${Math.round(M.fourchette.couverture_brute*100)} %.`;
+    vd.after(fp);
+  }
   if(M.comparaison && M.comparaison.length > 1){
     const cmp = document.createElement("p");
     cmp.className = "muted"; cmp.style.cssText = "font-size:13.5px;margin:10px 0 0";
     cmp.innerHTML = `À chaque mise à jour, le radar teste ${M.comparaison.length} façons de prévoir sur des périodes qu'il n'a jamais vues et garde la meilleure : <b>${esc(M.configuration)}</b>. ` +
       M.comparaison.map(c => `${esc(c.nom)} : AUC ${c.auc.toFixed(3).replace(".", ",")}`).join(" · ");
     vd.after(cmp);
-  } if(M.auc>=0.56 && adv>0.005) vd.classList.add("ok");
+  }
+  if(M.relatif && M.relatif.auc != null){
+    const R = M.relatif, rp = document.createElement("p");
+    rp.className = "muted"; rp.style.cssText = "font-size:13.5px;margin:10px 0 0";
+    rp.innerHTML = `<b>« Fera mieux que son marché ? »</b> Le second modèle a eu raison <b>${pctPlain(R.precision)}</b> du temps sur ${R.nb.toLocaleString("fr-FR")} cas jamais vus (référence naïve ${pctPlain(R.precision_base)}, AUC ${R.auc.toFixed(3).replace(".", ",")}). ${R.auc >= 0.53 ? "Un petit avantage, à confirmer en conditions réelles." : "Pas d'avantage net : à prendre comme une simple indication."}`;
+    vd.after(rp);
+  }
+  if(M.auc>=0.56 && adv>0.005) vd.classList.add("ok");
   $("#calib").innerHTML = M.calibration.map(c => {
-    const h = c.taux_hausse==null ? 0 : c.taux_hausse;
-    const attendu = (c.min + c.max)/2; const bad = c.taux_hausse!=null && Math.abs(h-attendu)>0.1 && c.nb>=30;
-    return `<div class="cb" title="${c.nb} cas"><small class="num">${c.taux_hausse==null?'–':Math.round(h*100)+' %'}</small><div class="bar ${bad?'bad':''}" style="height:${Math.max(2,h*100)}%"></div><small>${esc(c.tranche)}</small></div>`;
+    const peu = c.taux_hausse == null || c.nb < 30;
+    const h = peu ? 0 : c.taux_hausse;
+    const attendu = (c.min + c.max)/2; const bad = !peu && Math.abs(h-attendu) > 0.1;
+    return `<div class="cb" title="${c.nb} cas${c.ic && c.ic[0] != null ? ` · marge ${Math.round(c.ic[0]*100)} à ${Math.round(c.ic[1]*100)} %` : ""}"><small class="num">${peu ? 'trop peu de cas' : Math.round(h*100)+' %'}</small><div class="bar ${bad?'bad':''}" style="height:${Math.max(2,h*100)}%"></div><small>${esc(c.tranche)}</small></div>`;
   }).join("");
 } else {
   $("#trust").innerHTML = `<div class="empty">Modèle non évalué.</div>`; $("#verdict").hidden = true;
@@ -923,32 +1585,48 @@ const S = DATA.suivi;
 $("#suivi").innerHTML = S.nb_verifiees ? `
   <div class="facts"><div class="fact"><div class="label">Vérifiées</div><div class="v">${S.nb_verifiees}</div></div>
   <div class="fact"><div class="label">Justes</div><div class="v">${pctPlain(S.precision)}</div></div>
-  <div class="fact"><div class="label">Signaux d'achat gagnants</div><div class="v">${pctPlain(S.precision_signaux_achat)}</div></div></div>
+  <div class="fact"><div class="label">Signaux d'achat gagnants</div><div class="v">${pctPlain(S.precision_signaux_achat)}</div></div>
+  ${S.detail && S.detail.fourchette && S.detail.fourchette.nb ? `<div class="fact"><div class="label">Prix dans la fourchette</div><div class="v">${pctPlain(S.detail.fourchette.taux, 0)}</div></div>` : ""}</div>
   <div class="tablewrap" style="margin-top:10px"><table><tbody>${S.dernieres.slice(0,6).map(r=>`<tr><td class="num">${esc(r.date)}</td><td>${esc(r.ticker)}</td><td>${r.juste?'<span class="up">Juste</span>':'<span class="down">Faux</span>'}</td><td>${pct(r.rendement_reel)}</td></tr>`).join("")}</tbody></table></div>`
   : `<p class="muted" style="margin:0;font-size:14px;max-width:48ch">Le suivi commence avec cette mise à jour : ${S.nb_en_attente || T.length} prédictions sont enregistrées et seront vérifiées dans ${H} séances. Relance le bot régulièrement pour voir le vrai taux de réussite apparaître ici.</p>`;
+
+/* ---------- Qualité des données ---------- */
+(function(){
+  const Q = DATA.qualite, el = $("#qualite");
+  if(!Q){ el.closest("div").hidden = true; return; }
+  const r = Q.resume, src = Object.entries(r.sources || {}).map(([k, v]) => `${esc(k)} : ${v}`).join(" · ");
+  el.innerHTML = `<div class="facts">
+      <div class="fact"><div class="label">Titres vérifiés</div><div class="v up">${r.ok}</div></div>
+      <div class="fact"><div class="label">À vérifier</div><div class="v ${r.a_verifier ? "down" : ""}">${r.a_verifier}</div></div>
+      ${r.croisees ? `<div class="fact"><div class="label">Cryptos confirmées par Binance</div><div class="v">${r.croisees_ok} / ${r.croisees}</div></div>` : ""}
+    </div>
+    <p class="muted" style="font-size:13px;margin:8px 0 0">Chaque titre est contrôlé à chaque mise à jour : fraîcheur, séances manquantes, variations invraisemblables${r.croisees ? ", et comparaison du cours des cryptos entre deux sources indépendantes" : ""}. Un titre douteux est exclu des signaux forts. Sources utilisées : ${src || "–"}.</p>
+    ${Q.a_verifier.length ? `<ul style="font-size:13px;margin:8px 0 0;padding-left:18px">${Q.a_verifier.slice(0, 8).map(x => `<li><b>${esc(x.ticker)}</b> : ${esc(x.problemes.join(", "))}</li>`).join("")}</ul>` : ""}`;
+})();
 
 /* ---------- Tableau ---------- */
 let filtre = "all", tri = {k:"score", asc:false};
 const val = (t,k) => ({ticker:t.ticker, prix:t.prix, j1:t.perf["1 jour"], m1:t.perf["1 mois"], m3:t.perf["3 mois"], score:t.score,
-  signal:t.score, proba:t.proba_hausse ?? -1, risque:RISK[t.risque], rocket:t.potentiel_hausse?1:0, actus:t.tonalite ?? -9})[k];
+  signal:t.score, proba:t.proba_hausse ?? -1, marche:t.proba_marche ?? -1, risque:RISK[t.risque], rocket:t.potentiel_hausse?1:0, actus:t.tonalite ?? -9})[k];
 function rendre(){
   const q = $("#q").value.trim().toLowerCase();
-  let L = T.filter(t => filtre==="all" || (filtre==="rocket" ? t.potentiel_hausse : filtre==="fort" ? t.signal_fort : filtre==="fav" ? FAV.has(t.ticker) : t.marche===filtre))
+  let L = T.filter(t => !filtre || filtre==="all" || (filtre==="rocket" ? t.potentiel_hausse : filtre==="fort" ? t.signal_fort : filtre==="fav" ? FAV.has(t.ticker) : t.marche===filtre))
            .filter(t => !q || t.ticker.toLowerCase().includes(q) || t.nom.toLowerCase().includes(q));
   L.sort((a,b) => { const x=val(a,tri.k), y=val(b,tri.k);
     return (typeof x==="string" ? x.localeCompare(y) : (x??-9)-(y??-9)) * (tri.asc?1:-1); });
   $("#rows").innerHTML = L.map(t => `<tr data-t="${esc(t.ticker)}" tabindex="0">
-    <td><div class="tk">${FAV.has(t.ticker) ? '<span class="etoile" title="Dans tes favoris">★</span>' : ""}${esc(t.ticker)}</div><div class="nm">${esc(t.nom)}</div></td>
+    <td><div class="tk">${FAV.has(t.ticker) ? '<span class="etoile" title="Dans tes favoris">★</span>' : ""}${esc(t.ticker)}${t.qualite_ok === false ? ' <span title="Données à vérifier : exclu des signaux" style="color:var(--warn)">⚠</span>' : ""}</div><div class="nm">${esc(t.nom)}</div></td>
     <td class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}${t.live?'<span class="src">direct</span>':''}</td><td data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</td><td>${pct(t.perf["1 mois"])}</td>
     <td class="spk"><span>${spark(t.spark,72,24)}</span><span>${pct(t.perf["3 mois"],0)}</span></td>
-    <td><span class="score"><span class="num">${Math.round(t.score)}</span><span class="mini"><i style="width:${t.score}%"></i></span></span></td>
+    <td class="expert"><span class="score"><span class="num">${Math.round(t.score)}</span><span class="mini"><i style="width:${t.score}%"></i></span></span></td>
     <td><span class="pill ${SIG[t.signal]}">${esc(LIB[t.signal] || t.signal)}</span>${t.signal_fort?'<span class="badge-fort">Fort</span>':''}</td>
-    <td>${gauge(t.proba_hausse)}</td><td>${ton(t.tonalite)}</td><td class="risk r${RISK[t.risque]}">${esc(t.risque)}</td>
-    <td>${t.potentiel_hausse?'<span title="Configuration de décollage">🚀</span>':''}</td></tr>`).join("")
-    || `<tr><td colspan="11" class="empty">${filtre === "fav" ? "Pas encore de favori : ouvre un titre et clique sur « ☆ Suivre » pour le retrouver ici." : "Aucun titre ne correspond."}</td></tr>`;
+    <td>${gauge(t.proba_hausse, t.accord_ia)}</td><td>${t.proba_marche != null ? `<span class="num ${t.proba_marche >= .55 ? "up" : t.proba_marche <= .45 ? "down" : ""}" title="vs ${esc(t.indice_nom || "son indice")}">${Math.round(t.proba_marche*100)} %</span>` : '<span class="muted">–</span>'}</td><td class="expert">${ton(t.tonalite)}</td><td class="risk r${RISK[t.risque]}">${esc(t.risque)}</td>
+    <td class="expert">${t.potentiel_hausse?'<span title="Configuration de décollage" role="img" aria-label="Configuration de décollage">🚀</span>':''}</td></tr>`).join("")
+    || `<tr><td colspan="12" class="empty">${filtre === "fav" ? "Pas encore de favori : ouvre un titre et clique sur « ☆ Suivre » pour le retrouver ici." : "Aucun titre ne correspond."}</td></tr>`;
 }
-document.querySelectorAll(".filters .chip").forEach(c => c.onclick = () => {
-  document.querySelectorAll(".filters .chip").forEach(x => x.setAttribute("aria-pressed", x===c));
+// (seulement les puces du tableau : celles de l'espace simulation ont leur propre rôle)
+document.querySelectorAll(".filters .chip[data-m]").forEach(c => c.onclick = () => {
+  document.querySelectorAll(".filters .chip[data-m]").forEach(x => x.setAttribute("aria-pressed", x===c));
   filtre = c.dataset.m; rendre(); });
 $("#q").addEventListener("input", rendre);
 document.querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
@@ -966,6 +1644,13 @@ function rgba(hex, a){
   if(hex.length === 3) hex = hex.split("").map(c => c + c).join("");
   const n = parseInt(hex.slice(0, 6), 16);
   return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
+}
+// Couleur de texte la plus lisible (noir ou blanc) sur un fond « rgb(r,g,b) » : contraste WCAG
+function texteLisible(fond){
+  const m = String(fond).match(/\d+/g); if(!m) return "inherit";
+  const lum = m.slice(0, 3).map(x => { x = x / 255; return x <= .03928 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4; });
+  const L = .2126 * lum[0] + .7152 * lum[1] + .0722 * lum[2];
+  return (1.05 / (L + .05)) >= ((L + .05) / .05) ? "#ffffff" : "#000000";
 }
 function melange(a, b, part){   // couleur opaque entre a et b (part = proportion de b)
   const v = h => { h = h.replace("#", ""); if(h.length === 3) h = h.split("").map(c => c + c).join(""); const n = parseInt(h.slice(0,6), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
@@ -1034,13 +1719,18 @@ function compteur(p){
 function resumeSimple(t){
   const p = t.proba_hausse;
   if(p == null) return "";
-  const sur10 = Math.round(p * 10);
   const titre = p >= .58 ? "Plutôt à la hausse" : p >= .52 ? "Légèrement à la hausse" : p > .48 ? "Pile ou face" : p > .42 ? "Légèrement à la baisse" : "Plutôt à la baisse";
   const med = t.cone ? t.cone.mediane.at(-1) : null;
-  return `<div class="panel resume">${compteur(p)}
-    <div><div class="label">En résumé, pour le mois qui vient</div>
+  const accordTxt = t.accord_ia === true ? `<span class="accord oui">✓ Les deux IA sont d'accord</span>`
+    : t.accord_ia === false ? `<span class="accord non">⚠ Les deux IA ne sont pas d'accord : avis peu fiable</span>` : "";
+  return `<div class="panel resume"><div class="freq">${points100(p)}<p class="phrase muted" style="font-size:13px;max-width:260px">Sur 100 situations passées comme celle-ci, <b class="up">${Math.round(p*100)}</b> ont fini plus haut un mois après.</p><span class="expert">${compteur(p)}</span></div>
+    <div><div class="label">En résumé, pour le mois qui vient ${aide("proba")}</div>
       <div class="verdict-grand ${p >= .52 ? "up" : p <= .48 ? "down" : ""}">${titre}</div>
-      <p>Le radar donne <b>${sur10} chance${sur10 > 1 ? "s" : ""} sur 10</b> que ${esc(t.nom)} soit plus haut dans un mois.${med ? ` Le scénario le plus probable : environ <b class="num">${px(med, t.devise)}</b> (${pct(med / t.prix - 1)}).` : ""}${t.signal_fort ? " <b>Signal fort</b> : la tendance technique va dans le même sens." : ""}</p></div></div>`;
+      <p>Le radar donne <b>${Math.round(p * 100)} chances sur 100</b> que ${esc(t.nom)} soit plus haut dans un mois.${med ? ` Le scénario le plus probable : environ <b class="num">${px(med, t.devise)}</b> (${pct(med / t.prix - 1)}).` : ""}${t.signal_fort ? " <b>Signal fort</b> : la tendance technique va dans le même sens." : ""}</p>
+      ${t.proba_marche != null ? `<p><span class="badge-marche">Face à son marché</span>${aide("marche")} ${Math.round(t.proba_marche * 100)} chances sur 100 de faire <b>mieux que ${esc(t.indice_nom || "son marché")}</b> sur la même période.</p>` : ""}
+      ${t.fourchette_elargie ? `<p class="muted" style="font-size:13.5px">📅 Résultats de l'entreprise avant l'échéance : la fourchette a été élargie par prudence.</p>` : ""}
+      ${accordTxt ? `<p>${accordTxt} ${aide("accord")}</p>` : ""}
+      ${t.actu_contredit ? `<p class="muted" style="font-size:13.5px">📰 Les actualités récentes vont plutôt dans l'autre sens : prudence.</p>` : ""}</div></div>`;
 }
 
 /* Guide illustré « Comment lire ce graphique ? » */
@@ -1066,6 +1756,10 @@ function guide(){
   </div></details>`;
 }
 
+// Prix sur l'axe des graphiques au format français (virgule), avec assez de chiffres pour les petites cryptos
+const formatPrixAxe = v => !isFinite(v) ? "" : Math.abs(v) >= 1000 ? v.toLocaleString("fr-FR", {maximumFractionDigits:0})
+  : Math.abs(v) >= 1 ? v.toLocaleString("fr-FR", {minimumFractionDigits:2, maximumFractionDigits:2})
+  : v.toLocaleString("fr-FR", {maximumSignificantDigits:4});
 const tStr = tm => typeof tm === "string" ? tm : `${tm.year}-${String(tm.month).padStart(2,"0")}-${String(tm.day).padStart(2,"0")}`;
 const fmtDate = d => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", {day:"numeric", month:"short", year:"numeric"});
 const PERIODES = [["1M",21],["3M",63],["6M",126],["1A",250],["Tout",0]];
@@ -1074,18 +1768,19 @@ function coque(id){
     <div class="chart-bar">
       <div class="per" id="${id}-per" role="group" aria-label="Période">${PERIODES.map(([l,j]) => `<button data-j="${j}" aria-pressed="false">${l}</button>`).join("")}</div>
       <div class="opt" id="${id}-opt">
+        <label><input type="checkbox" data-s="bougies" checked> Bougies</label>
         <label><input type="checkbox" data-s="bulles" checked> Explications</label>
         <label><input type="checkbox" data-s="prev" checked> Prévision</label>
-        <label><input type="checkbox" data-s="sma50" checked> Moy. 50 j</label>
+        <label class="expert"><input type="checkbox" data-s="sma50" checked> Moy. 50 j</label>
         <label><input type="checkbox" data-s="sma200" checked> Moy. 200 j</label>
-        <label><input type="checkbox" data-s="fig" checked> Figures</label>
-        <label><input type="checkbox" data-s="bb"> Bollinger</label>
-        <label><input type="checkbox" data-s="vol" checked> Volumes</label>
+        <label class="expert"><input type="checkbox" data-s="fig" checked> Figures</label>
+        <label class="expert"><input type="checkbox" data-s="bb"> Bollinger</label>
+        <label class="expert"><input type="checkbox" data-s="vol" checked> Volumes</label>
       </div>
     </div>
     <div class="chart-leg" id="${id}-leg" aria-live="off"></div>
     <div class="chart-zone"><div class="chart big" id="${id}"></div><div class="bulles" id="${id}-bulles" aria-hidden="true"></div></div>
-    <div class="chart rsi rsi-lab" id="${id}-rsi"></div>
+    <div class="chart rsi rsi-lab expert" id="${id}-rsi"></div>
   </div>
   ${guide()}`;
 }
@@ -1095,23 +1790,32 @@ function detruireGraph(id){
   try{ if(g.obs) g.obs.disconnect(); g.chart.remove(); if(g.rsi) g.rsi.remove(); }catch(e){}
   delete GRAPHS[id];
 }
+const CALQUES_SIMPLES = {bougies:false, sma50:false, fig:false, bb:false, vol:false};
 function grapheComplet(id, t, opts = {}){
   detruireGraph(id);
+  // Mode simple : une courbe au lieu des bougies et moins de lignes, tant que le visiteur ne change rien
+  if(!opts.calques && MODE === "simple") opts.calques = {...CALQUES_SIMPLES};
   const el = document.getElementById(id), elR = document.getElementById(id + "-rsi"), leg = document.getElementById(id + "-leg");
   if(!el) return;
   if(!window.LightweightCharts){ el.innerHTML = `<p class="empty">Graphique indisponible (bibliothèque non chargée).</p>`; return; }
   const C = {up:css("--up"), down:css("--down"), acc:css("--accent"), warn:css("--warn"), cone:css("--cone"),
              surf:css("--surface"), line:css("--line"), muted:css("--muted"), ink:css("--ink")};
-  const base = {autoSize:true, localization:{locale:"fr-FR"},
+  const base = {autoSize:true, localization:{locale:"fr-FR", priceFormatter:formatPrixAxe},
     layout:{background:{type:"solid", color:C.surf}, textColor:C.muted, fontFamily:"IBM Plex Mono, monospace", fontSize:11},
     grid:{vertLines:{color:rgba(C.line, .55)}, horzLines:{color:rgba(C.line, .55)}}};
-  const chart = LightweightCharts.createChart(el, {...base, crosshair:{mode:0},
+  const chart = LightweightCharts.createChart(el, {...base, crosshair:{mode:1},
+    watermark:{visible:true, text:t.ticker.replace(/-USD$/, ""), fontSize:64, fontFamily:"Schibsted Grotesk, Arial, sans-serif", fontStyle:"bold", color:rgba(C.muted, .1), horzAlign:"center", vertAlign:"center"},
     rightPriceScale:{borderColor:C.line, minimumWidth:76, scaleMargins:{top:.06, bottom:.2}},
     timeScale:{borderColor:C.line, rightOffset:2}});
-  const s = t.serie, series = {sma50:[], sma200:[], bb:[], vol:[], prev:[]};
+  const s = t.serie, series = {sma50:[], sma200:[], bb:[], vol:[], prev:[], bougies:[]};
 
   const candles = chart.addCandlestickSeries({upColor:C.up, downColor:C.down, wickUpColor:C.up, wickDownColor:C.down, borderVisible:false});
   candles.setData(s.t.map((d,i) => ({time:d, open:s.o[i], high:s.h[i], low:s.l[i], close:s.c[i]})));
+  // Mode « ligne » pour les débutants : une courbe simple à la place des bougies
+  const courbe = chart.addAreaSeries({lineColor:C.acc, lineWidth:2, topColor:rgba(C.acc, .22), bottomColor:rgba(C.acc, 0),
+    priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:true, visible:false});
+  courbe.setData(s.t.map((d,i) => ({time:d, value:s.c[i]})));
+  series.bougies.push(candles);
   if(t._bar && t._bar.time >= s.t.at(-1)) candles.update(t._bar);
   const HAUSS = ["marteau", "englobante_haussiere", "etoile_matin"];
   const marqueursFig = (t.chandeliers || []).filter(m => m.t < s.t.at(-1) || m.t === s.t.at(-1)).map(m => ({
@@ -1149,9 +1853,9 @@ function grapheComplet(id, t, opts = {}){
     // puis la couleur du fond sous le bas. Résultat : une zone verte « si ça va bien » au-dessus
     // de la trajectoire probable et une zone rouge « si ça va mal » en dessous.
     const zone = {priceLineVisible:false, crosshairMarkerVisible:false};
-    const vert = chart.addAreaSeries({...zone, lineColor:C.up, lineWidth:2, topColor:melange(C.surf, C.up, .24), bottomColor:melange(C.surf, C.up, .24), lastValueVisible:true, title:"si ça va bien"});
+    const vert = chart.addAreaSeries({...zone, lineColor:C.up, lineWidth:2, topColor:melange(C.surf, C.up, .34), bottomColor:melange(C.surf, C.up, .12), lastValueVisible:true, title:"si ça va bien"});
     vert.setData(k.t.map((d,i) => ({time:d, value:k.haut[i]})));
-    const rouge = chart.addAreaSeries({...zone, lineColor:"rgba(0,0,0,0)", lineWidth:1, topColor:melange(C.surf, C.down, .22), bottomColor:melange(C.surf, C.down, .22), lastValueVisible:false});
+    const rouge = chart.addAreaSeries({...zone, lineColor:"rgba(0,0,0,0)", lineWidth:1, topColor:melange(C.surf, C.down, .12), bottomColor:melange(C.surf, C.down, .34), lastValueVisible:false});
     rouge.setData(k.t.map((d,i) => ({time:d, value:k.mediane[i]})));
     const fond = chart.addAreaSeries({...zone, lineColor:C.down, lineWidth:2, topColor:C.surf, bottomColor:C.surf, lastValueVisible:true, title:"si ça va mal"});
     fond.setData(k.t.map((d,i) => ({time:d, value:k.bas[i]})));
@@ -1205,23 +1909,25 @@ function grapheComplet(id, t, opts = {}){
   // Calques affichés
   const optEl = document.getElementById(id + "-opt");
   if(optEl) optEl.querySelectorAll("input").forEach(c => {
-    if(opts.calques && c.dataset.s in opts.calques) c.checked = opts.calques[c.dataset.s];
+    // réglage mémorisé, sinon réglage par défaut (important quand on change de mode)
+    c.checked = opts.calques && c.dataset.s in opts.calques ? opts.calques[c.dataset.s] : c.defaultChecked;
     const appliquer = () => {
       (series[c.dataset.s] || []).forEach(x => x.applyOptions({visible:c.checked}));
       if(c.dataset.s === "fig") majMarqueurs(c.checked);
+      if(c.dataset.s === "bougies") courbe.applyOptions({visible:!c.checked});
       (opts.calques ||= {})[c.dataset.s] = c.checked;
       if(GRAPHS[id]) bulles(GRAPHS[id]);
     };
     appliquer(); c.onchange = appliquer;
   });
-  const g = GRAPHS[id] = {id, chart, rsi:rsiC, candles, t, opts, series, el};
+  const g = GRAPHS[id] = {id, chart, rsi:rsiC, candles, t, opts, series, el, modeInit: MODE};
   const redessiner = () => requestAnimationFrame(() => bulles(g));
   chart.timeScale().subscribeVisibleLogicalRangeChange(redessiner);
   if(window.ResizeObserver){ g.obs = new ResizeObserver(redessiner); g.obs.observe(el); }
   requestAnimationFrame(() => { voir(opts.periode ?? 126); redessiner(); });
 }
 function graphique(t){ grapheComplet("g-detail", t, {niveaux:true, periode:63}); }
-function redessinerTout(){ for(const [id, g] of Object.entries(GRAPHS)) grapheComplet(id, g.t, g.opts); }
+function redessinerTout(){ for(const [id, g] of Object.entries(GRAPHS)) grapheComplet(id, g.t, g.opts); if(typeof rendreCarte === "function") rendreCarte(); }
 /* ---------- Prévision écrite : « Lecture du radar » ---------- */
 function lecture(t, court = false){
   const n = t.niveaux || {}, p = t.proba_hausse, k = t.cone, dev = t.devise, f = t.fourchette || [];
@@ -1237,14 +1943,15 @@ function lecture(t, court = false){
     : rsi < 30 ? ` Le RSI à ${Math.round(rsi)} indique un titre survendu : un rebond technique est possible.`
     : ` Le RSI à ${Math.round(rsi)} montre un élan ${rsi >= 50 ? "plutôt acheteur" : "plutôt vendeur"}, sans excès.`;
   const force = n.adx == null ? "" : n.adx > 25 ? ` La tendance est nette (ADX ${Math.round(n.adx)}).` : ` La tendance reste peu marquée (ADX ${Math.round(n.adx)}).`;
-  parts.push(`<h4>Tendance</h4><p>Tendance ${tend}.${elan}${force}</p>`);
+  parts.push(`<h3>Tendance</h3><p>Tendance ${tend}.${elan}${force}</p>`);
 
   if(p != null && k && f.length === 2){
     const med = k.mediane.at(-1);
     const avis = p >= 0.58 ? "plutôt favorable" : p >= 0.52 ? "légèrement favorable" : p > 0.48 ? "neutre, sans direction claire"
                : p > 0.42 ? "légèrement défavorable" : "plutôt défavorable";
-    parts.push(`<h4>Prévision à ${H} séances (environ un mois)</h4>
-      <p>L'avis du modèle est <b>${avis}</b> : ${Math.round(p*100)} % de probabilité que le cours soit plus haut qu'aujourd'hui.${t.signal_fort ? " C'est un <b>signal fort</b> : la tendance technique va dans le même sens." : ""}</p>
+    const rel = t.proba_marche != null ? ` Par rapport à ${esc(t.indice_nom || "son marché")}, la probabilité de faire mieux sur la même période est de ${Math.round(t.proba_marche*100)} %${t.proba_marche >= .55 ? " : plutôt plus fort que son marché" : t.proba_marche <= .45 ? " : plutôt plus faible que son marché" : ", sans avantage net"}.` : "";
+    parts.push(`<h3>Prévision à ${H} séances (environ un mois)</h3>
+      <p>L'avis du modèle est <b>${avis}</b> : ${Math.round(p*100)} % de probabilité que le cours soit plus haut qu'aujourd'hui.${t.signal_fort ? " C'est un <b>signal fort</b> : la tendance technique va dans le même sens." : ""}${rel}${t.fourchette_elargie ? " La fourchette a été élargie car l'entreprise publie ses résultats avant l'échéance." : ""}</p>
       <div class="scen">
         <div class="sc neg"><span class="label">Scénario défavorable</span><b class="num">${px(f[0], dev)}</b><span>${pct(f[0]/t.prix - 1)} · 1 chance sur 10 de finir plus bas</span></div>
         <div class="sc mid"><span class="label">Scénario central</span><b class="num">${px(med, dev)}</b><span>${pct(med/t.prix - 1)} · trajectoire médiane</span></div>
@@ -1257,22 +1964,23 @@ function lecture(t, court = false){
     ["Résistance (plus haut sur un an)", n.resistance], ["Moyenne 50 jours", n.sma50], ["Moyenne 200 jours", n.sma200],
     ["Support (plus bas sur 20 séances)", n.support], ["Stop-loss indicatif (2 ATR)", t.stop_loss]
   ].filter(([, v]) => v != null).sort((a, b) => b[1] - a[1]);
-  parts.push(`<h4>Niveaux à surveiller</h4><ul class="niv">${niv.map(([lib, v]) =>
+  parts.push(`<h3>Niveaux à surveiller</h3><ul class="niv">${niv.map(([lib, v]) =>
     `<li><span>${lib}</span><b class="num">${px(v, dev)}</b><em>${pct(v/t.prix - 1)}</em></li>`).join("")}</ul>`);
 
   const plancher = Math.max(t.stop_loss || 0, n.support || 0);
   const plafond = n.sma200 != null && n.sma200 > t.prix ? n.sma200 : (n.resistance || t.objectif);
-  parts.push(`<h4>Ce qui changerait l'avis</h4><p>${(p ?? 0.5) >= 0.5
+  parts.push(`<h3>Ce qui changerait l'avis</h3><p>${(p ?? 0.5) >= 0.5
     ? `Une clôture sous ${px(plancher, dev)} affaiblirait nettement ce scénario. À l'inverse, dépasser ${px(n.resistance || t.objectif, dev)} confirmerait la force du titre.`
     : `Un retour durable au-dessus de ${px(plafond, dev)} remettrait un scénario haussier sur la table. Sous ${px(plancher, dev)}, la baisse pourrait s'accélérer.`}</p>`);
 
   if(t.tonalite != null && !isNaN(t.tonalite)){
-    parts.push(`<h4>Actualités</h4><p>Tonalité des articles des 7 derniers jours : ${ton(t.tonalite)}.${t.actus && t.actus[0] ? ` Dernier titre : « ${esc(t.actus[0].titre)} ».` : ""} Cette tonalité n'entre pas dans la probabilité.</p>`);
+    parts.push(`<h3>Actualités</h3><p>Tonalité des articles des 7 derniers jours : ${ton(t.tonalite)}.${t.actus && t.actus[0] ? ` Dernier titre : « ${esc(t.actus[0].titre)} ».` : ""} Cette tonalité n'entre pas dans la probabilité.</p>`);
   }
   const M = DATA.modele;
   if(M && M.precision != null){
     const sf = M.signaux_forts;
-    parts.push(`<h4>Fiabilité</h4><p>Sur des périodes qu'il n'a jamais vues, le modèle a trouvé la bonne direction ${Math.round(M.precision*100)} % du temps${t.signal_fort && sf && sf.precision != null ? `, et ${Math.round(sf.precision*100)} % du temps pour les signaux forts comme celui-ci` : ""}. Une prévision reste une probabilité, jamais une promesse.</p>`);
+    const icP = M.ic && M.ic.precision;
+    parts.push(`<h3>Fiabilité</h3><p>Sur des années qu'elles n'avaient jamais vues, les IA ont trouvé la bonne direction <b>${Math.round(M.precision*100)} fois sur 100</b>${icP ? ` (marge d'erreur : ${Math.round(icP[0]*100)} à ${Math.round(icP[1]*100)})` : ""}, contre ${Math.round(M.precision_base*100)} en répondant toujours la même chose${t.signal_fort && sf && sf.precision != null ? `, et ${Math.round(sf.precision*100)} fois sur 100 pour les signaux forts comme celui-ci` : ""}.${t.accord_ia === false ? " <b>Attention</b> : aujourd'hui les deux IA ne sont pas d'accord sur ce titre, et dans ce cas elles n'ont pas fait mieux que le hasard." : ""} Une prévision reste une probabilité, jamais une promesse.</p>`);
   }
   return parts.join("");
 }
@@ -1413,18 +2121,21 @@ function chargerDetail(t){
   }
   return DETAILS_EN_COURS[t.ticker];
 }
+let ONGLET_VOULU = null;
+function ouvrirOnglet(tk, onglet){ ONGLET_VOULU = onglet; ouvrir(tk); }
 function ouvrir(tk, pousser=true){
   const t = T.find(x => x.ticker===tk); if(!t) return;
   if(!t.serie && t.detail){
     $("#d-title").textContent = t.nom;
     $("#d-sub").textContent = t.ticker;
     $("#d-body").innerHTML = `<div class="empty">Chargement de l'analyse de ${esc(t.nom)}…</div>`;
-    $("#sheet").hidden = false; document.body.style.overflow = "hidden";
     chargerDetail(t).then(() => { if(!$("#sheet").hidden) ouvrir(tk, pousser); })
       .catch(() => { $("#d-body").innerHTML = `<div class="empty">Impossible de charger le détail de ce titre. Vérifie ta connexion puis réessaie.</div>`; });
+    ouvrirDialogue("#sheet");
     return;
   }
   courant = t;
+  try{ if(window.goatcounter && window.goatcounter.count) window.goatcounter.count({path: "fiche/" + token(t.ticker), title: t.nom}); }catch(e){}
   $("#d-title").textContent = t.nom;
   $("#d-sub").innerHTML = `${esc(t.ticker)} · ${NOM_MARCHE[t.marche]||""} · <span class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}</span> <span data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</span>`;
   const p = t.proba_hausse, f = t.fourchette;
@@ -1525,18 +2236,20 @@ function ouvrir(tk, pousser=true){
     flash(FAV.has(t.ticker) ? "Ajouté à tes favoris (filtre « Mes favoris »)" : "Retiré de tes favoris"); };
   $("#share").onclick = () => partager(t);
   $("#pf-btn").onclick = () => pfFormulaire(t);
-  $("#sheet").hidden = false; document.body.style.overflow = "hidden";
+  $("#cmp-btn").onclick = () => ouvrirComparaison(t.ticker);
+  ouvrirDialogue("#sheet");
   requestAnimationFrame(() => graphique(t));
   if(pousser) try{ history.replaceState(null, "", "#" + token(t.ticker)); }catch(e){}
   $("#close").focus();
+  if(ONGLET_VOULU){ const b = document.querySelector(`.dtab[data-dtab="${ONGLET_VOULU}"]`); ONGLET_VOULU = null; if(b) b.click(); }
 }
-function fermer(){ $("#sheet").hidden = true; document.body.style.overflow = ""; detruireGraph("g-detail"); courant=null;
+function fermer(){ fermerDialogue("#sheet"); detruireGraph("g-detail"); courant=null;
   try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){} }
 document.addEventListener("click", e => { const b = e.target.closest("[data-t]"); if(b) ouvrir(b.dataset.t); });
 $("#rows").addEventListener("keydown", e => { if(e.key==="Enter"){ const r = e.target.closest("tr[data-t]"); if(r) ouvrir(r.dataset.t); }});
 $("#close").onclick = fermer;
 $("#sheet").addEventListener("click", e => { if(e.target.id==="sheet") fermer(); });
-document.addEventListener("keydown", e => { if(e.key==="Escape" && !$("#sheet").hidden && $("#legal").hidden) fermer(); });
+document.addEventListener("keydown", e => { if(e.key==="Escape" && !$("#sheet").hidden && $("#legal").hidden && $("#cmp").hidden) fermer(); });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redessinerTout);
 new MutationObserver(redessinerTout).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
 /* ---------- Météo du marché ---------- */
@@ -1585,6 +2298,12 @@ new MutationObserver(redessinerTout).observe(document.documentElement, {attribut
   let actif = null;
   const montrer = (t, nom) => {
     actif = t;
+    if(!t.serie && t.detail){   // en ligne : données du graphique chargées à la demande
+      $("#main-sub").textContent = `${nom} · ${t.ticker}`;
+      chargerDetail(t).then(() => { if(actif === t) montrer(t, nom); })
+        .catch(() => { $("#main-resume").innerHTML = `<div class="empty">Graphique indisponible pour le moment. Réessaie dans un instant.</div>`; });
+      return;
+    }
     $("#main-tabs").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.tk === t.ticker));
     $("#main-sub").textContent = `${nom} · ${t.ticker}`;
     $("#main-prix").innerHTML = `<span class="num" data-px="${esc(t.ticker)}">${px(t.prix, t.devise)}</span> <span style="font-size:16px" data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"], 2)}</span>`;
@@ -1614,11 +2333,22 @@ function majHorodatage(){
   $("#stamp").textContent = `Prévisions mises à jour ${rel}`;
 }
 majHorodatage(); setInterval(majHorodatage, 60000);
+// Mise à jour automatique : toutes les 5 minutes, le site vérifie s'il y a de nouvelles prévisions.
+// Si le visiteur ne fait rien (pas de fiche ouverte, pas de saisie depuis 1 min), la page se
+// recharge toute seule ; sinon, un petit bandeau propose d'actualiser.
+let derniereAction = Date.now();
+["pointerdown", "keydown", "scroll", "touchstart"].forEach(e => addEventListener(e, () => { derniereAction = Date.now(); }, {passive:true}));
 if(/^https?:$/.test(location.protocol) && !DATA.demo){
   setInterval(() => {
+    if(document.visibilityState !== "visible") return;
     fetch("version.json?t=" + Date.now(), {cache:"no-store"}).then(r => r.ok ? r.json() : null)
-      .then(d => { if(d && d.genere_le && d.genere_le !== DATA.genere_le) $("#toast").hidden = false; }).catch(() => {});
-  }, 10 * 60 * 1000);
+      .then(d => {
+        if(!(d && d.genere_le && d.genere_le !== DATA.genere_le)) return;
+        const calme = $("#sheet").hidden && $("#legal").hidden && Date.now() - derniereAction > 60000
+          && !(document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName));
+        if(calme) location.reload(); else $("#toast").hidden = false;
+      }).catch(() => {});
+  }, 5 * 60 * 1000);
 }
 $("#reload").onclick = () => location.reload();
 
@@ -1720,9 +2450,278 @@ $("#sources-txt").textContent = "Cours historiques : Yahoo Finance · cryptos en
   (DATA.live && DATA.live.finnhub ? " · actions US en direct : Finnhub" : "") +
   ". Les actions françaises et les prévisions sont mises à jour plusieurs fois par jour, pas en continu.";
 
+
+/* ---------- Bulles de définition (boutons « ? ») ---------- */
+(function(){
+  let bulle = null, bouton = null;
+  const fermerDef = (rendreFocus = false) => {
+    if(bulle){ bulle.remove(); bulle = null; }
+    if(bouton){ bouton.setAttribute("aria-expanded", "false"); if(rendreFocus) bouton.focus(); bouton = null; }
+  };
+  document.addEventListener("click", e => {
+    const b = e.target.closest(".def[data-def]");
+    if(!b){ if(bulle && !e.target.closest(".bulle-def")) fermerDef(); return; }
+    e.preventDefault(); e.stopPropagation();
+    if(bouton === b){ fermerDef(); return; }
+    fermerDef();
+    const [titre, texte] = DEFS[b.dataset.def] || ["", ""];
+    bulle = document.createElement("div"); bulle.className = "bulle-def"; bulle.setAttribute("role", "status");
+    bulle.innerHTML = `<b>${esc(titre)}</b>${esc(texte)}`;
+    document.body.appendChild(bulle);
+    const r = b.getBoundingClientRect(), z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+    const larg = bulle.offsetWidth, x = Math.max(16, Math.min(r.left / z + scrollX - larg / 2 + 10, document.documentElement.clientWidth / z - larg - 16));
+    bulle.style.left = x + "px"; bulle.style.top = (r.bottom / z + scrollY + 8) + "px";
+    bouton = b; b.setAttribute("aria-expanded", "true");
+  }, true);
+  document.addEventListener("keydown", e => { if(e.key === "Escape" && bulle){ e.stopPropagation(); fermerDef(true); } }, true);
+  addEventListener("resize", () => fermerDef());
+})();
+
+/* ---------- Réglages d'accessibilité ---------- */
+(function(){
+  const btn = $("#acces-btn"), pan = $("#acces-panneau");
+  const maj = () => {
+    pan.querySelectorAll("[data-taille]").forEach(b => b.setAttribute("aria-pressed", b.dataset.taille === ACCES.taille));
+    pan.querySelectorAll("[data-opt]").forEach(b => b.setAttribute("aria-pressed", !!ACCES[b.dataset.opt]));
+  };
+  const sauver = () => { try{ localStorage.setItem("radar-acces", JSON.stringify(ACCES)); }catch(e){} appliquerAcces(); maj();
+    document.documentElement.style.setProperty("--tete", (document.querySelector("header.top").offsetHeight) + "px"); };
+  btn.onclick = () => { pan.hidden = !pan.hidden; btn.setAttribute("aria-expanded", !pan.hidden); if(!pan.hidden) pan.querySelector("button").focus(); };
+  pan.querySelectorAll("[data-taille]").forEach(b => b.onclick = () => { ACCES.taille = b.dataset.taille; sauver(); });
+  pan.querySelectorAll("[data-opt]").forEach(b => b.onclick = () => { ACCES[b.dataset.opt] = !ACCES[b.dataset.opt]; sauver(); });
+  document.addEventListener("click", e => { if(!pan.hidden && !e.target.closest(".acces")){ pan.hidden = true; btn.setAttribute("aria-expanded", "false"); } });
+  pan.addEventListener("keydown", e => { if(e.key === "Escape"){ pan.hidden = true; btn.setAttribute("aria-expanded", "false"); btn.focus(); } });
+  maj();
+})();
+
+/* ---------- « Par où commencer ? » pour les nouveaux visiteurs ---------- */
+(function(){
+  let vu = false; try{ vu = localStorage.getItem("radar-depart-vu") === "1"; }catch(e){}
+  $("#depart").hidden = vu;
+  $("#depart-ok").onclick = () => { $("#depart").hidden = true; try{ localStorage.setItem("radar-depart-vu", "1"); }catch(e){} };
+})();
+
+/* ---------- Mode simple / expert ---------- */
+function appliquerMode(m){
+  MODE = m;
+  document.documentElement.classList.toggle("simple", m === "simple");
+  document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === m));
+  try{ localStorage.setItem("radar-mode", m); }catch(e){}
+  // les graphiques reprennent les réglages par défaut du nouveau mode
+  for(const [id, g] of Object.entries(GRAPHS)) if(g.modeInit !== m){ g.opts.calques = undefined; grapheComplet(id, g.t, g.opts); }
+}
+document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { appliquerMode(b.dataset.mode);
+  flash(b.dataset.mode === "simple" ? "Mode simple : l'essentiel, expliqué simplement" : "Mode expert : tous les indicateurs techniques"); });
+document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === MODE));
+
+/* ---------- Recherche globale (en haut de page) ---------- */
+(function(){
+  const champ = $("#rech"), liste = $("#rech-liste");
+  if(!champ) return;
+  const sansAccent = x => String(x).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  let trouves = [], choisi = -1;
+  const fermerListe = () => { liste.hidden = true; champ.setAttribute("aria-expanded", "false"); champ.removeAttribute("aria-activedescendant"); choisi = -1; };
+  const marquer = () => {
+    liste.querySelectorAll("li").forEach((li, i) => li.setAttribute("aria-selected", i === choisi));
+    if(choisi >= 0){ champ.setAttribute("aria-activedescendant", "rech-" + choisi); liste.children[choisi].scrollIntoView({block:"nearest"}); }
+  };
+  const chercher = () => {
+    const q = sansAccent(champ.value.trim());
+    if(!q){ fermerListe(); return; }
+    trouves = T.map(t => {
+      const n = sansAccent(t.nom), k = sansAccent(t.ticker), k2 = k.replace(/-usd$|\.pa$|\.de$|\.as$|\.mc$|\.mi$|^\^/, "");
+      const rang = k2 === q || k === q ? 0 : n.startsWith(q) || k.startsWith(q) ? 1 : n.includes(" " + q) ? 2 : n.includes(q) || k.includes(q) ? 3 : 9;
+      return [rang, t];
+    }).filter(([r]) => r < 9).sort((a, b) => a[0] - b[0] || a[1].nom.localeCompare(b[1].nom)).slice(0, 8).map(([, t]) => t);
+    liste.innerHTML = trouves.length ? trouves.map((t, i) => `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}</b><span class="num">${px(t.prix, t.devise)}</span><span>${esc(t.ticker)} · ${NOM_MARCHE[t.marche] || ""}</span><span>${t.proba_hausse != null ? Math.round(t.proba_hausse * 100) + " % de hausse" : ""}</span></li>`).join("")
+      : `<li role="option" aria-disabled="true" aria-selected="false"><span>Aucun titre suivi ne correspond. Le radar suit ${T.length} titres.</span></li>`;
+    liste.hidden = false; champ.setAttribute("aria-expanded", "true"); choisi = trouves.length ? 0 : -1; marquer();
+  };
+  const ouvrirChoix = i => { const t = trouves[i]; if(!t) return; fermerListe(); champ.value = ""; champ.blur(); ouvrir(t.ticker); };
+  champ.addEventListener("input", chercher);
+  champ.addEventListener("focus", () => { if(champ.value.trim()) chercher(); });
+  champ.addEventListener("keydown", e => {
+    if(e.key === "ArrowDown" && trouves.length){ e.preventDefault(); choisi = (choisi + 1) % trouves.length; marquer(); }
+    else if(e.key === "ArrowUp" && trouves.length){ e.preventDefault(); choisi = (choisi - 1 + trouves.length) % trouves.length; marquer(); }
+    else if(e.key === "Enter"){ e.preventDefault(); if(choisi >= 0) ouvrirChoix(choisi); }
+    else if(e.key === "Escape"){ fermerListe(); }
+  });
+  liste.addEventListener("mousedown", e => { const li = e.target.closest("li[data-i]"); if(li){ e.preventDefault(); ouvrirChoix(+li.dataset.i); } });
+  document.addEventListener("click", e => { if(!e.target.closest(".recherche")) fermerListe(); });
+})();
+
+/* ---------- Menu des sections : section en cours surlignée, en-tête compact sur téléphone ---------- */
+(function(){
+  const tete = document.querySelector("header.top");
+  const majHauteur = () => document.documentElement.style.setProperty("--tete", (tete ? tete.offsetHeight : 118) + "px");
+  majHauteur(); addEventListener("resize", majHauteur);
+  // Quand l'en-tête change de hauteur, le navigateur décale la page : on ignore ce décalage
+  // (sinon l'en-tête clignoterait en boucle entre compact et complet).
+  let dernierY = scrollY, calmeJusqua = 0;
+  const basculer = on => {
+    if(document.documentElement.classList.contains("defile") === on) return;
+    document.documentElement.classList.toggle("defile", on);
+    calmeJusqua = performance.now() + 250;
+    requestAnimationFrame(() => { dernierY = scrollY; majHauteur(); });
+  };
+  addEventListener("scroll", () => {
+    const y = scrollY;
+    if(performance.now() < calmeJusqua){ dernierY = y; return; }
+    if(y > dernierY + 12 && y > 260) basculer(true);
+    else if(y < dernierY - 24 || y < 120) basculer(false);
+    if(Math.abs(y - dernierY) > 12) dernierY = y;
+  }, {passive:true});
+  const liens = [...document.querySelectorAll('#nav-sec a[href^="#"]')];
+  const cibles = liens.map(a => document.getElementById(a.getAttribute("href").slice(1))).filter(Boolean);
+  if(!window.IntersectionObserver || !cibles.length) return;
+  const visibles = new Map();
+  const obs = new IntersectionObserver(entrees => {
+    entrees.forEach(e => visibles.set(e.target.id, e.isIntersecting ? e.intersectionRect.height : 0));
+    let meilleur = null, h = 0;
+    for(const [id, v] of visibles) if(v > h){ h = v; meilleur = id; }
+    liens.forEach(a => { const on = a.getAttribute("href") === "#" + meilleur; a.setAttribute("aria-current", on);
+      if(on && a.scrollIntoView && document.documentElement.classList.contains("defile") === false) a.parentNode.scrollLeft = Math.max(0, a.offsetLeft - 40); });
+  }, {rootMargin: "-120px 0px -45% 0px", threshold: [0, .1, .3, .6]});
+  cibles.forEach(c => obs.observe(c));
+})();
+
+/* ---------- Alertes sur les favoris : ce qui a changé depuis la dernière visite ---------- */
+(function(){
+  const CLE = "radar-bourse-favoris-etat-v1";
+  let avant = {};
+  try{ avant = JSON.parse(localStorage.getItem(CLE) || "{}") || {}; }catch(e){}
+  const maintenant = {}, changes = [];
+  for(const tk of FAV){
+    const t = T.find(x => x.ticker === tk); if(!t) continue;
+    maintenant[tk] = {s: t.signal, f: !!t.signal_fort, p: t.proba_hausse, d: DATA.genere_le};
+    const a = avant[tk]; if(!a || a.d === DATA.genere_le) continue;
+    const nom = `<button class="lnk" data-t="${esc(tk)}">${esc(t.nom)}</button>`;
+    if(t.signal_fort && !a.f) changes.push(`${nom} est passé en <b>signal fort</b> (${Math.round(t.proba_hausse * 100)} % de hausse)`);
+    else if(!t.signal_fort && a.f) changes.push(`${nom} n'est plus en signal fort`);
+    else if(a.s !== t.signal) changes.push(`${nom} : tendance passée de « ${esc(LIB[a.s] || a.s)} » à « ${esc(LIB[t.signal] || t.signal)} »`);
+    else if(a.p != null && t.proba_hausse != null && Math.abs(t.proba_hausse - a.p) >= 0.05)
+      changes.push(`${nom} : probabilité de hausse ${Math.round(a.p * 100)} % → <b>${Math.round(t.proba_hausse * 100)} %</b>`);
+  }
+  try{ localStorage.setItem(CLE, JSON.stringify(maintenant)); }catch(e){}
+  if(!changes.length) return;
+  const el = $("#alerte-fav");
+  el.innerHTML = `<b>🔔 Tes favoris depuis ta dernière visite</b><ul>${changes.slice(0, 8).map(c => `<li>${c}</li>`).join("")}</ul>
+    <span class="muted" style="font-size:12.5px">Rien n'est sûr : un changement de signal n'est pas une raison d'acheter ou de vendre.</span>
+    <button class="mini-btn ferme" id="alerte-fav-ok">OK, compris</button>`;
+  el.hidden = false;
+  $("#alerte-fav-ok").onclick = () => { el.hidden = true; };
+})();
+
+/* ---------- Comparer deux titres ---------- */
+let cmpGraph = null;
+function ouvrirComparaison(tkA, tkB){
+  const tries = [...T].sort((a, b) => a.nom.localeCompare(b.nom));
+  const options = sel => tries.map(t => `<option value="${esc(t.ticker)}"${t.ticker === sel ? " selected" : ""}>${esc(t.nom)} (${esc(t.ticker)})</option>`).join("");
+  const a = tkA || (T.find(t => t.ticker === "^FCHI") || T[0]).ticker;
+  const b = tkB || (T.find(t => t.ticker !== a && (t.ticker === "SPY" || t.ticker === "BTC-USD")) || T.find(t => t.ticker !== a)).ticker;
+  $("#cmp-a").innerHTML = options(a); $("#cmp-b").innerHTML = options(b);
+  ouvrirDialogue("#cmp");
+  dessinerComparaison();
+}
+function fermerComparaison(){ if(cmpGraph){ try{ cmpGraph.remove(); }catch(e){} cmpGraph = null; } fermerDialogue("#cmp"); }
+function dessinerComparaison(){
+  const A = T.find(t => t.ticker === $("#cmp-a").value), B = T.find(t => t.ticker === $("#cmp-b").value);
+  const corps = $("#cmp-corps"); if(!A || !B) return;
+  corps.innerHTML = `<div class="empty">Chargement…</div>`;
+  Promise.all([chargerDetail(A), chargerDetail(B)]).then(() => {
+    if($("#cmp").hidden) return;
+    const ligne = (lib, fa, va, vb, plusHaut = true) => {
+      const ok = plusHaut !== null && va != null && vb != null && va !== vb;
+      const ga = ok && (plusHaut ? va > vb : va < vb), gb = ok && !ga;
+      return `<tr><td>${lib}</td><td class="${ga ? "mieux" : ""}">${fa(va, A)}</td><td class="${gb ? "mieux" : ""}">${fa(vb, B)}</td></tr>`;
+    };
+    const p = v => v == null ? "–" : pct(v);
+    const prob = v => v == null ? "–" : `<span class="num">${Math.round(v * 100)} %</span>`;
+    const m1 = t => t.previsions && t.previsions["1m"] ? t.previsions["1m"].centre / t.prix - 1 : null;
+    const larg = t => t.previsions && t.previsions["1m"] ? (t.previsions["1m"].haut - t.previsions["1m"].bas) / t.prix : null;
+    corps.innerHTML = `
+      <div class="panel" style="padding:10px 12px"><div class="legend" style="margin-bottom:8px"><span><i class="cle-a"></i>${esc(A.nom)}</span><span><i class="cle-b"></i>${esc(B.nom)}</span><span>Base 100 au début de la période</span></div>
+        <div class="per" id="cmp-per" role="group" aria-label="Période">${[["3M",63],["6M",126],["1A",250],["Tout",400]].map(([l, j]) => `<button data-j="${j}" aria-pressed="${j === 126}">${l}</button>`).join("")}</div>
+        <div class="chart cmp-graph" id="cmp-graph" style="margin-top:8px"></div></div>
+      <div class="tablewrap"><table class="cmp-tab"><thead><tr><th scope="col"><span class="sr">Critère</span></th><th scope="col"><i class="cle-a"></i>${esc(A.nom)}</th><th scope="col"><i class="cle-b"></i>${esc(B.nom)}</th></tr></thead><tbody>
+        ${ligne("Dernier cours", (v, t) => `<span class="num">${px(v, t.devise)}</span>`, A.prix, B.prix, null)}
+        ${ligne("Probabilité de hausse à un mois", prob, A.proba_hausse, B.proba_hausse)}
+        ${ligne("Faire mieux que son indice", prob, A.proba_marche, B.proba_marche)}
+        ${ligne("Scénario central à un mois", p, m1(A), m1(B))}
+        ${ligne("Largeur de la fourchette (incertitude)", v => v == null ? "–" : `<span class="num">${Math.round(v * 100)} %</span>`, larg(A), larg(B), false)}
+        ${ligne("Sur 1 mois", p, A.perf["1 mois"], B.perf["1 mois"])}
+        ${ligne("Sur 3 mois", p, A.perf["3 mois"], B.perf["3 mois"])}
+        ${ligne("Sur 1 an", p, A.perf_an, B.perf_an)}
+        ${ligne("Volatilité annuelle (risque)", v => v == null ? "–" : pctPlain(v, 0), A.perf["volatilité annuelle"], B.perf["volatilité annuelle"], false)}
+        <tr><td>Signal</td><td><span class="pill ${SIG[A.signal]}">${esc(LIB[A.signal] || A.signal)}</span>${A.signal_fort ? '<span class="badge-fort">Fort</span>' : ""}</td><td><span class="pill ${SIG[B.signal]}">${esc(LIB[B.signal] || B.signal)}</span>${B.signal_fort ? '<span class="badge-fort">Fort</span>' : ""}</td></tr>
+        ${A.resultats_le || B.resultats_le ? `<tr><td>Prochains résultats</td><td>${A.resultats_le ? fmtDate(A.resultats_le) : "–"}</td><td>${B.resultats_le ? fmtDate(B.resultats_le) : "–"}</td></tr>` : ""}
+      </tbody></table></div>
+      <p class="muted" style="font-size:12.5px;margin:0">En gras : le chiffre le plus favorable (plus haut, ou moins risqué pour la volatilité et la largeur de fourchette). Rien n'est sûr : ce sont des estimations statistiques, pas des conseils.</p>
+      <p style="margin:0"><button class="btn ghost" data-t="${esc(A.ticker)}">Fiche de ${esc(A.nom)}</button> <button class="btn ghost" data-t="${esc(B.ticker)}">Fiche de ${esc(B.nom)}</button></p>`;
+    corps.querySelectorAll("[data-t]").forEach(x => x.addEventListener("click", () => fermerComparaison(), {capture:true}));
+    grapheComparaison(A, B, 126);
+    corps.querySelectorAll("#cmp-per button").forEach(x => x.onclick = () => {
+      corps.querySelectorAll("#cmp-per button").forEach(y => y.setAttribute("aria-pressed", y === x)); grapheComparaison(A, B, +x.dataset.j); });
+  }).catch(() => { corps.innerHTML = `<div class="empty">Impossible de charger les données. Vérifie ta connexion puis réessaie.</div>`; });
+}
+function grapheComparaison(A, B, jours){
+  const el = document.getElementById("cmp-graph"); if(!el) return;
+  if(cmpGraph){ try{ cmpGraph.remove(); }catch(e){} cmpGraph = null; }
+  if(!window.LightweightCharts){ el.innerHTML = `<p class="empty">Graphique indisponible.</p>`; return; }
+  // séries alignées sur les dates communes (les cryptos cotent aussi le week-end)
+  const sa = A.serie, sb = B.serie, mb = new Map(sb.t.map((d, i) => [d, sb.c[i]]));
+  const communes = sa.t.map((d, i) => [d, sa.c[i], mb.get(d)]).filter(([, x, y]) => x != null && y != null).slice(-jours);
+  if(communes.length < 5){ el.innerHTML = `<p class="empty">Pas assez de dates communes pour comparer ces deux titres.</p>`; return; }
+  const [, a0, b0] = communes[0];
+  const C = {acc:css("--accent"), warn:css("--warn"), surf:css("--surface"), line:css("--line"), muted:css("--muted")};
+  cmpGraph = LightweightCharts.createChart(el, {autoSize:true, localization:{locale:"fr-FR", priceFormatter:formatPrixAxe},
+    layout:{background:{type:"solid", color:C.surf}, textColor:C.muted, fontFamily:"IBM Plex Mono, monospace", fontSize:11},
+    grid:{vertLines:{color:rgba(C.line, .55)}, horzLines:{color:rgba(C.line, .55)}}, rightPriceScale:{borderColor:C.line}, timeScale:{borderColor:C.line}});
+  const la = cmpGraph.addLineSeries({color:C.acc, lineWidth:2.5, priceLineVisible:false, title:A.ticker.replace(/-USD$/, "")});
+  const lb = cmpGraph.addLineSeries({color:C.warn, lineWidth:2.5, priceLineVisible:false, title:B.ticker.replace(/-USD$/, "")});
+  la.setData(communes.map(([d, x]) => ({time:d, value:+(x / a0 * 100).toFixed(2)})));
+  lb.setData(communes.map(([d, , y]) => ({time:d, value:+(y / b0 * 100).toFixed(2)})));
+  la.createPriceLine({price:100, color:rgba(C.muted, .7), lineWidth:1, lineStyle:2, axisLabelVisible:false, title:""});
+  cmpGraph.timeScale().fitContent();
+}
+$("#cmp-a").onchange = dessinerComparaison; $("#cmp-b").onchange = dessinerComparaison;
+$("#cmp-close").onclick = fermerComparaison;
+$("#cmp").addEventListener("click", e => { if(e.target.id === "cmp") fermerComparaison(); });
+$("#cmp-ouvrir").onclick = () => ouvrirComparaison();
+
+/* ---------- Fenêtres (fiche, comparaison, textes légaux) : focus clavier gardé à l'intérieur ---------- */
+const PILE_DIALOGUES = [];
+function ouvrirDialogue(sel){
+  const d = $(sel); if(!d) return;
+  if(d.hidden) PILE_DIALOGUES.push({sel, retour: document.activeElement});
+  d.hidden = false; document.body.style.overflow = "hidden";
+  const btn = d.querySelector(".close"); if(btn) btn.focus();
+}
+function fermerDialogue(sel){
+  const d = $(sel); if(!d || d.hidden) return;
+  d.hidden = true;
+  const i = PILE_DIALOGUES.map(x => x.sel).lastIndexOf(sel);
+  const entree = i >= 0 ? PILE_DIALOGUES.splice(i, 1)[0] : null;
+  if(!document.querySelector(".sheet:not([hidden])")) document.body.style.overflow = "";
+  if(entree && entree.retour && document.contains(entree.retour) && entree.retour.focus) try{ entree.retour.focus({preventScroll:true}); }catch(e){}
+}
+document.addEventListener("keydown", e => {
+  if(e.key !== "Tab") return;
+  const ouverts = [...document.querySelectorAll(".sheet:not([hidden])")];
+  if(!ouverts.length) return;
+  const d = ouverts.sort((a, b) => (+getComputedStyle(b).zIndex || 0) - (+getComputedStyle(a).zIndex || 0))[0];
+  const f = [...d.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"]),summary')].filter(x => x.offsetParent !== null);
+  if(!f.length) return;
+  if(!d.contains(document.activeElement)){ e.preventDefault(); f[0].focus(); return; }
+  if(e.shiftKey && document.activeElement === f[0]){ e.preventDefault(); f.at(-1).focus(); }
+  else if(!e.shiftKey && document.activeElement === f.at(-1)){ e.preventDefault(); f[0].focus(); }
+});
+document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#cmp").hidden && $("#legal").hidden) fermerComparaison(); });
+
 /* ---------- Textes légaux et avertissement ---------- */
 const LEG = DATA.legal || {};
 $("#m-editeur").textContent = LEG.editeur || "—";
+if(DATA.stats) $("#conf-stats").hidden = false;
 document.querySelectorAll(".leg-editeur").forEach(e => e.textContent = LEG.editeur || "l'Éditeur");
 document.querySelectorAll(".leg-conflits").forEach(e => e.textContent = LEG.conflits || "Aucun conflit d'intérêts déclaré.");
 if(/^https:\/\/github\.com\//.test(LEG.contact || "")){
@@ -1731,14 +2730,12 @@ if(/^https:\/\/github\.com\//.test(LEG.contact || "")){
 const ONGLETS = ["risques", "conditions", "methodologie", "mentions", "confidentialite"];
 function ouvrirLegal(tab){
   document.querySelectorAll("[data-pane]").forEach(p => p.hidden = p.dataset.pane !== tab);
-  document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-pressed", b.dataset.tab === tab));
-  $("#legal").hidden = false; document.body.style.overflow = "hidden";
+  document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
+  ouvrirDialogue("#legal");
   try{ history.replaceState(null, "", "#" + tab); }catch(e){}
-  $("#l-close").focus();
 }
 function fermerLegal(){
-  $("#legal").hidden = true;
-  if($("#sheet").hidden) document.body.style.overflow = "";
+  fermerDialogue("#legal");
   try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
 }
 document.addEventListener("click", e => {

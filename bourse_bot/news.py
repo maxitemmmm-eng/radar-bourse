@@ -184,3 +184,19 @@ def _demo(ticker: str) -> list[dict]:
     return [{"titre": f"[Démo] {t}", "source": "Données fictives", "url": "https://example.com",
              "date": (base - timedelta(hours=10 * i + r)).isoformat(timespec="minutes"),
              "tonalite": s} for i, (t, s) in enumerate(exemples[r:] + exemples[:r])]
+
+
+def garde_fou(analyses) -> None:
+    """L'actu n'entre pas dans la probabilité (pas d'historique pour mesurer son effet), mais elle
+    sert de garde-fou : quand les articles récents contredisent nettement l'avis de l'IA, on le
+    signale, et un signal fort est suspendu par prudence. Cela ne peut que rendre le radar plus prudent."""
+    for a in analyses:
+        ton, n = a.tonalite, len(a.actus or [])
+        if ton != ton or n < 3 or a.proba_hausse != a.proba_hausse:
+            continue
+        a.actu_contredit = bool((a.proba_hausse >= 0.55 and ton <= -0.25) or (a.proba_hausse <= 0.45 and ton >= 0.25))
+        if a.actu_contredit:
+            a.alertes.insert(0, "📰 Les actualités récentes vont dans le sens contraire de l'IA : prudence")
+        if a.signal_fort and ton <= -0.25:
+            a.signal_fort = False
+            a.alertes.insert(0, "Signal fort suspendu : actualités récentes nettement négatives")

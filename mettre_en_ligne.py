@@ -36,12 +36,15 @@ WINDOWS = os.name == "nt"
 MEMOIRE = os.path.join(ICI, ".radar_deploy.json")
 JOURNAL = os.path.join(ICI, "erreur_mise_en_ligne.txt")
 GIT, GH = "git", "gh"
-ETAPES = 9
+ETAPES = 10
 
 
 # ----------------------------------------------------------------------------
 # Affichage et utilitaires
 # ----------------------------------------------------------------------------
+MEMOIRE_DOMAINE = [""]
+
+
 def etape(n, texte):
     print(f"\n[{n}/{ETAPES}] {texte}")
 
@@ -391,7 +394,91 @@ def telegram(m, complet):
 
 
 # ----------------------------------------------------------------------------
-# 9. Publication et vérification
+# 9. Statistiques de visites privées (optionnel)
+# ----------------------------------------------------------------------------
+def statistiques(m, complet):
+    etape(9, "Statistiques de visites, visibles par toi seule (optionnel)")
+    if m.get("stats_demande") and "--stats" not in sys.argv:
+        if m.get("stats_code"):
+            ok(f"Déjà configurées : https://{m['stats_code']}.goatcounter.com")
+        else:
+            ok("Déjà réglé lors d'un passage précédent.")
+        return
+    info("GoatCounter compte les visiteurs sans cookie et sans les pister. Ton tableau de bord")
+    info("est privé : toi seule le vois. Ton nom n'apparaît nulle part sur le site.")
+    if not oui("Tu veux l'activer maintenant ?", defaut=True):
+        info("Passé. Pour l'activer plus tard : double-clique sur statistiques.bat.")
+        m["stats_demande"] = True
+        sauver_memoire(m)
+        return
+    info("1. Va sur https://www.goatcounter.com/signup (gratuit, sans carte bancaire).")
+    info("2. Choisis un « Code » (par exemple radarbourse123) : ton tableau de bord sera")
+    info("   https://CODE.goatcounter.com. Mets ton e-mail et un mot de passe, valide.")
+    if not SIMULATION and WINDOWS:
+        try:
+            os.startfile("https://www.goatcounter.com/signup")
+        except Exception:
+            pass
+    code = question("Le code que tu as choisi").strip().lower()
+    code = code.replace("https://", "").replace(".goatcounter.com", "").strip("/")
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,48}", code):
+        info("⚠️ Ce code ne semble pas valide. Passé : double-clique sur statistiques.bat pour réessayer.")
+        return
+    run([GH, "variable", "set", "GOATCOUNTER_CODE", "-R", complet, "--body", code], montrer=False)
+    if not SIMULATION:
+        with open(os.path.join(ICI, "Mes statistiques de visites.url"), "w", encoding="utf-8") as f:
+            f.write(f"[InternetShortcut]\nURL=https://{code}.goatcounter.com\n")
+    ok(f"Statistiques activées. Tableau de bord privé : https://{code}.goatcounter.com")
+    ok("Raccourci créé dans ce dossier : « Mes statistiques de visites ».")
+    m["stats_demande"], m["stats_code"] = True, code
+    sauver_memoire(m)
+
+
+# ----------------------------------------------------------------------------
+# Nom de domaine personnalisé (seulement avec nom_de_domaine.bat)
+# ----------------------------------------------------------------------------
+def domaine(m, complet):
+    if "--domaine" not in sys.argv:
+        if m.get("domaine"):
+            ok(f"Nom de domaine : {m['domaine']}")
+        return
+    print("\n🌍 Nom de domaine personnalisé (facultatif, environ 7 à 12 € par an)")
+    info("1. Achète un nom (ex : radarbourse.fr) chez OVH, Gandi, Namecheap ou Cloudflare.")
+    info("   Conseil anti-dox : active la « protection WHOIS » (souvent gratuite) pour que ton")
+    info("   nom n'apparaisse pas dans l'annuaire public des domaines.")
+    info("2. Dans la zone DNS de ton domaine, ajoute ces 4 enregistrements de type A :")
+    for ip in ("185.199.108.153", "185.199.109.153", "185.199.110.153", "185.199.111.153"):
+        info(f"      A   @   {ip}")
+    info(f"   et un enregistrement CNAME :  www   {complet.split('/')[0].lower()}.github.io")
+    nom = question("3. Ton nom de domaine (vide pour annuler, « aucun » pour le retirer)").strip().lower()
+    nom = nom.replace("https://", "").replace("http://", "").strip("/")
+    if not nom:
+        info("Annulé.")
+        return
+    if nom == "aucun":
+        silencieux([GH, "api", "-X", "PUT", f"repos/{complet}/pages", "-F", "cname="])
+        silencieux([GH, "variable", "delete", "RADAR_DOMAINE", "-R", complet])
+        m.pop("domaine", None)
+        sauver_memoire(m)
+        ok("Nom de domaine retiré : le site reprend son adresse github.io.")
+        return
+    if not re.fullmatch(r"[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+", nom):
+        info("⚠️ Ce nom ne semble pas valide (exemple attendu : radarbourse.fr). Relance nom_de_domaine.bat.")
+        return
+    run([GH, "variable", "set", "RADAR_DOMAINE", "-R", complet, "--body", nom], montrer=False)
+    code, sortie = silencieux([GH, "api", "-X", "PUT", f"repos/{complet}/pages", "-f", f"cname={nom}"])
+    if code != 0:
+        info("⚠️ GitHub n'a pas accepté le domaine tout de suite (souvent parce que le DNS n'est pas encore")
+        info(f"   propagé). Tu peux aussi le saisir dans https://github.com/{complet}/settings/pages")
+    else:
+        ok(f"Domaine {nom} enregistré. Le DNS peut mettre jusqu'à 24 h à fonctionner.")
+        info(f"Ensuite, coche « Enforce HTTPS » dans https://github.com/{complet}/settings/pages")
+    m["domaine"] = nom
+    sauver_memoire(m)
+
+
+# ----------------------------------------------------------------------------
+# 10. Publication et vérification
 # ----------------------------------------------------------------------------
 def dernier_run(complet, depuis):
     code, sortie = silencieux([GH, "run", "list", "-R", complet, "-w", "radar.yml", "-L", "5",
@@ -407,7 +494,7 @@ def dernier_run(complet, depuis):
 
 
 def publier(complet, login):
-    etape(9, "Publication (3 à 6 minutes)")
+    etape(10, "Publication (3 à 6 minutes)")
     depuis = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if SIMULATION:
         run([GH, "workflow", "run", "radar.yml", "-R", complet])
@@ -444,6 +531,8 @@ def publier(complet, login):
     ok("Mise à jour terminée.")
 
     url = f"https://{login.lower()}.github.io/{complet.split('/')[1]}/"
+    if MEMOIRE_DOMAINE[0]:
+        url = f"https://{MEMOIRE_DOMAINE[0]}/"
     info("Vérification que le site répond…")
     for _ in range(24):  # jusqu'à 2 minutes : GitHub met parfois un peu de temps à servir la page
         try:
@@ -474,6 +563,9 @@ def main():
     envoyer(complet)
     finnhub(m, complet)
     telegram(m, complet)
+    statistiques(m, complet)
+    domaine(m, complet)
+    MEMOIRE_DOMAINE[0] = m.get("domaine", "")
     url = publier(complet, login)
 
     if not SIMULATION:

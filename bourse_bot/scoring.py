@@ -36,6 +36,16 @@ class Analyse:
     actus: list = field(default_factory=list) # derniers titres d'actualité
     tonalite: float = float("nan")            # tonalité moyenne des actus (-1 à +1)
     fondamentaux: dict | None = None          # PER, marges, dette… (actions seulement)
+    quantiles: tuple = ()                     # (bas, central, haut) du log-rendement à l'horizon, par l'IA
+    resultats_le: str = ""                     # date de la prochaine publication de résultats
+    proba_marche: float = float("nan")         # probabilité de faire mieux que son indice de référence
+    indice_ref: str = ""                       # indice de comparaison (CAC 40, S&P 500, Bitcoin…)
+    fourchette_elargie: bool = False           # fourchette élargie avant une publication de résultats
+    extremes: tuple = ()                       # (bas 5 %, haut 95 %) : scénarios extrêmes (mode risque)
+    proba_ia1: float = float("nan")            # avis de l'IA n°1
+    proba_ia2: float = float("nan")            # avis de l'IA n°2
+    accord_ia: bool | None = None              # les deux IA vont-elles dans le même sens ?
+    actu_contredit: bool = False               # les actus récentes contredisent l'avis de l'IA
 
     def to_dict(self) -> dict:
         return propre(self.__dict__.copy())

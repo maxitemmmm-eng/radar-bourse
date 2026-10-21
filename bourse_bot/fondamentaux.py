@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import time
 import zlib
+from datetime import datetime, timedelta, timezone
 
 from . import data
 
@@ -27,12 +28,14 @@ CHAMPS = {
 
 def _demo(ticker: str) -> dict:
     r = zlib.crc32(ticker.encode())
+    jours = r % 60
     f = lambda a, b, k: a + (r >> k) % 1000 / 1000 * (b - a)
     return {"secteur": "Démo (données fictives)", "devise": data.devise(ticker), "valeurs": {
         "marketCap": f(5e9, 3e12, 1), "trailingPE": f(8, 45, 3), "forwardPE": f(8, 35, 5),
         "pegRatio": f(0.5, 3, 7), "revenueGrowth": f(-0.05, 0.3, 9), "profitMargins": f(0.02, 0.35, 11),
         "returnOnEquity": f(0.03, 0.45, 13), "debtToEquity": f(10, 250, 15), "dividendYield": f(0, 4, 17),
-        "freeCashflow": f(1e8, 9e10, 19)}}
+        "freeCashflow": f(1e8, 9e10, 19)},
+        "resultats_le": (datetime.now() + timedelta(days=jours)).strftime("%Y-%m-%d")}
 
 
 def recuperer(ticker: str, marche: str) -> dict | None:
@@ -55,15 +58,49 @@ def recuperer(ticker: str, marche: str) -> dict | None:
     # Yahoo a changé le format du rendement du dividende (parfois 0,03, parfois 3) : on unifie en %
     if "dividendYield" in valeurs and valeurs["dividendYield"] < 0.5:
         valeurs["dividendYield"] *= 100
-    if not valeurs:
+    resultats = None
+    for cle in ("earningsTimestamp", "earningsTimestampStart"):
+        ts = info.get(cle)
+        if isinstance(ts, (int, float)) and ts > 0:
+            resultats = datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d")
+            break
+    if not valeurs and not resultats:
         return None
     return {"secteur": info.get("sector") or "", "devise": "€" if info.get("currency") == "EUR" else "$",
-            "valeurs": valeurs}
+            "valeurs": valeurs, "resultats_le": resultats}
+
+
+ELARGISSEMENT_RESULTATS = 1.3   # règle de prudence fixe (non mesurée) : +30 % d'amplitude
+
+
+def elargir_fourchette(a) -> None:
+    """Une publication de résultats avant l'échéance peut faire bouger le cours bien plus que
+    d'habitude : on élargit les scénarios bas et haut autour du scénario central."""
+    if len(a.quantiles or ()) != 3 or a.fourchette_elargie:
+        return
+    b, m, h = a.quantiles
+    k = ELARGISSEMENT_RESULTATS
+    a.quantiles = (m - (m - b) * k, m, m + (h - m) * k)
+    if len(a.extremes or ()) == 2:
+        eb, eh = a.extremes
+        a.extremes = (m - (m - eb) * k, m + (eh - m) * k)
+    a.fourchette_elargie = True
 
 
 def enrichir(analyses) -> None:
+    aujourd_hui = datetime.now().date()
     for a in analyses:
         a.fondamentaux = recuperer(a.ticker, a.marche)
+        date = (a.fondamentaux or {}).get("resultats_le")
+        if date:
+            ecart = (datetime.strptime(date, "%Y-%m-%d").date() - aujourd_hui).days
+            if 0 <= ecart <= 30:
+                a.resultats_le = date
+                quand = "aujourd'hui" if ecart == 0 else "demain" if ecart == 1 else f"dans {ecart} jours"
+                a.alertes.insert(0, f"📅 Résultats trimestriels {quand} ({datetime.strptime(date, '%Y-%m-%d'):%d/%m}) : "
+                                    "le cours peut bouger fortement, même au-delà de la fourchette prévue")
+                if ecart <= 28:   # publication avant l'échéance de la prévision (~20 séances)
+                    elargir_fourchette(a)
         if not data.DEMO and a.fondamentaux is not None:
             time.sleep(0.2)
 

@@ -243,6 +243,17 @@ def calculer(df: pd.DataFrame, benchmark: pd.DataFrame | None = None,
     d["taux_chg"] = taux.diff(20) if taux is not None else np.nan
     d["dollar_chg"] = dollar.pct_change(20) if dollar is not None else np.nan
     d["fng"] = fng if fng is not None else np.nan
+    # Économie : courbe des taux (taux long - taux court ; négative = signal de récession souvent cité),
+    # pétrole, cuivre, prime de risque du crédit, tension financière, chômage
+    court, petrole, cuivre = aligne("taux_court"), aligne("petrole"), aligne("cuivre")
+    spread, condfin, chomage = aligne("spread_credit"), aligne("conditions_fin"), aligne("chomage")
+    d["courbe_taux"] = (taux - court) if (taux is not None and court is not None) else np.nan
+    d["petrole_chg"] = petrole.pct_change(20) if petrole is not None else np.nan
+    d["cuivre_chg"] = cuivre.pct_change(20) if cuivre is not None else np.nan
+    d["spread_credit"] = spread if spread is not None else np.nan
+    d["spread_credit_chg"] = spread.diff(20) if spread is not None else np.nan
+    d["conditions_fin"] = condfin if condfin is not None else np.nan
+    d["chomage_tendance"] = (chomage.rolling(20).mean() / chomage.rolling(120).mean() - 1) if chomage is not None else np.nan
 
     return d.replace([np.inf, -np.inf], np.nan)
 
@@ -257,4 +268,7 @@ FEATURES = [
     "dist_ema50_200", "stoch_k", "mfi", "cmf", "dist_vwap20", "aroon", "donchian_pos",
     "supertrend", "ichimoku", "roc_10", "div_rsi",
     "vix", "vix_chg", "taux_chg", "dollar_chg", "fng",
+    # ajoutés en version 15 : contexte économique
+    "courbe_taux", "petrole_chg", "cuivre_chg", "spread_credit", "spread_credit_chg", "conditions_fin",
+    "chomage_tendance",
 ]

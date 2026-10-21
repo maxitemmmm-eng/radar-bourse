@@ -6,3 +6,5 @@ rapports/
 .radar_deploy.json
 erreur_mise_en_ligne.txt
 *.url
+.cache_entrainement/
+rapports/

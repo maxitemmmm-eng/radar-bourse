@@ -1,14 +1,12 @@
 # Met à jour Radar Bourse automatiquement et le publie sur GitHub Pages.
-# - toutes les heures pendant les heures de marché (lundi → vendredi)
-# - toutes les 3 heures le week-end (les cryptos ne ferment jamais)
+# - toutes les heures, jour et nuit, 7 jours sur 7 (les cryptos ne ferment jamais)
 # - un calcul complet chaque soir, qui sauvegarde aussi l'historique des prédictions
 # Si Yahoo bloque, le site n'est pas republié : l'ancienne version reste en ligne.
 name: Mise à jour du Radar
 
 on:
   schedule:
-    - cron: "5 7-21 * * 1-5"    # chaque heure de 7h05 à 21h05 UTC en semaine
-    - cron: "5 */3 * * 0,6"     # toutes les 3 h le week-end
+    - cron: "5 * * * *"         # chaque heure, 7 jours sur 7
     - cron: "30 22 * * *"       # chaque soir à 22h30 UTC (après la clôture de Wall Street)
   workflow_dispatch:            # bouton « Run workflow » pour lancer à la main
   push:
@@ -25,7 +23,7 @@ concurrency:
 jobs:
   construire:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 90
     permissions:
       contents: write   # uniquement pour enregistrer l'historique des prédictions
     env:
@@ -35,9 +33,15 @@ jobs:
       TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
       TELEGRAM_CHAINE: ${{ vars.TELEGRAM_CHAINE }}
       RADAR_ALERTES: ${{ github.event.schedule == '30 22 * * *' && '1' || '0' }}
+      # Le soir (et au lancement manuel), l'IA compare ses 3 façons de prévoir ; la journée, elle réutilise le choix
+      RADAR_SELECTION: ${{ (github.event.schedule == '30 22 * * *' || github.event_name == 'workflow_dispatch' || github.event_name == 'push') && '1' || '0' }}
       RADAR_CACHE_MAX_H: "0.5"
       # Facultatif : code de vérification Google Search Console (Settings → Secrets and variables → Variables)
       GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
+      # Statistiques de visites privées (facultatif)
+      GOATCOUNTER_CODE: ${{ vars.GOATCOUNTER_CODE }}
+      # Nom de domaine personnalisé (facultatif, réglé par nom_de_domaine.bat)
+      RADAR_DOMAINE: ${{ vars.RADAR_DOMAINE }}
       PYTHONUTF8: "1"
     steps:
       - uses: actions/checkout@v4
@@ -67,12 +71,12 @@ jobs:
           done
           exit 1
 
-      - name: Sauvegarder l'historique des prédictions (le soir seulement)
-        if: github.event.schedule == '30 22 * * *' || github.event_name == 'workflow_dispatch'
+      - name: Sauvegarder l'historique, le choix du modèle et le point du jour (le soir, ou après une nouvelle version)
+        if: github.event.schedule == '30 22 * * *' || github.event_name != 'schedule'
         run: |
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
-          git add historique/predictions.csv
+          git add historique/
           git commit -m "Prédictions du $(date +%F)" || exit 0
           for essai in 1 2 3; do
             git pull --rebase -X theirs origin main && git push && exit 0
@@ -97,3 +101,17 @@ jobs:
     steps:
       - id: deploiement
         uses: actions/deploy-pages@v4
+
+      # Le soir, signale les pages mises à jour aux moteurs de recherche (Bing, Yandex…) via IndexNow
+      - name: Prévenir les moteurs de recherche
+        if: github.event.schedule == '30 22 * * *' || github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        env:
+          DEPOT: ${{ github.repository }}
+          URL_SITE: ${{ steps.deploiement.outputs.page_url }}
+        run: |
+          CLE=$(python3 -c "import hashlib,os; print(hashlib.sha256(('radar-'+os.environ['DEPOT']).encode()).hexdigest()[:32])")
+          HOTE=$(python3 -c "import os,urllib.parse; print(urllib.parse.urlparse(os.environ['URL_SITE']).netloc)")
+          AUJ=$(date -u +%F)
+          BODY=$(python3 -c "import json,os; u=os.environ['URL_SITE']; print(json.dumps({'host':'$HOTE','key':'$CLE','keyLocation':u+'$CLE.txt','urlList':[u, u+'point.html', u+'point/$AUJ.html', u+'titres.html', u+'resultats.html', u+'en/index.html']}))")
+          curl -s -o /dev/null -w "IndexNow : %{http_code}\n" -X POST "https://api.indexnow.org/indexnow" -H "Content-Type: application/json; charset=utf-8" -d "$BODY"

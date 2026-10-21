@@ -24,21 +24,78 @@ CRYPTOS = {
     "BTC-USD": "Bitcoin", "ETH-USD": "Ethereum", "SOL-USD": "Solana",
     "BNB-USD": "BNB", "XRP-USD": "XRP", "ADA-USD": "Cardano",
     "DOGE-USD": "Dogecoin", "AVAX-USD": "Avalanche", "LINK-USD": "Chainlink",
-    "DOT-USD": "Polkadot",
+    "DOT-USD": "Polkadot", "LTC-USD": "Litecoin", "BCH-USD": "Bitcoin Cash",
+    "TRX-USD": "Tron", "XLM-USD": "Stellar", "NEAR-USD": "Near", "ATOM-USD": "Cosmos",
+}
+
+# --- Grandes actions européennes (hors France), cotées en euros
+ACTIONS_EU = {
+    "SAP.DE": "SAP", "SIE.DE": "Siemens", "ALV.DE": "Allianz", "DTE.DE": "Deutsche Telekom",
+    "ADS.DE": "Adidas", "BMW.DE": "BMW", "MBG.DE": "Mercedes-Benz", "ASML.AS": "ASML",
+    "INGA.AS": "ING", "ADYEN.AS": "Adyen", "PRX.AS": "Prosus", "IBE.MC": "Iberdrola",
+    "ITX.MC": "Inditex", "SAN.MC": "Banco Santander", "ENEL.MI": "Enel", "RACE.MI": "Ferrari",
 }
 
 # --- ETF de référence (indices) : servent aussi de "marché" pour comparer
 ETFS = {
     "SPY": "S&P 500 (ETF)", "QQQ": "Nasdaq 100 (ETF)", "CW8.PA": "MSCI World (ETF Amundi)",
-    "^FCHI": "CAC 40 (indice)",
+    "^FCHI": "CAC 40 (indice)", "^STOXX50E": "Euro Stoxx 50 (indice)",
+    "GLD": "Or (ETF SPDR Gold)", "SMH": "Semi-conducteurs (ETF VanEck)",
+    "ICLN": "Énergie propre (ETF iShares)", "BOTZ": "Robotique et IA (ETF Global X)",
+    "XLE": "Pétrole et gaz (ETF Energy Select)",
 }
 
-UNIVERS = {"fr": ACTIONS_FR, "us": ACTIONS_US, "crypto": CRYPTOS, "etf": ETFS}
+UNIVERS = {"fr": ACTIONS_FR, "eu": ACTIONS_EU, "us": ACTIONS_US, "crypto": CRYPTOS, "etf": ETFS}
+
+# Titres utilisés UNIQUEMENT pour l'apprentissage de l'IA (pas affichés sur le site) :
+# plus l'IA voit de situations différentes, moins elle se fait piéger par le hasard.
+ENTRAINEMENT_SUPPLEMENTAIRE = {
+    "us": ["ADBE", "ORCL", "CSCO", "PEP", "KO", "PG", "JNJ", "MRK", "PFE", "ABBV", "WMT", "HD", "MCD",
+           "NKE", "BA", "CAT", "GE", "IBM", "QCOM", "TXN", "BAC", "WFC", "GS", "MS", "T", "VZ", "CVX",
+           "COP", "SBUX", "UPS", "LMT", "HON", "AMAT", "MU", "PYPL", "UBER"],
+    "fr": ["ENGI.PA", "VIE.PA", "SGO.PA", "LR.PA", "ML.PA", "PUB.PA", "ACA.PA", "BN.PA"],
+    "eu": ["BAS.DE", "BAYN.DE", "MUV2.DE", "PHIA.AS", "AD.AS", "BBVA.MC", "UCG.MI", "ISP.MI"],
+    "crypto": ["ETC-USD", "ALGO-USD", "FIL-USD", "HBAR-USD"],
+}
+
+MAX_APPRENTISSAGE_EN_LIGNE = 80   # titres d'apprentissage en plus, au maximum, lors des mises à jour en ligne
+
+
+def entrainement_supplementaire() -> dict:
+    """Titres d'apprentissage : la liste de base, plus ceux que l'entraînement approfondi
+    (entrainement_ia.py) a prouvé utiles (historique/apprentissage.json)."""
+    import json as _json
+    out = {k: list(v) for k, v in ENTRAINEMENT_SUPPLEMENTAIRE.items()}
+    try:
+        with open(_os.path.join(DOSSIER_HISTORIQUE, "apprentissage.json"), encoding="utf-8") as f:
+            extra = _json.load(f).get("tickers", {})
+        deja = {t for v in out.values() for t in v}
+        n = 0
+        for marche, liste in extra.items():
+            for t in liste:
+                if isinstance(t, str) and len(t) <= 20 and t not in deja and n < MAX_APPRENTISSAGE_EN_LIGNE:
+                    out.setdefault(marche, []).append(t); deja.add(t); n += 1
+    except (OSError, ValueError, AttributeError):
+        pass
+    return out
+
 
 # Indice de référence par marché (pour la force relative)
-BENCHMARK = {"fr": "^FCHI", "us": "SPY", "crypto": "BTC-USD", "etf": "SPY"}
+BENCHMARK = {"fr": "^FCHI", "eu": "^STOXX50E", "us": "SPY", "crypto": "BTC-USD", "etf": "SPY"}
+NOM_BENCHMARK = {"^FCHI": "le CAC 40", "^STOXX50E": "l'Euro Stoxx 50", "SPY": "le S&P 500", "BTC-USD": "le Bitcoin"}
 
-HISTORIQUE = "5y"           # profondeur d'historique téléchargée
+
+def benchmark_de(ticker: str, marche: str = "") -> str:
+    """Indice de comparaison d'un titre (pour « fera-t-il mieux que son marché ? »)."""
+    if ticker.endswith("-USD"):
+        return "BTC-USD"
+    if ticker.endswith(".PA") or ticker == "^FCHI":
+        return "^FCHI"
+    if ticker.endswith((".DE", ".AS", ".MC", ".MI")) or ticker == "^STOXX50E":
+        return "^STOXX50E"
+    return BENCHMARK.get(marche, "SPY")
+
+HISTORIQUE = "10y"          # profondeur d'historique téléchargée (plus de données = IA plus robuste)
 HORIZON_PREDICTION = 20     # le modèle prédit la direction sur N séances (~1 mois)
 FRAIS_PAR_ORDRE = 0.001     # 0,1 % de frais par achat/vente dans les backtests
 DOSSIER_CACHE = ".cache_cours"
@@ -57,6 +114,11 @@ CACHE_MAX_H = float(_os.environ.get("RADAR_CACHE_MAX_H", "12"))
 FINNHUB_CLE = _os.environ.get("FINNHUB_KEY", "")
 
 # Mentions légales : à compléter avant la mise en ligne (un pseudo suffit pour un particulier).
+# Nom de domaine personnalisé (facultatif), ex : radarbourse.fr
+DOMAINE = _os.environ.get("RADAR_DOMAINE", "").strip().lower().removeprefix("https://").removeprefix("http://").strip("/")
+if DOMAINE and not __import__("re").fullmatch(r"[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+", DOMAINE):
+    DOMAINE = ""
+
 EDITEUR = _os.environ.get("RADAR_EDITEUR", "maxitemmmm")
 CONTACT = _os.environ.get("RADAR_CONTACT", "https://github.com/maxitemmmm-eng/radar-bourse/issues")
 
@@ -69,3 +131,9 @@ CONFLITS = _os.environ.get("RADAR_CONFLITS",
 
 # Chaîne Telegram publique des alertes (ex : @radar_bourse_alertes), affichée sur le site.
 TELEGRAM_CHAINE = _os.environ.get("TELEGRAM_CHAINE", "")
+
+# Statistiques de visites privées (GoatCounter, sans cookies). Code du compte, ex : « radarbourse »
+# pour un tableau de bord à l'adresse https://radarbourse.goatcounter.com (visible par toi seule).
+GOATCOUNTER = _os.environ.get("GOATCOUNTER_CODE", "").strip().lower()
+if GOATCOUNTER and not __import__("re").fullmatch(r"[a-z0-9][a-z0-9-]{1,48}", GOATCOUNTER):
+    GOATCOUNTER = ""

@@ -156,9 +156,12 @@ def telecharger_plusieurs(tickers: list[str], max_age_h: float | None = None) ->
     if max_age_h is None:
         max_age_h = config.CACHE_MAX_H
     if DEMO:
+        SOURCES_UTILISEES.update({t: "Démo" for t in tickers})
         return {t: cours_synthetiques(t) for t in tickers}
 
     resultats = {t: df for t in tickers if not (df := _lire_cache(t, max_age_h)).empty}
+    for t in resultats:
+        SOURCES_UTILISEES.setdefault(t, "Yahoo (cache récent)")
     a_telecharger = [t for t in tickers if t not in resultats]
     if a_telecharger:
         frais = _yahoo(a_telecharger)
@@ -176,6 +179,7 @@ def telecharger_plusieurs(tickers: list[str], max_age_h: float | None = None) ->
         for t in a_telecharger:  # secours : vieux cache si le réseau a échoué
             if t not in resultats and not (vieux := _lire_cache(t, None)).empty:
                 resultats[t] = vieux
+                SOURCES_UTILISEES[t] = "ancien cache"
     return resultats
 
 
@@ -228,7 +232,7 @@ def tendances_crypto() -> dict[str, str]:
 
 
 def devise(ticker: str) -> str:
-    if ticker.endswith((".PA", ".AS", ".DE", ".MI", ".MC")) or ticker == "^FCHI":
+    if ticker.endswith((".PA", ".AS", ".DE", ".MI", ".MC")) or ticker in ("^FCHI", "^STOXX50E"):
         return "€"
     return "$"
 
@@ -263,7 +267,32 @@ def cours_synthetiques(ticker: str, n: int = 1260) -> pd.DataFrame:
 # ----------------------------------------------------------------------------
 # Contexte économique (peur des marchés, taux, dollar, or, sentiment crypto)
 # ----------------------------------------------------------------------------
-MACRO_TICKERS = {"vix": "^VIX", "taux": "^TNX", "dollar": "DX-Y.NYB", "or": "GC=F"}
+MACRO_TICKERS = {"vix": "^VIX", "taux": "^TNX", "dollar": "DX-Y.NYB", "or": "GC=F",
+                 # économie : pétrole, cuivre (thermomètre de l'industrie), taux court américain (3 mois)
+                 "petrole": "CL=F", "cuivre": "HG=F", "taux_court": "^IRX"}
+
+# Indicateurs économiques de la Réserve fédérale de Saint-Louis (FRED), gratuits et sans clé.
+# Le décalage (jours) reproduit le délai de publication : l'IA ne voit jamais un chiffre avant
+# qu'il ait été réellement publié (sinon elle « tricherait » en regardant le futur).
+FRED_SERIES = {
+    "spread_credit": ("BAMLH0A0HYM2", 1),   # prime de risque des entreprises fragiles (quotidien)
+    "conditions_fin": ("NFCI", 7),          # tension du système financier (hebdomadaire)
+    "chomage": ("ICSA", 7),                 # inscriptions au chômage aux États-Unis (hebdomadaire)
+}
+
+
+def _fred(code: str, decalage_jours: int) -> pd.Series:
+    try:
+        req = urllib.request.Request(f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={code}",
+                                     headers={"User-Agent": "radar-bourse"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            df = pd.read_csv(r)
+        df.columns = ["date", "valeur"]
+        s = pd.Series(pd.to_numeric(df["valeur"], errors="coerce").to_numpy(), index=pd.to_datetime(df["date"])).dropna()
+        s.index = s.index + pd.Timedelta(days=decalage_jours)
+        return s.sort_index()
+    except Exception:
+        return pd.Series(dtype=float)
 
 
 def _fear_greed() -> pd.Series:
@@ -289,10 +318,16 @@ def macro() -> dict[str, pd.Series]:
         idx = pd.date_range(end=pd.Timestamp.today().normalize(), periods=1260, freq="D")
         rng = np.random.default_rng(7)
         out["fng"] = pd.Series(np.clip(50 + np.cumsum(rng.normal(0, 4, len(idx))) % 80, 5, 95), index=idx)
+        for nom in FRED_SERIES:
+            out[nom] = cours_synthetiques("FRED-" + nom)["Close"] / 50
         return out
     bruts = telecharger_plusieurs(list(MACRO_TICKERS.values()))
     out = {nom: bruts[t]["Close"] for nom, t in MACRO_TICKERS.items() if t in bruts}
     fng = _fear_greed()
     if len(fng):
         out["fng"] = fng
+    for nom, (code, decalage) in FRED_SERIES.items():
+        serie = _fred(code, decalage)
+        if len(serie):
+            out[nom] = serie
     return out

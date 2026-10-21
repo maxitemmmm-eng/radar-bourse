@@ -83,6 +83,14 @@ Après 3 à 6 minutes, la coche devient verte. L'adresse du site s'affiche dans
   et l'exécution suivante (une heure plus tard) réessaie.
 - GitHub peut retarder les exécutions programmées de quelques minutes, c'est normal.
 
+## Nom de domaine personnalisé (facultatif)
+
+Une adresse comme `radarbourse.fr` (7 à 12 € par an) inspire plus confiance qu'une adresse en
+`github.io`. Achète le nom (OVH, Gandi, Namecheap, Cloudflare), **active la protection WHOIS** pour
+que ton nom n'apparaisse pas publiquement, puis double-clique sur **`nom_de_domaine.bat`** : il
+t'indique les réglages DNS à faire et branche le domaine sur ton site. Pour revenir à l'adresse
+github.io, relance-le et réponds « aucun ».
+
 ## À savoir
 
 - Garde le site **gratuit et sans publicité** : les données de Yahoo Finance sont réservées à un usage

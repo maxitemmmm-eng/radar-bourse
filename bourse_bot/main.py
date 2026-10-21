@@ -24,12 +24,12 @@ for flux in (sys.stdout, sys.stderr):
 from rich.console import Console
 from rich.table import Table
 
-from . import alertes, backtest, config, data, fondamentaux, historique, indicators, model, news, report, scoring, site
+from . import alertes, backtest, config, data, fondamentaux, historique, qualite, seo, indicators, model, news, report, scoring, site
 
 console = Console()
 COULEUR = {"ACHAT FORT": "bold green", "ACHAT": "green", "NEUTRE": "white",
            "VENTE": "red", "VENTE FORTE": "bold red"}
-TOUS_MARCHES = ["fr", "us", "crypto", "etf", "tendances"]
+TOUS_MARCHES = ["fr", "eu", "us", "crypto", "etf", "tendances"]
 
 
 def _marche_de(ticker: str) -> str:
@@ -38,7 +38,9 @@ def _marche_de(ticker: str) -> str:
             return marche
     if ticker.endswith("-USD"):
         return "crypto"
-    return "fr" if ticker.endswith(".PA") else "us"
+    if ticker.endswith(".PA"):
+        return "fr"
+    return "eu" if ticker.endswith((".DE", ".AS", ".MC", ".MI")) else "us"
 
 
 def _univers(marches: list[str]) -> tuple[dict[str, str], dict[str, str]]:
@@ -60,8 +62,10 @@ def _univers(marches: list[str]) -> tuple[dict[str, str], dict[str, str]]:
 def _preparer(noms: dict[str, str], marche_de: dict[str, str]):
     """Télécharge tout en un lot puis calcule les indicateurs. Renvoie (données, bruts)."""
     extra = set(config.BENCHMARK.values()) | {t for t, _ in site.INDICES} | {"EURUSD=X"}
-    with console.status(f"Téléchargement des cours ({len(noms)} titres)…"):
-        bruts = data.telecharger_plusieurs(list(noms) + sorted(extra))
+    supplement = config.entrainement_supplementaire()
+    apprentissage = [t for liste in supplement.values() for t in liste if t not in noms]
+    with console.status(f"Téléchargement des cours ({len(noms)} titres + {len(apprentissage)} pour l'apprentissage)…"):
+        bruts = data.telecharger_plusieurs(list(noms) + sorted(extra) + apprentissage)
     with console.status("Contexte économique (VIX, taux, dollar, or, sentiment crypto)…"):
         try:
             contexte = data.macro()
@@ -82,6 +86,18 @@ def _preparer(noms: dict[str, str], marche_de: dict[str, str]):
     if ignores:
         console.print(f"[dim]{len(ignores)} titre(s) ignoré(s) (introuvable ou moins d'un an "
                       f"d'historique) : {', '.join(ignores[:12])}{'…' if len(ignores) > 12 else ''}[/dim]")
+    # Titres servant uniquement à l'apprentissage de l'IA
+    supp = {}
+    for marche, liste in supplement.items():
+        for t in liste:
+            brut = bruts.get(t)
+            if t in noms or brut is None or len(brut) < 400:
+                continue
+            bench = bruts.get(config.BENCHMARK.get(marche, "SPY"))
+            ctx = contexte if marche == "crypto" else {k: v for k, v in contexte.items() if k != "fng"}
+            supp[t] = indicators.calculer(brut, bench, ctx)
+            marche_de.setdefault(t, marche)
+    bruts["__apprentissage__"] = supp
     return donnees, bruts
 
 
@@ -96,14 +112,27 @@ def _analyser(donnees, noms, marche_de, args):
     if not args.sans_ml and len(donnees) >= 5:
         with console.status("Entraînement et validation du modèle (peut prendre 1 à 2 minutes)…"):
             try:
+                supp = getattr(args, "_apprentissage", {}) or {}
+                marches = {a.ticker: ("crypto" if a.ticker.endswith("-USD") else a.marche) for a in analyses}
+                marches.update({t: ("crypto" if t.endswith("-USD") else marche_de.get(t, "us")) for t in supp})
                 probas, evaluation = model.entrainer_et_predire(
-                    {a.ticker: donnees[a.ticker] for a in analyses},
-                    {a.ticker: ("crypto" if a.ticker.endswith("-USD") else a.marche) for a in analyses})
+                    {a.ticker: donnees[a.ticker] for a in analyses}, marches, supplementaires=supp)
+                fiable = evaluation.auc == evaluation.auc and evaluation.auc > 0.5
                 for a in analyses:
                     a.proba_hausse = probas.get(a.ticker, float("nan"))
                     a.fiabilite_modele = evaluation.precision
+                    a.quantiles = tuple(evaluation.quantiles.get(a.ticker, ()))
+                    a.extremes = tuple(evaluation.extremes.get(a.ticker, ()))
+                    a.proba_marche = evaluation.proba_marche.get(a.ticker, float("nan"))
+                    a.proba_ia1 = evaluation.proba_ia1.get(a.ticker, float("nan"))
+                    a.proba_ia2 = evaluation.proba_ia2.get(a.ticker, float("nan"))
+                    a.accord_ia = evaluation.accord_titres.get(a.ticker)
+                    a.indice_ref = config.benchmark_de(a.ticker, a.marche)
                     tech = bool(model.technique_haussiere(donnees[a.ticker].iloc[[-1]]).iloc[0])
-                    a.signal_fort = bool(a.proba_hausse >= model.SEUIL_FORT and tech)
+                    # signal fort : IA confiante, tendance technique haussière ET les deux IA d'accord
+                    a.signal_fort = bool(fiable and a.proba_hausse >= model.SEUIL_FORT and tech and a.accord_ia is not False)
+            except model.ErreurControle:
+                raise
             except Exception as e:
                 console.print(f"[yellow]Modèle désactivé pour cette fois : {e}[/yellow]")
     return analyses, evaluation
@@ -128,6 +157,7 @@ def _ouvrir(chemin, args):
 def cmd_site(args):
     noms, marche_de = _univers(args.marches)
     donnees, bruts = _preparer(noms, marche_de)
+    args._apprentissage = bruts.pop("__apprentissage__", {})
     if not donnees:
         console.print("[red]Aucune donnée récupérée. Vérifie ta connexion Internet puis relance.[/red]")
         return 1
@@ -139,7 +169,16 @@ def cmd_site(args):
         console.print(f"[red]Seulement {couverture:.0%} des titres ont pu être téléchargés : "
                       f"Yahoo bloque sans doute temporairement. Site non mis à jour, réessaie plus tard.[/red]")
         return 2
-    analyses, evaluation = _analyser(donnees, noms, marche_de, args)
+    try:
+        analyses, evaluation = _analyser(donnees, noms, marche_de, args)
+    except model.ErreurControle as e:
+        console.print(f"[red]Contrôle de cohérence échoué : {e}. Site non publié : l'ancienne version reste en ligne.[/red]")
+        return 3
+    controle = qualite.controler(donnees)
+    qualite.appliquer(analyses, controle)
+    r = controle["resume"]
+    console.print(f"Qualité des données : {r['ok']} titres vérifiés, {r['a_verifier']} à vérifier"
+                  + (f", {r['croisees_ok']}/{r['croisees']} cryptos confirmées par Binance" if r["croisees"] else ""))
     actus_marche = []
     if not args.sans_actus:
         with console.status("Lecture des actualités…"):
@@ -147,6 +186,7 @@ def cmd_site(args):
                 actus_marche = news.enrichir(analyses)
             except Exception as e:  # les actus sont un bonus : elles ne doivent jamais bloquer le site
                 console.print(f"[yellow]Actualités indisponibles cette fois : {e}[/yellow]")
+    news.garde_fou(analyses)
     with console.status("Données fondamentales des entreprises…"):
         try:
             fondamentaux.enrichir(analyses)
@@ -167,7 +207,9 @@ def cmd_site(args):
     console.print(tab)
 
     payload = site.construire(analyses, donnees, evaluation, suivi, bruts, demo=args.demo,
-                              actus_marche=actus_marche)
+                              actus_marche=actus_marche, qualite=controle)
+    if not args.demo and os.environ.get("RADAR_SELECTION") == "1":
+        seo.archiver_point(payload)   # le point du jour est archivé chaque soir
     chemin = site.ecrire(payload)
     etat_alertes = alertes.publier_si_active(payload)
     if os.environ.get("RADAR_ALERTES") == "1":
