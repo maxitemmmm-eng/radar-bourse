@@ -1,0 +1,630 @@
+<title>Radar Bourse</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+/* Layout : un « pupitre de marché » — bandeau des indices, prédictions du jour, fiabilité, puis la liste complète ; chaque titre s'ouvre dans un panneau de détail. */
+:root{
+  --bg:#eef1f5; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#0f1b2d; --muted:#5a6a80; --line:#d9e0e8;
+  --accent:#1d4fd8; --accent-soft:#e3eafc; --up:#0b8a4f; --up-soft:#dcf2e6; --down:#c9352f; --down-soft:#fbe3e1;
+  --warn:#9a6b0a; --warn-soft:#fbf0d6; --cone:#1d4fd8;
+  --f-display:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0a111d; --surface:#111a29; --surface-2:#162133; --ink:#e4ebf5; --muted:#8c9bb0; --line:#22314a;
+  --accent:#7398ff; --accent-soft:#1a2747; --up:#35c27d; --up-soft:#11301f; --down:#ff6b62; --down-soft:#3a1716;
+  --warn:#e5b453; --warn-soft:#33270d; --cone:#7398ff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a111d; --surface:#111a29; --surface-2:#162133; --ink:#e4ebf5; --muted:#8c9bb0; --line:#22314a;
+  --accent:#7398ff; --accent-soft:#1a2747; --up:#35c27d; --up-soft:#11301f; --down:#ff6b62; --down-soft:#3a1716;
+  --warn:#e5b453; --warn-soft:#33270d; --cone:#7398ff; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.gutter{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1240px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h2{font-size:20px;font-weight:700}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.label{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.up{color:var(--up)}.down{color:var(--down)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Barre du haut */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:16px;padding-block:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand h1{font-size:22px;font-weight:800}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--up);display:inline-block;box-shadow:0 0 0 3px var(--up-soft)}
+.stamp{font-size:13px;color:var(--muted)}
+.demo{background:var(--warn-soft);color:var(--warn);border-bottom:1px solid var(--line);font-size:13.5px}
+.demo .wrap{padding-block:8px}
+
+/* Bandeau des indices */
+.tape{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-top:20px}
+.tick{background:var(--surface);padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;min-width:0}
+.tick .n{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tick .p{font-size:17px}
+.tick svg{grid-row:1/3;grid-column:2}
+
+section{margin-top:36px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.sec-head p{margin:0;font-size:13.5px;color:var(--muted);max-width:62ch}
+
+/* Prédictions du jour */
+.duo{display:grid;grid-template-columns:1.35fr 1fr;gap:20px}
+@media (max-width:900px){.duo{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.picks{display:grid;gap:8px}
+.pick{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border-radius:8px;background:var(--surface-2);border:1px solid transparent;cursor:pointer;text-align:left;width:100%}
+.pick:hover{border-color:var(--line)}
+.pick .t{font-weight:600}.pick .s{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gauge{position:relative;height:8px;border-radius:4px;background:var(--line)}
+.gauge i{position:absolute;inset:0 auto 0 0;border-radius:4px;background:var(--accent)}
+.gauge b{position:absolute;left:50%;top:-3px;bottom:-3px;width:1.5px;background:var(--muted);opacity:.7}
+.gauge.lo i{background:var(--down)}
+.rocket-list{display:grid;gap:8px}
+.rk{padding:10px 12px;border-radius:8px;background:var(--surface-2);cursor:pointer;width:100%;text-align:left;border:1px solid transparent}
+.rk:hover{border-color:var(--line)}
+.rk .why{font-size:12.5px;color:var(--muted);margin-top:2px}
+.empty{color:var(--muted);font-size:14px;padding:12px}
+
+/* Fiabilité */
+.trust{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:900px){.trust{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi .v{font-family:var(--f-display);font-size:28px;font-weight:700;line-height:1.1}
+.kpi .d{font-size:12.5px;color:var(--muted)}
+.verdict{margin-top:14px;padding:10px 12px;border-radius:8px;font-size:14px;background:var(--warn-soft);color:var(--warn)}
+.verdict.ok{background:var(--up-soft);color:var(--up)}
+.calib{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;align-items:end;height:150px;margin-top:8px}
+.cb{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;min-width:0}
+.cb .bar{width:70%;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px}
+.cb .bar.bad{background:var(--down)}
+.cb small{font-size:11px;color:var(--muted);white-space:nowrap}
+.trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+@media (max-width:900px){.trust-grid{grid-template-columns:1fr}}
+
+/* Filtres + tableau */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--surface);padding:6px 12px;border-radius:99px;cursor:pointer;font-size:13.5px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.search{flex:1 1 200px;max-width:280px;padding:7px 12px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{position:sticky;top:0;background:var(--surface);text-align:left;font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+th[aria-sort]::after{content:" ↓"}th[aria-sort="ascending"]::after{content:" ↑"}
+td{padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+tbody tr{cursor:pointer}tbody tr:hover td{background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:0}
+.tk{font-weight:600}.nm{font-size:12.5px;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+.s-af{background:var(--up);color:var(--surface)}.s-a{background:var(--up-soft);color:var(--up)}
+.s-n{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.s-v{background:var(--down-soft);color:var(--down)}.s-vf{background:var(--down);color:var(--surface)}
+.score{display:inline-flex;align-items:center;gap:8px}
+.score .mini{width:44px;height:5px;border-radius:3px;background:var(--line);position:relative;overflow:hidden}
+.score .mini i{position:absolute;inset:0 auto 0 0;background:var(--ink)}
+.risk{font-size:12.5px}
+.risk.r3,.risk.r4{color:var(--down)}
+
+/* Panneau de détail */
+.sheet{position:fixed;inset:0;z-index:20;display:flex;justify-content:flex-end;background:rgba(5,10,20,.45)}
+.sheet[hidden]{display:none!important}
+.sheet-in{background:var(--bg);width:min(760px,100%);height:100%;overflow-y:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:max(24px,env(safe-area-inset-bottom,0px))}
+.sheet-head{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--line);z-index:2;padding-block:14px;display:flex;align-items:center;gap:12px}
+.sheet-head h3{font-size:22px;font-weight:800}
+.close{margin-left:auto;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;cursor:pointer}
+.sheet-body{display:grid;gap:16px;padding-block:16px}
+.chart{height:340px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--surface)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:14px;height:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+.forecast{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:560px){.forecast{grid-template-columns:1fr}}
+.forecast .kpi .v{font-size:22px}
+.sentence{font-size:15.5px;line-height:1.55;max-width:65ch;margin:0}
+.reasons{display:grid;gap:6px;margin:0;padding:0;list-style:none;font-size:14px}
+.reasons li{display:grid;grid-template-columns:20px 1fr;gap:6px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px}
+.fact .v{font-family:var(--f-mono);font-size:15px}
+.disclaimer{font-size:12.5px;color:var(--muted);max-width:75ch}
+footer{margin-top:48px;border-top:1px solid var(--line);padding-block:20px 40px;display:grid;gap:12px}
+footer nav{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13.5px}
+.lnk{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-size:inherit}
+
+/* Statut du direct */
+.live{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:3px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.live.on{color:var(--up);border-color:var(--up-soft);background:var(--up-soft)}
+.live.on i{background:var(--up)}
+@media (prefers-reduced-motion:no-preference){.live.on i{animation:pulse 1.6s ease-in-out infinite}}
+@keyframes pulse{50%{opacity:.35}}
+.flash-up{background:var(--up-soft)!important}.flash-down{background:var(--down-soft)!important}
+@media (prefers-reduced-motion:no-preference){[data-px]{transition:background .6s}}
+.src{font-size:10.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-left:4px}
+
+/* Bandeau d'avertissement (premier passage) */
+.consent{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(5,10,20,.12);padding-bottom:max(14px,env(safe-area-inset-bottom,0px))}
+.consent .wrap{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding-top:14px}
+.consent p{margin:0;font-size:14px;flex:1 1 380px;max-width:80ch}
+.btn{border:0;border-radius:8px;padding:9px 16px;font-weight:600;cursor:pointer;background:var(--ink);color:var(--surface)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+
+/* Textes légaux */
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.legal{max-width:68ch;font-size:14.5px;line-height:1.65}
+.legal h4{font-family:var(--f-display);font-size:16px;margin:22px 0 6px}
+.legal p,.legal ul{margin:0 0 10px}
+.legal .maj{font-size:12.5px;color:var(--muted)}
+.note-pred{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+@media (prefers-reduced-motion:no-preference){.pick,.rk,tbody tr td{transition:background .15s,border-color .15s}}
+</style>
+
+<header class="top gutter"><div class="wrap">
+  <div class="brand"><span class="dot" aria-hidden="true"></span><h1>Radar Bourse</h1><span class="stamp" id="stamp"></span></div>
+  <span class="live" id="live" title="État des cours en direct"><i></i><span>Cours différés</span></span>
+</div></header>
+<div class="demo gutter" id="demo" hidden><div class="wrap">Données fictives de démonstration. Lance <span class="num">python -m bourse_bot site</span> sur ton PC pour afficher les vrais cours.</div></div>
+
+<main class="gutter"><div class="wrap">
+  <div class="tape" id="tape" aria-label="Marchés"></div>
+
+  <section aria-labelledby="h-pred">
+    <div class="sec-head"><h2 id="h-pred">Ce que le radar prévoit</h2>
+      <p id="pred-sub"></p></div>
+    <div class="duo">
+      <div class="panel"><div class="label" style="margin-bottom:10px">Plus forte probabilité de hausse</div><div class="picks" id="picks"></div></div>
+      <div class="panel"><div class="label" style="margin-bottom:10px">Configurations de décollage</div><div class="rocket-list" id="rockets"></div></div>
+    </div>
+    <p class="note-pred">Calculs statistiques automatiques, identiques pour tout le monde. Ce ne sont pas des recommandations d'achat ou de vente. <button class="lnk" data-legal="risques">Lire l'avertissement sur les risques</button></p>
+  </section>
+
+  <section aria-labelledby="h-trust">
+    <div class="sec-head"><h2 id="h-trust">Peut-on lui faire confiance ?</h2>
+      <p>Le modèle est testé uniquement sur des périodes qu'il n'a jamais vues, puis chaque prédiction publiée ici est vérifiée une fois l'échéance passée.</p></div>
+    <div class="panel">
+      <div class="trust" id="trust"></div>
+      <div class="verdict" id="verdict"></div>
+      <div class="trust-grid">
+        <div><div class="label">Calibration : prévu vs réellement monté</div><div class="calib" id="calib"></div></div>
+        <div><div class="label">Suivi en conditions réelles</div><div id="suivi" style="margin-top:8px"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-all">
+    <div class="sec-head"><h2 id="h-all">Tous les titres</h2><p>Clique sur une ligne pour voir le graphique, la prévision et les raisons du signal.</p></div>
+    <div class="filters" role="group" aria-label="Filtres">
+      <button class="chip" data-m="all" aria-pressed="true">Tout</button>
+      <button class="chip" data-m="fr" aria-pressed="false">France</button>
+      <button class="chip" data-m="us" aria-pressed="false">États-Unis</button>
+      <button class="chip" data-m="crypto" aria-pressed="false">Crypto</button>
+      <button class="chip" data-m="etf" aria-pressed="false">ETF / indices</button>
+      <button class="chip" data-m="tendances" aria-pressed="false">En tendance</button>
+      <button class="chip" data-m="rocket" aria-pressed="false">Décollage seulement</button>
+      <input class="search" id="q" type="search" placeholder="Rechercher un titre…" aria-label="Rechercher un titre">
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr>
+        <th data-k="ticker">Titre</th><th data-k="prix">Cours</th><th data-k="j1">1 jour</th><th data-k="m1">1 mois</th>
+        <th data-k="score" aria-sort="descending">Score</th><th data-k="signal">Signal</th>
+        <th data-k="proba">Proba de hausse</th><th data-k="risque">Risque</th><th data-k="rocket"></th>
+      </tr></thead><tbody id="rows"></tbody></table></div>
+  </section>
+
+  <footer>
+    <p class="disclaimer"><b>Avertissement.</b> Radar Bourse est un projet éducatif. Les informations publiées sont générées automatiquement, peuvent contenir des erreurs et ne constituent ni un conseil en investissement, ni une recommandation personnalisée, ni une incitation à acheter ou vendre. Investir comporte un risque de perte totale du capital. L'éditeur décline toute responsabilité quant à l'usage fait de ces informations.</p>
+    <nav aria-label="Informations légales">
+      <button class="lnk" data-legal="risques">Avertissement sur les risques</button>
+      <button class="lnk" data-legal="conditions">Conditions d'utilisation</button>
+      <button class="lnk" data-legal="mentions">Mentions légales</button>
+      <button class="lnk" data-legal="confidentialite">Confidentialité</button>
+    </nav>
+    <p class="disclaimer" id="sources-txt"></p>
+  </footer>
+</div></main>
+
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="d-title">
+  <div class="sheet-in">
+    <div class="sheet-head gutter"><div><h3 id="d-title"></h3><div class="stamp" id="d-sub"></div></div><button class="close" id="close">Fermer</button></div>
+    <div class="sheet-body gutter" id="d-body"></div>
+  </div>
+</div>
+
+<div class="sheet" id="legal" style="z-index:40" hidden role="dialog" aria-modal="true" aria-labelledby="l-title">
+  <div class="sheet-in">
+    <div class="sheet-head gutter"><h3 id="l-title">Informations légales</h3><button class="close" id="l-close">Fermer</button></div>
+    <div class="sheet-body gutter">
+      <div class="tabs" role="tablist">
+        <button class="chip" role="tab" data-tab="risques">Risques</button>
+        <button class="chip" role="tab" data-tab="conditions">Conditions</button>
+        <button class="chip" role="tab" data-tab="mentions">Mentions légales</button>
+        <button class="chip" role="tab" data-tab="confidentialite">Confidentialité</button>
+      </div>
+
+      <article class="legal" data-pane="risques">
+        <h4>Avertissement sur les risques</h4>
+        <p>Radar Bourse est un projet personnel et éducatif. Il montre ce que des indicateurs techniques et un modèle statistique calculent à partir des cours passés. <b>Il ne prédit pas l'avenir.</b></p>
+        <ul>
+          <li>Les probabilités affichées sont des estimations statistiques. Elles se trompent souvent : la précision mesurée du modèle est indiquée sur la page et reste proche du hasard.</li>
+          <li>Les performances passées, les backtests et les fourchettes de prix ne préjugent pas des performances futures.</li>
+          <li>Les actions et surtout les cryptomonnaies sont des actifs volatils. Tu peux perdre tout ou partie de l'argent investi.</li>
+          <li>Les données peuvent être en retard, incomplètes ou fausses. Les cours « en direct » proviennent de services tiers et peuvent être interrompus.</li>
+          <li>N'investis jamais d'argent dont tu as besoin, et ne prends jamais de décision sur la seule base de ce site.</li>
+        </ul>
+        <p>Avant tout investissement, renseigne-toi auprès de sources officielles (par exemple l'AMF) ou d'un professionnel agréé.</p>
+      </article>
+
+      <article class="legal" data-pane="conditions" hidden>
+        <h4>Conditions d'utilisation</h4>
+        <p class="maj">En utilisant ce site, tu acceptes les conditions ci-dessous. Si tu ne les acceptes pas, n'utilise pas le site.</p>
+        <h4>1. Objet</h4>
+        <p>Le site publie des analyses techniques et des estimations statistiques générées automatiquement sur des actions, des ETF et des cryptomonnaies, dans un but pédagogique et informatif.</p>
+        <h4>2. Absence de conseil</h4>
+        <p>Les contenus sont généraux, identiques pour tous les visiteurs et ne tiennent compte d'aucune situation personnelle. Ils ne constituent pas un conseil en investissement, une recommandation personnalisée, une sollicitation, ni une offre d'achat ou de vente d'instruments financiers ou de crypto-actifs. L'éditeur n'est pas conseiller en investissements financiers (CIF), ni prestataire de services d'investissement ou sur crypto-actifs, et n'exerce aucune de ces activités.</p>
+        <h4>3. Absence de garantie</h4>
+        <p>Le site est fourni « tel quel », sans garantie d'exactitude, d'exhaustivité, d'actualité ou de disponibilité. Les données proviennent de services tiers et peuvent contenir des erreurs ou des retards. Le site peut être interrompu ou modifié à tout moment, sans préavis.</p>
+        <h4>4. Limitation de responsabilité</h4>
+        <p>Dans toute la mesure permise par la loi, l'éditeur ne pourra être tenu responsable d'aucune perte, directe ou indirecte, financière ou autre, résultant de l'utilisation du site, de l'impossibilité de l'utiliser, ou de décisions prises sur la base de ses contenus. Chaque utilisateur reste seul responsable de ses décisions d'investissement et de leurs conséquences.</p>
+        <h4>5. Utilisation autorisée</h4>
+        <p>Le site est destiné à un usage personnel et non commercial. Il est interdit d'en extraire massivement les données ou de les présenter comme des conseils professionnels.</p>
+        <h4>6. Services et liens tiers</h4>
+        <p>Le site utilise des services externes (données de marché, polices, bibliothèque graphique). L'éditeur n'a aucun contrôle sur ces services et n'est pas responsable de leur contenu ni de leur disponibilité.</p>
+        <h4>7. Modification des conditions</h4>
+        <p>Ces conditions peuvent être modifiées à tout moment. La version applicable est celle publiée sur le site au moment de la consultation.</p>
+        <h4>8. Droit applicable</h4>
+        <p>Ces conditions sont soumises au droit français.</p>
+      </article>
+
+      <article class="legal" data-pane="mentions" hidden>
+        <h4>Mentions légales</h4>
+        <p><b>Éditeur :</b> <span id="m-editeur"></span>, particulier, à titre non professionnel.<br>
+        <b>Contact :</b> <span id="m-contact" class="num"></span></p>
+        <p><b>Hébergeur :</b> GitHub, Inc. (service GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.</p>
+        <p><b>Sources des données :</b> Yahoo Finance (cours historiques), CoinGecko (cryptos en tendance), Binance (cours des cryptos en direct) et, le cas échéant, Finnhub (cours des actions américaines en direct). Ces données restent la propriété de leurs fournisseurs respectifs.</p>
+      </article>
+
+      <article class="legal" data-pane="confidentialite" hidden>
+        <h4>Confidentialité</h4>
+        <p>Le site ne demande aucun compte, ne collecte aucune donnée personnelle et n'utilise aucun cookie publicitaire ni outil de mesure d'audience.</p>
+        <p>Ton navigateur garde seulement en mémoire locale le fait que tu as lu l'avertissement, pour ne pas te le réafficher. Tu peux l'effacer en vidant les données du site.</p>
+        <p>Pour afficher la page, ton navigateur se connecte à des services tiers (Google Fonts pour les polices, unpkg pour la bibliothèque graphique, Binance et éventuellement Finnhub pour les cours en direct). Ces services reçoivent ton adresse IP, comme pour toute page web, selon leurs propres politiques de confidentialité.</p>
+      </article>
+    </div>
+  </div>
+</div>
+
+<div class="consent gutter" id="consent" hidden role="region" aria-label="Avertissement">
+  <div class="wrap">
+    <p><b>Avant de commencer :</b> Radar Bourse est un projet éducatif. Ses prévisions sont des calculs statistiques qui se trompent souvent, pas des conseils en investissement. L'éditeur n'est pas responsable de tes décisions ni de tes pertes.</p>
+    <button class="btn ghost" data-legal="conditions">Lire les conditions</button>
+    <button class="btn" id="accept">J'ai compris et j'accepte</button>
+  </div>
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const $ = s => document.querySelector(s);
+const H = DATA.horizon;
+const NOM_MARCHE = {fr:"France",us:"États-Unis",crypto:"Crypto",etf:"ETF / indice",tendances:"En tendance"};
+const SIG = {"ACHAT FORT":"s-af","ACHAT":"s-a","NEUTRE":"s-n","VENTE":"s-v","VENTE FORTE":"s-vf"};
+const RISK = {"Faible":1,"Moyen":2,"Élevé":3,"Très élevé":4};
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pct = (v, d=1) => v==null ? "–" : `<span class="num ${v>0?'up':v<0?'down':''}">${v>0?'+':''}${(v*100).toFixed(d).replace('.',',')} %</span>`;
+const pctPlain = (v, d=1) => v==null ? "–" : `${(v*100).toFixed(d).replace('.',',')} %`;
+const px = (v, cur) => v==null ? "–" : `${v.toLocaleString('fr-FR',{maximumFractionDigits: v<1?4:2, minimumFractionDigits: v<1?2:2})} ${cur}`;
+const token = t => t.replace(/[^A-Za-z0-9._-]/g, "");
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function spark(vals, w=90, h=32){
+  if(!vals || vals.length<2) return "";
+  const mn=Math.min(...vals), mx=Math.max(...vals), r=(mx-mn)||1;
+  const pts=vals.map((v,i)=>`${(i/(vals.length-1)*(w-4)+2).toFixed(1)},${(h-3-(v-mn)/r*(h-6)).toFixed(1)}`).join(" ");
+  const col = vals.at(-1)>=vals[0] ? "var(--up)" : "var(--down)";
+  const last = pts.split(" ").at(-1).split(",");
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="${last[0]}" cy="${last[1]}" r="2.4" fill="${col}"/></svg>`;
+}
+function gauge(p){
+  if(p==null) return `<span class="muted">–</span>`;
+  return `<div style="display:flex;align-items:center;gap:8px"><div class="gauge ${p<0.5?'lo':''}" style="width:80px"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span class="num">${Math.round(p*100)} %</span></div>`;
+}
+
+/* ---------- En-tête ---------- */
+$("#stamp").textContent = `Cours au ${new Date(DATA.date_donnees).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})} · mis à jour le ${new Date(DATA.genere_le).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`;
+$("#demo").hidden = !DATA.demo;
+function rendreTape(){
+  $("#tape").innerHTML = DATA.indices.map(i => `<div class="tick"><span class="n">${esc(i.nom)}</span>${spark(i.spark)}<span><span class="p num" data-px="${esc(i.ticker)}">${px(i.prix,i.devise)}</span> <span data-j1="${esc(i.ticker)}">${pct(i.var_jour,2)}</span></span></div>`).join("");
+}
+rendreTape();
+
+/* ---------- Prédictions ---------- */
+const T = DATA.titres;
+$("#pred-sub").textContent = `Probabilité, selon le modèle, que le cours soit plus haut dans ${H} séances (environ un mois). 50 % = pile ou face.`;
+const avecProba = T.filter(t => t.proba_hausse!=null).sort((a,b)=>b.proba_hausse-a.proba_hausse);
+$("#picks").innerHTML = avecProba.slice(0,7).map(t => `<button class="pick" data-t="${esc(t.ticker)}">
+  <span style="min-width:0"><span class="t">${esc(t.nom)}</span><span class="s">${esc(t.ticker)} · ${NOM_MARCHE[t.marche]||""}</span></span>
+  ${gauge(t.proba_hausse)}
+  <span class="pill ${SIG[t.signal]}">${esc(t.signal)}</span></button>`).join("") || `<div class="empty">Le modèle n'a pas pu être entraîné (pas assez de données).</div>`;
+const rockets = T.filter(t => t.potentiel_hausse).sort((a,b)=>b.score-a.score);
+$("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t="${esc(t.ticker)}">
+  <div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(t.nom)}</b><span class="num">score ${Math.round(t.score)}</span></div>
+  <div class="why">${esc((t.alertes[0]||"").replace(/^🚀 Configuration de hausse potentielle : /,""))}</div></button>`).join("")
+  || `<div class="empty">Aucune configuration de décollage aujourd'hui. Le radar ne force pas les signaux quand le marché n'en donne pas.</div>`;
+
+/* ---------- Fiabilité ---------- */
+const M = DATA.modele;
+if(M && M.precision!=null){
+  const adv = M.precision - M.precision_base;
+  $("#trust").innerHTML = `
+   <div class="kpi"><div class="label">Bonnes directions</div><div class="v num">${pctPlain(M.precision)}</div><div class="d">sur ${M.nb_tests.toLocaleString('fr-FR')} prédictions testées (${esc(M.periode)})</div></div>
+   <div class="kpi"><div class="label">Référence naïve</div><div class="v num">${pctPlain(M.precision_base)}</div><div class="d">en répondant toujours la même chose</div></div>
+   <div class="kpi"><div class="label">Avantage</div><div class="v num ${adv>0?'up':'down'}">${adv>0?'+':''}${(adv*100).toFixed(1).replace('.',',')} pts</div><div class="d">au-dessus de la référence</div></div>
+   <div class="kpi"><div class="label">AUC</div><div class="v num">${M.auc.toFixed(3).replace('.',',')}</div><div class="d">0,500 = hasard · 1 = parfait</div></div>`;
+  const vd = $("#verdict"); vd.textContent = M.verdict; if(M.auc>=0.56 && adv>0.005) vd.classList.add("ok");
+  $("#calib").innerHTML = M.calibration.map(c => {
+    const h = c.taux_hausse==null ? 0 : c.taux_hausse;
+    const attendu = (c.min + c.max)/2; const bad = c.taux_hausse!=null && Math.abs(h-attendu)>0.1 && c.nb>=30;
+    return `<div class="cb" title="${c.nb} cas"><small class="num">${c.taux_hausse==null?'–':Math.round(h*100)+' %'}</small><div class="bar ${bad?'bad':''}" style="height:${Math.max(2,h*100)}%"></div><small>${esc(c.tranche)}</small></div>`;
+  }).join("");
+} else {
+  $("#trust").innerHTML = `<div class="empty">Modèle non évalué.</div>`; $("#verdict").hidden = true;
+}
+const S = DATA.suivi;
+$("#suivi").innerHTML = S.nb_verifiees ? `
+  <div class="facts"><div class="fact"><div class="label">Vérifiées</div><div class="v">${S.nb_verifiees}</div></div>
+  <div class="fact"><div class="label">Justes</div><div class="v">${pctPlain(S.precision)}</div></div>
+  <div class="fact"><div class="label">Signaux d'achat gagnants</div><div class="v">${pctPlain(S.precision_signaux_achat)}</div></div></div>
+  <div class="tablewrap" style="margin-top:10px"><table><tbody>${S.dernieres.slice(0,6).map(r=>`<tr><td class="num">${esc(r.date)}</td><td>${esc(r.ticker)}</td><td>${r.juste?'<span class="up">Juste</span>':'<span class="down">Faux</span>'}</td><td>${pct(r.rendement_reel)}</td></tr>`).join("")}</tbody></table></div>`
+  : `<p class="muted" style="margin:0;font-size:14px;max-width:48ch">Le suivi commence avec cette mise à jour : ${S.nb_en_attente || T.length} prédictions sont enregistrées et seront vérifiées dans ${H} séances. Relance le bot régulièrement pour voir le vrai taux de réussite apparaître ici.</p>`;
+
+/* ---------- Tableau ---------- */
+let filtre = "all", tri = {k:"score", asc:false};
+const val = (t,k) => ({ticker:t.ticker, prix:t.prix, j1:t.perf["1 jour"], m1:t.perf["1 mois"], score:t.score,
+  signal:t.score, proba:t.proba_hausse ?? -1, risque:RISK[t.risque], rocket:t.potentiel_hausse?1:0})[k];
+function rendre(){
+  const q = $("#q").value.trim().toLowerCase();
+  let L = T.filter(t => filtre==="all" || (filtre==="rocket" ? t.potentiel_hausse : t.marche===filtre))
+           .filter(t => !q || t.ticker.toLowerCase().includes(q) || t.nom.toLowerCase().includes(q));
+  L.sort((a,b) => { const x=val(a,tri.k), y=val(b,tri.k);
+    return (typeof x==="string" ? x.localeCompare(y) : (x??-9)-(y??-9)) * (tri.asc?1:-1); });
+  $("#rows").innerHTML = L.map(t => `<tr data-t="${esc(t.ticker)}" tabindex="0">
+    <td><div class="tk">${esc(t.ticker)}</div><div class="nm">${esc(t.nom)}</div></td>
+    <td class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}${t.live?'<span class="src">direct</span>':''}</td><td data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</td><td>${pct(t.perf["1 mois"])}</td>
+    <td><span class="score"><span class="num">${Math.round(t.score)}</span><span class="mini"><i style="width:${t.score}%"></i></span></span></td>
+    <td><span class="pill ${SIG[t.signal]}">${esc(t.signal)}</span></td>
+    <td>${gauge(t.proba_hausse)}</td><td class="risk r${RISK[t.risque]}">${esc(t.risque)}</td>
+    <td>${t.potentiel_hausse?'<span title="Configuration de décollage">🚀</span>':''}</td></tr>`).join("")
+    || `<tr><td colspan="9" class="empty">Aucun titre ne correspond.</td></tr>`;
+}
+document.querySelectorAll(".filters .chip").forEach(c => c.onclick = () => {
+  document.querySelectorAll(".filters .chip").forEach(x => x.setAttribute("aria-pressed", x===c));
+  filtre = c.dataset.m; rendre(); });
+$("#q").addEventListener("input", rendre);
+document.querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
+  const k = th.dataset.k; tri = {k, asc: tri.k===k ? !tri.asc : k==="ticker"};
+  document.querySelectorAll("th").forEach(x => x.removeAttribute("aria-sort"));
+  th.setAttribute("aria-sort", tri.asc ? "ascending" : "descending"); rendre(); });
+rendre();
+
+/* ---------- Détail ---------- */
+let chart = null, courant = null, bougies = null;
+function graphique(t){
+  if(chart){ chart.remove(); chart = null; bougies = null; }
+  const el = $("#chart"); if(!el || !window.LightweightCharts) { if(el) el.innerHTML = `<p class="empty">Graphique indisponible hors connexion.</p>`; return; }
+  chart = LightweightCharts.createChart(el, { autoSize:true,
+    layout:{background:{type:"solid",color:css("--surface")}, textColor:css("--muted"), fontFamily:"IBM Plex Mono, monospace", fontSize:11},
+    grid:{vertLines:{color:css("--line")}, horzLines:{color:css("--line")}},
+    rightPriceScale:{borderColor:css("--line")}, timeScale:{borderColor:css("--line")},
+    crosshair:{mode:0}, localization:{locale:"fr-FR"} });
+  const s = t.serie;
+  const c = bougies = chart.addCandlestickSeries({upColor:css("--up"), downColor:css("--down"), wickUpColor:css("--up"), wickDownColor:css("--down"), borderVisible:false});
+  c.setData(s.t.map((d,i)=>({time:d, open:s.o[i], high:s.h[i], low:s.l[i], close:s.c[i]})));
+  if(t._bar && t._bar.time >= s.t.at(-1)) c.update(t._bar);
+  const ligne = (vals, color, style=0, w=1.5) => { const l = chart.addLineSeries({color, lineWidth:w, lineStyle:style, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false});
+    l.setData(s.t.map((d,i)=>vals[i]==null?null:{time:d, value:vals[i]}).filter(Boolean)); return l; };
+  ligne(s.sma50, css("--accent"), 0, 1.4);
+  ligne(s.sma200, css("--warn"), 0, 1.4);
+  if(t.cone){
+    const k = t.cone;
+    for(const [arr, st] of [[k.mediane,2],[k.haut,1],[k.bas,1]]){
+      const l = chart.addLineSeries({color:css("--cone"), lineWidth: st===2?2:1, lineStyle:st, priceLineVisible:false, lastValueVisible:st===2, crosshairMarkerVisible:false});
+      l.setData(k.t.map((d,i)=>({time:d, value:arr[i]})));
+    }
+  }
+  chart.timeScale().fitContent();
+}
+function ouvrir(tk, pousser=true){
+  const t = T.find(x => x.ticker===tk); if(!t) return;
+  courant = t;
+  $("#d-title").textContent = t.nom;
+  $("#d-sub").innerHTML = `${esc(t.ticker)} · ${NOM_MARCHE[t.marche]||""} · <span class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}</span> <span data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</span>`;
+  const p = t.proba_hausse, f = t.fourchette;
+  const phrase = p==null ? `Pas de probabilité disponible pour ce titre.` :
+    `Le modèle estime à <b>${Math.round(p*100)} %</b> la probabilité que ${esc(t.nom)} soit plus haut dans ${H} séances. ` +
+    (f && f.length ? `Fourchette probable à cette échéance (2 chances sur 3) : <b class="num">${px(f[0],t.devise)}</b> à <b class="num">${px(f[1],t.devise)}</b>. ` : "") +
+    (DATA.modele && DATA.modele.auc < 0.52 ? `Attention, sur l'historique ce modèle ne fait pas mieux que le hasard.` : "");
+  const bt = t.backtest;
+  $("#d-body").innerHTML = `
+    <div class="forecast">
+      <div class="panel kpi"><div class="label">Proba de hausse · ${H} séances</div><div class="v num">${p==null?'–':Math.round(p*100)+' %'}</div>${gauge(p)}</div>
+      <div class="panel kpi"><div class="label">Score technique</div><div class="v num">${Math.round(t.score)} / 100</div><span class="pill ${SIG[t.signal]}">${esc(t.signal)}</span></div>
+      <div class="panel kpi"><div class="label">Risque</div><div class="v">${esc(t.risque)}</div><div class="d">volatilité annuelle ${pctPlain(t.perf["volatilité annuelle"],0)}</div></div>
+    </div>
+    <p class="sentence">${phrase}</p>
+    <div><div class="chart" id="chart"></div>
+    <div class="legend" style="margin-top:8px"><span style="--c:var(--accent)">Moyenne 50 jours</span><span style="--c:var(--warn)">Moyenne 200 jours</span><span style="--c:var(--cone)">Prévision : médiane et fourchette</span></div></div>
+    <div class="panel"><div class="label" style="margin-bottom:8px">Pourquoi ce signal</div><ul class="reasons">
+      ${t.alertes.map(r=>`<li><span>🔔</span><span>${esc(r.replace(/^🚀 /,""))}</span></li>`).join("")}
+      ${t.raisons_pour.map(r=>`<li><span class="up">✓</span><span>${esc(r)}</span></li>`).join("")}
+      ${t.raisons_contre.map(r=>`<li><span class="down">✕</span><span>${esc(r)}</span></li>`).join("")}</ul></div>
+    <div class="facts">
+      <div class="fact"><div class="label">1 semaine</div><div class="v">${pct(t.perf["1 semaine"])}</div></div>
+      <div class="fact"><div class="label">1 mois</div><div class="v">${pct(t.perf["1 mois"])}</div></div>
+      <div class="fact"><div class="label">3 mois</div><div class="v">${pct(t.perf["3 mois"])}</div></div>
+      <div class="fact"><div class="label">6 mois</div><div class="v">${pct(t.perf["6 mois"])}</div></div>
+      <div class="fact"><div class="label">Stop-loss indicatif</div><div class="v">${px(t.stop_loss,t.devise)}</div></div>
+      <div class="fact"><div class="label">Objectif indicatif</div><div class="v">${px(t.objectif,t.devise)}</div></div>
+    </div>
+    ${bt ? `<div class="panel"><div class="label" style="margin-bottom:8px">Si tu avais suivi les signaux du radar (${bt.annees} ans, 1 000 € de départ, frais compris)</div>
+      <div class="facts"><div class="fact"><div class="label">Radar</div><div class="v">${pct(bt.bot)}</div></div>
+      <div class="fact"><div class="label">Acheter et garder</div><div class="v">${pct(bt.garder)}</div></div>
+      <div class="fact"><div class="label">Trades</div><div class="v">${bt.trades}</div></div>
+      <div class="fact"><div class="label">Pire baisse radar</div><div class="v">${pct(bt.drawdown_bot)}</div></div></div>
+      <p class="muted" style="font-size:13px;margin:8px 0 0">${bt.bot>bt.garder?"Sur ce titre, suivre les signaux a fait mieux que garder.":"Sur ce titre, simplement garder a fait mieux que suivre les signaux."}</p></div>`:""}
+    <p class="disclaimer">Prévision statistique, pas une certitude. Ce n'est pas un conseil en investissement.</p>`;
+  $("#sheet").hidden = false; document.body.style.overflow = "hidden";
+  requestAnimationFrame(() => graphique(t));
+  if(pousser) try{ history.replaceState(null, "", "#" + token(t.ticker)); }catch(e){}
+  $("#close").focus();
+}
+function fermer(){ $("#sheet").hidden = true; document.body.style.overflow = ""; if(chart){chart.remove(); chart=null; bougies=null;} courant=null;
+  try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){} }
+document.addEventListener("click", e => { const b = e.target.closest("[data-t]"); if(b) ouvrir(b.dataset.t); });
+$("#rows").addEventListener("keydown", e => { if(e.key==="Enter"){ const r = e.target.closest("tr[data-t]"); if(r) ouvrir(r.dataset.t); }});
+$("#close").onclick = fermer;
+$("#sheet").addEventListener("click", e => { if(e.target.id==="sheet") fermer(); });
+document.addEventListener("keydown", e => { if(e.key==="Escape" && !$("#sheet").hidden && $("#legal").hidden) fermer(); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if(courant) graphique(courant); });
+new MutationObserver(() => { if(courant) graphique(courant); }).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+/* ---------- Cours en direct ---------- */
+const OBJETS = {};   // ticker -> objets à mettre à jour (titre et/ou indice)
+for(const t of T){ t.prix_base = t.prix; (OBJETS[t.ticker] ||= []).push({o:t, type:"titre"}); }
+for(const i of DATA.indices){ i.prix_base = i.prix; i.date_cours = DATA.date_donnees; (OBJETS[i.ticker] ||= []).push({o:i, type:"indice"}); }
+const enAttente = new Map(), sources = {};
+const NOM_SOURCE = {crypto:"cryptos", us:"actions US"};
+
+function etat(src, on){
+  sources[src] = on;
+  const actifs = Object.keys(sources).filter(k => sources[k]);
+  const el = $("#live");
+  el.classList.toggle("on", actifs.length > 0);
+  el.querySelector("span").textContent = actifs.length ? "En direct · " + actifs.map(k => NOM_SOURCE[k]).join(", ") : "Cours différés";
+}
+function recevoir(tk, prix, ts){ if(OBJETS[tk] && isFinite(prix) && prix > 0) enAttente.set(tk, {prix, ts: ts || Date.now()}); }
+function reference(o, ts){
+  const jour = new Date(ts).toISOString().slice(0,10);
+  return jour > o.date_cours ? o.prix_base : (o.prev_close ?? o.prix_base);
+}
+function appliquer(){
+  for(const [tk, {prix, ts}] of enAttente){
+    let ancien = null, devise = "$", varJ = null;
+    for(const {o, type} of OBJETS[tk]){
+      ancien = o.prix; devise = o.devise;
+      const ref = reference(o, ts); varJ = ref ? prix/ref - 1 : null;
+      o.prix = prix; o.live = true;
+      if(type === "titre"){
+        o.perf["1 jour"] = varJ;
+        const jour = new Date(ts).toISOString().slice(0,10), s = o.serie, dernier = s.t.at(-1);
+        if(!o._bar) o._bar = {time:dernier, open:s.o.at(-1), high:s.h.at(-1), low:s.l.at(-1), close:s.c.at(-1)};
+        if(jour > o._bar.time) o._bar = {time:jour, open:prix, high:prix, low:prix, close:prix};
+        else o._bar = {...o._bar, high:Math.max(o._bar.high, prix), low:Math.min(o._bar.low, prix), close:prix};
+        if(courant === o && bougies) try{ bougies.update(o._bar); }catch(e){}
+      } else o.var_jour = varJ;
+    }
+    const sel = CSS.escape(tk);
+    document.querySelectorAll(`[data-px="${sel}"]`).forEach(el => {
+      el.innerHTML = px(prix, devise) + (el.tagName === "TD" ? '<span class="src">direct</span>' : "");
+      if(ancien != null && prix !== ancien){
+        const c = prix > ancien ? "flash-up" : "flash-down";
+        el.classList.add(c); setTimeout(() => el.classList.remove(c), 700);
+      }
+    });
+    document.querySelectorAll(`[data-j1="${sel}"]`).forEach(el => el.innerHTML = pct(varJ, 2));
+  }
+  enAttente.clear();
+}
+setInterval(appliquer, 1000);
+
+function demarrerBinance(){
+  const parSymbole = {};
+  for(const tk of Object.keys(OBJETS)) if(tk.endsWith("-USD")) (parSymbole[tk.replace("-USD","USDT")] ||= []).push(tk);
+  const syms = Object.keys(parSymbole);
+  if(!syms.length) return;
+  let essais = 0, secoursLance = false;
+  const secours = () => {   // si le WebSocket est bloqué : interrogation toutes les 20 s
+    if(secoursLance) return; secoursLance = true;
+    const tour = () => fetch("https://api.binance.com/api/v3/ticker/price")
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(arr => { etat("crypto", true); const now = Date.now(); arr.forEach(x => (parSymbole[x.symbol]||[]).forEach(tk => recevoir(tk, +x.price, now))); })
+      .catch(() => etat("crypto", false))
+      .finally(() => setTimeout(tour, 20000));
+    tour();
+  };
+  const connecter = () => {
+    let ws;
+    try{ ws = new WebSocket("wss://stream.binance.com:9443/stream?streams=" + syms.map(x => x.toLowerCase() + "@miniTicker").join("/")); }
+    catch(e){ return secours(); }
+    ws.onopen = () => { essais = 0; etat("crypto", true); };
+    ws.onmessage = e => { try{ const d = JSON.parse(e.data).data; (parSymbole[d.s]||[]).forEach(tk => recevoir(tk, +d.c, d.E)); }catch(_){} };
+    ws.onclose = () => { etat("crypto", false); if(++essais <= 3) setTimeout(connecter, 2000 * essais); else secours(); };
+  };
+  connecter();
+}
+
+function demarrerFinnhub(){
+  const cle = DATA.live && DATA.live.finnhub;
+  if(!cle) return;
+  const tks = Object.keys(OBJETS).filter(tk => /^[A-Z]{1,5}$/.test(tk)).slice(0, 50);  // offre gratuite : 50 titres max
+  if(!tks.length) return;
+  let essais = 0;
+  const connecter = () => {
+    let ws;
+    try{ ws = new WebSocket("wss://ws.finnhub.io?token=" + encodeURIComponent(cle)); }catch(e){ return; }
+    ws.onopen = () => { essais = 0; etat("us", true); tks.forEach(x => ws.send(JSON.stringify({type:"subscribe", symbol:x}))); };
+    ws.onmessage = e => { try{ const m = JSON.parse(e.data); if(m.type === "trade") m.data.forEach(d => recevoir(d.s, d.p, d.t)); }catch(_){} };
+    ws.onclose = () => { etat("us", false); if(++essais <= 5) setTimeout(connecter, 3000 * essais); };
+  };
+  connecter();
+}
+
+if(DATA.demo){ $("#live").querySelector("span").textContent = "Démo : pas de direct"; }
+else { demarrerBinance(); demarrerFinnhub(); }
+$("#sources-txt").textContent = "Cours historiques : Yahoo Finance · cryptos en direct : Binance" +
+  (DATA.live && DATA.live.finnhub ? " · actions US en direct : Finnhub" : "") +
+  ". Les actions françaises et les prévisions sont mises à jour plusieurs fois par jour, pas en continu.";
+
+/* ---------- Textes légaux et avertissement ---------- */
+const LEG = DATA.legal || {};
+$("#m-editeur").textContent = LEG.editeur || "—";
+$("#m-contact").textContent = LEG.contact || "—";
+const ONGLETS = ["risques", "conditions", "mentions", "confidentialite"];
+function ouvrirLegal(tab){
+  document.querySelectorAll("[data-pane]").forEach(p => p.hidden = p.dataset.pane !== tab);
+  document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-pressed", b.dataset.tab === tab));
+  $("#legal").hidden = false; document.body.style.overflow = "hidden";
+  try{ history.replaceState(null, "", "#" + tab); }catch(e){}
+  $("#l-close").focus();
+}
+function fermerLegal(){
+  $("#legal").hidden = true;
+  if($("#sheet").hidden) document.body.style.overflow = "";
+  try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-legal],[data-tab]");
+  if(b) ouvrirLegal(b.dataset.legal || b.dataset.tab);
+});
+$("#l-close").onclick = fermerLegal;
+$("#legal").addEventListener("click", e => { if(e.target.id === "legal") fermerLegal(); });
+document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#legal").hidden) fermerLegal(); });
+
+const CLE_AVERT = "radar-bourse-avertissement-v1";
+let dejaVu = false;
+try{ dejaVu = localStorage.getItem(CLE_AVERT) === "1"; }catch(e){}
+$("#consent").hidden = dejaVu;
+$("#accept").onclick = () => { try{ localStorage.setItem(CLE_AVERT, "1"); }catch(e){} $("#consent").hidden = true; };
+
+if(location.hash){
+  const h = location.hash.slice(1);
+  if(ONGLETS.includes(h)) ouvrirLegal(h);
+  else { const t = T.find(x => token(x.ticker) === h); if(t) ouvrir(t.ticker, false); }
+}
+</script>

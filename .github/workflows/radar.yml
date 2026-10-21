@@ -1,0 +1,66 @@
+# Met à jour Radar Bourse automatiquement et le publie sur GitHub Pages.
+# - toutes les heures pendant les heures de marché (lundi → vendredi)
+# - toutes les 3 heures le week-end (les cryptos ne ferment jamais)
+# - un calcul complet chaque soir, qui sauvegarde aussi l'historique des prédictions
+name: Mise à jour du Radar
+
+on:
+  schedule:
+    - cron: "5 7-21 * * 1-5"    # chaque heure de 7h05 à 21h05 UTC en semaine
+    - cron: "5 */3 * * 0,6"     # toutes les 3 h le week-end
+    - cron: "30 22 * * *"       # chaque soir à 22h30 UTC (après la clôture de Wall Street)
+  workflow_dispatch:            # bouton « Run workflow » pour lancer à la main
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: radar
+  cancel-in-progress: false
+
+jobs:
+  construire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+
+      - name: Analyser les marchés et générer le site
+        run: python -m bourse_bot --pas-de-navigateur site
+
+      - name: Sauvegarder l'historique des prédictions (le soir seulement)
+        if: github.event.schedule == '30 22 * * *' || github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add historique/predictions.csv
+          git commit -m "Prédictions du $(date +%F)" || echo "Rien de nouveau à enregistrer"
+          git push
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  publier:
+    needs: construire
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - id: deploiement
+        uses: actions/deploy-pages@v4
