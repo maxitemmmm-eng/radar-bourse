@@ -26,8 +26,21 @@ Le site s'ouvre tout seul dans ton navigateur (`site/index.html`). Il faut Inter
 | `python -m bourse_bot --demo` | Données fictives, pour tester sans Internet |
 | `python -m bourse_bot --sans-ml` | Plus rapide, sans le modèle de prédiction |
 
+## Mettre à jour le site en ligne
+
+- **Les données** (cours, prévisions, actus) se mettent à jour toutes seules, chaque heure en semaine.
+- **Une nouvelle version du code** : extrais le nouveau zip **dans le même dossier** que l'ancien
+  (accepte de remplacer les fichiers), puis double-clique sur `mettre_en_ligne.bat`. Il ne repose pas
+  les questions et envoie la nouvelle version ; le site est à jour 3 à 6 minutes après.
+
 ## Ce qu'affiche le site
 
+- **Signaux forts** : les titres où le modèle est confiant ET la tendance technique haussière,
+  avec leur taux de réussite réellement mesuré sur l'historique.
+- **Actualités** : derniers titres de presse par action et pour le marché, avec leur tonalité
+  (positive, neutre, négative). La tonalité est informative : elle n'entre pas dans la probabilité.
+- **Simulateur** dans chaque fiche : choisis un montant et une durée, le site rejoue 4 000 scénarios
+  tirés du vrai historique du titre et montre l'éventail des résultats et le risque de perte.
 - **Météo du marché** : part des titres en tendance haussière, probabilité moyenne, signaux d'achat
   et de vente, nombre de configurations de décollage.
 

@@ -32,6 +32,9 @@ class Analyse:
     devise: str = "$"
     rendement_attendu: float = float("nan")   # médiane historique pour cette probabilité
     fourchette: tuple = ()                    # (bas, haut) probables à l'horizon
+    signal_fort: bool = False                 # modèle confiant ET tendance technique haussière
+    actus: list = field(default_factory=list) # derniers titres d'actualité
+    tonalite: float = float("nan")            # tonalité moyenne des actus (-1 à +1)
 
     def to_dict(self) -> dict:
         return propre(self.__dict__.copy())

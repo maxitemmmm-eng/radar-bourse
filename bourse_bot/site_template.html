@@ -144,6 +144,62 @@ footer{margin-top:48px;border-top:1px solid var(--line);padding-block:20px 40px;
 footer nav{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13.5px}
 .lnk{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-size:inherit}
 
+/* Accroche */
+.hero{padding-block:28px 4px;max-width:760px}
+.hero h2{font-size:clamp(28px,4.4vw,44px);font-weight:800;letter-spacing:-.025em;line-height:1.05}
+.hero p{margin:12px 0 0;color:var(--muted);font-size:16px;max-width:62ch}
+
+/* Signaux forts */
+.fort-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:20px}
+@media (max-width:860px){.fort-panel{grid-template-columns:1fr}}
+.fort-stats{display:grid;gap:12px;align-content:start}
+.fort-stats .big{font-family:var(--f-display);font-size:40px;font-weight:800;line-height:1}
+.fort-stats p{margin:0;font-size:14px;color:var(--muted);max-width:44ch}
+.cmp{display:grid;gap:6px}
+.cmp div{display:grid;grid-template-columns:120px 1fr 48px;gap:8px;align-items:center;font-size:13px}
+.cmp i{display:block;height:8px;border-radius:4px;background:var(--accent)}
+.cmp .b i{background:var(--line)}
+.fort-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;align-content:start}
+.fcard{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2);cursor:pointer;text-align:left;width:100%;display:grid;gap:6px}
+.fcard:hover{border-color:var(--accent)}
+.fcard .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.fcard .top b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge-fort{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--accent-soft);color:var(--accent);margin-left:6px;vertical-align:middle}
+
+/* Actualités */
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.news{display:grid;gap:6px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);text-decoration:none;min-width:0}
+.news:hover{border-color:var(--accent)}
+.news .h{font-weight:500;line-height:1.35}
+.news .m{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.tone{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;white-space:nowrap}
+.tone::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.tone.pos{color:var(--up)}.tone.neg{color:var(--down)}.tone.neu{color:var(--muted)}
+
+/* Onglets de la fiche */
+.dtabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.dtab{background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;cursor:pointer;color:var(--muted);font-weight:600;white-space:nowrap}
+.dtab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.dpane{display:grid;gap:16px}
+
+/* Simulateur */
+.sim-ctrl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:560px){.sim-ctrl{grid-template-columns:1fr}}
+.field{display:grid;gap:6px}
+.field label{font-size:13px;font-weight:600}
+.field .val{font-family:var(--f-mono);font-size:20px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.switch{display:flex;gap:8px;align-items:center;font-size:14px}
+.sim-out{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.sim-out{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hist{width:100%;height:auto;display:block}
+.hist text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+.range-band{position:relative;height:34px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);margin-top:4px}
+.range-band .zone{position:absolute;top:6px;bottom:6px;border-radius:5px;background:var(--accent-soft)}
+.range-band .mid{position:absolute;top:2px;bottom:2px;width:2px;background:var(--accent)}
+.range-band .start{position:absolute;top:0;bottom:0;width:1.5px;background:var(--ink);opacity:.5}
+.past{display:flex;gap:6px;flex-wrap:wrap}
+
 /* Météo du marché */
 .mood{margin-top:14px;display:grid;grid-template-columns:auto 1fr;gap:10px 28px;align-items:center}
 .mood .mot{font-family:var(--f-display);font-size:30px;font-weight:800;line-height:1}
@@ -198,6 +254,10 @@ footer nav{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13.5px}
 <div class="demo gutter" id="demo" hidden><div class="wrap">Données fictives de démonstration. Lance <span class="num">python -m bourse_bot site</span> sur ton PC pour afficher les vrais cours.</div></div>
 
 <main class="gutter"><div class="wrap">
+  <div class="hero">
+    <h2>Les marchés, lus par les chiffres.</h2>
+    <p>Prévisions statistiques à un mois, signaux forts mesurés sur l'historique, actualités et simulateur pour chaque titre. Un projet éducatif : les chiffres aident à réfléchir, ils ne décident pas à ta place.</p>
+  </div>
   <div class="tape" id="tape" aria-label="Marchés"></div>
   <div class="mood panel" id="mood" aria-label="Météo du marché"></div>
 
@@ -209,6 +269,21 @@ footer nav{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13.5px}
       <div class="panel"><div class="label" style="margin-bottom:10px">Configurations de décollage</div><div class="rocket-list" id="rockets"></div></div>
     </div>
     <p class="note-pred">Calculs statistiques automatiques, identiques pour tout le monde. Ce ne sont pas des recommandations d'achat ou de vente. <button class="lnk" data-legal="risques">Lire l'avertissement sur les risques</button></p>
+  </section>
+
+  <section aria-labelledby="h-fort">
+    <div class="sec-head"><h2 id="h-fort">Signaux forts</h2>
+      <p>Le modèle est confiant (probabilité calibrée d'au moins 55 %) <b>et</b> la tendance technique est haussière. C'est plus rare, et c'est là que le radar a été le plus juste sur l'historique.</p></div>
+    <div class="panel fort-panel">
+      <div class="fort-stats" id="fort-stats"></div>
+      <div class="fort-list" id="fort-list"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-news">
+    <div class="sec-head"><h2 id="h-news">L'actu du marché</h2>
+      <p>Derniers titres de presse sur les grands indices et le Bitcoin, avec leur tonalité estimée automatiquement.</p></div>
+    <div class="news-grid" id="news-marche"></div>
   </section>
 
   <section aria-labelledby="h-trust">
@@ -233,14 +308,15 @@ footer nav{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13.5px}
       <button class="chip" data-m="crypto" aria-pressed="false">Crypto</button>
       <button class="chip" data-m="etf" aria-pressed="false">ETF / indices</button>
       <button class="chip" data-m="tendances" aria-pressed="false">En tendance</button>
-      <button class="chip" data-m="rocket" aria-pressed="false">Décollage seulement</button>
+      <button class="chip" data-m="fort" aria-pressed="false">Signaux forts</button>
+      <button class="chip" data-m="rocket" aria-pressed="false">Décollage</button>
       <input class="search" id="q" type="search" placeholder="Rechercher un titre…" aria-label="Rechercher un titre">
     </div>
     <div class="tablewrap"><table>
       <thead><tr>
         <th data-k="ticker">Titre</th><th data-k="prix">Cours</th><th data-k="j1">1 jour</th><th data-k="m1">1 mois</th><th data-k="m3">3 mois</th>
         <th data-k="score" aria-sort="descending">Score</th><th data-k="signal">Signal</th>
-        <th data-k="proba">Proba de hausse</th><th data-k="risque">Risque</th><th data-k="rocket"></th>
+        <th data-k="proba">Proba de hausse</th><th data-k="actus">Actus</th><th data-k="risque">Risque</th><th data-k="rocket"></th>
       </tr></thead><tbody id="rows"></tbody></table></div>
   </section>
 
@@ -384,6 +460,48 @@ $("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t
   <div class="why">${esc((t.alertes[0]||"").replace(/^🚀 Configuration de hausse potentielle : /,""))}</div></button>`).join("")
   || `<div class="empty">Aucune configuration de décollage aujourd'hui. Le radar ne force pas les signaux quand le marché n'en donne pas.</div>`;
 
+/* ---------- Tonalité des actus ---------- */
+function ton(v){
+  if(v==null || isNaN(v)) return `<span class="tone neu">Pas d'actu</span>`;
+  if(v > 0.15) return `<span class="tone pos">Positive</span>`;
+  if(v < -0.15) return `<span class="tone neg">Négative</span>`;
+  return `<span class="tone neu">Neutre</span>`;
+}
+function depuis(iso){
+  const h = Math.round((Date.now() - new Date(iso)) / 3600000);
+  return h < 1 ? "à l'instant" : h < 24 ? `il y a ${h} h` : `il y a ${Math.round(h/24)} j`;
+}
+function carteActu(n, avecTitre=""){
+  return `<a class="news" href="${esc(n.url)}" target="_blank" rel="noopener">
+    <span class="h">${esc(n.titre)}</span>
+    <span class="m">${ton(n.tonalite)}<span>${esc(n.source||"")}</span><span>${depuis(n.date)}</span>${avecTitre}</span></a>`;
+}
+$("#news-marche").innerHTML = (DATA.actus_marche||[]).map(n => carteActu(n)).join("")
+  || `<div class="empty">Pas d'actualité récupérée lors de la dernière mise à jour.</div>`;
+
+/* ---------- Signaux forts ---------- */
+(function(){
+  const sf = DATA.modele && DATA.modele.signaux_forts;
+  const forts = T.filter(t => t.signal_fort).sort((a,b) => b.proba_hausse - a.proba_hausse);
+  if(sf && sf.precision != null){
+    const lift = sf.precision - sf.base;
+    $("#fort-stats").innerHTML = `
+      <div><div class="label">Réussite mesurée de ces signaux</div><div class="big num">${Math.round(sf.precision*100)} %</div></div>
+      <div class="cmp">
+        <div><span>Signaux forts</span><i style="width:${Math.round(sf.precision*100)}%"></i><span class="num">${Math.round(sf.precision*100)} %</span></div>
+        <div class="b"><span>Tous les titres</span><i style="width:${Math.round(sf.base*100)}%"></i><span class="num">${Math.round(sf.base*100)} %</span></div>
+      </div>
+      <p>Part des cas où le cours était plus haut ${H} séances après un signal fort, sur ${sf.nb.toLocaleString('fr-FR')} cas jamais vus par le modèle (${esc(DATA.modele.periode)}). ${lift > 0.02 ? `C'est ${Math.round(lift*100)} points de mieux que la moyenne.` : `C'est à peine mieux que la moyenne : prudence.`} Un signal fort se trompe quand même régulièrement.</p>`;
+  } else {
+    $("#fort-stats").innerHTML = `<p>Pas assez de cas dans l'historique pour mesurer la réussite des signaux forts.</p>`;
+  }
+  $("#fort-list").innerHTML = forts.slice(0, 9).map(t => `<button class="fcard" data-t="${esc(t.ticker)}">
+      <span class="top"><b>${esc(t.nom)}</b><span class="num">${Math.round(t.proba_hausse*100)} %</span></span>
+      ${spark(t.spark, 180, 30)}
+      <span class="m muted" style="font-size:12px">${esc(t.ticker)} · ${NOM_MARCHE[t.marche]||""} · actus ${ton(t.tonalite)}</span></button>`).join("")
+    || `<div class="empty">Aucun signal fort aujourd'hui. Le radar n'en invente pas quand les conditions ne sont pas réunies.</div>`;
+})();
+
 /* ---------- Fiabilité ---------- */
 const M = DATA.modele;
 if(M && M.precision!=null){
@@ -413,10 +531,10 @@ $("#suivi").innerHTML = S.nb_verifiees ? `
 /* ---------- Tableau ---------- */
 let filtre = "all", tri = {k:"score", asc:false};
 const val = (t,k) => ({ticker:t.ticker, prix:t.prix, j1:t.perf["1 jour"], m1:t.perf["1 mois"], m3:t.perf["3 mois"], score:t.score,
-  signal:t.score, proba:t.proba_hausse ?? -1, risque:RISK[t.risque], rocket:t.potentiel_hausse?1:0})[k];
+  signal:t.score, proba:t.proba_hausse ?? -1, risque:RISK[t.risque], rocket:t.potentiel_hausse?1:0, actus:t.tonalite ?? -9})[k];
 function rendre(){
   const q = $("#q").value.trim().toLowerCase();
-  let L = T.filter(t => filtre==="all" || (filtre==="rocket" ? t.potentiel_hausse : t.marche===filtre))
+  let L = T.filter(t => filtre==="all" || (filtre==="rocket" ? t.potentiel_hausse : filtre==="fort" ? t.signal_fort : t.marche===filtre))
            .filter(t => !q || t.ticker.toLowerCase().includes(q) || t.nom.toLowerCase().includes(q));
   L.sort((a,b) => { const x=val(a,tri.k), y=val(b,tri.k);
     return (typeof x==="string" ? x.localeCompare(y) : (x??-9)-(y??-9)) * (tri.asc?1:-1); });
@@ -425,10 +543,10 @@ function rendre(){
     <td class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}${t.live?'<span class="src">direct</span>':''}</td><td data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</td><td>${pct(t.perf["1 mois"])}</td>
     <td class="spk"><span>${spark(t.spark,72,24)}</span><span>${pct(t.perf["3 mois"],0)}</span></td>
     <td><span class="score"><span class="num">${Math.round(t.score)}</span><span class="mini"><i style="width:${t.score}%"></i></span></span></td>
-    <td><span class="pill ${SIG[t.signal]}">${esc(t.signal)}</span></td>
-    <td>${gauge(t.proba_hausse)}</td><td class="risk r${RISK[t.risque]}">${esc(t.risque)}</td>
+    <td><span class="pill ${SIG[t.signal]}">${esc(t.signal)}</span>${t.signal_fort?'<span class="badge-fort">Fort</span>':''}</td>
+    <td>${gauge(t.proba_hausse)}</td><td>${ton(t.tonalite)}</td><td class="risk r${RISK[t.risque]}">${esc(t.risque)}</td>
     <td>${t.potentiel_hausse?'<span title="Configuration de décollage">🚀</span>':''}</td></tr>`).join("")
-    || `<tr><td colspan="10" class="empty">Aucun titre ne correspond.</td></tr>`;
+    || `<tr><td colspan="11" class="empty">Aucun titre ne correspond.</td></tr>`;
 }
 document.querySelectorAll(".filters .chip").forEach(c => c.onclick = () => {
   document.querySelectorAll(".filters .chip").forEach(x => x.setAttribute("aria-pressed", x===c));
@@ -467,6 +585,78 @@ function graphique(t){
   }
   chart.timeScale().fitContent();
 }
+/* ---------- Simulateur Monte-Carlo ---------- */
+function simuler(t, montant, h, avecModele){
+  const r = t.rendements;
+  if(!r || r.length < 60) return null;
+  const moy = r.reduce((a,b) => a+b, 0) / r.length;
+  let mu = avecModele && t.rendement_attendu != null ? Math.log(1 + t.rendement_attendu) / H : moy;
+  mu = Math.max(-0.003, Math.min(0.003, mu));       // garde-fou contre les dérives extrêmes
+  const N = 4000, B = 5, fin = new Float64Array(N);
+  let graine = 2463534242;                             // générateur déterministe : mêmes réglages, même résultat
+  const alea = () => { graine ^= graine << 13; graine >>>= 0; graine ^= graine >>> 17; graine ^= graine << 5; graine >>>= 0; return graine / 4294967296; };
+  for(let i = 0; i < N; i++){
+    let somme = 0, k = 0;
+    while(k < h){                                      // tirage par blocs de 5 jours pour garder les séries de hausses/baisses
+      const st = Math.floor(alea() * (r.length - B));
+      for(let j = 0; j < B && k < h; j++, k++) somme += r[st + j] - moy + mu;
+    }
+    fin[i] = montant * Math.exp(somme);
+  }
+  fin.sort();
+  const q = p => fin[Math.min(N - 1, Math.floor(p * N))];
+  let perte = 0, gain10 = 0;
+  for(const v of fin){ if(v < montant) perte++; if(v >= montant * 1.1) gain10++; }
+  return {fin, q01:q(.01), q10:q(.1), q50:q(.5), q90:q(.9), q99:q(.99), pPerte:perte/N, pGain10:gain10/N};
+}
+let simEnAttente = null;
+function lancerSim(t){
+  if(simEnAttente) cancelAnimationFrame(simEnAttente);
+  simEnAttente = requestAnimationFrame(() => dessinerSim(t));
+}
+function dessinerSim(t){
+  const montant = +$("#sim-montant").value, h = +$("#sim-duree").value, modele = $("#sim-modele").checked;
+  const mois = h / (t.jours_an === 365 ? 30.4 : 21);
+  $("#sim-montant-v").textContent = montant.toLocaleString("fr-FR") + " €";
+  $("#sim-duree-v").textContent = `${h} ${t.jours_an === 365 ? "jours" : "séances"} · ≈ ${mois < 1.5 ? Math.round(mois*4.3)+" semaines" : Math.round(mois)+" mois"}`;
+  const R = simuler(t, montant, h, modele);
+  if(!R){ $("#sim-out").innerHTML = `<div class="empty">Historique trop court pour simuler.</div>`; return; }
+  const eur = v => Math.round(v).toLocaleString("fr-FR") + " €";
+  const g = v => `<span class="${v>=montant?'up':'down'}">${eur(v)}</span>`;
+  $("#sim-out").innerHTML = `
+    <div class="fact"><div class="label">Résultat médian</div><div class="v">${g(R.q50)}</div></div>
+    <div class="fact"><div class="label">8 cas sur 10 entre</div><div class="v">${eur(R.q10)} – ${eur(R.q90)}</div></div>
+    <div class="fact"><div class="label">Risque de finir en perte</div><div class="v down">${Math.round(R.pPerte*100)} %</div></div>
+    <div class="fact"><div class="label">Chance de gagner +10 %</div><div class="v up">${Math.round(R.pGain10*100)} %</div></div>`;
+  // histogramme
+  const W = 600, Ht = 170, bas = 22, nb = 36, lo = R.q01, hi = R.q99, pas = (hi - lo) / nb || 1;
+  const bacs = new Array(nb).fill(0);
+  for(const v of R.fin){ if(v >= lo && v <= hi) bacs[Math.min(nb-1, Math.floor((v - lo) / pas))]++; }
+  const mx = Math.max(...bacs) || 1, bw = W / nb;
+  const xv = v => Math.max(0, Math.min(W, (v - lo) / (hi - lo) * W));
+  let barres = bacs.map((c, i) => {
+    const x0 = lo + i * pas, hgt = c / mx * (Ht - bas - 10);
+    return `<rect x="${(i*bw+1).toFixed(1)}" y="${(Ht-bas-hgt).toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${hgt.toFixed(1)}" rx="2" fill="${x0 + pas/2 >= montant ? 'var(--up)' : 'var(--down)'}" opacity=".75"/>`;
+  }).join("");
+  const xm = xv(montant), xmed = xv(R.q50);
+  $("#sim-hist").innerHTML = `<svg class="hist" viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Histogramme des résultats simulés">
+    ${barres}
+    <line x1="${xm}" x2="${xm}" y1="4" y2="${Ht-bas}" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 3" opacity=".6"/>
+    <line x1="${xmed}" x2="${xmed}" y1="4" y2="${Ht-bas}" stroke="var(--accent)" stroke-width="2"/>
+    <text x="4" y="${Ht-6}">${eur(lo)}</text><text x="${W-4}" y="${Ht-6}" text-anchor="end">${eur(hi)}</text>
+    <text x="${Math.min(W-80, Math.max(80, xmed))}" y="${Ht-6}" text-anchor="middle" style="fill:var(--accent)">médiane ${eur(R.q50)}</text></svg>`;
+  const b = $("#sim-band");
+  b.innerHTML = `<div class="zone" style="left:${xv(R.q10)/W*100}%;width:${(xv(R.q90)-xv(R.q10))/W*100}%"></div>
+    <div class="start" style="left:${xm/W*100}%"></div><div class="mid" style="left:${xmed/W*100}%"></div>`;
+  // « et si tu avais investi il y a… »
+  const c = t.serie.c, n = c.length;
+  const passes = [["1 mois",21],["3 mois",63],["6 mois",126],["1 an",250]].filter(([,d]) => d < n);
+  $("#sim-past").innerHTML = passes.map(([lib, d]) => {
+    const v = montant * t.prix / c[n - 1 - d];
+    return `<div class="fact"><div class="label">${lib}</div><div class="v">${g(v)}</div></div>`;
+  }).join("");
+}
+
 function ouvrir(tk, pousser=true){
   const t = T.find(x => x.ticker===tk); if(!t) return;
   courant = t;
@@ -478,34 +668,78 @@ function ouvrir(tk, pousser=true){
     (f && f.length ? `Fourchette probable à cette échéance (2 chances sur 3) : <b class="num">${px(f[0],t.devise)}</b> à <b class="num">${px(f[1],t.devise)}</b>. ` : "") +
     (DATA.modele && DATA.modele.auc < 0.52 ? `Attention, sur l'historique ce modèle ne fait pas mieux que le hasard.` : "");
   const bt = t.backtest;
+  const tonMoy = t.tonalite;
   $("#d-body").innerHTML = `
-    <div class="forecast">
-      <div class="panel kpi"><div class="label">Proba de hausse · ${H} séances</div><div class="v num">${p==null?'–':Math.round(p*100)+' %'}</div>${gauge(p)}</div>
-      <div class="panel kpi"><div class="label">Score technique</div><div class="v num">${Math.round(t.score)} / 100</div><span class="pill ${SIG[t.signal]}">${esc(t.signal)}</span></div>
-      <div class="panel kpi"><div class="label">Risque</div><div class="v">${esc(t.risque)}</div><div class="d">volatilité annuelle ${pctPlain(t.perf["volatilité annuelle"],0)}</div></div>
+    <div class="dtabs" role="tablist">
+      <button class="dtab" role="tab" data-dtab="prev" aria-selected="true">Prévision</button>
+      <button class="dtab" role="tab" data-dtab="sim" aria-selected="false">Simulateur</button>
+      <button class="dtab" role="tab" data-dtab="actus" aria-selected="false">Actualités${t.actus && t.actus.length ? ` (${t.actus.length})` : ""}</button>
+      <button class="dtab" role="tab" data-dtab="analyse" aria-selected="false">Analyse</button>
     </div>
-    <p class="sentence">${phrase}</p>
-    <div><div class="chart" id="chart"></div>
-    <div class="legend" style="margin-top:8px"><span style="--c:var(--accent)">Moyenne 50 jours</span><span style="--c:var(--warn)">Moyenne 200 jours</span><span style="--c:var(--cone)">Prévision : médiane et fourchette</span></div></div>
-    <div class="panel"><div class="label" style="margin-bottom:8px">Pourquoi ce signal</div><ul class="reasons">
-      ${t.alertes.map(r=>`<li><span>🔔</span><span>${esc(r.replace(/^🚀 /,""))}</span></li>`).join("")}
-      ${t.raisons_pour.map(r=>`<li><span class="up">✓</span><span>${esc(r)}</span></li>`).join("")}
-      ${t.raisons_contre.map(r=>`<li><span class="down">✕</span><span>${esc(r)}</span></li>`).join("")}</ul></div>
-    <div class="facts">
-      <div class="fact"><div class="label">1 semaine</div><div class="v">${pct(t.perf["1 semaine"])}</div></div>
-      <div class="fact"><div class="label">1 mois</div><div class="v">${pct(t.perf["1 mois"])}</div></div>
-      <div class="fact"><div class="label">3 mois</div><div class="v">${pct(t.perf["3 mois"])}</div></div>
-      <div class="fact"><div class="label">6 mois</div><div class="v">${pct(t.perf["6 mois"])}</div></div>
-      <div class="fact"><div class="label">Stop-loss indicatif</div><div class="v">${px(t.stop_loss,t.devise)}</div></div>
-      <div class="fact"><div class="label">Objectif indicatif</div><div class="v">${px(t.objectif,t.devise)}</div></div>
+
+    <div class="dpane" data-dpane="prev">
+      <div class="forecast">
+        <div class="panel kpi"><div class="label">Proba de hausse · ${H} séances</div><div class="v num">${p==null?'–':Math.round(p*100)+' %'}${t.signal_fort?'<span class="badge-fort">Signal fort</span>':''}</div>${gauge(p)}</div>
+        <div class="panel kpi"><div class="label">Score technique</div><div class="v num">${Math.round(t.score)} / 100</div><span class="pill ${SIG[t.signal]}">${esc(t.signal)}</span></div>
+        <div class="panel kpi"><div class="label">Risque</div><div class="v">${esc(t.risque)}</div><div class="d">volatilité annuelle ${pctPlain(t.perf["volatilité annuelle"],0)}</div></div>
+      </div>
+      <p class="sentence">${phrase}</p>
+      <div><div class="chart" id="chart"></div>
+      <div class="legend" style="margin-top:8px"><span style="--c:var(--accent)">Moyenne 50 jours</span><span style="--c:var(--warn)">Moyenne 200 jours</span><span style="--c:var(--cone)">Prévision : médiane et fourchette</span></div></div>
     </div>
-    ${bt ? `<div class="panel"><div class="label" style="margin-bottom:8px">Si tu avais suivi les signaux du radar (${bt.annees} ans, 1 000 € de départ, frais compris)</div>
-      <div class="facts"><div class="fact"><div class="label">Radar</div><div class="v">${pct(bt.bot)}</div></div>
-      <div class="fact"><div class="label">Acheter et garder</div><div class="v">${pct(bt.garder)}</div></div>
-      <div class="fact"><div class="label">Trades</div><div class="v">${bt.trades}</div></div>
-      <div class="fact"><div class="label">Pire baisse radar</div><div class="v">${pct(bt.drawdown_bot)}</div></div></div>
-      <p class="muted" style="font-size:13px;margin:8px 0 0">${bt.bot>bt.garder?"Sur ce titre, suivre les signaux a fait mieux que garder.":"Sur ce titre, simplement garder a fait mieux que suivre les signaux."}</p></div>`:""}
+
+    <div class="dpane" data-dpane="sim" hidden>
+      <p class="sentence">Simule ce que pourrait devenir une somme investie dans ${esc(t.nom)}. Le calcul rejoue 4 000 fois des suites de journées tirées de son vrai historique, pour montrer l'éventail des possibles plutôt qu'un seul chiffre.</p>
+      <div class="panel sim-ctrl">
+        <div class="field"><label for="sim-montant">Montant investi</label><span class="val" id="sim-montant-v"></span>
+          <input type="range" id="sim-montant" min="50" max="10000" step="50" value="500"></div>
+        <div class="field"><label for="sim-duree">Durée</label><span class="val" id="sim-duree-v"></span>
+          <input type="range" id="sim-duree" min="5" max="250" step="5" value="${H}"></div>
+        <label class="switch"><input type="checkbox" id="sim-modele" checked> Tenir compte de la prévision du modèle</label>
+      </div>
+      <div class="sim-out" id="sim-out"></div>
+      <div class="panel"><div class="label">Répartition des 4 000 résultats simulés</div><div id="sim-hist"></div>
+        <div class="range-band" id="sim-band" aria-hidden="true"></div>
+        <p class="muted" style="font-size:12.5px;margin:8px 0 0">Zone bleue : 8 cas sur 10. Trait bleu : résultat médian. Trait gris : ta mise de départ.</p></div>
+      <div class="panel"><div class="label" style="margin-bottom:8px">Et si tu avais investi ce montant il y a…</div>
+        <div class="past" id="sim-past"></div></div>
+      <p class="disclaimer">Simulation statistique : l'avenir peut sortir de cet éventail (krach, annonce surprise). Elle ne garantit aucun résultat.</p>
+    </div>
+
+    <div class="dpane" data-dpane="actus" hidden>
+      <div class="panel" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap"><div><div class="label">Tonalité des 7 derniers jours</div><div style="font-size:18px;margin-top:4px">${ton(tonMoy)}</div></div>
+        <p class="muted" style="margin:0;font-size:13px;flex:1 1 280px">Estimée automatiquement à partir des titres d'articles. Elle n'entre pas dans la probabilité du modèle : c'est un éclairage, à lire avec recul.</p></div>
+      <div class="news-grid" style="grid-template-columns:1fr">${(t.actus||[]).map(n => carteActu(n)).join("") || `<div class="empty">Pas d'actualité récente trouvée pour ce titre.</div>`}</div>
+    </div>
+
+    <div class="dpane" data-dpane="analyse" hidden>
+      <div class="panel"><div class="label" style="margin-bottom:8px">Pourquoi ce signal</div><ul class="reasons">
+        ${t.alertes.map(r=>`<li><span>🔔</span><span>${esc(r.replace(/^🚀 /,""))}</span></li>`).join("")}
+        ${t.raisons_pour.map(r=>`<li><span class="up">✓</span><span>${esc(r)}</span></li>`).join("")}
+        ${t.raisons_contre.map(r=>`<li><span class="down">✕</span><span>${esc(r)}</span></li>`).join("")}</ul></div>
+      <div class="facts">
+        <div class="fact"><div class="label">1 semaine</div><div class="v">${pct(t.perf["1 semaine"])}</div></div>
+        <div class="fact"><div class="label">1 mois</div><div class="v">${pct(t.perf["1 mois"])}</div></div>
+        <div class="fact"><div class="label">3 mois</div><div class="v">${pct(t.perf["3 mois"])}</div></div>
+        <div class="fact"><div class="label">6 mois</div><div class="v">${pct(t.perf["6 mois"])}</div></div>
+        <div class="fact"><div class="label">Stop-loss indicatif</div><div class="v">${px(t.stop_loss,t.devise)}</div></div>
+        <div class="fact"><div class="label">Objectif indicatif</div><div class="v">${px(t.objectif,t.devise)}</div></div>
+      </div>
+      ${bt ? `<div class="panel"><div class="label" style="margin-bottom:8px">Si tu avais suivi les signaux du radar (${bt.annees} ans, 1 000 € de départ, frais compris)</div>
+        <div class="facts"><div class="fact"><div class="label">Radar</div><div class="v">${pct(bt.bot)}</div></div>
+        <div class="fact"><div class="label">Acheter et garder</div><div class="v">${pct(bt.garder)}</div></div>
+        <div class="fact"><div class="label">Trades</div><div class="v">${bt.trades}</div></div>
+        <div class="fact"><div class="label">Pire baisse radar</div><div class="v">${pct(bt.drawdown_bot)}</div></div></div>
+        <p class="muted" style="font-size:13px;margin:8px 0 0">${bt.bot>bt.garder?"Sur ce titre, suivre les signaux a fait mieux que garder.":"Sur ce titre, simplement garder a fait mieux que suivre les signaux."}</p></div>`:""}
+    </div>
     <p class="disclaimer">Prévision statistique, pas une certitude. Ce n'est pas un conseil en investissement.</p>`;
+  document.querySelectorAll(".dtab").forEach(b => b.onclick = () => {
+    document.querySelectorAll(".dtab").forEach(x => x.setAttribute("aria-selected", x === b));
+    document.querySelectorAll("[data-dpane]").forEach(p => p.hidden = p.dataset.dpane !== b.dataset.dtab);
+    if(b.dataset.dtab === "prev") requestAnimationFrame(() => graphique(t));
+    if(b.dataset.dtab === "sim") lancerSim(t);
+  });
+  ["sim-montant","sim-duree","sim-modele"].forEach(id => $("#"+id).addEventListener("input", () => lancerSim(t)));
   $("#sheet").hidden = false; document.body.style.overflow = "hidden";
   requestAnimationFrame(() => graphique(t));
   if(pousser) try{ history.replaceState(null, "", "#" + token(t.ticker)); }catch(e){}

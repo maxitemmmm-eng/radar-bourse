@@ -63,7 +63,7 @@ def _backtest(ticker: str, d: pd.DataFrame) -> dict | None:
             "drawdown_bot": r.stats_strategie["pire baisse (drawdown)"]}
 
 
-def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False) -> dict:
+def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, actus_marche=None) -> dict:
     horizon = config.HORIZON_PREDICTION
     titres = []
     for a in sorted(analyses, key=lambda a: a.score, reverse=True):
@@ -78,6 +78,10 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False) 
         item["backtest"] = _backtest(a.ticker, d)
         item["prev_close"] = float(d["Close"].iloc[-2]) if len(d) > 1 else None
         item["spark"] = [_arrondi(v) for v in d["Close"].iloc[-63:]]
+        # rendements quotidiens réels (3 dernières années) pour le simulateur Monte-Carlo du site
+        lr = np.log(d["Close"]).diff().dropna().iloc[-750:]
+        item["rendements"] = [round(float(v), 5) for v in lr if np.isfinite(v)]
+        item["jours_an"] = 365 if a.ticker.endswith("-USD") else 252
         x = d.iloc[-1]
         item["au_dessus_200"] = bool(x["Close"] > x["sma200"]) if x["sma200"] == x["sma200"] else None
         titres.append(item)
@@ -101,6 +105,7 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False) 
         "modele": None if evaluation is None else evaluation.to_dict(),
         "suivi": suivi, "indices": indices, "titres": titres,
         "live": {"finnhub": config.FINNHUB_CLE},
+        "actus_marche": actus_marche or [],
         "legal": {"editeur": config.EDITEUR, "contact": config.CONTACT},
     })
 

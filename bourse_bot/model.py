@@ -29,6 +29,15 @@ from .indicators import FEATURES
 COLS_RANG = ["ret_21j", "ret_63j", "ret_126j", "vol_20j", "force_relative_63j", "dist_plus_haut"]
 VARIABLES = FEATURES + ["est_crypto"] + [f"rang_{c}" for c in COLS_RANG]
 TRANCHES = [0.0, 0.40, 0.45, 0.50, 0.55, 0.60, 1.0]
+SEUIL_FORT = 0.55  # probabilité calibrée minimale pour un « signal fort »
+
+
+def technique_haussiere(df: pd.DataFrame) -> pd.Series:
+    """Tendance technique haussière nette : au-dessus de la moyenne 200 j, moyenne 50 j > 200 j,
+    MACD positif et RSI pas en surchauffe. Fonctionne sur les colonnes d'indicateurs."""
+    sma50_sur_200 = (1 + df["dist_sma200"]) / (1 + df["dist_sma50"])
+    return ((df["dist_sma200"] > 0) & (sma50_sur_200 > 1) & (df["macd_hist_norm"] > 0)
+            & (df["rsi"] < 75)).fillna(False)
 NOMS_TRANCHES = ["< 40 %", "40–45 %", "45–50 %", "50–55 %", "55–60 %", "> 60 %"]
 
 
@@ -58,6 +67,8 @@ class Evaluation:
     auc: float
     nb_tests: int
     calibration: list = field(default_factory=list)   # par tranche de probabilité
+    signaux_forts: dict = field(default_factory=dict)  # modèle confiant ET technique haussière
+    top_confiance: dict = field(default_factory=dict)  # 10 % des prévisions les plus confiantes
     par_marche: dict = field(default_factory=dict)
     periode: str = ""
 
@@ -83,6 +94,8 @@ class Evaluation:
         return {"precision": self.precision, "precision_base": self.precision_base, "auc": self.auc,
                 "nb_tests": self.nb_tests, "calibration": self.calibration,
                 "par_marche": self.par_marche, "periode": self.periode, "verdict": self.verdict(),
+                "signaux_forts": self.signaux_forts, "top_confiance": self.top_confiance,
+                "seuil_fort": SEUIL_FORT,
                 "horizon": config.HORIZON_PREDICTION}
 
 
@@ -122,6 +135,7 @@ def evaluer_walk_forward(jeu: pd.DataFrame, horizon: int, n_plis: int = 6):
             continue
         mod = Ensemble().fit(train[VARIABLES], train["cible"])
         t = test[["cible", "rendement_futur", "marche"]].copy()
+        t["technique"] = technique_haussiere(test).to_numpy()
         t["proba"] = mod.predict_proba(test[VARIABLES])
         morceaux.append(t)
 
@@ -147,11 +161,22 @@ def evaluer_walk_forward(jeu: pd.DataFrame, horizon: int, n_plis: int = 6):
                          "base": float(max(g["cible"].mean(), 1 - g["cible"].mean())),
                          "nb": int(len(g))}
     periode = f"{oof.index.min():%m/%Y} – {oof.index.max():%m/%Y}"
+
+    def resume(sel):
+        if len(sel) < 30:
+            return {"nb": int(len(sel)), "precision": None, "rendement_median": None}
+        return {"nb": int(len(sel)), "precision": float(sel["cible"].mean()),
+                "rendement_median": float(sel["rendement_futur"].median()),
+                "part": float(len(sel) / len(oof))}
+    forts = resume(oof[(oof["proba"] >= SEUIL_FORT) & oof["technique"]])
+    forts["base"] = float(oof["cible"].mean())  # taux de hausse moyen, pour comparer
+    top = resume(oof[oof["proba"] >= oof["proba"].quantile(0.9)])
     return Evaluation(
         precision=float(((p > 0.5) == (y == 1)).mean()),
         precision_base=float(max(y.mean(), 1 - y.mean())),
         auc=float(roc_auc_score(y, p)) if len(set(y)) > 1 else np.nan,
-        nb_tests=len(y), calibration=calibration, par_marche=par_marche, periode=periode), calibreur
+        nb_tests=len(y), calibration=calibration, par_marche=par_marche, periode=periode,
+        signaux_forts=forts, top_confiance=top), calibreur
 
 
 def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICTION):

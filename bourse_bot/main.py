@@ -23,7 +23,7 @@ for flux in (sys.stdout, sys.stderr):
 from rich.console import Console
 from rich.table import Table
 
-from . import backtest, config, data, historique, indicators, model, report, scoring, site
+from . import backtest, config, data, historique, indicators, model, news, report, scoring, site
 
 console = Console()
 COULEUR = {"ACHAT FORT": "bold green", "ACHAT": "green", "NEUTRE": "white",
@@ -93,6 +93,8 @@ def _analyser(donnees, noms, marche_de, args):
                 for a in analyses:
                     a.proba_hausse = probas.get(a.ticker, float("nan"))
                     a.fiabilite_modele = evaluation.precision
+                    tech = bool(model.technique_haussiere(donnees[a.ticker].iloc[[-1]]).iloc[0])
+                    a.signal_fort = bool(a.proba_hausse >= model.SEUIL_FORT and tech)
             except Exception as e:
                 console.print(f"[yellow]Modèle désactivé pour cette fois : {e}[/yellow]")
     return analyses, evaluation
@@ -129,6 +131,13 @@ def cmd_site(args):
                       f"Yahoo bloque sans doute temporairement. Site non mis à jour, réessaie plus tard.[/red]")
         return 2
     analyses, evaluation = _analyser(donnees, noms, marche_de, args)
+    actus_marche = []
+    if not args.sans_actus:
+        with console.status("Lecture des actualités…"):
+            try:
+                actus_marche = news.enrichir(analyses)
+            except Exception as e:  # les actus sont un bonus : elles ne doivent jamais bloquer le site
+                console.print(f"[yellow]Actualités indisponibles cette fois : {e}[/yellow]")
     if not args.demo:
         historique.enregistrer(analyses)
     suivi = historique.bilan(bruts if not args.demo else {})
@@ -143,7 +152,8 @@ def cmd_site(args):
                     "🚀" if a.potentiel_hausse else "")
     console.print(tab)
 
-    payload = site.construire(analyses, donnees, evaluation, suivi, bruts, demo=args.demo)
+    payload = site.construire(analyses, donnees, evaluation, suivi, bruts, demo=args.demo,
+                              actus_marche=actus_marche)
     chemin = site.ecrire(payload)
     console.print(f"✅ Site généré : {len(analyses)} titres analysés.")
     _ouvrir(chemin, args)
@@ -209,6 +219,7 @@ def main(argv=None):
     p.add_argument("--demo", action="store_true", help="données fictives, sans Internet")
     p.add_argument("--sans-ml", action="store_true", help="désactive le modèle de machine learning")
     p.add_argument("--pas-de-navigateur", action="store_true", help="n'ouvre pas la page automatiquement")
+    p.add_argument("--sans-actus", action="store_true", help="ne récupère pas les actualités")
     sp = p.add_subparsers(dest="cmd")
 
     s = sp.add_parser("site", aliases=["scan"], help="analyse les marchés et génère le site")
