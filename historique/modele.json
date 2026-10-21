@@ -1,0 +1,272 @@
+{
+ "version": 2,
+ "recette": null,
+ "entrainements": [],
+ "date": "2026-10-21T17:01:18",
+ "horizon": 20,
+ "configuration": "Un seul modèle, indicateurs de base",
+ "mode": "commun",
+ "evaluation": {
+  "precision": 0.5417777989115165,
+  "precision_base": 0.5309188997583549,
+  "auc": 0.526075507699853,
+  "nb_tests": 231331,
+  "calibration": [
+   {
+    "tranche": "< 40 %",
+    "min": 0.0,
+    "max": 0.4,
+    "nb": 1,
+    "taux_hausse": 0.0,
+    "ic": [
+     0.0,
+     0.7934567085261071
+    ],
+    "rendement_moyen": -0.3275862004166852
+   },
+   {
+    "tranche": "40–45 %",
+    "min": 0.4,
+    "max": 0.45,
+    "nb": 732,
+    "taux_hausse": 0.43306010928961747,
+    "ic": [
+     0.397605940877775,
+     0.4692132223769254
+    ],
+    "rendement_moyen": -0.036607862000632596
+   },
+   {
+    "tranche": "45–50 %",
+    "min": 0.45,
+    "max": 0.5,
+    "nb": 27109,
+    "taux_hausse": 0.4554944852263086,
+    "ic": [
+     0.44957274604731573,
+     0.46142883631725645
+    ],
+    "rendement_moyen": -0.015672842676094034
+   },
+   {
+    "tranche": "50–55 %",
+    "min": 0.5,
+    "max": 0.55,
+    "nb": 158024,
+    "taux_hausse": 0.5434744089505391,
+    "ic": [
+     0.5410174479106246,
+     0.5459292562959587
+    ],
+    "rendement_moyen": 0.00848432909013852
+   },
+   {
+    "tranche": "55–60 %",
+    "min": 0.55,
+    "max": 0.6,
+    "nb": 39727,
+    "taux_hausse": 0.5105595690588265,
+    "ic": [
+     0.5056430748816891,
+     0.5154740212132498
+    ],
+    "rendement_moyen": 0.0021831053397185496
+   },
+   {
+    "tranche": "> 60 %",
+    "min": 0.6,
+    "max": 1.0,
+    "nb": 5738,
+    "taux_hausse": 0.6950156849076333,
+    "ic": [
+     0.6829757347583492,
+     0.7067946831507761
+    ],
+    "rendement_moyen": 0.049928595503904716
+   }
+  ],
+  "par_marche": {
+   "crypto": {
+    "precision": 0.5092129884424876,
+    "base": 0.548882773802972,
+    "nb": 45425
+   },
+   "etf": {
+    "precision": 0.5950673931746487,
+    "base": 0.5952107829079438,
+    "nb": 13948
+   },
+   "eu": {
+    "precision": 0.5634405429330186,
+    "base": 0.5624963115963411,
+    "nb": 33890
+   },
+   "fr": {
+    "precision": 0.551315656820244,
+    "base": 0.5507611654400645,
+    "nb": 39676
+   },
+   "tendances": {
+    "precision": 0.5061438380917962,
+    "base": 0.5025298156848572,
+    "nb": 22136
+   },
+   "us": {
+    "precision": 0.5471831724716744,
+    "base": 0.5505796265211917,
+    "nb": 76256
+   }
+  },
+  "periode": "03/2021 – 10/2026",
+  "verdict": "Léger avantage possible, mais pas prouvé : la marge d'erreur inclut le hasard. Les probabilités sont indicatives.",
+  "niveau_preuve": "possible",
+  "signaux_forts": {
+   "nb": 7719,
+   "precision": 0.556678326208058,
+   "ic": [
+    0.49592983980758526,
+    0.6311419424603588
+   ],
+   "rendement_median": 0.010067146730718735,
+   "part": 0.03336777172104041,
+   "base": 0.5309188997583549
+  },
+  "top_confiance": {
+   "nb": 23134,
+   "precision": 0.5450851560473762,
+   "ic": [
+    0.4275994116970455,
+    0.6432234761780234
+   ],
+   "rendement_median": 0.01059568235543118,
+   "part": 0.10000389052915519
+  },
+  "seuil_fort": 0.55,
+  "configuration": "Un seul modèle, indicateurs de base",
+  "comparaison": [
+   {
+    "nom": "Un seul modèle, indicateurs de base",
+    "auc": 0.525833836468254
+   },
+   {
+    "nom": "Un seul modèle, tous les indicateurs",
+    "auc": 0.5244752616204982
+   },
+   {
+    "nom": "Un modèle par marché (actions / cryptos)",
+    "auc": 0.5167277813760702
+   }
+  ],
+  "fourchette": {
+   "cible": 0.8,
+   "cible_extreme": 0.9,
+   "nb": 231331,
+   "couverture_brute": 0.7732037643030981,
+   "couverture": 0.8131170784846022,
+   "ic": [
+    0.7893238917010049,
+    0.8383360732799214
+   ],
+   "ajustement": 0.006877142722780488,
+   "couverture_brute_extreme": 0.8768301697567554,
+   "couverture_extreme": 0.9083308837514914,
+   "ic_extreme": [
+    0.8928350044379605,
+    0.9249662379033131
+   ],
+   "ajustement_extreme": 0.010466418093980587,
+   "largeur_mediane": 0.20598735400692575
+  },
+  "relatif": {
+   "auc": 0.5467689634642252,
+   "precision": 0.5303072806044982,
+   "precision_base": 0.5182760939162804,
+   "nb": 224583,
+   "ic_auc": [
+    0.5298626910376176,
+    0.5625072007146179
+   ],
+   "ic_precision": [
+    0.5195658429284085,
+    0.5421616247513293
+   ],
+   "precision_confiants": 0.46326754385964913,
+   "nb_confiants": 1824
+  },
+  "ic": {
+   "precision": [
+    0.5109939030737277,
+    0.5676395501258922
+   ],
+   "auc": [
+    0.49612551995123993,
+    0.5583972622753255
+   ],
+   "avantage": [
+    -0.0038248352477735863,
+    0.02725344911491278
+   ],
+   "p_hasard": 0.04,
+   "nb_mois": 68
+  },
+  "brier": {
+   "brier": 0.24820827878612686,
+   "reference": 0.2490440216377328,
+   "progres": 0.0033558037093603943
+  },
+  "ia": {
+   "ia1": {
+    "auc": 0.525833836468254,
+    "precision": 0.5426726206172109
+   },
+   "ia2": {
+    "auc": 0.5246084248561554,
+    "precision": 0.5392057268589164
+   },
+   "commun": {
+    "auc": 0.526075507699853,
+    "precision": 0.5417777989115165
+   },
+   "mode": "commun"
+  },
+  "accord": {
+   "part": 0.9175942696828354,
+   "precision_accord": 0.5446982116946502,
+   "precision_desaccord": 0.5092587735403662,
+   "ic_accord": [
+    0.5110796054495119,
+    0.5761197183604249
+   ],
+   "ic_desaccord": [
+    0.4850085480246216,
+    0.5332222482419295
+   ]
+  },
+  "champion": {
+   "actuel": "Un seul modèle, indicateurs de base",
+   "change": false,
+   "raison": "Premier choix ou même modèle qu'avant."
+  },
+  "controles": [],
+  "date_evaluation": "2026-10-21T17:01",
+  "horizon": 20
+ },
+ "platt": {
+  "ia1": {
+   "coef": 0.44784141763328766,
+   "intercept": 0.019177580288955755
+  },
+  "ia2": {
+   "coef": 0.5002212302051091,
+   "intercept": 0.00466275702783283
+  },
+  "final": {
+   "coef": 0.5177993503060181,
+   "intercept": 0.0018752258575919917
+  },
+  "relatif": {
+   "coef": 0.7311369129142123,
+   "intercept": -0.03136232608883275
+  }
+ }
+}
