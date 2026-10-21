@@ -35,6 +35,7 @@ class Analyse:
     signal_fort: bool = False                 # modèle confiant ET tendance technique haussière
     actus: list = field(default_factory=list) # derniers titres d'actualité
     tonalite: float = float("nan")            # tonalité moyenne des actus (-1 à +1)
+    fondamentaux: dict | None = None          # PER, marges, dette… (actions seulement)
 
     def to_dict(self) -> dict:
         return propre(self.__dict__.copy())
@@ -110,7 +111,25 @@ def analyser(ticker: str, nom: str, marche: str, d: pd.DataFrame) -> Analyse:
         m += 1; pour.append("Fait mieux que son marché sur 3 mois (force relative)")
     elif x.force_relative_63j < -0.05:
         m -= 1; contre.append("Fait moins bien que son marché sur 3 mois")
-    s_momentum = _sous_score(m, 4)
+    # Confirmations par d'autres indicateurs (poids volontairement modéré)
+    g = lambda nom: x.get(nom, np.nan)
+    if g("ichimoku") == 1:
+        m += 0.5; pour.append("Cours au-dessus du nuage Ichimoku")
+    elif g("ichimoku") == -1:
+        m -= 0.5; contre.append("Cours sous le nuage Ichimoku")
+    if g("supertrend") == 1:
+        m += 0.5; pour.append("Supertrend orienté à la hausse")
+    elif g("supertrend") == -1:
+        m -= 0.5; contre.append("Supertrend orienté à la baisse")
+    if g("stoch_k") > 80 and x.rsi > 70:
+        m -= 0.5; contre.append("Surchauffe confirmée par le stochastique")
+    elif g("stoch_k") < 20 and x.rsi < 35:
+        alertes.append("Stochastique en zone de survente : rebond possible")
+    if g("div_rsi") == -1:
+        m -= 0.5; alertes.append("Divergence baissière : le prix monte mais le RSI s'essouffle")
+    elif g("div_rsi") == 1:
+        m += 0.5; alertes.append("Divergence haussière : le prix baisse mais le RSI se redresse")
+    s_momentum = _sous_score(m, 6)
 
     # ---------------- 3. Volume / flux (poids 15 %) ----------------
     v = 0.0
@@ -121,7 +140,34 @@ def analyser(ticker: str, nom: str, marche: str, d: pd.DataFrame) -> Analyse:
     if x.volume_ratio > 1.8:
         alertes.append(f"Volume inhabituel : x{x.volume_ratio:.1f} la moyenne")
         v += 1 if x.ret_5j > 0 else -1
-    s_volume = _sous_score(v, 2)
+    if g("cmf") > 0.1:
+        v += 0.5; pour.append("Pression acheteuse sur 20 séances (Chaikin Money Flow)")
+    elif g("cmf") < -0.1:
+        v -= 0.5; contre.append("Pression vendeuse sur 20 séances (Chaikin Money Flow)")
+    if g("mfi") > 80:
+        contre.append(f"Money Flow Index à {g('mfi'):.0f} : beaucoup d'argent est déjà entré")
+    if x.ret_5j > 0.02 and x.volume_ratio < 0.8:
+        v -= 0.5; contre.append("Hausse récente avec des volumes faibles : mouvement fragile")
+    elif x.ret_5j > 0.02 and x.volume_ratio > 1.3:
+        v += 0.5; pour.append("Hausse récente confirmée par des volumes élevés")
+    s_volume = _sous_score(v, 3)
+
+    # Figures de chandeliers japonais des 3 dernières séances
+    from .indicators import NOMS_CHANDELIERS
+    for date, fig in d["chandelier"].iloc[-3:].items():
+        if fig and fig in NOMS_CHANDELIERS:
+            nom_f, sens = NOMS_CHANDELIERS[fig]
+            alertes.append(f"Chandelier « {nom_f} » le {date:%d/%m} : {sens}")
+    # Proximité d'une résistance (plus haut annuel)
+    if -0.02 < x.dist_plus_haut < 0:
+        alertes.append("Tout proche de son plus haut sur un an : cassure (hausse) ou rejet (repli) à surveiller")
+    # Contexte économique
+    if g("vix") > 30:
+        alertes.append(f"Marchés très nerveux (VIX à {g('vix'):.0f}) : les mouvements peuvent être violents")
+    if g("fng") < 20:
+        alertes.append(f"Crypto : « peur extrême » (Fear & Greed à {g('fng'):.0f})")
+    elif g("fng") > 80:
+        alertes.append(f"Crypto : « avidité extrême » (Fear & Greed à {g('fng'):.0f}), prudence")
 
     # ---------------- 4. Risque (poids 20 %, pénalité) ----------------
     r = 0.0

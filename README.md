@@ -87,6 +87,76 @@ Quand la page est ouverte, elle reçoit les prix en direct : cryptos via Binance
 actions US via Finnhub si une clé est configurée (`FINNHUB_KEY`). Les actions françaises n'ont pas de
 source gratuite en temps réel : elles sont rafraîchies à chaque mise à jour du site.
 
+## Pour les visiteurs
+
+- **Portefeuille virtuel** : 10 000 € fictifs pour s'entraîner sans risque (gardé dans le navigateur).
+- **Favoris**, bouton **Partager**, installation sur téléphone.
+- **Apprendre la Bourse** : 8 mini-cours illustrés avec un quiz (actions, cryptos, bougies, tendances,
+  RSI/MACD, gestion du risque, pièges, long terme) + un glossaire.
+- **Alertes Telegram** (facultatif) : chaque soir, le robot publie les signaux forts sur ta chaîne.
+  Pour l'activer plus tard : double-clique sur `alertes_telegram.bat`.
+
+## Fiabilité et surveillance
+
+- À chaque mise à jour, le radar **teste 3 façons de prévoir** (modèle unique avec tous les
+  indicateurs, modèle unique avec les indicateurs de base, un modèle par marché) sur des périodes
+  jamais vues, et garde la meilleure. Le résultat est affiché dans « Peut-on lui faire confiance ? ».
+- **Sources de secours** si Yahoo ne répond pas : Binance pour les cryptos, Stooq pour le reste.
+- **Surveillance** : chaque matin, une tâche vérifie que le site a été mis à jour ; sinon GitHub
+  t'envoie un e-mail.
+- Les titres « en tendance » sont filtrés (pas de petites valeurs ni de micro-cryptos, souvent manipulées).
+
+## Indicateurs utilisés (et ceux volontairement écartés)
+
+**Utilisés par le modèle** (leur effet est mesuré par la validation walk-forward) : moyennes mobiles
+simples et exponentielles (EMA 9/20/50/200), RSI et ses divergences, MACD, ADX, Bollinger (et squeeze),
+ATR, stochastique, Ichimoku, Supertrend, Aroon, canal de Donchian, MFI, Chaikin Money Flow, OBV,
+VWAP 20 séances, force relative, supports et résistances, figures de chandeliers japonais (affichées),
+et le contexte : VIX, taux 10 ans US, dollar, or, Fear & Greed crypto.
+
+**Affichés mais hors du modèle** (pas d'historique gratuit pour mesurer leur effet) : actualités et
+leur tonalité, données fondamentales (PER, PEG, marges, ROE, dette, dividende, free cash-flow).
+
+**Écartés** : données on-chain avancées (MVRV, SOPR…), options (gamma, max pain), futures
+(funding, liquidations), carnet d'ordres et flux institutionnels (payants ou réservés aux pros) ;
+Smart Money Concepts et Wyckoff (interprétations subjectives, impossibles à tester proprement) ;
+les « 100 indicateurs » : la plupart se recoupent, et en empiler davantage rend un modèle moins
+fiable, pas plus (il apprend le bruit du passé).
+
+## Être trouvé sur Google et partagé
+
+Le site génère automatiquement tout ce qu'il faut pour le référencement :
+- **une page par titre** (`titres/lvmh…`), lisible par Google sans JavaScript, avec un titre et une
+  description qui changent chaque jour (« LVMH (MC.PA) : analyse et prévision à un mois ») ;
+- **un glossaire** des indicateurs (RSI, MACD, PER…), des pages très recherchées ;
+- `sitemap.xml`, `robots.txt`, balises Open Graph / Twitter, données structurées, adresse canonique ;
+- **une image de partage** : quand quelqu'un colle le lien dans WhatsApp, Discord, X ou Snapchat,
+  une jolie carte s'affiche ;
+- un **manifeste** : sur téléphone, « Ajouter à l'écran d'accueil » installe le site comme une appli.
+
+**Pour accélérer l'arrivée sur Google (10 minutes, une seule fois) :**
+1. Va sur https://search.google.com/search-console et ajoute ta propriété « Préfixe de l'URL » avec
+   l'adresse de ton site.
+2. Choisis la méthode « Balise HTML » et copie uniquement le code entre `content="` et `"`.
+3. Sur GitHub : Settings → Secrets and variables → Actions → onglet **Variables** → New variable,
+   nom `GOOGLE_SITE_VERIFICATION`, valeur : ce code. Relance la mise à jour (onglet Actions).
+4. Dans Search Console, clique « Valider », puis menu « Sitemaps » : ajoute `sitemap.xml`.
+
+## Sécurité
+
+- **Politique de sécurité du contenu (CSP)** : la page ne peut charger des scripts que depuis le site
+  lui-même et ne peut se connecter qu'aux services de cours (Binance, Finnhub). Un script injecté
+  depuis ailleurs serait bloqué par le navigateur.
+- **Bibliothèque graphique hébergée sur le site** (plus de dépendance à un CDN externe).
+- **Toutes les données affichées sont échappées** (titres d'actus, noms…) et seuls les liens
+  `http(s)` sont acceptés, ouverts sans transmettre d'informations au site visé.
+- **Anti-cadre** : le site refuse de s'afficher à l'intérieur d'un autre site.
+- **Robot GitHub à droits minimaux** : aucun droit par défaut, chaque tâche reçoit uniquement ce
+  dont elle a besoin. **Dependabot** propose chaque mois les mises à jour de sécurité des outils.
+- **Clé Finnhub** : elle reste visible dans la page (inévitable pour du direct sans serveur). Elle ne
+  donne accès qu'à des données publiques gratuites ; utilise un compte Finnhub dédié au projet et
+  régénère la clé sur finnhub.io si tu vois un usage anormal.
+
 ## Mentions légales
 
 Avant toute mise en ligne, renseigne ton nom ou pseudo et un e-mail de contact à la fin de

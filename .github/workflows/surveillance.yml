@@ -1,0 +1,32 @@
+# Surveillance : chaque matin, vérifie que le site a bien été mis à jour.
+# Si ce n'est pas le cas depuis plus de 26 heures, cette tâche échoue
+# et GitHub t'envoie automatiquement un e-mail.
+name: Surveillance du site
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Vérifier la date de la dernière mise à jour
+        env:
+          PROPRIO: ${{ github.repository_owner }}
+          DEPOT: ${{ github.event.repository.name }}
+        run: |
+          URL="https://${PROPRIO,,}.github.io/${DEPOT}/version.json"
+          echo "Lecture de $URL"
+          REPONSE=$(curl -fsSL --retry 3 "$URL?t=$(date +%s)") || { echo "::error::Le site ne répond pas."; exit 1; }
+          GENERE=$(echo "$REPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['genere_le'])")
+          AGE_H=$(python3 -c "from datetime import datetime; print(int((datetime.now()-datetime.fromisoformat('$GENERE')).total_seconds()//3600))")
+          echo "Dernière mise à jour : $GENERE (il y a $AGE_H h)"
+          if [ "$AGE_H" -gt 26 ]; then
+            echo "::error::Le site n'a pas été mis à jour depuis $AGE_H heures. Regarde l'onglet Actions (tâche « Mise à jour du Radar »)."
+            exit 1
+          fi

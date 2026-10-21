@@ -59,3 +59,13 @@ FINNHUB_CLE = _os.environ.get("FINNHUB_KEY", "")
 # Mentions légales : à compléter avant la mise en ligne (un pseudo suffit pour un particulier).
 EDITEUR = _os.environ.get("RADAR_EDITEUR", "maxitemmmm")
 CONTACT = _os.environ.get("RADAR_CONTACT", "https://github.com/maxitemmmm-eng/radar-bourse/issues")
+
+# Conflits d'intérêts (obligation de transparence pour qui publie des avis sur des cours).
+# Décris honnêtement ta situation, par exemple : « L'éditeur détient des actions Apple. »
+CONFLITS = _os.environ.get("RADAR_CONFLITS",
+    "L'éditeur ne perçoit aucune rémunération liée aux titres présentés. Les signaux sont "
+    "générés automatiquement, sans intervention manuelle sur un titre en particulier. "
+    "L'éditeur peut détenir à titre personnel certains des instruments mentionnés.")
+
+# Chaîne Telegram publique des alertes (ex : @radar_bourse_alertes), affichée sur le site.
+TELEGRAM_CHAINE = _os.environ.get("TELEGRAM_CHAINE", "")

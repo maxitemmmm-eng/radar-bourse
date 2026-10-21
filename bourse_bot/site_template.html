@@ -1,13 +1,15 @@
 <title>Radar Bourse</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<!--META-->
 <meta name="description" content="Radar Bourse : analyse technique et prévisions statistiques à un mois sur les actions françaises, américaines et les cryptos. Projet éducatif.">
 <meta property="og:title" content="Radar Bourse">
 <meta property="og:description" content="Prévisions statistiques à un mois, cours en direct et fiabilité mesurée. Projet éducatif, pas un conseil en investissement.">
+<!--/META-->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230f1b2d'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%237398ff' stroke-width='1.5'/%3E%3Cpath d='M16 16 L27 9' stroke='%2335c27d' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%2335c27d'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<!--__LIB__-->
 <style>
 /* Layout : un « pupitre de marché » — bandeau des indices, prédictions du jour, fiabilité, puis la liste complète ; chaque titre s'ouvre dans un panneau de détail. */
 :root{
@@ -29,6 +31,7 @@
   --warn:#e5b453; --warn-soft:#33270d; --cone:#7398ff; color-scheme:dark}
 
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);margin:0}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
 .gutter{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -122,12 +125,143 @@ tbody tr:last-child td{border-bottom:0}
 /* Panneau de détail */
 .sheet{position:fixed;inset:0;z-index:20;display:flex;justify-content:flex-end;background:rgba(5,10,20,.45)}
 .sheet[hidden]{display:none!important}
-.sheet-in{background:var(--bg);width:min(760px,100%);height:100%;overflow-y:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:max(24px,env(safe-area-inset-bottom,0px))}
-.sheet-head{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--line);z-index:2;padding-block:14px;display:flex;align-items:center;gap:12px}
+.sheet-in{background:var(--bg);width:min(1400px,100%);height:100%;overflow-y:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:max(24px,env(safe-area-inset-bottom,0px))}
+.sheet-head{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--line);z-index:6;padding-block:14px;display:flex;align-items:center;gap:12px}
 .sheet-head h3{font-size:22px;font-weight:800}
 .close{margin-left:auto;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;cursor:pointer}
 .sheet-body{display:grid;gap:16px;padding-block:16px}
-.chart{height:340px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--surface)}
+.chart{border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.chart.big{height:clamp(460px,70vh,780px)}
+.chart.rsi{height:130px;border-top:1px solid var(--line)}
+@media (max-width:700px){.chart.big{height:440px}.chart.rsi{height:100px}}
+.chart-zone{position:relative}
+.bulles{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden}
+.bulle{position:absolute;transform:translate(-50%,calc(-100% - 10px));background:var(--ink);color:var(--surface);font:600 12.5px/1.25 var(--f-body);padding:6px 10px;border-radius:9px;white-space:nowrap;box-shadow:0 4px 14px rgba(5,10,20,.22);max-width:260px}
+.bulle small{display:block;font-weight:400;opacity:.85;font-size:11.5px}
+.bulle::after{content:"";position:absolute;left:50%;bottom:-5px;width:10px;height:10px;background:inherit;transform:translateX(-50%) rotate(45deg);border-radius:2px}
+.bulle.g{transform:translate(calc(-100% - 12px),-50%)}
+.bulle.g::after{left:auto;right:-5px;bottom:auto;top:50%;transform:translateY(-50%) rotate(45deg)}
+.bulle.up{background:var(--up);color:#fff}.bulle.down{background:var(--down);color:#fff}
+.bulle.acc{background:var(--accent);color:#fff}.bulle.warn{background:var(--warn);color:#fff}
+@media (max-width:700px){.bulle{font-size:11px;padding:4px 7px}.bulle small{display:none}}
+.sep{position:absolute;top:0;bottom:0;border-left:2px dashed var(--ink);opacity:.55}
+.sep-lab{position:absolute;top:10px;font:700 11px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--ink);background:var(--surface);padding:3px 7px;border-radius:5px;border:1px solid var(--line);white-space:nowrap}
+.sep-lab.gauche{transform:translateX(calc(-100% - 8px))}
+.sep-lab.droite{transform:translateX(8px);color:var(--accent);border-color:var(--accent)}
+
+/* Compteur hausse / baisse */
+.resume{display:grid;grid-template-columns:auto 1fr;gap:18px 26px;align-items:center}
+@media (max-width:640px){.resume{grid-template-columns:1fr;justify-items:center;text-align:center}}
+.compteur{width:220px;max-width:100%;height:auto;display:block}
+.compteur text{font-family:var(--f-body);font-size:11px;fill:var(--muted)}
+.resume .verdict-grand{font-family:var(--f-display);font-size:clamp(24px,3.2vw,34px);font-weight:800;line-height:1.1}
+.resume p{margin:6px 0 0;font-size:15px;max-width:60ch}
+
+/* Liens de référencement, favoris, partage */
+.seo-liens{font-size:12.5px;color:var(--muted);line-height:1.9}
+.seo-liens a{color:var(--muted);margin-right:10px;white-space:nowrap}
+.fav,.share{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:600;white-space:nowrap}
+.fav[aria-pressed="true"]{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+.etoile{color:var(--warn);margin-right:4px}
+.sheet-head .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.sheet-head .close{margin-left:0}
+.note-flash{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:50;background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;font-weight:600;box-shadow:0 8px 24px rgba(5,10,20,.25)}
+
+/* Portefeuille virtuel */
+.pf-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.pf-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pf-kpis .k b{display:block;font-family:var(--f-mono);font-size:22px;font-weight:500}
+.pf-kpis .k > span{font-size:12.5px;color:var(--muted)}
+.pf-table td,.pf-table th{white-space:nowrap}
+.pf-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.mini-btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;font-weight:600}
+.mini-btn.danger{color:var(--down);border-color:var(--down-soft)}
+.pf-ordre{display:grid;gap:10px;border:2px solid var(--accent);border-radius:var(--r);padding:14px;background:var(--surface)}
+.pf-ordre .ligne{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.pf-ordre input{width:140px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:15px var(--f-mono)}
+
+.hero-liens{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.hero-liens .btn{text-decoration:none;display:inline-block}
+
+/* Contexte économique */
+.ctx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.ctx{display:grid;gap:4px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);min-width:0}
+.ctx .tete{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ctx .v{font-family:var(--f-mono);font-size:20px}
+.ctx p{margin:0;font-size:12.5px;color:var(--muted)}
+
+/* Fondamentaux */
+.fond{width:100%;border-collapse:collapse;font-size:14px}
+.fond td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;white-space:normal}
+.fond td:first-child{font-weight:600;width:34%}
+.fond td.val{font-family:var(--f-mono);white-space:nowrap;width:18%}
+.fond .aide{color:var(--muted);font-size:13px}
+.rep{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:5px;margin-top:4px}
+.rep.bon{background:var(--up-soft);color:var(--up)}.rep.moy{background:var(--surface-2);color:var(--muted)}.rep.att{background:var(--warn-soft);color:var(--warn)}
+
+/* Calculateur de risque */
+.calc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:640px){.calc{grid-template-columns:1fr}}
+.calc input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:15px var(--f-mono)}
+.regle{padding:10px 12px;border-radius:8px;background:var(--accent-soft);color:var(--ink);font-size:14px}
+
+/* Prévention */
+.prev-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.prev-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.prev-grid{grid-template-columns:1fr}}
+.prev-item{display:grid;gap:6px;padding:14px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.prev-item b{font-family:var(--f-display);font-size:16px}
+.prev-item p{margin:0;font-size:14px;color:var(--muted)}
+.aide-tel{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
+.tel{padding:14px;border-radius:10px;border:2px solid var(--accent);background:var(--surface);display:grid;gap:4px}
+.tel .num{font-size:20px;user-select:all}
+.tel p{margin:0;font-size:13px;color:var(--muted)}
+
+/* Guide « comment lire » */
+.guide{border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.guide summary{cursor:pointer;padding:12px 14px;font-weight:600;list-style:none;display:flex;gap:8px;align-items:center}
+.guide summary::-webkit-details-marker{display:none}
+.guide summary::before{content:"?";display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;font-weight:800}
+.guide[open] summary{border-bottom:1px solid var(--line)}
+.guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;padding:14px}
+.gitem{display:grid;grid-template-columns:64px 1fr;gap:12px;align-items:center;font-size:14px;line-height:1.45}
+.gitem svg{width:64px;height:56px}
+.gitem b{display:block}
+.chart-wrap{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden}
+.chart-bar{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}
+.per,.opt{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.per button{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:6px;padding:4px 10px;font:500 12.5px var(--f-mono);cursor:pointer}
+.per button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.opt label{display:inline-flex;gap:5px;align-items:center;font-size:12.5px;color:var(--muted);padding:3px 8px;border-radius:6px;cursor:pointer;user-select:none}
+.opt input{accent-color:var(--accent);margin:0}
+.chart-leg{padding:8px 12px;font:12.5px var(--f-mono);color:var(--muted);min-height:34px;border-bottom:1px solid var(--line);display:flex;gap:4px 10px;flex-wrap:wrap;align-items:center}
+.chart-leg b{color:var(--ink);font-weight:500}
+.rsi-lab{position:relative}
+.rsi-lab::before{content:"RSI 14";position:absolute;left:10px;top:6px;z-index:2;font:600 11px var(--f-body);letter-spacing:.06em;color:var(--muted)}
+
+/* Lecture du radar (prévision écrite) */
+.lecture{display:grid;gap:4px;max-width:900px}
+.lecture h4{font-family:var(--f-display);font-size:16px;margin:14px 0 2px}
+.lecture h4:first-child{margin-top:0}
+.lecture p{margin:0;font-size:15px;line-height:1.6;max-width:72ch}
+.scen{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+@media (max-width:640px){.scen{grid-template-columns:1fr}}
+.sc{display:grid;gap:3px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2)}
+.sc b{font-size:20px;font-weight:500}
+.sc span:last-child{font-size:12.5px;color:var(--muted)}
+.sc.pos{border-color:var(--up-soft);background:var(--up-soft)}
+.sc.neg{border-color:var(--down-soft);background:var(--down-soft)}
+.sc.mid{border-color:var(--accent-soft);background:var(--accent-soft)}
+.niv{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.niv li{display:grid;grid-template-columns:1fr auto 76px;gap:12px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:14px;align-items:center}
+.niv li:last-child{border-bottom:0}
+.niv em{font-style:normal;text-align:right}
+
+/* Graphique principal */
+.main-chart{display:grid;gap:14px}
+.main-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:end}
+.main-prix{font-family:var(--f-display);font-size:30px;font-weight:800;line-height:1.1}
+.main-prix .num{font-family:var(--f-mono);font-weight:500}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
 .legend span::before{content:"";display:inline-block;width:14px;height:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
 .forecast{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
@@ -162,8 +296,8 @@ footer nav{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13.5px}
 .fort-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;align-content:start}
 .fcard{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2);cursor:pointer;text-align:left;width:100%;display:grid;gap:6px}
 .fcard:hover{border-color:var(--accent)}
-.fcard .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
-.fcard .top b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fcard .tete{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.fcard .tete b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .badge-fort{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--accent-soft);color:var(--accent);margin-left:6px;vertical-align:middle}
 
 /* Actualités */
@@ -245,6 +379,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .note-pred{font-size:12.5px;color:var(--muted);margin:10px 0 0}
 @media (prefers-reduced-motion:no-preference){.pick,.rk,tbody tr td{transition:background .15s,border-color .15s}}
 </style>
+<!--__CORPS__-->
 
 <header class="top gutter"><div class="wrap">
   <div class="brand"><span class="dot" aria-hidden="true"></span><h1>Radar Bourse</h1><span class="stamp" id="stamp"></span></div>
@@ -257,9 +392,27 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   <div class="hero">
     <h2>Les marchés, lus par les chiffres.</h2>
     <p>Prévisions statistiques à un mois, signaux forts mesurés sur l'historique, actualités et simulateur pour chaque titre. Un projet éducatif : les chiffres aident à réfléchir, ils ne décident pas à ta place.</p>
+    <div class="hero-liens"><a class="btn" href="#portefeuille">Essayer le portefeuille virtuel</a><a class="btn ghost" href="apprendre.html" id="lien-apprendre">Apprendre la Bourse</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
   </div>
   <div class="tape" id="tape" aria-label="Marchés"></div>
   <div class="mood panel" id="mood" aria-label="Météo du marché"></div>
+
+  <section aria-labelledby="h-ctx">
+    <div class="sec-head"><h2 id="h-ctx">Le contexte économique</h2>
+      <p>Ce qui pèse sur tous les marchés en même temps. Ces données font partie de ce que le modèle analyse.</p></div>
+    <div class="ctx-grid" id="ctx"></div>
+  </section>
+
+  <section aria-labelledby="h-graph">
+    <div class="sec-head"><h2 id="h-graph">Le graphique du jour</h2><div class="per" id="main-tabs" role="group" aria-label="Choisir un marché"></div></div>
+    <div class="panel main-chart">
+      <div class="main-head"><div><div class="label" id="main-sub"></div><div class="main-prix" id="main-prix"></div></div>
+        <button class="btn ghost" id="main-open">Voir la fiche complète</button></div>
+      <div id="main-resume"></div>
+      <div id="main-shell"></div>
+      <div class="lecture" id="main-lecture"></div>
+    </div>
+  </section>
 
   <section aria-labelledby="h-pred">
     <div class="sec-head"><h2 id="h-pred">Ce que le radar prévoit</h2>
@@ -278,6 +431,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <div class="fort-stats" id="fort-stats"></div>
       <div class="fort-list" id="fort-list"></div>
     </div>
+  </section>
+
+  <section aria-labelledby="h-pf" id="portefeuille">
+    <div class="sec-head"><h2 id="h-pf">Mon portefeuille virtuel</h2>
+      <p>Entraîne-toi sans risque : tu commences avec 10 000 € fictifs. Ouvre un titre et clique « Investir (virtuel) ». Tout reste dans ton navigateur, rien n'est envoyé nulle part.</p></div>
+    <div class="panel" id="pf"></div>
   </section>
 
   <section aria-labelledby="h-news">
@@ -308,6 +467,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <button class="chip" data-m="crypto" aria-pressed="false">Crypto</button>
       <button class="chip" data-m="etf" aria-pressed="false">ETF / indices</button>
       <button class="chip" data-m="tendances" aria-pressed="false">En tendance</button>
+      <button class="chip" data-m="fav" aria-pressed="false">★ Mes favoris</button>
       <button class="chip" data-m="fort" aria-pressed="false">Signaux forts</button>
       <button class="chip" data-m="rocket" aria-pressed="false">Décollage</button>
       <input class="search" id="q" type="search" placeholder="Rechercher un titre…" aria-label="Rechercher un titre">
@@ -320,21 +480,42 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       </tr></thead><tbody id="rows"></tbody></table></div>
   </section>
 
+  <section aria-labelledby="h-prev" id="prevention">
+    <div class="sec-head"><h2 id="h-prev">Avant d'investir, lis ça</h2>
+      <p>Ce site t'aide à comprendre les marchés. Il ne peut pas te protéger des pertes. Quelques règles simples évitent la plupart des catastrophes.</p></div>
+    <div class="prev-grid">
+      <div class="prev-item"><b>Rien n'est sûr</b><p>Personne ne prédit la Bourse de façon fiable, ni ce site, ni les influenceurs, ni les « robots de trading ». Même nos signaux forts se trompent régulièrement.</p></div>
+      <div class="prev-item"><b>Seulement l'argent que tu peux perdre</b><p>N'investis jamais l'argent du loyer, des courses, de tes études ou ton épargne de sécurité. N'emprunte jamais pour investir.</p></div>
+      <div class="prev-item"><b>Pas d'effet de levier</b><p>CFD, options, trading « x10 » ou « x100 » : la grande majorité des particuliers y perdent. Une petite baisse peut tout effacer.</p></div>
+      <div class="prev-item"><b>1 à 2 % de risque par position</b><p>Règle des professionnels : sur une opération, ne risque jamais plus de 1 à 2 % de ton capital. Le calculateur de chaque fiche (onglet Simulateur) le fait pour toi.</p></div>
+      <div class="prev-item"><b>Méfie-toi des promesses</b><p>Rendement « garanti », gains rapides, pression pour se décider vite, conseiller trouvé sur un réseau social : ce sont les signes classiques d'une arnaque.</p></div>
+      <div class="prev-item"><b>Repère les signes d'alerte</b><p>Regarder les cours sans arrêt, vouloir « se refaire » après une perte, cacher ses pertes, emprunter : le trading peut devenir une addiction, comme les jeux d'argent.</p></div>
+    </div>
+    <div class="aide-tel">
+      <div class="tel"><span class="label">Une question sur un placement, un doute sur une offre</span><span class="num">01 53 45 62 00</span><p>AMF Épargne Info Service, l'autorité des marchés financiers. Du lundi au vendredi, 9 h – 12 h 30, prix d'un appel local. Liste noire des sites frauduleux sur <a href="https://www.amf-france.org/fr/espace-epargnants/proteger-son-epargne/listes-noires-et-mises-en-garde" target="_blank" rel="noopener noreferrer">amf-france.org</a>.</p></div>
+      <div class="tel"><span class="label">Tu as du mal à t'arrêter de trader ou de parier</span><span class="num">09 74 75 13 13</span><p>Joueurs Info Service : écoute anonyme, 7 jours sur 7 de 8 h à 2 h, prix d'un appel local. Aussi sur <a href="https://www.joueurs-info-service.fr" target="_blank" rel="noopener noreferrer">joueurs-info-service.fr</a>.</p></div>
+    </div>
+  </section>
+
   <footer>
-    <p class="disclaimer"><b>Avertissement.</b> Radar Bourse est un projet éducatif. Les informations publiées sont générées automatiquement, peuvent contenir des erreurs et ne constituent ni un conseil en investissement, ni une recommandation personnalisée, ni une incitation à acheter ou vendre. Investir comporte un risque de perte totale du capital. L'éditeur décline toute responsabilité quant à l'usage fait de ces informations.</p>
+    <p class="disclaimer"><b>Rien n'est sûr en Bourse.</b> Radar Bourse est un projet éducatif. Les informations publiées sont générées automatiquement, peuvent contenir des erreurs et ne constituent ni un conseil en investissement, ni une recommandation personnalisée, ni une incitation à acheter ou vendre. Investir comporte un risque de perte totale du capital. L'éditeur décline toute responsabilité quant à l'usage fait de ces informations.</p>
     <nav aria-label="Informations légales">
       <button class="lnk" data-legal="risques">Avertissement sur les risques</button>
       <button class="lnk" data-legal="conditions">Conditions d'utilisation</button>
+      <button class="lnk" data-legal="methodologie">Méthodologie et conflits d'intérêts</button>
       <button class="lnk" data-legal="mentions">Mentions légales</button>
       <button class="lnk" data-legal="confidentialite">Confidentialité</button>
     </nav>
+    <!--__LIENS_SEO__-->
     <p class="disclaimer" id="sources-txt"></p>
+    <p class="disclaimer">Graphiques réalisés avec <a href="https://www.tradingview.com/lightweight-charts/" target="_blank" rel="noopener noreferrer">TradingView Lightweight Charts™</a>, hébergé sur ce site (licence Apache 2.0).</p>
   </footer>
 </div></main>
 
 <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="d-title">
   <div class="sheet-in">
-    <div class="sheet-head gutter"><div><h3 id="d-title"></h3><div class="stamp" id="d-sub"></div></div><button class="close" id="close">Fermer</button></div>
+    <div class="sheet-head gutter"><div><h3 id="d-title"></h3><div class="stamp" id="d-sub"></div></div>
+      <div class="actions"><button class="fav" id="pf-btn">Investir (virtuel)</button><button class="fav" id="fav" aria-pressed="false">☆ Suivre</button><button class="share" id="share">Partager</button><button class="close" id="close">Fermer</button></div></div>
     <div class="sheet-body gutter" id="d-body"></div>
   </div>
 </div>
@@ -347,6 +528,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         <button class="chip" role="tab" data-tab="risques">Risques</button>
         <button class="chip" role="tab" data-tab="conditions">Conditions</button>
         <button class="chip" role="tab" data-tab="mentions">Mentions légales</button>
+        <button class="chip" role="tab" data-tab="methodologie">Méthodologie</button>
         <button class="chip" role="tab" data-tab="confidentialite">Confidentialité</button>
       </div>
 
@@ -364,30 +546,119 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       </article>
 
       <article class="legal" data-pane="conditions" hidden>
-        <h4>Conditions d'utilisation</h4>
-        <p class="maj">En utilisant ce site, tu acceptes les conditions ci-dessous. Si tu ne les acceptes pas, n'utilise pas le site.</p>
-        <h4>1. Objet</h4>
-        <p>Le site publie des analyses techniques et des estimations statistiques générées automatiquement sur des actions, des ETF et des cryptomonnaies, dans un but pédagogique et informatif.</p>
-        <h4>2. Absence de conseil</h4>
-        <p>Les contenus sont généraux, identiques pour tous les visiteurs et ne tiennent compte d'aucune situation personnelle. Ils ne constituent pas un conseil en investissement, une recommandation personnalisée, une sollicitation, ni une offre d'achat ou de vente d'instruments financiers ou de crypto-actifs. L'éditeur n'est pas conseiller en investissements financiers (CIF), ni prestataire de services d'investissement ou sur crypto-actifs, et n'exerce aucune de ces activités.</p>
-        <h4>3. Absence de garantie</h4>
-        <p>Le site est fourni « tel quel », sans garantie d'exactitude, d'exhaustivité, d'actualité ou de disponibilité. Les données proviennent de services tiers et peuvent contenir des erreurs ou des retards. Le site peut être interrompu ou modifié à tout moment, sans préavis.</p>
-        <h4>4. Limitation de responsabilité</h4>
-        <p>Dans toute la mesure permise par la loi, l'éditeur ne pourra être tenu responsable d'aucune perte, directe ou indirecte, financière ou autre, résultant de l'utilisation du site, de l'impossibilité de l'utiliser, ou de décisions prises sur la base de ses contenus. Chaque utilisateur reste seul responsable de ses décisions d'investissement et de leurs conséquences.</p>
-        <h4>5. Utilisation autorisée</h4>
-        <p>Le site est destiné à un usage personnel et non commercial. Il est interdit d'en extraire massivement les données ou de les présenter comme des conseils professionnels.</p>
-        <h4>6. Services et liens tiers</h4>
-        <p>Le site utilise des services externes (données de marché, polices, bibliothèque graphique). L'éditeur n'a aucun contrôle sur ces services et n'est pas responsable de leur contenu ni de leur disponibilité.</p>
-        <h4>7. Modification des conditions</h4>
-        <p>Ces conditions peuvent être modifiées à tout moment. La version applicable est celle publiée sur le site au moment de la consultation.</p>
-        <h4>8. Droit applicable</h4>
-        <p>Ces conditions sont soumises au droit français.</p>
+        <h4>Conditions générales d'utilisation</h4>
+        <p class="maj">Version du 21 octobre 2026. Merci de les lire attentivement : en utilisant le site, tu les acceptes sans réserve. Si tu ne les acceptes pas, n'utilise pas le site.</p>
+
+        <h4>Préambule</h4>
+        <p>Radar Bourse (ci-après « le Site ») est un projet personnel, gratuit, non commercial et à vocation pédagogique, édité par un particulier (ci-après « l'Éditeur »). Il publie des analyses techniques et des estimations statistiques produites automatiquement par un programme informatique. Il n'a ni client, ni abonnement, ni publicité, ni partenariat rémunéré.</p>
+
+        <h4>Article 1 – Définitions</h4>
+        <ul>
+          <li><b>Utilisateur</b> : toute personne qui consulte le Site, de quelque manière que ce soit.</li>
+          <li><b>Contenus</b> : l'ensemble des informations affichées (cours, graphiques, indicateurs, scores, signaux, probabilités, scénarios, simulations, textes générés automatiquement, actualités, données fondamentales et de contexte).</li>
+          <li><b>Signal</b> : toute qualification automatique d'un titre (par exemple « haussier », « baissier », « signal fort », « configuration de décollage »).</li>
+          <li><b>Données tierces</b> : les informations fournies par des services extérieurs (Yahoo Finance, Binance, Finnhub, CoinGecko, alternative.me, éditeurs de presse).</li>
+        </ul>
+
+        <h4>Article 2 – Objet</h4>
+        <p>Les présentes conditions définissent les règles d'accès et d'utilisation du Site. Le Site a pour seul objet d'illustrer, à des fins d'apprentissage et de curiosité, le fonctionnement d'outils d'analyse technique et de méthodes statistiques appliqués aux marchés financiers.</p>
+
+        <h4>Article 3 – Acceptation et opposabilité</h4>
+        <p>L'accès au Site vaut acceptation pleine et entière des présentes conditions, dans leur version en vigueur au moment de la consultation. L'Utilisateur reconnaît en avoir pris connaissance, notamment l'avertissement sur les risques et la page Méthodologie.</p>
+
+        <h4>Article 4 – Accès au Site</h4>
+        <p>Le Site est accessible gratuitement, sans inscription. L'Éditeur ne garantit pas que le Site soit accessible en permanence ni exempt d'erreurs, et peut le suspendre, le modifier ou le fermer à tout moment, sans préavis ni indemnité. Les frais d'accès à Internet restent à la charge de l'Utilisateur.</p>
+
+        <h4>Article 5 – Nature des Contenus : aucun conseil</h4>
+        <p>Les Contenus sont <b>généraux, identiques pour tous les visiteurs et produits automatiquement</b>, sans tenir compte de la situation financière, des objectifs, de l'expérience ni du profil de risque de quiconque. En conséquence :</p>
+        <ul>
+          <li>ils ne constituent <b>pas un conseil en investissement</b> ni une recommandation personnalisée ;</li>
+          <li>ils ne constituent ni une offre, ni une sollicitation, ni une incitation à acheter, vendre ou conserver un instrument financier ou un crypto-actif ;</li>
+          <li>l'Éditeur n'est ni conseiller en investissements financiers, ni prestataire de services d'investissement, ni prestataire de services sur crypto-actifs, ni intermédiaire, et n'exerce aucune de ces activités ;</li>
+          <li>le Site ne gère aucun argent, n'exécute aucun ordre et ne reçoit aucun fonds.</li>
+        </ul>
+        <p>Les libellés « haussier » ou « baissier » décrivent l'orientation statistique d'indicateurs à un instant donné. Ils ne signifient jamais « achète » ou « vends ».</p>
+
+        <h4>Article 6 – Méthode, sources et transparence</h4>
+        <p>Dans un souci de présentation objective, la méthode de calcul, les sources de données, les limites connues, la fiabilité mesurée et la déclaration de conflits d'intérêts sont publiées dans la rubrique « Méthodologie », qui fait partie intégrante des présentes conditions. Le taux de réussite des prévisions passées est affiché sur le Site, y compris lorsqu'il est défavorable.</p>
+
+        <h4>Article 7 – Risques</h4>
+        <p>L'Utilisateur reconnaît être informé que tout investissement comporte des risques, notamment :</p>
+        <ul>
+          <li>un <b>risque de perte partielle ou totale</b> du capital investi ;</li>
+          <li>une forte volatilité, en particulier pour les crypto-actifs, qui peuvent perdre l'essentiel de leur valeur en peu de temps ;</li>
+          <li>des risques de liquidité, de change, de défaillance d'une plateforme ou d'un émetteur ;</li>
+          <li>des pertes pouvant dépasser la mise en cas d'effet de levier ou de produits dérivés.</li>
+        </ul>
+        <p>Les performances passées, les backtests, les simulations et les scénarios ne préjugent en rien des performances futures.</p>
+
+        <h4>Article 8 – Responsabilité de l'Utilisateur</h4>
+        <p>L'Utilisateur est <b>seul responsable</b> de l'usage qu'il fait des Contenus et des décisions qu'il prend, ainsi que de leurs conséquences. Avant toute décision, il lui appartient de vérifier les informations auprès de sources officielles, d'évaluer sa propre situation et, si nécessaire, de consulter un professionnel agréé. Il s'engage à ne jamais investir de sommes dont il pourrait avoir besoin ni de sommes empruntées. Les décisions d'investissement sont réservées aux personnes majeures et capables.</p>
+
+        <h4>Article 9 – Absence de garantie</h4>
+        <p>Les Contenus sont fournis <b>« en l'état »</b>, sans aucune garantie, expresse ou implicite, d'exactitude, d'exhaustivité, d'actualité, de fiabilité, d'adéquation à un besoin particulier ou de résultat. Ils peuvent contenir des erreurs de calcul, des erreurs de programmation, des retards ou des interruptions, et reposent sur des Données tierces que l'Éditeur ne contrôle pas. Les cours affichés peuvent être différés ; seuls les cours de la plateforme ou de l'intermédiaire de l'Utilisateur font foi.</p>
+
+        <h4>Article 10 – Limitation de responsabilité</h4>
+        <p>Dans toute la mesure permise par la loi applicable, l'Éditeur ne pourra être tenu responsable d'aucun dommage, direct ou indirect, matériel ou immatériel, résultant de l'accès au Site, de son utilisation, de l'impossibilité de l'utiliser ou de la confiance accordée aux Contenus, notamment : pertes financières ou de capital, perte de chance, manque à gagner, décisions d'investissement, erreurs ou omissions des Contenus, indisponibilité du Site, défaillance des Données tierces, virus ou intrusion informatique. Rien dans les présentes ne limite la responsabilité de l'Éditeur dans les cas où la loi interdit une telle limitation.</p>
+
+        <h4>Article 11 – Données tierces et liens externes</h4>
+        <p>Le Site affiche des Données tierces et des liens vers des sites extérieurs (articles de presse, autorités, services de données). L'Éditeur n'exerce aucun contrôle sur ces contenus, n'en garantit ni l'exactitude ni la disponibilité, et décline toute responsabilité quant à leur contenu, leurs pratiques ou leurs conditions d'utilisation. La présence d'un lien ne vaut ni approbation ni recommandation. Les titres d'articles appartiennent à leurs éditeurs respectifs.</p>
+
+        <h4>Article 12 – Propriété intellectuelle</h4>
+        <p>La structure du Site, ses textes et son code sont protégés. Toute reproduction ou réutilisation substantielle sans autorisation est interdite, sauf usage strictement personnel et non commercial. Les marques, noms de sociétés et dénominations de titres cités appartiennent à leurs propriétaires et ne sont utilisés qu'à des fins d'identification. Les graphiques utilisent la bibliothèque TradingView Lightweight Charts™, sous licence Apache 2.0.</p>
+
+        <h4>Article 13 – Utilisations interdites</h4>
+        <p>Il est interdit : d'extraire massivement ou automatiquement les Contenus ; de les revendre, de les intégrer dans un service payant ou de les présenter comme des conseils professionnels ; de porter atteinte à la sécurité ou au fonctionnement du Site ; d'afficher le Site dans un autre site en le faisant passer pour le sien ; d'utiliser le Site dans un but illicite, notamment de manipulation de cours ou de diffusion d'informations trompeuses.</p>
+
+        <h4>Article 14 – Données personnelles</h4>
+        <p>Le Site ne collecte aucune donnée personnelle. Les détails figurent dans la rubrique « Confidentialité ».</p>
+
+        <h4>Article 15 – Modification des conditions</h4>
+        <p>L'Éditeur peut modifier les présentes conditions à tout moment. La version applicable est celle publiée sur le Site au moment de la consultation. La date de mise à jour figure en tête de ce texte.</p>
+
+        <h4>Article 16 – Divisibilité et non-renonciation</h4>
+        <p>Si une clause était déclarée nulle ou inapplicable, les autres clauses resteraient en vigueur. Le fait pour l'Éditeur de ne pas se prévaloir d'une clause ne vaut pas renonciation à s'en prévaloir ultérieurement.</p>
+
+        <h4>Article 17 – Droit applicable et litiges</h4>
+        <p>Les présentes conditions sont régies par le droit français. En cas de difficulté, l'Utilisateur s'engage à contacter d'abord l'Éditeur (voir « Mentions légales ») afin de rechercher une solution amiable. À défaut, le litige sera porté devant les juridictions compétentes selon les règles de droit commun, sans préjudice des dispositions protectrices dont bénéficient les consommateurs.</p>
+
+        <h4>Article 18 – Contact</h4>
+        <p>Pour toute question ou réclamation, l'Éditeur peut être contacté via les coordonnées indiquées dans les Mentions légales.</p>
+      </article>
+
+      <article class="legal" data-pane="methodologie" hidden>
+        <h4>Méthodologie, sources et conflits d'intérêts</h4>
+        <p class="maj">Publiée pour permettre à chacun de juger les Contenus de façon éclairée.</p>
+        <h4>Auteur</h4>
+        <p>Contenus produits automatiquement par un programme conçu par <span class="leg-editeur"></span>, particulier, sans qualification professionnelle en conseil en investissement.</p>
+        <h4>Sources de données</h4>
+        <ul>
+          <li>Cours historiques quotidiens des actions, ETF, indices, cryptos, du VIX, des taux, du dollar et de l'or : Yahoo Finance.</li>
+          <li>Cours en direct des cryptos : Binance. Cours en direct des actions américaines et actualités des entreprises américaines : Finnhub.</li>
+          <li>Cryptos en tendance : CoinGecko. Indice Fear &amp; Greed crypto : alternative.me. Autres actualités et données fondamentales : Yahoo Finance.</li>
+        </ul>
+        <h4>Méthode</h4>
+        <ul>
+          <li><b>Indicateurs techniques</b> : moyennes mobiles simples et exponentielles, RSI, MACD, ADX, bandes de Bollinger, ATR, stochastique, Ichimoku, Supertrend, Aroon, canal de Donchian, MFI, Chaikin Money Flow, OBV, VWAP sur 20 séances, divergences du RSI, figures de chandeliers japonais, supports et résistances.</li>
+          <li><b>Score technique</b> (0 à 100) : somme pondérée de règles publiques (tendance 35 %, élan 30 %, volumes 15 %, risque 20 %), chaque point étant justifié par une phrase dans la fiche du titre.</li>
+          <li><b>Probabilité de hausse à 20 séances</b> : moyenne de deux modèles statistiques (gradient boosting et régression logistique) entraînés sur environ cinq ans d'historique, avec des variables de contexte (VIX, taux, dollar, sentiment crypto). Les probabilités sont recalées (calibration isotonique) sur les fréquences réellement observées.</li>
+          <li><b>Validation</b> : le modèle est testé uniquement sur des périodes qu'il n'a jamais vues (validation « walk-forward » avec purge). La précision obtenue est affichée sur le Site.</li>
+          <li><b>Scénarios et simulations</b> : trajectoire médiane issue de l'historique du modèle, fourchette à 80 % calculée à partir de la volatilité réelle du titre, simulations par tirage de journées passées (Monte-Carlo).</li>
+          <li><b>Actualités</b> : tonalité estimée automatiquement à partir des titres d'articles. Elle est affichée à titre d'information et n'entre pas dans les probabilités. Les données fondamentales sont affichées sans être utilisées par le modèle.</li>
+        </ul>
+        <h4>Limites connues</h4>
+        <p>Les marchés réagissent à des événements imprévisibles (annonces, crises, décisions politiques) qu'aucun indicateur ne capte. Un modèle qui a fonctionné sur le passé peut cesser de fonctionner. La précision mesurée reste proche du hasard, ce qui est normal pour ce type d'exercice. Les données gratuites peuvent comporter des erreurs ou des retards.</p>
+        <h4>Fréquence de mise à jour</h4>
+        <p>Prévisions et données recalculées environ toutes les heures en semaine et toutes les trois heures le week-end. Chaque prévision publiée est archivée puis comparée au résultat réel 20 séances plus tard (rubrique « Suivi en conditions réelles »).</p>
+        <h4>Conflits d'intérêts</h4>
+        <p class="leg-conflits"></p>
       </article>
 
       <article class="legal" data-pane="mentions" hidden>
         <h4>Mentions légales</h4>
         <p><b>Éditeur :</b> <span id="m-editeur"></span>, particulier, à titre non professionnel.<br>
         <b>Contact :</b> <span id="m-contact" class="num"></span></p>
+        <p><b>Conflits d'intérêts :</b> <span class="leg-conflits"></span></p>
         <p><b>Hébergeur :</b> GitHub, Inc. (service GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.</p>
         <p><b>Sources des données :</b> Yahoo Finance (cours historiques), CoinGecko (cryptos en tendance), Binance (cours des cryptos en direct) et, le cas échéant, Finnhub (cours des actions américaines en direct). Ces données restent la propriété de leurs fournisseurs respectifs.</p>
       </article>
@@ -396,7 +667,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         <h4>Confidentialité</h4>
         <p>Le site ne demande aucun compte, ne collecte aucune donnée personnelle et n'utilise aucun cookie publicitaire ni outil de mesure d'audience.</p>
         <p>Ton navigateur garde seulement en mémoire locale le fait que tu as lu l'avertissement, pour ne pas te le réafficher. Tu peux l'effacer en vidant les données du site.</p>
-        <p>Pour afficher la page, ton navigateur se connecte à des services tiers (Google Fonts pour les polices, unpkg pour la bibliothèque graphique, Binance et éventuellement Finnhub pour les cours en direct). Ces services reçoivent ton adresse IP, comme pour toute page web, selon leurs propres politiques de confidentialité.</p>
+        <p>Pour afficher la page, ton navigateur se connecte à des services tiers (Google Fonts pour les polices, Binance et éventuellement Finnhub pour les cours en direct). Ces services reçoivent ton adresse IP, comme pour toute page web, selon leurs propres politiques de confidentialité.</p>
       </article>
     </div>
   </div>
@@ -404,7 +675,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
 <div class="consent gutter" id="consent" hidden role="region" aria-label="Avertissement">
   <div class="wrap">
-    <p><b>Avant de commencer :</b> Radar Bourse est un projet éducatif. Ses prévisions sont des calculs statistiques qui se trompent souvent, pas des conseils en investissement. L'éditeur n'est pas responsable de tes décisions ni de tes pertes.</p>
+    <p><b>Avant de commencer :</b> Radar Bourse est un projet éducatif et gratuit. Ses prévisions sont des calculs automatiques qui se trompent souvent : <b>rien n'y est sûr</b>, ce ne sont pas des conseils en investissement et tu peux perdre tout l'argent investi. En continuant, tu acceptes les conditions d'utilisation et tu restes seul·e responsable de tes décisions.</p>
     <button class="btn ghost" data-legal="conditions">Lire les conditions</button>
     <button class="btn" id="accept">J'ai compris et j'accepte</button>
   </div>
@@ -418,11 +689,17 @@ const $ = s => document.querySelector(s);
 const H = DATA.horizon;
 const NOM_MARCHE = {fr:"France",us:"États-Unis",crypto:"Crypto",etf:"ETF / indice",tendances:"En tendance"};
 const SIG = {"ACHAT FORT":"s-af","ACHAT":"s-a","NEUTRE":"s-n","VENTE":"s-v","VENTE FORTE":"s-vf"};
+const LIB = {"ACHAT FORT":"Haussier fort","ACHAT":"Haussier","NEUTRE":"Neutre","VENTE":"Baissier","VENTE FORTE":"Baissier fort"};
 const RISK = {"Faible":1,"Moyen":2,"Élevé":3,"Très élevé":4};
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pct = (v, d=1) => v==null ? "–" : `<span class="num ${v>0?'up':v<0?'down':''}">${v>0?'+':''}${(v*100).toFixed(d).replace('.',',')} %</span>`;
 const pctPlain = (v, d=1) => v==null ? "–" : `${(v*100).toFixed(d).replace('.',',')} %`;
-const px = (v, cur) => v==null ? "–" : `${v.toLocaleString('fr-FR',{maximumFractionDigits: v<1?4:2, minimumFractionDigits: v<1?2:2})} ${cur}`;
+const px = (v, cur) => {
+  if(v == null || !isFinite(v)) return "–";
+  const a = Math.abs(v);
+  const opts = a >= 1 ? {minimumFractionDigits:2, maximumFractionDigits:2} : {maximumSignificantDigits:4, minimumSignificantDigits:2};
+  return `${v.toLocaleString('fr-FR', opts)} ${cur}`;
+};
 const token = t => t.replace(/[^A-Za-z0-9._-]/g, "");
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
@@ -453,12 +730,127 @@ const avecProba = T.filter(t => t.proba_hausse!=null).sort((a,b)=>b.proba_hausse
 $("#picks").innerHTML = avecProba.slice(0,7).map(t => `<button class="pick" data-t="${esc(t.ticker)}">
   <span style="min-width:0"><span class="t">${esc(t.nom)}</span><span class="s">${esc(t.ticker)} · ${NOM_MARCHE[t.marche]||""}</span></span>
   <span class="pick-mid">${spark(t.spark,64,22)}${gauge(t.proba_hausse)}</span>
-  <span class="pill ${SIG[t.signal]}">${esc(t.signal)}</span></button>`).join("") || `<div class="empty">Le modèle n'a pas pu être entraîné (pas assez de données).</div>`;
+  <span class="pill ${SIG[t.signal]}">${esc(LIB[t.signal] || t.signal)}</span></button>`).join("") || `<div class="empty">Le modèle n'a pas pu être entraîné (pas assez de données).</div>`;
 const rockets = T.filter(t => t.potentiel_hausse).sort((a,b)=>b.score-a.score);
 $("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t="${esc(t.ticker)}">
   <div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(t.nom)}</b><span class="num">score ${Math.round(t.score)}</span></div>
   <div class="why">${esc((t.alertes[0]||"").replace(/^🚀 Configuration de hausse potentielle : /,""))}</div></button>`).join("")
   || `<div class="empty">Aucune configuration de décollage aujourd'hui. Le radar ne force pas les signaux quand le marché n'en donne pas.</div>`;
+
+/* ---------- Sécurité ---------- */
+const urlSure = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "#";
+const SITE_PUBLIE = !!document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+if(SITE_PUBLIE && window.top !== window.self){   // empêche d'afficher le site dans le cadre d'un autre site
+  try{ window.top.location.replace(window.location.href); }
+  catch(e){ document.body.textContent = "Ce site ne peut pas être affiché dans un autre site. Ouvre-le directement : " + location.href; }
+}
+
+/* ---------- Favoris (gardés dans ce navigateur) et partage ---------- */
+const CLE_FAV = "radar-bourse-favoris";
+let FAV = new Set();
+try{ FAV = new Set(JSON.parse(localStorage.getItem(CLE_FAV) || "[]")); }catch(e){}
+function sauverFav(){ try{ localStorage.setItem(CLE_FAV, JSON.stringify([...FAV])); }catch(e){} }
+function flash(msg){
+  const n = document.createElement("div"); n.className = "note-flash"; n.setAttribute("role", "status"); n.textContent = msg;
+  document.body.appendChild(n); setTimeout(() => n.remove(), 2400);
+}
+const slugTitre = tk => tk.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "titre";
+function lienPartage(t){
+  if(SITE_PUBLIE) return new URL("titres/" + slugTitre(t.ticker) + ".html", location.href).href;
+  return location.href.split("#")[0] + "#" + token(t.ticker);
+}
+async function partager(t){
+  const url = lienPartage(t), texte = `${t.nom} : analyse et prévision à un mois sur Radar Bourse`;
+  if(navigator.share){ try{ await navigator.share({title: texte, url}); return; }catch(e){ if(e && e.name === "AbortError") return; } }
+  try{ await navigator.clipboard.writeText(url); flash("Lien copié : colle-le où tu veux"); }
+  catch(e){ flash(url); }
+}
+
+/* ---------- Portefeuille virtuel (argent fictif, gardé dans ce navigateur) ---------- */
+const CLE_PF = "radar-bourse-portefeuille-v1", DEPART_PF = 10000;
+function pfCharger(){
+  try{ const p = JSON.parse(localStorage.getItem(CLE_PF)); if(p && typeof p.cash === "number") return p; }catch(e){}
+  return {cash: DEPART_PF, positions: {}, historique: [], debut: new Date().toISOString()};
+}
+let PF = pfCharger();
+function pfSauver(){ try{ localStorage.setItem(CLE_PF, JSON.stringify(PF)); }catch(e){} }
+const eur = v => (Math.round(v * 100) / 100).toLocaleString("fr-FR", {minimumFractionDigits:2, maximumFractionDigits:2}) + " €";
+function pfPrix(tk){ const t = T.find(x => x.ticker === tk); return t ? t.prix : (PF.positions[tk] && PF.positions[tk].dernier) || 0; }
+function pfTaux(t){ return t && t.devise === "$" ? (DATA.usd_eur || 0.92) : 1; }   // conversion simple des $ en €
+function pfValeur(){
+  let v = PF.cash;
+  for(const [tk, pos] of Object.entries(PF.positions)){ const t = T.find(x => x.ticker === tk); v += pos.qte * pfPrix(tk) * (t ? pfTaux(t) : (pos.taux || 1)); }
+  return v;
+}
+function pfAcheter(t, montantEur){
+  const taux = pfTaux(t), prixEur = t.prix * taux;
+  const fraction = t.ticker.endsWith("-USD");
+  let qte = montantEur / prixEur; if(!fraction) qte = Math.floor(qte);
+  if(qte <= 0) return "Montant trop petit pour acheter au moins une action.";
+  const cout = qte * prixEur;
+  if(cout > PF.cash + 1e-9) return "Pas assez d'argent fictif disponible.";
+  const pos = PF.positions[t.ticker] || {qte: 0, prixMoyen: 0};
+  pos.prixMoyen = (pos.prixMoyen * pos.qte + t.prix * qte) / (pos.qte + qte);
+  pos.qte += qte; pos.dernier = t.prix; pos.taux = taux; pos.nom = t.nom; pos.devise = t.devise;
+  PF.positions[t.ticker] = pos; PF.cash -= cout;
+  PF.historique.unshift({date: new Date().toISOString(), ticker: t.ticker, nom: t.nom, sens: "achat", qte, prix: t.prix, devise: t.devise});
+  PF.historique = PF.historique.slice(0, 50);
+  pfSauver(); pfAfficher(); return null;
+}
+function pfVendre(tk){
+  const pos = PF.positions[tk]; if(!pos) return;
+  const t = T.find(x => x.ticker === tk), prix = pfPrix(tk), taux = t ? pfTaux(t) : (pos.taux || 1);
+  PF.cash += pos.qte * prix * taux;
+  PF.historique.unshift({date: new Date().toISOString(), ticker: tk, nom: pos.nom, sens: "vente", qte: pos.qte, prix, devise: pos.devise, gain: (prix / pos.prixMoyen - 1)});
+  delete PF.positions[tk];
+  pfSauver(); pfAfficher();
+}
+function pfAfficher(){
+  const el = $("#pf"); if(!el) return;
+  const total = pfValeur(), perf = total / DEPART_PF - 1, lignes = Object.entries(PF.positions);
+  const fmtQ = q => Number.isInteger(q) ? q : q.toFixed(4).replace(".", ",");
+  el.innerHTML = `
+    <div class="pf-kpis">
+      <div class="k"><b class="${perf > 0.0005 ? "up" : perf < -0.0005 ? "down" : ""}">${eur(total)}</b><span>valeur totale</span></div>
+      <div class="k"><b>${pct(perf)}</b><span>depuis le départ (10 000 €)</span></div>
+      <div class="k"><b>${eur(PF.cash)}</b><span>disponible</span></div>
+      <div class="k"><b>${lignes.length}</b><span>position${lignes.length > 1 ? "s" : ""}</span></div>
+    </div>
+    ${lignes.length ? `<div class="tablewrap" style="margin-top:14px"><table class="pf-table"><thead><tr><th>Titre</th><th>Quantité</th><th>Prix moyen</th><th>Cours</th><th>Résultat</th><th></th></tr></thead><tbody>
+      ${lignes.map(([tk, pos]) => { const prix = pfPrix(tk), g = prix / pos.prixMoyen - 1;
+        return `<tr><td><button class="lnk" data-t="${esc(tk)}">${esc(pos.nom || tk)}</button></td><td class="num">${fmtQ(pos.qte)}</td><td class="num">${px(pos.prixMoyen, pos.devise || "€")}</td><td class="num">${px(prix, pos.devise || "€")}</td><td>${pct(g)}</td><td><button class="mini-btn" data-vendre="${esc(tk)}">Vendre</button></td></tr>`; }).join("")}
+    </tbody></table></div>` : `<p class="empty" style="padding:14px 0 0">Aucune position pour l'instant. Ouvre un titre (par exemple un signal fort) et clique « Investir (virtuel) ».</p>`}
+    ${PF.historique.length ? `<details style="margin-top:12px"><summary class="muted" style="cursor:pointer">Dernières opérations (${PF.historique.length})</summary><ul style="font-size:13.5px;margin:8px 0 0;padding-left:18px">
+      ${PF.historique.slice(0, 10).map(h => `<li>${new Date(h.date).toLocaleDateString("fr-FR")} · ${h.sens === "achat" ? "Achat" : "Vente"} de ${fmtQ(h.qte)} ${esc(h.nom || h.ticker)} à ${px(h.prix, h.devise || "€")}${h.gain != null ? ` (${pct(h.gain)})` : ""}</li>`).join("")}</ul></details>` : ""}
+    <div class="pf-actions"><span class="muted" style="font-size:12.5px">Argent fictif · sans frais · cours en $ convertis en € au taux du jour. Entraînement uniquement.</span>
+      <span id="pf-raz-zone"><button class="mini-btn danger" id="pf-raz">Recommencer à zéro</button></span></div>`;
+  el.querySelectorAll("[data-vendre]").forEach(b => b.onclick = () => { pfVendre(b.dataset.vendre); flash("Position vendue (virtuellement)"); });
+  $("#pf-raz").onclick = () => {
+    $("#pf-raz-zone").innerHTML = `Tout effacer ? <button class="mini-btn danger" id="pf-oui">Oui, recommencer</button> <button class="mini-btn" id="pf-non">Non</button>`;
+    $("#pf-oui").onclick = () => { PF = {cash: DEPART_PF, positions: {}, historique: [], debut: new Date().toISOString()}; pfSauver(); pfAfficher(); flash("Portefeuille remis à 10 000 €"); };
+    $("#pf-non").onclick = pfAfficher;
+  };
+}
+function pfFormulaire(t){
+  const pos = PF.positions[t.ticker];
+  const zone = document.createElement("div");
+  zone.className = "pf-ordre"; zone.id = "pf-ordre";
+  zone.innerHTML = `<div><span class="label">Portefeuille virtuel · ${eur(PF.cash)} disponibles</span></div>
+    <div class="ligne"><div class="field"><label for="pf-montant">Montant à investir (€ fictifs)</label><input type="number" id="pf-montant" min="10" step="10" value="${Math.min(1000, Math.floor(PF.cash))}"></div>
+      <button class="btn" id="pf-acheter">Investir dans ${esc(t.nom)}</button>
+      ${pos ? `<button class="btn ghost" id="pf-vendre">Vendre ma position (${pct(pfPrix(t.ticker) / pos.prixMoyen - 1)})</button>` : ""}</div>
+    <p class="muted" style="margin:0;font-size:12.5px">Astuce : regarde l'onglet Simulateur pour décider combien risquer. Aucun argent réel n'est utilisé.</p>`;
+  const ancien = $("#pf-ordre"); if(ancien) ancien.remove();
+  $("#d-body").prepend(zone);
+  $("#pf-acheter").onclick = () => { const err = pfAcheter(t, +$("#pf-montant").value || 0); if(err) flash(err); else { flash("Investi (virtuellement) !"); zone.remove(); } };
+  if(pos) $("#pf-vendre").onclick = () => { pfVendre(t.ticker); flash("Position vendue (virtuellement)"); zone.remove(); };
+  $("#pf-montant").focus();
+}
+setInterval(() => { if(!document.hidden) pfAfficher(); }, 5000);
+
+/* Liens de l'accroche : Telegram si configuré, cours seulement sur le vrai site */
+if(DATA.telegram && /^[A-Za-z0-9_]{4,40}$/.test(DATA.telegram)){ const l = $("#lien-tg"); l.href = "https://t.me/" + DATA.telegram; l.hidden = false; }
+if(!SITE_PUBLIE) $("#lien-apprendre").hidden = true;
 
 /* ---------- Tonalité des actus ---------- */
 function ton(v){
@@ -472,7 +864,7 @@ function depuis(iso){
   return h < 1 ? "à l'instant" : h < 24 ? `il y a ${h} h` : `il y a ${Math.round(h/24)} j`;
 }
 function carteActu(n, avecTitre=""){
-  return `<a class="news" href="${esc(n.url)}" target="_blank" rel="noopener">
+  return `<a class="news" href="${esc(urlSure(n.url))}" target="_blank" rel="noopener noreferrer">
     <span class="h">${esc(n.titre)}</span>
     <span class="m">${ton(n.tonalite)}<span>${esc(n.source||"")}</span><span>${depuis(n.date)}</span>${avecTitre}</span></a>`;
 }
@@ -496,7 +888,7 @@ $("#news-marche").innerHTML = (DATA.actus_marche||[]).map(n => carteActu(n)).joi
     $("#fort-stats").innerHTML = `<p>Pas assez de cas dans l'historique pour mesurer la réussite des signaux forts.</p>`;
   }
   $("#fort-list").innerHTML = forts.slice(0, 9).map(t => `<button class="fcard" data-t="${esc(t.ticker)}">
-      <span class="top"><b>${esc(t.nom)}</b><span class="num">${Math.round(t.proba_hausse*100)} %</span></span>
+      <span class="tete"><b>${esc(t.nom)}</b><span class="num">${Math.round(t.proba_hausse*100)} %</span></span>
       ${spark(t.spark, 180, 30)}
       <span class="m muted" style="font-size:12px">${esc(t.ticker)} · ${NOM_MARCHE[t.marche]||""} · actus ${ton(t.tonalite)}</span></button>`).join("")
     || `<div class="empty">Aucun signal fort aujourd'hui. Le radar n'en invente pas quand les conditions ne sont pas réunies.</div>`;
@@ -511,7 +903,14 @@ if(M && M.precision!=null){
    <div class="kpi"><div class="label">Référence naïve</div><div class="v num">${pctPlain(M.precision_base)}</div><div class="d">en répondant toujours la même chose</div></div>
    <div class="kpi"><div class="label">Avantage</div><div class="v num ${adv>0?'up':'down'}">${adv>0?'+':''}${(adv*100).toFixed(1).replace('.',',')} pts</div><div class="d">au-dessus de la référence</div></div>
    <div class="kpi"><div class="label">AUC</div><div class="v num">${M.auc.toFixed(3).replace('.',',')}</div><div class="d">0,500 = hasard · 1 = parfait</div></div>`;
-  const vd = $("#verdict"); vd.textContent = M.verdict; if(M.auc>=0.56 && adv>0.005) vd.classList.add("ok");
+  const vd = $("#verdict"); vd.textContent = M.verdict;
+  if(M.comparaison && M.comparaison.length > 1){
+    const cmp = document.createElement("p");
+    cmp.className = "muted"; cmp.style.cssText = "font-size:13.5px;margin:10px 0 0";
+    cmp.innerHTML = `À chaque mise à jour, le radar teste ${M.comparaison.length} façons de prévoir sur des périodes qu'il n'a jamais vues et garde la meilleure : <b>${esc(M.configuration)}</b>. ` +
+      M.comparaison.map(c => `${esc(c.nom)} : AUC ${c.auc.toFixed(3).replace(".", ",")}`).join(" · ");
+    vd.after(cmp);
+  } if(M.auc>=0.56 && adv>0.005) vd.classList.add("ok");
   $("#calib").innerHTML = M.calibration.map(c => {
     const h = c.taux_hausse==null ? 0 : c.taux_hausse;
     const attendu = (c.min + c.max)/2; const bad = c.taux_hausse!=null && Math.abs(h-attendu)>0.1 && c.nb>=30;
@@ -534,19 +933,19 @@ const val = (t,k) => ({ticker:t.ticker, prix:t.prix, j1:t.perf["1 jour"], m1:t.p
   signal:t.score, proba:t.proba_hausse ?? -1, risque:RISK[t.risque], rocket:t.potentiel_hausse?1:0, actus:t.tonalite ?? -9})[k];
 function rendre(){
   const q = $("#q").value.trim().toLowerCase();
-  let L = T.filter(t => filtre==="all" || (filtre==="rocket" ? t.potentiel_hausse : filtre==="fort" ? t.signal_fort : t.marche===filtre))
+  let L = T.filter(t => filtre==="all" || (filtre==="rocket" ? t.potentiel_hausse : filtre==="fort" ? t.signal_fort : filtre==="fav" ? FAV.has(t.ticker) : t.marche===filtre))
            .filter(t => !q || t.ticker.toLowerCase().includes(q) || t.nom.toLowerCase().includes(q));
   L.sort((a,b) => { const x=val(a,tri.k), y=val(b,tri.k);
     return (typeof x==="string" ? x.localeCompare(y) : (x??-9)-(y??-9)) * (tri.asc?1:-1); });
   $("#rows").innerHTML = L.map(t => `<tr data-t="${esc(t.ticker)}" tabindex="0">
-    <td><div class="tk">${esc(t.ticker)}</div><div class="nm">${esc(t.nom)}</div></td>
+    <td><div class="tk">${FAV.has(t.ticker) ? '<span class="etoile" title="Dans tes favoris">★</span>' : ""}${esc(t.ticker)}</div><div class="nm">${esc(t.nom)}</div></td>
     <td class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}${t.live?'<span class="src">direct</span>':''}</td><td data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</td><td>${pct(t.perf["1 mois"])}</td>
     <td class="spk"><span>${spark(t.spark,72,24)}</span><span>${pct(t.perf["3 mois"],0)}</span></td>
     <td><span class="score"><span class="num">${Math.round(t.score)}</span><span class="mini"><i style="width:${t.score}%"></i></span></span></td>
-    <td><span class="pill ${SIG[t.signal]}">${esc(t.signal)}</span>${t.signal_fort?'<span class="badge-fort">Fort</span>':''}</td>
+    <td><span class="pill ${SIG[t.signal]}">${esc(LIB[t.signal] || t.signal)}</span>${t.signal_fort?'<span class="badge-fort">Fort</span>':''}</td>
     <td>${gauge(t.proba_hausse)}</td><td>${ton(t.tonalite)}</td><td class="risk r${RISK[t.risque]}">${esc(t.risque)}</td>
     <td>${t.potentiel_hausse?'<span title="Configuration de décollage">🚀</span>':''}</td></tr>`).join("")
-    || `<tr><td colspan="11" class="empty">Aucun titre ne correspond.</td></tr>`;
+    || `<tr><td colspan="11" class="empty">${filtre === "fav" ? "Pas encore de favori : ouvre un titre et clique sur « ☆ Suivre » pour le retrouver ici." : "Aucun titre ne correspond."}</td></tr>`;
 }
 document.querySelectorAll(".filters .chip").forEach(c => c.onclick = () => {
   document.querySelectorAll(".filters .chip").forEach(x => x.setAttribute("aria-pressed", x===c));
@@ -557,34 +956,379 @@ document.querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
   document.querySelectorAll("th").forEach(x => x.removeAttribute("aria-sort"));
   th.setAttribute("aria-sort", tri.asc ? "ascending" : "descending"); rendre(); });
 rendre();
+pfAfficher();
 
 /* ---------- Détail ---------- */
-let chart = null, courant = null, bougies = null;
-function graphique(t){
-  if(chart){ chart.remove(); chart = null; bougies = null; }
-  const el = $("#chart"); if(!el || !window.LightweightCharts) { if(el) el.innerHTML = `<p class="empty">Graphique indisponible hors connexion.</p>`; return; }
-  chart = LightweightCharts.createChart(el, { autoSize:true,
-    layout:{background:{type:"solid",color:css("--surface")}, textColor:css("--muted"), fontFamily:"IBM Plex Mono, monospace", fontSize:11},
-    grid:{vertLines:{color:css("--line")}, horzLines:{color:css("--line")}},
-    rightPriceScale:{borderColor:css("--line")}, timeScale:{borderColor:css("--line")},
-    crosshair:{mode:0}, localization:{locale:"fr-FR"} });
-  const s = t.serie;
-  const c = bougies = chart.addCandlestickSeries({upColor:css("--up"), downColor:css("--down"), wickUpColor:css("--up"), wickDownColor:css("--down"), borderVisible:false});
-  c.setData(s.t.map((d,i)=>({time:d, open:s.o[i], high:s.h[i], low:s.l[i], close:s.c[i]})));
-  if(t._bar && t._bar.time >= s.t.at(-1)) c.update(t._bar);
-  const ligne = (vals, color, style=0, w=1.5) => { const l = chart.addLineSeries({color, lineWidth:w, lineStyle:style, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false});
-    l.setData(s.t.map((d,i)=>vals[i]==null?null:{time:d, value:vals[i]}).filter(Boolean)); return l; };
-  ligne(s.sma50, css("--accent"), 0, 1.4);
-  ligne(s.sma200, css("--warn"), 0, 1.4);
-  if(t.cone){
-    const k = t.cone;
-    for(const [arr, st] of [[k.mediane,2],[k.haut,1],[k.bas,1]]){
-      const l = chart.addLineSeries({color:css("--cone"), lineWidth: st===2?2:1, lineStyle:st, priceLineVisible:false, lastValueVisible:st===2, crosshairMarkerVisible:false});
-      l.setData(k.t.map((d,i)=>({time:d, value:arr[i]})));
+let courant = null;
+/* ---------- Graphiques détaillés ---------- */
+function rgba(hex, a){
+  hex = (hex || "#888888").replace("#", "");
+  if(hex.length === 3) hex = hex.split("").map(c => c + c).join("");
+  const n = parseInt(hex.slice(0, 6), 16);
+  return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
+}
+function melange(a, b, part){   // couleur opaque entre a et b (part = proportion de b)
+  const v = h => { h = h.replace("#", ""); if(h.length === 3) h = h.split("").map(c => c + c).join(""); const n = parseInt(h.slice(0,6), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+  const [x, y] = [v(a), v(b)];
+  return `rgb(${x.map((c, i) => Math.round(c + (y[i] - c) * part)).join(",")})`;
+}
+
+/* Bulles explicatives posées directement sur le graphique */
+function bulles(g){
+  const box = document.getElementById(g.id + "-bulles");
+  if(!box || !GRAPHS[g.id]) return;
+  const calques = g.opts.calques || {};
+  if(calques.bulles === false){ box.innerHTML = ""; return; }
+  const {chart, candles, t} = g, ts = chart.timeScale(), s = t.serie, k = t.cone, f = t.fourchette || [];
+  const W = box.clientWidth || g.el.clientWidth, Hh = box.clientHeight || g.el.clientHeight;
+  const deja = [];
+  const out = [];
+  const poser = (time, prix, cls, html, gauche = false) => {
+    let x, y;
+    try{ x = ts.timeToCoordinate(time); y = candles.priceToCoordinate(prix); }catch(e){ return; }
+    if(x == null || y == null || !isFinite(x) || !isFinite(y)) return;
+    if(x < 20 || x > W - 70 || y < 34 || y > Hh - 24) return;
+    if(deja.some(([a, b]) => Math.abs(a - x) < 150 && Math.abs(b - y) < 34)) return;   // évite les chevauchements
+    deja.push([x, y]);
+    out.push(`<div class="bulle ${cls}${gauche ? " g" : ""}" style="left:${x.toFixed(0)}px;top:${y.toFixed(0)}px">${html}</div>`);
+  };
+  const i = s.t.length - 1;
+  // Séparation nette entre le passé (vraies bougies) et la prévision (zones colorées)
+  let xAuj = null; try{ xAuj = ts.timeToCoordinate(s.t[i]); }catch(e){}
+  let largeurAxe = 76; try{ largeurAxe = chart.priceScale("right").width() || 76; }catch(e){}
+  if(xAuj != null && isFinite(xAuj) && xAuj > 40 && xAuj < W - largeurAxe){
+    if(k && calques.prev !== false){
+      out.push(`<div class="sep-lab droite" style="left:${xAuj.toFixed(0)}px">Prévision ▶</div>`);
+    }
+    out.push(`<div class="sep" style="left:${xAuj.toFixed(0)}px"></div>`);
+    out.push(`<div class="sep-lab gauche" style="left:${xAuj.toFixed(0)}px">◀ Ce qui s'est passé</div>`);
+    deja.push([xAuj, 20]);
+  }
+  poser(s.t[i], Math.max(s.h[i], s.c[i]), "", `Aujourd'hui · ${px(t.prix, t.devise)}`);
+  if(calques.sma200 !== false){
+    let rg = null; try{ rg = ts.getVisibleLogicalRange(); }catch(e){}
+    if(rg){
+      const idx = Math.max(0, Math.min(i, Math.round(rg.from + (rg.to - rg.from) * .25)));
+      if(s.sma200[idx] != null) poser(s.t[idx], s.sma200[idx], "warn", `Tendance de fond<small>moyenne des 200 derniers jours</small>`);
     }
   }
-  chart.timeScale().fitContent();
+  box.innerHTML = out.join("");
 }
+
+/* Compteur façon tableau de bord : où penche la prévision ? */
+function compteur(p){
+  if(p == null) return "";
+  const cx = 110, cy = 104, r = 84;
+  const pt = (a, rr = r) => [cx + rr * Math.cos(Math.PI * (1 - a)), cy - rr * Math.sin(Math.PI * (1 - a))];
+  const arc = (a0, a1, col) => { const [x0, y0] = pt(a0), [x1, y1] = pt(a1);
+    return `<path d="M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}" stroke="${col}" stroke-width="16" fill="none"/>`; };
+  const segs = [[0,.4,"var(--down)"],[.4,.47,"var(--down-soft)"],[.47,.53,"var(--line)"],[.53,.6,"var(--up-soft)"],[.6,1,"var(--up)"]];
+  const a = Math.max(.02, Math.min(.98, p)), [nx, ny] = pt(a, r - 22);
+  return `<svg class="compteur" viewBox="0 0 220 130" role="img" aria-label="Probabilité de hausse : ${Math.round(p*100)} %">
+    ${segs.map(([u, v, c]) => arc(u + .004, v - .004, c)).join("")}
+    <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="7" fill="var(--ink)"/>
+    <text x="14" y="126">baisse</text><text x="206" y="126" text-anchor="end">hausse</text>
+  </svg>`;
+}
+function resumeSimple(t){
+  const p = t.proba_hausse;
+  if(p == null) return "";
+  const sur10 = Math.round(p * 10);
+  const titre = p >= .58 ? "Plutôt à la hausse" : p >= .52 ? "Légèrement à la hausse" : p > .48 ? "Pile ou face" : p > .42 ? "Légèrement à la baisse" : "Plutôt à la baisse";
+  const med = t.cone ? t.cone.mediane.at(-1) : null;
+  return `<div class="panel resume">${compteur(p)}
+    <div><div class="label">En résumé, pour le mois qui vient</div>
+      <div class="verdict-grand ${p >= .52 ? "up" : p <= .48 ? "down" : ""}">${titre}</div>
+      <p>Le radar donne <b>${sur10} chance${sur10 > 1 ? "s" : ""} sur 10</b> que ${esc(t.nom)} soit plus haut dans un mois.${med ? ` Le scénario le plus probable : environ <b class="num">${px(med, t.devise)}</b> (${pct(med / t.prix - 1)}).` : ""}${t.signal_fort ? " <b>Signal fort</b> : la tendance technique va dans le même sens." : ""}</p></div></div>`;
+}
+
+/* Guide illustré « Comment lire ce graphique ? » */
+function guide(){
+  const bougie = (c, sens) => `<svg viewBox="0 0 64 56" aria-hidden="true"><line x1="22" y1="4" x2="22" y2="52" stroke="${c}" stroke-width="2"/><rect x="14" y="${sens ? 14 : 14}" width="16" height="28" rx="2" fill="${c}"/>
+    <text x="36" y="10" font-size="8" fill="var(--muted)">plus haut</text><text x="36" y="${sens ? 18 : 18}" font-size="8" fill="var(--muted)">${sens ? "clôture" : "ouverture"}</text>
+    <text x="36" y="42" font-size="8" fill="var(--muted)">${sens ? "ouverture" : "clôture"}</text><text x="36" y="54" font-size="8" fill="var(--muted)">plus bas</text></svg>`;
+  const trait = (c, dash, w = 3) => `<svg viewBox="0 0 64 56" aria-hidden="true"><path d="M4 40 C18 34 26 22 36 24 S52 16 60 12" stroke="${c}" stroke-width="${w}" fill="none" ${dash ? 'stroke-dasharray="6 4"' : ""}/></svg>`;
+  const zones = `<svg viewBox="0 0 64 56" aria-hidden="true"><path d="M4 28 L60 8 L60 28 Z" fill="var(--up-soft)"/><path d="M4 28 L60 28 L60 48 Z" fill="var(--down-soft)"/>
+    <path d="M4 28 L60 8" stroke="var(--up)" stroke-width="2"/><path d="M4 28 L60 48" stroke="var(--down)" stroke-width="2"/><path d="M4 28 L60 28" stroke="var(--accent)" stroke-width="3" stroke-dasharray="6 4"/></svg>`;
+  const barres = `<svg viewBox="0 0 64 56" aria-hidden="true">${[10,22,14,30,18,40,26].map((h, i) => `<rect x="${4 + i * 8.5}" y="${52 - h}" width="6" height="${h}" rx="1" fill="${i % 3 ? "var(--up)" : "var(--down)"}" opacity=".55"/>`).join("")}</svg>`;
+  const rsi = `<svg viewBox="0 0 64 56" aria-hidden="true"><rect x="2" y="6" width="60" height="12" fill="var(--down-soft)"/><rect x="2" y="38" width="60" height="12" fill="var(--up-soft)"/>
+    <path d="M2 30 L12 22 L22 12 L32 20 L42 34 L52 44 L62 36" stroke="var(--accent)" stroke-width="2" fill="none"/></svg>`;
+  return `<details class="guide"><summary>Comment lire ce graphique ?</summary><div class="guide-grid">
+    <div class="gitem">${bougie("var(--up)", true)}<span><b>Bougie verte</b>Le prix a monté ce jour-là : il a fini plus haut qu'il n'a commencé. Les petits traits montrent le plus haut et le plus bas de la journée.</span></div>
+    <div class="gitem">${bougie("var(--down)", false)}<span><b>Bougie rouge</b>Le prix a baissé ce jour-là. Plus la bougie est grande, plus la journée a bougé.</span></div>
+    <div class="gitem">${trait("var(--warn)", false)}<span><b>Ligne orange : la tendance de fond</b>La moyenne des 200 derniers jours. Prix au-dessus : la santé du titre est plutôt bonne. En dessous : prudence.</span></div>
+    <div class="gitem">${trait("var(--accent)", false, 2)}<span><b>Ligne bleue fine : la tendance récente</b>La moyenne des 50 derniers jours. Elle réagit plus vite que l'orange.</span></div>
+    <div class="gitem">${zones}<span><b>À droite : l'avenir possible</b>Pointillés bleus : le chemin le plus probable. Zone verte : si ça se passe bien. Zone rouge : si ça se passe mal. Dans 8 cas sur 10, le prix reste dans l'ensemble des deux zones.</span></div>
+    <div class="gitem"><svg viewBox="0 0 64 56" aria-hidden="true"><path d="M20 44 L28 32 L36 44 Z" fill="var(--up)"/><path d="M36 12 L44 24 L52 12 Z" fill="var(--down)"/></svg><span><b>Petites flèches : les figures</b>Formes de bougies connues des traders (marteau, étoile du soir…). Flèche verte : rebond possible. Flèche rouge : repli possible. L'explication de chaque figure est dans l'onglet « Analyse ».</span></div>
+    <div class="gitem">${barres}<span><b>Barres en bas : les volumes</b>Combien d'actions ont été échangées. Une grosse barre veut dire que beaucoup de monde a acheté ou vendu.</span></div>
+    <div class="gitem">${rsi}<span><b>Courbe du bas : le RSI</b>Le « thermomètre » du titre. Au-dessus de 70 : il a peut-être monté trop vite. Sous 30 : il a peut-être trop baissé.</span></div>
+  </div></details>`;
+}
+
+const tStr = tm => typeof tm === "string" ? tm : `${tm.year}-${String(tm.month).padStart(2,"0")}-${String(tm.day).padStart(2,"0")}`;
+const fmtDate = d => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", {day:"numeric", month:"short", year:"numeric"});
+const PERIODES = [["1M",21],["3M",63],["6M",126],["1A",250],["Tout",0]];
+function coque(id){
+  return `<div class="chart-wrap">
+    <div class="chart-bar">
+      <div class="per" id="${id}-per" role="group" aria-label="Période">${PERIODES.map(([l,j]) => `<button data-j="${j}" aria-pressed="false">${l}</button>`).join("")}</div>
+      <div class="opt" id="${id}-opt">
+        <label><input type="checkbox" data-s="bulles" checked> Explications</label>
+        <label><input type="checkbox" data-s="prev" checked> Prévision</label>
+        <label><input type="checkbox" data-s="sma50" checked> Moy. 50 j</label>
+        <label><input type="checkbox" data-s="sma200" checked> Moy. 200 j</label>
+        <label><input type="checkbox" data-s="fig" checked> Figures</label>
+        <label><input type="checkbox" data-s="bb"> Bollinger</label>
+        <label><input type="checkbox" data-s="vol" checked> Volumes</label>
+      </div>
+    </div>
+    <div class="chart-leg" id="${id}-leg" aria-live="off"></div>
+    <div class="chart-zone"><div class="chart big" id="${id}"></div><div class="bulles" id="${id}-bulles" aria-hidden="true"></div></div>
+    <div class="chart rsi rsi-lab" id="${id}-rsi"></div>
+  </div>
+  ${guide()}`;
+}
+const GRAPHS = {};
+function detruireGraph(id){
+  const g = GRAPHS[id]; if(!g) return;
+  try{ if(g.obs) g.obs.disconnect(); g.chart.remove(); if(g.rsi) g.rsi.remove(); }catch(e){}
+  delete GRAPHS[id];
+}
+function grapheComplet(id, t, opts = {}){
+  detruireGraph(id);
+  const el = document.getElementById(id), elR = document.getElementById(id + "-rsi"), leg = document.getElementById(id + "-leg");
+  if(!el) return;
+  if(!window.LightweightCharts){ el.innerHTML = `<p class="empty">Graphique indisponible (bibliothèque non chargée).</p>`; return; }
+  const C = {up:css("--up"), down:css("--down"), acc:css("--accent"), warn:css("--warn"), cone:css("--cone"),
+             surf:css("--surface"), line:css("--line"), muted:css("--muted"), ink:css("--ink")};
+  const base = {autoSize:true, localization:{locale:"fr-FR"},
+    layout:{background:{type:"solid", color:C.surf}, textColor:C.muted, fontFamily:"IBM Plex Mono, monospace", fontSize:11},
+    grid:{vertLines:{color:rgba(C.line, .55)}, horzLines:{color:rgba(C.line, .55)}}};
+  const chart = LightweightCharts.createChart(el, {...base, crosshair:{mode:0},
+    rightPriceScale:{borderColor:C.line, minimumWidth:76, scaleMargins:{top:.06, bottom:.2}},
+    timeScale:{borderColor:C.line, rightOffset:2}});
+  const s = t.serie, series = {sma50:[], sma200:[], bb:[], vol:[], prev:[]};
+
+  const candles = chart.addCandlestickSeries({upColor:C.up, downColor:C.down, wickUpColor:C.up, wickDownColor:C.down, borderVisible:false});
+  candles.setData(s.t.map((d,i) => ({time:d, open:s.o[i], high:s.h[i], low:s.l[i], close:s.c[i]})));
+  if(t._bar && t._bar.time >= s.t.at(-1)) candles.update(t._bar);
+  const HAUSS = ["marteau", "englobante_haussiere", "etoile_matin"];
+  const marqueursFig = (t.chandeliers || []).filter(m => m.t < s.t.at(-1) || m.t === s.t.at(-1)).map(m => ({
+    time:m.t, position: HAUSS.includes(m.code) ? "belowBar" : "aboveBar", color: HAUSS.includes(m.code) ? C.up : C.down,
+    shape: HAUSS.includes(m.code) ? "arrowUp" : "arrowDown", text: m.nom}));
+  const majMarqueurs = avecFig => {
+    const liste = (avecFig ? marqueursFig.filter(m => m.time !== s.t.at(-1)) : []).concat([{time:s.t.at(-1), position:"aboveBar", color:C.ink, shape:"arrowDown", text:"aujourd'hui"}]);
+    liste.sort((a, b) => a.time < b.time ? -1 : 1);
+    candles.setMarkers(liste);
+  };
+  majMarqueurs(!(opts.calques && opts.calques.fig === false));
+  if(opts.niveaux){
+    const n = t.niveaux || {};
+    if(t.stop_loss) candles.createPriceLine({price:t.stop_loss, color:C.down, lineWidth:1, lineStyle:2, axisLabelVisible:true, title:"stop"});
+    if(n.resistance && n.resistance > t.prix * 1.005) candles.createPriceLine({price:n.resistance, color:C.muted, lineWidth:1, lineStyle:1, axisLabelVisible:true, title:"résistance"});
+  }
+
+  const vol = chart.addHistogramSeries({priceFormat:{type:"volume"}, priceScaleId:"vol", lastValueVisible:false, priceLineVisible:false});
+  chart.priceScale("vol").applyOptions({scaleMargins:{top:.84, bottom:0}});
+  vol.setData(s.t.map((d,i) => ({time:d, value:s.v[i] || 0, color: s.c[i] >= s.o[i] ? rgba(C.up, .35) : rgba(C.down, .35)})));
+  series.vol.push(vol);
+
+  const ligne = (vals, color, style = 0, w = 1.4) => {
+    const l = chart.addLineSeries({color, lineWidth:w, lineStyle:style, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false});
+    l.setData(s.t.map((d,i) => vals && vals[i] != null ? {time:d, value:vals[i]} : {time:d}));
+    return l;
+  };
+  series.sma50.push(ligne(s.sma50, C.acc));
+  series.sma200.push(ligne(s.sma200, C.warn));
+  series.bb.push(ligne(s.bbh, rgba(C.muted, .8), 1, 1), ligne(s.bbb, rgba(C.muted, .8), 1, 1));
+
+  const k = t.cone, refs = {};
+  if(k){
+    // Trois couches opaques empilées : vert du haut jusqu'à la médiane, rouge de la médiane au bas,
+    // puis la couleur du fond sous le bas. Résultat : une zone verte « si ça va bien » au-dessus
+    // de la trajectoire probable et une zone rouge « si ça va mal » en dessous.
+    const zone = {priceLineVisible:false, crosshairMarkerVisible:false};
+    const vert = chart.addAreaSeries({...zone, lineColor:C.up, lineWidth:2, topColor:melange(C.surf, C.up, .24), bottomColor:melange(C.surf, C.up, .24), lastValueVisible:true, title:"si ça va bien"});
+    vert.setData(k.t.map((d,i) => ({time:d, value:k.haut[i]})));
+    const rouge = chart.addAreaSeries({...zone, lineColor:"rgba(0,0,0,0)", lineWidth:1, topColor:melange(C.surf, C.down, .22), bottomColor:melange(C.surf, C.down, .22), lastValueVisible:false});
+    rouge.setData(k.t.map((d,i) => ({time:d, value:k.mediane[i]})));
+    const fond = chart.addAreaSeries({...zone, lineColor:C.down, lineWidth:2, topColor:C.surf, bottomColor:C.surf, lastValueVisible:true, title:"si ça va mal"});
+    fond.setData(k.t.map((d,i) => ({time:d, value:k.bas[i]})));
+    const med = chart.addLineSeries({color:C.cone, lineWidth:3, lineStyle:2, priceLineVisible:false, lastValueVisible:true, title:"le plus probable", crosshairMarkerVisible:false});
+    med.setData(k.t.map((d,i) => ({time:d, value:k.mediane[i]})));
+    series.prev.push(vert, rouge, fond, med);
+  }
+  series.bb.forEach(x => x.applyOptions({visible:false}));
+
+  // RSI synchronisé sous le graphique
+  let rsiC = null;
+  if(elR && s.rsi){
+    rsiC = LightweightCharts.createChart(elR, {...base, handleScroll:false, handleScale:false, crosshair:{mode:0},
+      rightPriceScale:{borderColor:C.line, minimumWidth:76, scaleMargins:{top:.12, bottom:.08}},
+      timeScale:{visible:false, borderColor:C.line, rightOffset:2}});
+    const r = rsiC.addLineSeries({color:C.acc, lineWidth:1.5, priceLineVisible:false, lastValueVisible:true, crosshairMarkerVisible:false});
+    const futur = k ? k.t.slice(1) : [];
+    r.setData(s.t.map((d,i) => s.rsi[i] != null ? {time:d, value:s.rsi[i]} : {time:d}).concat(futur.map(d => ({time:d}))));
+    r.createPriceLine({price:70, color:rgba(C.down, .8), lineWidth:1, lineStyle:2, axisLabelVisible:true, title:""});
+    r.createPriceLine({price:30, color:rgba(C.up, .8), lineWidth:1, lineStyle:2, axisLabelVisible:true, title:""});
+    chart.timeScale().subscribeVisibleLogicalRangeChange(rg => { if(rg && rsiC) try{ rsiC.timeScale().setVisibleLogicalRange(rg); }catch(e){} });
+  }
+
+  // Légende au survol : bougie du jour, ou prévision dans la zone future
+  const derniere = () => { const i = s.t.length - 1; return t._bar || {time:s.t[i], open:s.o[i], high:s.h[i], low:s.l[i], close:s.c[i]}; };
+  const majLeg = p => {
+    if(!leg) return;
+    let d = null, date = null;
+    if(p && p.time){
+      date = tStr(p.time); d = p.seriesData.get(candles);
+      if(!d && k){
+        const j = k.t.indexOf(date);
+        if(j >= 0){ leg.innerHTML = `<b>${fmtDate(date)}</b><span>prévision médiane <b>${px(k.mediane[j], t.devise)}</b> ${pct(k.mediane[j]/t.prix - 1)}</span><span>fourchette 8 chances sur 10 : ${px(k.bas[j], t.devise)} – ${px(k.haut[j], t.devise)}</span>`; return; }
+      }
+    }
+    if(!d){ d = derniere(); date = tStr(d.time); }
+    leg.innerHTML = `<b>${fmtDate(date)}</b><span>ouv. ${px(d.open, t.devise)}</span><span>haut ${px(d.high, t.devise)}</span><span>bas ${px(d.low, t.devise)}</span><span>clôt. <b>${px(d.close, t.devise)}</b> ${pct(d.close/d.open - 1, 2)}</span>`;
+  };
+  chart.subscribeCrosshairMove(majLeg);
+  majLeg(null);
+
+  // Période affichée
+  const perEl = document.getElementById(id + "-per");
+  const voir = j => {
+    perEl && perEl.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.j === j));
+    if(!j){ chart.timeScale().fitContent(); return; }
+    const to = k ? k.t.at(-1) : s.t.at(-1);
+    chart.timeScale().setVisibleRange({from:s.t[Math.max(0, s.t.length - j)], to});
+  };
+  if(perEl) perEl.querySelectorAll("button").forEach(b => b.onclick = () => { opts.periode = +b.dataset.j; voir(opts.periode); });
+  // Calques affichés
+  const optEl = document.getElementById(id + "-opt");
+  if(optEl) optEl.querySelectorAll("input").forEach(c => {
+    if(opts.calques && c.dataset.s in opts.calques) c.checked = opts.calques[c.dataset.s];
+    const appliquer = () => {
+      (series[c.dataset.s] || []).forEach(x => x.applyOptions({visible:c.checked}));
+      if(c.dataset.s === "fig") majMarqueurs(c.checked);
+      (opts.calques ||= {})[c.dataset.s] = c.checked;
+      if(GRAPHS[id]) bulles(GRAPHS[id]);
+    };
+    appliquer(); c.onchange = appliquer;
+  });
+  const g = GRAPHS[id] = {id, chart, rsi:rsiC, candles, t, opts, series, el};
+  const redessiner = () => requestAnimationFrame(() => bulles(g));
+  chart.timeScale().subscribeVisibleLogicalRangeChange(redessiner);
+  if(window.ResizeObserver){ g.obs = new ResizeObserver(redessiner); g.obs.observe(el); }
+  requestAnimationFrame(() => { voir(opts.periode ?? 126); redessiner(); });
+}
+function graphique(t){ grapheComplet("g-detail", t, {niveaux:true, periode:63}); }
+function redessinerTout(){ for(const [id, g] of Object.entries(GRAPHS)) grapheComplet(id, g.t, g.opts); }
+/* ---------- Prévision écrite : « Lecture du radar » ---------- */
+function lecture(t, court = false){
+  const n = t.niveaux || {}, p = t.proba_hausse, k = t.cone, dev = t.devise, f = t.fourchette || [];
+  const parts = [];
+  const au200 = n.sma200 != null && t.prix > n.sma200, au50 = n.sma50 != null && t.prix > n.sma50;
+  const tend = au200
+    ? (au50 ? "haussière et solide : le cours est au-dessus de ses moyennes 50 et 200 jours"
+            : "haussière sur le fond, mais le cours est repassé sous sa moyenne 50 jours, signe d'essoufflement à court terme")
+    : (au50 ? "baissière sur le fond, avec un rebond en cours au-dessus de la moyenne 50 jours"
+            : "baissière : le cours est sous ses moyennes 50 et 200 jours");
+  const rsi = n.rsi;
+  const elan = rsi == null ? "" : rsi > 70 ? ` Le RSI à ${Math.round(rsi)} signale une surchauffe : un repli ne serait pas surprenant.`
+    : rsi < 30 ? ` Le RSI à ${Math.round(rsi)} indique un titre survendu : un rebond technique est possible.`
+    : ` Le RSI à ${Math.round(rsi)} montre un élan ${rsi >= 50 ? "plutôt acheteur" : "plutôt vendeur"}, sans excès.`;
+  const force = n.adx == null ? "" : n.adx > 25 ? ` La tendance est nette (ADX ${Math.round(n.adx)}).` : ` La tendance reste peu marquée (ADX ${Math.round(n.adx)}).`;
+  parts.push(`<h4>Tendance</h4><p>Tendance ${tend}.${elan}${force}</p>`);
+
+  if(p != null && k && f.length === 2){
+    const med = k.mediane.at(-1);
+    const avis = p >= 0.58 ? "plutôt favorable" : p >= 0.52 ? "légèrement favorable" : p > 0.48 ? "neutre, sans direction claire"
+               : p > 0.42 ? "légèrement défavorable" : "plutôt défavorable";
+    parts.push(`<h4>Prévision à ${H} séances (environ un mois)</h4>
+      <p>L'avis du modèle est <b>${avis}</b> : ${Math.round(p*100)} % de probabilité que le cours soit plus haut qu'aujourd'hui.${t.signal_fort ? " C'est un <b>signal fort</b> : la tendance technique va dans le même sens." : ""}</p>
+      <div class="scen">
+        <div class="sc neg"><span class="label">Scénario défavorable</span><b class="num">${px(f[0], dev)}</b><span>${pct(f[0]/t.prix - 1)} · 1 chance sur 10 de finir plus bas</span></div>
+        <div class="sc mid"><span class="label">Scénario central</span><b class="num">${px(med, dev)}</b><span>${pct(med/t.prix - 1)} · trajectoire médiane</span></div>
+        <div class="sc pos"><span class="label">Scénario favorable</span><b class="num">${px(f[1], dev)}</b><span>${pct(f[1]/t.prix - 1)} · 1 chance sur 10 de finir plus haut</span></div>
+      </div>`);
+  }
+  if(court) return parts.join("");
+
+  const niv = [
+    ["Résistance (plus haut sur un an)", n.resistance], ["Moyenne 50 jours", n.sma50], ["Moyenne 200 jours", n.sma200],
+    ["Support (plus bas sur 20 séances)", n.support], ["Stop-loss indicatif (2 ATR)", t.stop_loss]
+  ].filter(([, v]) => v != null).sort((a, b) => b[1] - a[1]);
+  parts.push(`<h4>Niveaux à surveiller</h4><ul class="niv">${niv.map(([lib, v]) =>
+    `<li><span>${lib}</span><b class="num">${px(v, dev)}</b><em>${pct(v/t.prix - 1)}</em></li>`).join("")}</ul>`);
+
+  const plancher = Math.max(t.stop_loss || 0, n.support || 0);
+  const plafond = n.sma200 != null && n.sma200 > t.prix ? n.sma200 : (n.resistance || t.objectif);
+  parts.push(`<h4>Ce qui changerait l'avis</h4><p>${(p ?? 0.5) >= 0.5
+    ? `Une clôture sous ${px(plancher, dev)} affaiblirait nettement ce scénario. À l'inverse, dépasser ${px(n.resistance || t.objectif, dev)} confirmerait la force du titre.`
+    : `Un retour durable au-dessus de ${px(plafond, dev)} remettrait un scénario haussier sur la table. Sous ${px(plancher, dev)}, la baisse pourrait s'accélérer.`}</p>`);
+
+  if(t.tonalite != null && !isNaN(t.tonalite)){
+    parts.push(`<h4>Actualités</h4><p>Tonalité des articles des 7 derniers jours : ${ton(t.tonalite)}.${t.actus && t.actus[0] ? ` Dernier titre : « ${esc(t.actus[0].titre)} ».` : ""} Cette tonalité n'entre pas dans la probabilité.</p>`);
+  }
+  const M = DATA.modele;
+  if(M && M.precision != null){
+    const sf = M.signaux_forts;
+    parts.push(`<h4>Fiabilité</h4><p>Sur des périodes qu'il n'a jamais vues, le modèle a trouvé la bonne direction ${Math.round(M.precision*100)} % du temps${t.signal_fort && sf && sf.precision != null ? `, et ${Math.round(sf.precision*100)} % du temps pour les signaux forts comme celui-ci` : ""}. Une prévision reste une probabilité, jamais une promesse.</p>`);
+  }
+  return parts.join("");
+}
+
+/* ---------- Onglet Entreprise ---------- */
+function blocFondamentaux(t){
+  const F = t.fondamentaux, L = DATA.fondamentaux_libelles || {};
+  if(!F) return "";
+  const fmt = (v, f) => {
+    if(v == null) return "–";
+    if(f === "pct") return pctPlain(v);
+    if(f === "pct_brut") return v.toFixed(2).replace(".", ",") + " %";
+    if(f === "ratio") return Math.round(v) + " %";
+    if(f === "x") return v.toFixed(1).replace(".", ",");
+    const u = Math.abs(v) >= 1e9 ? [1e9, " Md"] : Math.abs(v) >= 1e6 ? [1e6, " M"] : [1, ""];
+    return (v / u[0]).toLocaleString("fr-FR", {maximumFractionDigits: Math.abs(v / u[0]) >= 100 ? 0 : 1}) + u[1] + " " + (F.devise || t.devise);
+  };
+  const repere = (k, v) => {
+    if(v == null) return "";
+    const r = (c, txt) => `<span class="rep ${c}">${txt}</span>`;
+    if(k === "trailingPE" || k === "forwardPE") return v < 0 ? r("att", "bénéfices négatifs") : v < 15 ? r("bon", "plutôt bon marché") : v <= 25 ? r("moy", "dans la moyenne") : r("att", "cher : forte attente de croissance");
+    if(k === "pegRatio") return v < 1 ? r("bon", "croissance bon marché") : v <= 2 ? r("moy", "raisonnable") : r("att", "cher par rapport à la croissance");
+    if(k === "profitMargins") return v > .15 ? r("bon", "marge élevée") : v > .05 ? r("moy", "marge moyenne") : r("att", "marge faible");
+    if(k === "returnOnEquity") return v > .15 ? r("bon", "très rentable") : v > .08 ? r("moy", "rentabilité correcte") : r("att", "rentabilité faible");
+    if(k === "debtToEquity") return v < 80 ? r("bon", "peu endettée") : v <= 200 ? r("moy", "endettement modéré") : r("att", "très endettée");
+    if(k === "revenueGrowth") return v > .1 ? r("bon", "forte croissance") : v > 0 ? r("moy", "croissance modérée") : r("att", "ventes en baisse");
+    return "";
+  };
+  const lignes = Object.entries(L).filter(([k]) => F.valeurs[k] != null).map(([k, l]) =>
+    `<tr><td>${esc(l.libelle)}</td><td class="val">${fmt(F.valeurs[k], l.format)}</td><td><span class="aide">${esc(l.aide)}</span><br>${repere(k, F.valeurs[k])}</td></tr>`).join("");
+  return `<div class="panel"><div class="label" style="margin-bottom:8px">La santé de l'entreprise${F.secteur ? " · " + esc(F.secteur) : ""}</div>
+    <div class="tablewrap" style="border:0"><table class="fond"><tbody>${lignes}</tbody></table></div>
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Les repères sont généraux : un PER « cher » peut être normal dans la technologie, une dette élevée normale dans l'énergie. Ces chiffres sont affichés pour comprendre l'entreprise ; ils n'entrent pas dans la probabilité du modèle.</p></div>`;
+}
+
+/* ---------- Calculateur de taille de position (gestion du risque) ---------- */
+function calculPosition(t){
+  const cap = +$("#pos-capital").value || 0, risque = +$("#pos-risque").value, stop = +$("#pos-stop").value;
+  $("#pos-risque-v").textContent = risque.toString().replace(".", ",") + " % du capital";
+  const out = $("#pos-out");
+  if(!cap || !stop || stop >= t.prix){ out.innerHTML = `<div class="empty">Indique un capital et un niveau de sortie inférieur au cours actuel (${px(t.prix, t.devise)}).</div>`; return; }
+  const perteMax = cap * risque / 100, parUnite = t.prix - stop;
+  let qte = perteMax / parUnite;
+  const fractionnable = t.ticker.endsWith("-USD");
+  if(!fractionnable) qte = Math.floor(qte);
+  let montant = qte * t.prix, plafond = false;
+  if(montant > cap){ qte = fractionnable ? cap / t.prix : Math.floor(cap / t.prix); montant = qte * t.prix; plafond = true; }
+  out.innerHTML = `
+    <div class="fact"><div class="label">Perte maximale acceptée</div><div class="v down">${Math.round(perteMax).toLocaleString("fr-FR")} €</div></div>
+    <div class="fact"><div class="label">Quantité</div><div class="v">${fractionnable ? qte.toFixed(4).replace(".", ",") : qte}</div></div>
+    <div class="fact"><div class="label">Montant à investir au maximum</div><div class="v">${Math.round(montant).toLocaleString("fr-FR")} €</div></div>
+    <div class="fact"><div class="label">Écart jusqu'au stop</div><div class="v">${pct(stop / t.prix - 1)}</div></div>
+    ${plafond ? `<p class="muted" style="grid-column:1/-1;margin:0;font-size:13px">Le calcul dépassait ton capital : montant plafonné à ton capital.</p>` : ""}
+    ${!fractionnable && qte === 0 ? `<p class="muted" style="grid-column:1/-1;margin:0;font-size:13px">Avec ce risque, tu ne peux même pas acheter une action : c'est un signe que la position serait trop risquée pour ton capital.</p>` : ""}`;
+}
+
 /* ---------- Simulateur Monte-Carlo ---------- */
 function simuler(t, montant, h, avecModele){
   const r = t.rendements;
@@ -657,15 +1401,36 @@ function dessinerSim(t){
   }).join("");
 }
 
+/* Détails d'un titre chargés à la demande (site en ligne) : la page d'accueil reste légère */
+const DETAILS_EN_COURS = {};
+function chargerDetail(t){
+  if(t.serie || !t.detail) return Promise.resolve(t);
+  if(!DETAILS_EN_COURS[t.ticker]){
+    DETAILS_EN_COURS[t.ticker] = fetch(t.detail, {cache:"no-cache"})
+      .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
+      .then(d => { Object.assign(t, d); return t; })
+      .catch(e => { delete DETAILS_EN_COURS[t.ticker]; throw e; });
+  }
+  return DETAILS_EN_COURS[t.ticker];
+}
 function ouvrir(tk, pousser=true){
   const t = T.find(x => x.ticker===tk); if(!t) return;
+  if(!t.serie && t.detail){
+    $("#d-title").textContent = t.nom;
+    $("#d-sub").textContent = t.ticker;
+    $("#d-body").innerHTML = `<div class="empty">Chargement de l'analyse de ${esc(t.nom)}…</div>`;
+    $("#sheet").hidden = false; document.body.style.overflow = "hidden";
+    chargerDetail(t).then(() => { if(!$("#sheet").hidden) ouvrir(tk, pousser); })
+      .catch(() => { $("#d-body").innerHTML = `<div class="empty">Impossible de charger le détail de ce titre. Vérifie ta connexion puis réessaie.</div>`; });
+    return;
+  }
   courant = t;
   $("#d-title").textContent = t.nom;
   $("#d-sub").innerHTML = `${esc(t.ticker)} · ${NOM_MARCHE[t.marche]||""} · <span class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}</span> <span data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</span>`;
   const p = t.proba_hausse, f = t.fourchette;
   const phrase = p==null ? `Pas de probabilité disponible pour ce titre.` :
     `Le modèle estime à <b>${Math.round(p*100)} %</b> la probabilité que ${esc(t.nom)} soit plus haut dans ${H} séances. ` +
-    (f && f.length ? `Fourchette probable à cette échéance (2 chances sur 3) : <b class="num">${px(f[0],t.devise)}</b> à <b class="num">${px(f[1],t.devise)}</b>. ` : "") +
+    (f && f.length ? `Fourchette probable à cette échéance (8 chances sur 10) : <b class="num">${px(f[0],t.devise)}</b> à <b class="num">${px(f[1],t.devise)}</b>. ` : "") +
     (DATA.modele && DATA.modele.auc < 0.52 ? `Attention, sur l'historique ce modèle ne fait pas mieux que le hasard.` : "");
   const bt = t.backtest;
   const tonMoy = t.tonalite;
@@ -674,18 +1439,20 @@ function ouvrir(tk, pousser=true){
       <button class="dtab" role="tab" data-dtab="prev" aria-selected="true">Prévision</button>
       <button class="dtab" role="tab" data-dtab="sim" aria-selected="false">Simulateur</button>
       <button class="dtab" role="tab" data-dtab="actus" aria-selected="false">Actualités${t.actus && t.actus.length ? ` (${t.actus.length})` : ""}</button>
+      ${t.fondamentaux ? `<button class="dtab" role="tab" data-dtab="entreprise" aria-selected="false">Entreprise</button>` : ""}
       <button class="dtab" role="tab" data-dtab="analyse" aria-selected="false">Analyse</button>
     </div>
 
     <div class="dpane" data-dpane="prev">
+      ${resumeSimple(t)}
       <div class="forecast">
-        <div class="panel kpi"><div class="label">Proba de hausse · ${H} séances</div><div class="v num">${p==null?'–':Math.round(p*100)+' %'}${t.signal_fort?'<span class="badge-fort">Signal fort</span>':''}</div>${gauge(p)}</div>
-        <div class="panel kpi"><div class="label">Score technique</div><div class="v num">${Math.round(t.score)} / 100</div><span class="pill ${SIG[t.signal]}">${esc(t.signal)}</span></div>
+        <div class="panel kpi"><div class="label">Dans un mois, le plus probable</div><div class="v num">${t.cone ? px(t.cone.mediane.at(-1), t.devise) : '–'}${t.signal_fort?'<span class="badge-fort">Signal fort</span>':''}</div><div class="d">${f && f.length ? `8 chances sur 10 entre ${px(f[0], t.devise)} et ${px(f[1], t.devise)}` : ''}</div></div>
+        <div class="panel kpi"><div class="label">Score technique</div><div class="v num">${Math.round(t.score)} / 100</div><span class="pill ${SIG[t.signal]}">${esc(LIB[t.signal] || t.signal)}</span></div>
         <div class="panel kpi"><div class="label">Risque</div><div class="v">${esc(t.risque)}</div><div class="d">volatilité annuelle ${pctPlain(t.perf["volatilité annuelle"],0)}</div></div>
       </div>
-      <p class="sentence">${phrase}</p>
-      <div><div class="chart" id="chart"></div>
-      <div class="legend" style="margin-top:8px"><span style="--c:var(--accent)">Moyenne 50 jours</span><span style="--c:var(--warn)">Moyenne 200 jours</span><span style="--c:var(--cone)">Prévision : médiane et fourchette</span></div></div>
+      ${coque("g-detail")}
+      <div class="legend"><span style="--c:var(--accent)">Moyenne 50 jours</span><span style="--c:var(--warn)">Moyenne 200 jours</span><span style="--c:var(--cone)">Le plus probable (pointillés)</span><span style="--c:var(--up)">Si ça va bien</span><span style="--c:var(--down)">Si ça va mal</span><span style="--c:var(--muted)">Stop-loss indicatif (tirets rouges)</span></div>
+      <div class="panel"><div class="label" style="margin-bottom:10px">Lecture du radar</div><div class="lecture">${lecture(t)}</div></div>
     </div>
 
     <div class="dpane" data-dpane="sim" hidden>
@@ -703,6 +1470,15 @@ function ouvrir(tk, pousser=true){
         <p class="muted" style="font-size:12.5px;margin:8px 0 0">Zone bleue : 8 cas sur 10. Trait bleu : résultat médian. Trait gris : ta mise de départ.</p></div>
       <div class="panel"><div class="label" style="margin-bottom:8px">Et si tu avais investi ce montant il y a…</div>
         <div class="past" id="sim-past"></div></div>
+      <div class="panel"><div class="label" style="margin-bottom:10px">Combien risquer ? Le calculateur de taille de position</div>
+        <div class="calc">
+          <div class="field"><label for="pos-capital">Ton capital total</label><input type="number" id="pos-capital" min="10" step="10" value="1000"></div>
+          <div class="field"><label for="pos-risque">Risque accepté : <span id="pos-risque-v"></span></label><input type="range" id="pos-risque" min="0.5" max="5" step="0.5" value="1"></div>
+          <div class="field"><label for="pos-stop">Niveau de sortie (stop-loss)</label><input type="number" id="pos-stop" step="any" value="${t.stop_loss ? Number(t.stop_loss.toPrecision(5)) : ""}"></div>
+        </div>
+        <div class="sim-out" id="pos-out" style="margin-top:12px"></div>
+        <p class="regle" style="margin:12px 0 0">Règle des professionnels : ne jamais risquer plus de 1 à 2 % de son capital sur une seule opération. Ainsi, même dix erreurs d'affilée ne te ruinent pas.</p>
+      </div>
       <p class="disclaimer">Simulation statistique : l'avenir peut sortir de cet éventail (krach, annonce surprise). Elle ne garantit aucun résultat.</p>
     </div>
 
@@ -711,6 +1487,8 @@ function ouvrir(tk, pousser=true){
         <p class="muted" style="margin:0;font-size:13px;flex:1 1 280px">Estimée automatiquement à partir des titres d'articles. Elle n'entre pas dans la probabilité du modèle : c'est un éclairage, à lire avec recul.</p></div>
       <div class="news-grid" style="grid-template-columns:1fr">${(t.actus||[]).map(n => carteActu(n)).join("") || `<div class="empty">Pas d'actualité récente trouvée pour ce titre.</div>`}</div>
     </div>
+
+    ${t.fondamentaux ? `<div class="dpane" data-dpane="entreprise" hidden>${blocFondamentaux(t)}</div>` : ""}
 
     <div class="dpane" data-dpane="analyse" hidden>
       <div class="panel"><div class="label" style="margin-bottom:8px">Pourquoi ce signal</div><ul class="reasons">
@@ -737,23 +1515,30 @@ function ouvrir(tk, pousser=true){
     document.querySelectorAll(".dtab").forEach(x => x.setAttribute("aria-selected", x === b));
     document.querySelectorAll("[data-dpane]").forEach(p => p.hidden = p.dataset.dpane !== b.dataset.dtab);
     if(b.dataset.dtab === "prev") requestAnimationFrame(() => graphique(t));
-    if(b.dataset.dtab === "sim") lancerSim(t);
+    if(b.dataset.dtab === "sim"){ lancerSim(t); calculPosition(t); }
   });
   ["sim-montant","sim-duree","sim-modele"].forEach(id => $("#"+id).addEventListener("input", () => lancerSim(t)));
+  ["pos-capital","pos-risque","pos-stop"].forEach(id => $("#"+id).addEventListener("input", () => calculPosition(t)));
+  const majFav = () => { const on = FAV.has(t.ticker); $("#fav").setAttribute("aria-pressed", on); $("#fav").textContent = on ? "★ Suivi" : "☆ Suivre"; };
+  majFav();
+  $("#fav").onclick = () => { FAV.has(t.ticker) ? FAV.delete(t.ticker) : FAV.add(t.ticker); sauverFav(); majFav(); rendre();
+    flash(FAV.has(t.ticker) ? "Ajouté à tes favoris (filtre « Mes favoris »)" : "Retiré de tes favoris"); };
+  $("#share").onclick = () => partager(t);
+  $("#pf-btn").onclick = () => pfFormulaire(t);
   $("#sheet").hidden = false; document.body.style.overflow = "hidden";
   requestAnimationFrame(() => graphique(t));
   if(pousser) try{ history.replaceState(null, "", "#" + token(t.ticker)); }catch(e){}
   $("#close").focus();
 }
-function fermer(){ $("#sheet").hidden = true; document.body.style.overflow = ""; if(chart){chart.remove(); chart=null; bougies=null;} courant=null;
+function fermer(){ $("#sheet").hidden = true; document.body.style.overflow = ""; detruireGraph("g-detail"); courant=null;
   try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){} }
 document.addEventListener("click", e => { const b = e.target.closest("[data-t]"); if(b) ouvrir(b.dataset.t); });
 $("#rows").addEventListener("keydown", e => { if(e.key==="Enter"){ const r = e.target.closest("tr[data-t]"); if(r) ouvrir(r.dataset.t); }});
 $("#close").onclick = fermer;
 $("#sheet").addEventListener("click", e => { if(e.target.id==="sheet") fermer(); });
 document.addEventListener("keydown", e => { if(e.key==="Escape" && !$("#sheet").hidden && $("#legal").hidden) fermer(); });
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if(courant) graphique(courant); });
-new MutationObserver(() => { if(courant) graphique(courant); }).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redessinerTout);
+new MutationObserver(redessinerTout).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
 /* ---------- Météo du marché ---------- */
 (function(){
   const base = T.filter(t => t.marche !== "tendances");
@@ -768,9 +1553,49 @@ new MutationObserver(() => { if(courant) graphique(courant); }).observe(document
    <div class="stats">
     <div class="st"><b>${largeur==null?'–':Math.round(largeur*100)+' %'}</b><span>des titres au-dessus de leur moyenne 200 jours</span>${largeur==null?'':`<div class="breadth"><i style="width:${Math.round(largeur*100)}%"></i></div>`}</div>
     <div class="st"><b>${moyP==null?'–':Math.round(moyP*100)+' %'}</b><span>probabilité de hausse moyenne à ${H} séances</span></div>
-    <div class="st"><b><span class="up">${achats}</span> / <span class="down">${ventes}</span></b><span>signaux d'achat / de vente</span></div>
+    <div class="st"><b><span class="up">${achats}</span> / <span class="down">${ventes}</span></b><span>titres haussiers / baissiers</span></div>
     <div class="st"><b>${T.filter(t=>t.potentiel_hausse).length}</b><span>configurations de décollage</span></div>
    </div>`;
+})();
+
+/* ---------- Contexte économique ---------- */
+(function(){
+  const C = DATA.contexte || [];
+  if(!C.length){ $("#h-ctx").closest("section").hidden = true; return; }
+  const fmtV = c => c.unite === "$" ? px(c.valeur, "$") : c.valeur.toLocaleString("fr-FR", {maximumFractionDigits: c.cle === "taux" ? 2 : 1}) + (c.unite === "%" ? " %" : c.unite === "/100" ? " / 100" : "");
+  const varTxt = c => c.variation_type === "pct" ? pct(c.variation) : `<span class="num">${c.variation > 0 ? "+" : ""}${c.variation.toFixed(c.cle === "taux" ? 2 : 0).replace(".", ",")} pt</span>`;
+  const humeur = c => {
+    if(c.cle === "vix") return c.valeur < 15 ? "marché calme" : c.valeur < 25 ? "nervosité normale" : c.valeur < 30 ? "marché tendu" : "forte peur";
+    if(c.cle === "fng") return c.valeur < 25 ? "peur extrême" : c.valeur < 45 ? "peur" : c.valeur <= 55 ? "neutre" : c.valeur <= 75 ? "avidité" : "avidité extrême";
+    return "";
+  };
+  $("#ctx").innerHTML = C.map(c => `<div class="ctx">
+    <div class="tete"><span class="label">${esc(c.nom)}</span>${spark(c.spark, 70, 22)}</div>
+    <div><span class="v">${fmtV(c)}</span> ${varTxt(c)} <span class="muted" style="font-size:12px">sur 1 mois</span></div>
+    ${humeur(c) ? `<b style="font-size:13.5px">${humeur(c)}</b>` : ""}
+    <p>${esc(c.aide)}</p></div>`).join("");
+})();
+
+/* ---------- Graphique du jour ---------- */
+(function(){
+  const choix = [["^FCHI","CAC 40"],["SPY","S&P 500"],["QQQ","Nasdaq 100"],["BTC-USD","Bitcoin"]]
+    .map(([tk, nom]) => [T.find(x => x.ticker === tk), nom]).filter(([t]) => t);
+  if(!choix.length){ $("#h-graph").closest("section").hidden = true; return; }
+  $("#main-shell").innerHTML = coque("g-main");
+  let actif = null;
+  const montrer = (t, nom) => {
+    actif = t;
+    $("#main-tabs").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.tk === t.ticker));
+    $("#main-sub").textContent = `${nom} · ${t.ticker}`;
+    $("#main-prix").innerHTML = `<span class="num" data-px="${esc(t.ticker)}">${px(t.prix, t.devise)}</span> <span style="font-size:16px" data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"], 2)}</span>`;
+    $("#main-lecture").innerHTML = lecture(t, true);
+    $("#main-resume").innerHTML = resumeSimple(t);
+    grapheComplet("g-main", t, {periode:63});
+  };
+  $("#main-tabs").innerHTML = choix.map(([t, nom]) => `<button data-tk="${esc(t.ticker)}" aria-pressed="false">${esc(nom)}</button>`).join("");
+  $("#main-tabs").querySelectorAll("button").forEach((b, i) => b.onclick = () => montrer(...choix[i]));
+  $("#main-open").onclick = () => actif && ouvrir(actif.ticker);
+  requestAnimationFrame(() => montrer(...choix[0]));
 })();
 
 /* ---------- Thème clair / sombre ---------- */
@@ -791,7 +1616,7 @@ function majHorodatage(){
 majHorodatage(); setInterval(majHorodatage, 60000);
 if(/^https?:$/.test(location.protocol) && !DATA.demo){
   setInterval(() => {
-    fetch("donnees.json?t=" + Date.now(), {cache:"no-store"}).then(r => r.ok ? r.json() : null)
+    fetch("version.json?t=" + Date.now(), {cache:"no-store"}).then(r => r.ok ? r.json() : null)
       .then(d => { if(d && d.genere_le && d.genere_le !== DATA.genere_le) $("#toast").hidden = false; }).catch(() => {});
   }, 10 * 60 * 1000);
 }
@@ -825,11 +1650,12 @@ function appliquer(){
       o.prix = prix; o.live = true;
       if(type === "titre"){
         o.perf["1 jour"] = varJ;
+        if(!o.serie) continue;   // détail pas encore chargé : seul le prix est mis à jour
         const jour = new Date(ts).toISOString().slice(0,10), s = o.serie, dernier = s.t.at(-1);
         if(!o._bar) o._bar = {time:dernier, open:s.o.at(-1), high:s.h.at(-1), low:s.l.at(-1), close:s.c.at(-1)};
         if(jour > o._bar.time) o._bar = {time:jour, open:prix, high:prix, low:prix, close:prix};
         else o._bar = {...o._bar, high:Math.max(o._bar.high, prix), low:Math.min(o._bar.low, prix), close:prix};
-        if(courant === o && bougies) try{ bougies.update(o._bar); }catch(e){}
+        for(const g of Object.values(GRAPHS)) if(g.t === o) try{ g.candles.update(o._bar); }catch(e){}
       } else o.var_jour = varJ;
     }
     const sel = CSS.escape(tk);
@@ -897,10 +1723,12 @@ $("#sources-txt").textContent = "Cours historiques : Yahoo Finance · cryptos en
 /* ---------- Textes légaux et avertissement ---------- */
 const LEG = DATA.legal || {};
 $("#m-editeur").textContent = LEG.editeur || "—";
+document.querySelectorAll(".leg-editeur").forEach(e => e.textContent = LEG.editeur || "l'Éditeur");
+document.querySelectorAll(".leg-conflits").forEach(e => e.textContent = LEG.conflits || "Aucun conflit d'intérêts déclaré.");
 if(/^https:\/\/github\.com\//.test(LEG.contact || "")){
   $("#m-contact").innerHTML = `<a href="${esc(LEG.contact)}" target="_blank" rel="noopener">page du projet sur GitHub</a> (onglet « Issues »)`;
 } else $("#m-contact").textContent = LEG.contact || "—";
-const ONGLETS = ["risques", "conditions", "mentions", "confidentialite"];
+const ONGLETS = ["risques", "conditions", "methodologie", "mentions", "confidentialite"];
 function ouvrirLegal(tab){
   document.querySelectorAll("[data-pane]").forEach(p => p.hidden = p.dataset.pane !== tab);
   document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-pressed", b.dataset.tab === tab));

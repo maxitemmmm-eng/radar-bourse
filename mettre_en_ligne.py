@@ -36,7 +36,7 @@ WINDOWS = os.name == "nt"
 MEMOIRE = os.path.join(ICI, ".radar_deploy.json")
 JOURNAL = os.path.join(ICI, "erreur_mise_en_ligne.txt")
 GIT, GH = "git", "gh"
-ETAPES = 8
+ETAPES = 9
 
 
 # ----------------------------------------------------------------------------
@@ -343,7 +343,55 @@ def finnhub(m, complet):
 
 
 # ----------------------------------------------------------------------------
-# 8. Publication et vérification
+# 8. Alertes Telegram (optionnel)
+# ----------------------------------------------------------------------------
+def telegram(m, complet):
+    etape(8, "Alertes Telegram (optionnel)")
+    if m.get("telegram_demande") and "--telegram" not in sys.argv:
+        ok("Déjà réglé lors d'un passage précédent.")
+        return
+    info("Chaque soir, le robot peut publier les signaux forts sur une chaîne Telegram que les")
+    info("visiteurs suivent. Ton identité n'apparaît pas : seul le nom de la chaîne est public.")
+    if not oui("Tu veux le configurer maintenant ?", defaut=False):
+        info("Passé. Pour l'ajouter plus tard : double-clique sur alertes_telegram.bat.")
+        m["telegram_demande"] = True
+        sauver_memoire(m)
+        return
+    info("1. Dans Telegram, ouvre @BotFather, envoie /newbot et suis les questions.")
+    info("   Il te donne un « token » qui ressemble à 123456789:ABCdef… : copie-le.")
+    jeton = question("Colle le token du bot (clic droit pour coller)").strip()
+    info("2. Crée une chaîne PUBLIQUE (Nouvelle chaîne), choisis un lien du type t.me/radar_bourse_xxx.")
+    info("3. Dans les réglages de la chaîne : Administrateurs → Ajouter → cherche ton bot → valide.")
+    chaine = question("Nom de la chaîne (ce qui suit t.me/, par exemple radar_bourse_xxx)").strip().lstrip("@")
+    chaine = chaine.replace("https://t.me/", "").replace("t.me/", "").strip("/")
+    if not re.fullmatch(r"\d{5,}:[A-Za-z0-9_-]{20,}", jeton) or not re.fullmatch(r"[A-Za-z0-9_]{4,40}", chaine):
+        info("⚠️ Le token ou le nom de la chaîne ne semble pas valide. Passé : relance le script pour réessayer.")
+        return
+    if not SIMULATION:
+        import urllib.parse
+        try:
+            donnees = urllib.parse.urlencode({"chat_id": "@" + chaine, "text":
+                "📡 Radar Bourse est connecté ! Les signaux du soir arriveront ici. "
+                "Rappel : calculs automatiques, rien n'est sûr, pas un conseil en investissement."}).encode()
+            with urllib.request.urlopen(urllib.request.Request(
+                    f"https://api.telegram.org/bot{jeton}/sendMessage", data=donnees), timeout=15) as r:
+                bon = json.load(r).get("ok", False)
+        except Exception:
+            bon = False
+        if not bon:
+            info("⚠️ Le message de test n'est pas passé. Vérifie que le bot est bien administrateur de la")
+            info("   chaîne et que la chaîne est publique, puis relance le script.")
+            return
+        run([GH, "secret", "set", "TELEGRAM_TOKEN", "-R", complet], entree=jeton, montrer=False)
+        run([GH, "secret", "set", "TELEGRAM_CHAT", "-R", complet], entree="@" + chaine, montrer=False)
+        run([GH, "variable", "set", "TELEGRAM_CHAINE", "-R", complet, "--body", chaine], montrer=False)
+    ok(f"Alertes activées : un message de test vient d'arriver sur t.me/{chaine}")
+    m["telegram_demande"] = True
+    sauver_memoire(m)
+
+
+# ----------------------------------------------------------------------------
+# 9. Publication et vérification
 # ----------------------------------------------------------------------------
 def dernier_run(complet, depuis):
     code, sortie = silencieux([GH, "run", "list", "-R", complet, "-w", "radar.yml", "-L", "5",
@@ -359,7 +407,7 @@ def dernier_run(complet, depuis):
 
 
 def publier(complet, login):
-    etape(8, "Publication (3 à 6 minutes)")
+    etape(9, "Publication (3 à 6 minutes)")
     depuis = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if SIMULATION:
         run([GH, "workflow", "run", "radar.yml", "-R", complet])
@@ -425,6 +473,7 @@ def main():
     complet = depot(m, login)
     envoyer(complet)
     finnhub(m, complet)
+    telegram(m, complet)
     url = publier(complet, login)
 
     if not SIMULATION:

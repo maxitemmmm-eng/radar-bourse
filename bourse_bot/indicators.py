@@ -45,7 +45,120 @@ def adx(df: pd.DataFrame, n: int = 14) -> pd.Series:
     return dx.ewm(alpha=1 / n, adjust=False).mean()
 
 
-def calculer(df: pd.DataFrame, benchmark: pd.DataFrame | None = None) -> pd.DataFrame:
+def stochastique(d: pd.DataFrame, n: int = 14, lissage: int = 3) -> pd.Series:
+    """%K lissé : position du cours entre le plus bas et le plus haut des n séances (0-100)."""
+    bas, haut = d["Low"].rolling(n).min(), d["High"].rolling(n).max()
+    k = 100 * (d["Close"] - bas) / (haut - bas).replace(0, np.nan)
+    return k.rolling(lissage).mean()
+
+
+def mfi(d: pd.DataFrame, n: int = 14) -> pd.Series:
+    """Money Flow Index : un RSI qui tient compte des volumes (>80 surachat, <20 survente)."""
+    tp = (d["High"] + d["Low"] + d["Close"]) / 3
+    flux = tp * d["Volume"]
+    pos = flux.where(tp > tp.shift(), 0.0).rolling(n).sum()
+    neg = flux.where(tp < tp.shift(), 0.0).rolling(n).sum()
+    return 100 - 100 / (1 + pos / neg.replace(0, np.nan))
+
+
+def cmf(d: pd.DataFrame, n: int = 20) -> pd.Series:
+    """Chaikin Money Flow : pression acheteuse (>0) ou vendeuse (<0) sur n séances."""
+    etendue = (d["High"] - d["Low"]).replace(0, np.nan)
+    mfm = ((d["Close"] - d["Low"]) - (d["High"] - d["Close"])) / etendue
+    return (mfm * d["Volume"]).rolling(n).sum() / d["Volume"].rolling(n).sum().replace(0, np.nan)
+
+
+def aroon_osc(d: pd.DataFrame, n: int = 25) -> pd.Series:
+    """Aroon : depuis combien de temps le dernier plus haut / plus bas ? (-100 à +100)."""
+    haut = d["High"].rolling(n + 1).apply(lambda x: x.argmax(), raw=True)
+    bas = d["Low"].rolling(n + 1).apply(lambda x: x.argmin(), raw=True)
+    return 100 * (haut - bas) / n
+
+
+def supertrend_dir(d: pd.DataFrame, n: int = 10, mult: float = 3.0) -> pd.Series:
+    """Supertrend : +1 tendance haussière, -1 baissière (bandes ATR qui suivent le cours)."""
+    a = atr(d, n).to_numpy()
+    hl2 = ((d["High"] + d["Low"]) / 2).to_numpy()
+    c = d["Close"].to_numpy()
+    haut_b, bas_b = hl2 + mult * a, hl2 - mult * a
+    sens = np.ones(len(c))
+    hf, bf = haut_b.copy(), bas_b.copy()
+    for i in range(1, len(c)):
+        hf[i] = haut_b[i] if (haut_b[i] < hf[i - 1] or c[i - 1] > hf[i - 1]) else hf[i - 1]
+        bf[i] = bas_b[i] if (bas_b[i] > bf[i - 1] or c[i - 1] < bf[i - 1]) else bf[i - 1]
+        if c[i] > hf[i - 1]:
+            sens[i] = 1
+        elif c[i] < bf[i - 1]:
+            sens[i] = -1
+        else:
+            sens[i] = sens[i - 1]
+    return pd.Series(sens, index=d.index)
+
+
+def ichimoku_position(d: pd.DataFrame) -> pd.Series:
+    """Position du cours par rapport au nuage Ichimoku : +1 au-dessus, -1 en dessous, 0 dedans.
+    Le nuage du jour est calculé avec des données d'il y a 26 séances (aucune info du futur)."""
+    mid = lambda n: (d["High"].rolling(n).max() + d["Low"].rolling(n).min()) / 2
+    tenkan, kijun = mid(9), mid(26)
+    span_a = ((tenkan + kijun) / 2).shift(26)
+    span_b = mid(52).shift(26)
+    haut, bas = np.maximum(span_a, span_b), np.minimum(span_a, span_b)
+    pos = np.where(d["Close"] > haut, 1.0, np.where(d["Close"] < bas, -1.0, 0.0))
+    return pd.Series(pos, index=d.index).where(span_b.notna())
+
+
+def divergences_rsi(d: pd.DataFrame, n: int = 20) -> pd.Series:
+    """-1 : divergence baissière (nouveau plus haut du prix mais RSI plus faible),
+    +1 : divergence haussière (nouveau plus bas du prix mais RSI plus fort), 0 sinon."""
+    c, r = d["Close"], d["rsi"]
+    haut_prix = c >= c.rolling(n).max() * 0.995
+    bas_prix = c <= c.rolling(n).min() * 1.005
+    baissiere = haut_prix & (r < r.rolling(n).max() - 5)
+    haussiere = bas_prix & (r > r.rolling(n).min() + 5)
+    return pd.Series(np.where(baissiere, -1.0, np.where(haussiere, 1.0, 0.0)), index=d.index)
+
+
+NOMS_CHANDELIERS = {
+    "doji": ("Doji", "hésitation : acheteurs et vendeurs s'équilibrent"),
+    "marteau": ("Marteau", "après une baisse, les acheteurs ont repoussé les vendeurs : rebond possible"),
+    "etoile_filante": ("Étoile filante", "après une hausse, les vendeurs ont repris la main : repli possible"),
+    "englobante_haussiere": ("Englobante haussière", "une grosse bougie verte avale la rouge d'avant : signal de retournement à la hausse"),
+    "englobante_baissiere": ("Englobante baissière", "une grosse bougie rouge avale la verte d'avant : signal de retournement à la baisse"),
+    "etoile_matin": ("Étoile du matin", "figure en trois bougies qui annonce souvent la fin d'une baisse"),
+    "etoile_soir": ("Étoile du soir", "figure en trois bougies qui annonce souvent la fin d'une hausse"),
+}
+
+
+def chandeliers(d: pd.DataFrame) -> pd.Series:
+    """Repère les figures de chandeliers japonais classiques (nom de la figure ou chaîne vide)."""
+    o, h, l, c = d["Open"], d["High"], d["Low"], d["Close"]
+    corps = (c - o).abs()
+    etendue = (h - l).replace(0, np.nan)
+    haute = h - np.maximum(o, c)
+    basse = np.minimum(o, c) - l
+    vert, rouge = c > o, c < o
+    baisse_avant = c.shift(1) < c.shift(5)
+    hausse_avant = c.shift(1) > c.shift(5)
+    corps_moy = corps.rolling(20).mean()
+    f = pd.Series("", index=d.index, dtype=object)
+    regles = [   # du moins prioritaire au plus prioritaire (le dernier vrai l'emporte)
+        ("doji", corps <= 0.08 * etendue),
+        ("marteau", baisse_avant & (basse >= 2 * corps) & (haute <= corps) & (corps > 0)),
+        ("etoile_filante", hausse_avant & (haute >= 2 * corps) & (basse <= corps) & (corps > 0)),
+        ("englobante_haussiere", baisse_avant & rouge.shift(1) & vert & (o <= c.shift(1)) & (c >= o.shift(1)) & (corps > corps.shift(1))),
+        ("englobante_baissiere", hausse_avant & vert.shift(1) & rouge & (o >= c.shift(1)) & (c <= o.shift(1)) & (corps > corps.shift(1))),
+        ("etoile_matin", rouge.shift(2) & (corps.shift(2) > corps_moy) & (corps.shift(1) < 0.4 * corps.shift(2))
+         & vert & (c > (o.shift(2) + c.shift(2)) / 2)),
+        ("etoile_soir", vert.shift(2) & (corps.shift(2) > corps_moy) & (corps.shift(1) < 0.4 * corps.shift(2))
+         & rouge & (c < (o.shift(2) + c.shift(2)) / 2)),
+    ]
+    for nom, cond in regles:
+        f[cond.fillna(False).astype(bool)] = nom
+    return f
+
+
+def calculer(df: pd.DataFrame, benchmark: pd.DataFrame | None = None,
+             macro: dict | None = None) -> pd.DataFrame:
     """Ajoute toutes les colonnes d'indicateurs au DataFrame de cours."""
     d = df.copy()
     c = d["Close"]
@@ -101,6 +214,36 @@ def calculer(df: pd.DataFrame, benchmark: pd.DataFrame | None = None) -> pd.Data
         d["marche_tendance"] = np.nan
         d["marche_vol"] = np.nan
 
+    # Indicateurs complémentaires (moyennes exponentielles, Ichimoku, flux d'argent…)
+    for n in (9, 20, 50, 200):
+        d[f"ema{n}"] = ema(c, n)
+    d["dist_ema50_200"] = d["ema50"] / d["ema200"] - 1
+    d["stoch_k"] = stochastique(d)
+    d["mfi"] = mfi(d)
+    d["cmf"] = cmf(d)
+    vwap20 = (c * d["Volume"]).rolling(20).sum() / d["Volume"].rolling(20).sum().replace(0, np.nan)
+    d["dist_vwap20"] = c / vwap20 - 1
+    d["aroon"] = aroon_osc(d)
+    don_h, don_b = d["High"].rolling(20).max(), d["Low"].rolling(20).min()
+    d["donchian_pos"] = (c - don_b) / (don_h - don_b).replace(0, np.nan)
+    d["supertrend"] = supertrend_dir(d)
+    d["ichimoku"] = ichimoku_position(d)
+    d["roc_10"] = c.pct_change(10)
+    d["div_rsi"] = divergences_rsi(d)
+    d["chandelier"] = chandeliers(d)
+
+    # Contexte économique : peur des marchés (VIX), taux, dollar, sentiment crypto
+    macro = macro or {}
+    def aligne(nom):
+        m = macro.get(nom)
+        return None if m is None or len(m) == 0 else m.reindex(d.index, method="ffill")
+    vix, taux, dollar, fng = aligne("vix"), aligne("taux"), aligne("dollar"), aligne("fng")
+    d["vix"] = vix if vix is not None else np.nan
+    d["vix_chg"] = vix.pct_change(20) if vix is not None else np.nan
+    d["taux_chg"] = taux.diff(20) if taux is not None else np.nan
+    d["dollar_chg"] = dollar.pct_change(20) if dollar is not None else np.nan
+    d["fng"] = fng if fng is not None else np.nan
+
     return d.replace([np.inf, -np.inf], np.nan)
 
 
@@ -110,4 +253,8 @@ FEATURES = [
     "ret_5j", "ret_21j", "ret_63j", "ret_126j", "vol_20j", "atr_pct", "bb_position",
     "bb_largeur", "drawdown", "dist_plus_haut", "volume_ratio", "obv_pente",
     "force_relative_63j", "marche_tendance", "marche_vol",
+    # ajoutés en version 2 (voir README : chaque ajout est mesuré par la validation walk-forward)
+    "dist_ema50_200", "stoch_k", "mfi", "cmf", "dist_vwap20", "aroon", "donchian_pos",
+    "supertrend", "ichimoku", "roc_10", "div_rsi",
+    "vix", "vix_chg", "taux_chg", "dollar_chg", "fng",
 ]

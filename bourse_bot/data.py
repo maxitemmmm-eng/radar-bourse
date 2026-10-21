@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
+import urllib.parse
 import urllib.request
 import zlib
 
@@ -89,6 +91,65 @@ def _yahoo(tickers: list[str]) -> dict[str, pd.DataFrame]:
     return out
 
 
+# ----------------------------------------------------------------------------
+# Sources de secours (si Yahoo ne répond pas pour un titre)
+# ----------------------------------------------------------------------------
+def _binance(ticker: str) -> pd.DataFrame:
+    """Cryptos : bougies quotidiennes Binance (point d'accès public de données de marché)."""
+    if not ticker.endswith("-USD"):
+        return pd.DataFrame()
+    symbole = ticker[:-4] + "USDT"
+    url = f"https://data-api.binance.vision/api/v3/klines?symbol={symbole}&interval=1d&limit=1000"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "radar-bourse"})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            lignes = json.load(r)
+    except Exception:
+        return pd.DataFrame()
+    if not isinstance(lignes, list) or not lignes:
+        return pd.DataFrame()
+    df = pd.DataFrame([l[:6] for l in lignes], columns=["t", "Open", "High", "Low", "Close", "Volume"])
+    df.index = pd.to_datetime(df.pop("t"), unit="ms").dt.normalize()
+    return _nettoyer(df.astype(float))
+
+
+def _symbole_stooq(ticker: str) -> str | None:
+    speciaux = {"^FCHI": "^cac", "^VIX": None, "^TNX": None, "DX-Y.NYB": None, "GC=F": "xauusd"}
+    if ticker in speciaux:
+        return speciaux[ticker]
+    if ticker.endswith("-USD"):
+        return None
+    if ticker.endswith(".PA"):
+        return ticker[:-3].lower() + ".fr"
+    if re.fullmatch(r"[A-Z.]{1,6}", ticker):
+        return ticker.lower().replace(".", "-") + ".us"
+    return None
+
+
+def _stooq(ticker: str) -> pd.DataFrame:
+    """Actions, ETF et indices : historique quotidien Stooq (CSV gratuit)."""
+    sym = _symbole_stooq(ticker)
+    if not sym:
+        return pd.DataFrame()
+    url = "https://stooq.com/q/d/l/?" + urllib.parse.urlencode({"s": sym, "i": "d"})
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 radar-bourse"})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            texte = r.read().decode("utf-8", "replace")
+        if not texte.startswith("Date"):
+            return pd.DataFrame()
+        import io
+        df = pd.read_csv(io.StringIO(texte), index_col=0, parse_dates=True)
+        if "Volume" not in df:
+            df["Volume"] = 0.0
+        return _nettoyer(df.iloc[-1300:])
+    except Exception:
+        return pd.DataFrame()
+
+
+SOURCES_UTILISEES: dict[str, str] = {}
+
+
 def telecharger_plusieurs(tickers: list[str], max_age_h: float | None = None) -> dict[str, pd.DataFrame]:
     """Renvoie {ticker: cours} pour tous les titres trouvés (les introuvables sont ignorés)."""
     tickers = list(dict.fromkeys(tickers))
@@ -101,6 +162,14 @@ def telecharger_plusieurs(tickers: list[str], max_age_h: float | None = None) ->
     a_telecharger = [t for t in tickers if t not in resultats]
     if a_telecharger:
         frais = _yahoo(a_telecharger)
+        for t in frais:
+            SOURCES_UTILISEES[t] = "Yahoo"
+        for t in a_telecharger:   # secours : Binance pour les cryptos, Stooq pour le reste
+            if t not in frais:
+                df = _binance(t) if t.endswith("-USD") else _stooq(t)
+                if len(df) >= 260:
+                    frais[t] = df
+                    SOURCES_UTILISEES[t] = "Binance" if t.endswith("-USD") else "Stooq"
         for t, df in frais.items():
             df.to_csv(_chemin_cache(t))
             resultats[t] = df
@@ -126,7 +195,11 @@ def tendances_actions(n: int = 15) -> dict[str, str]:
         import yfinance as yf
         for ecran in ("day_gainers", "most_actives"):
             for q in yf.screen(ecran, count=n).get("quotes", []):
-                if q.get("quoteType", "EQUITY") == "EQUITY":
+                # Filtre anti « penny stocks » : sur ces petites valeurs, les hausses spectaculaires
+                # sont souvent des manipulations (pump & dump). On garde les sociétés solides.
+                prix = q.get("regularMarketPrice") or 0
+                capi = q.get("marketCap") or 0
+                if q.get("quoteType", "EQUITY") == "EQUITY" and prix >= 5 and capi >= 2e9:
                     out[q["symbol"]] = q.get("shortName") or q["symbol"]
     except Exception:
         pass  # le screener Yahoo change parfois de format : on continue sans
@@ -143,9 +216,12 @@ def tendances_crypto() -> dict[str, str]:
                                      headers={"User-Agent": "radar-bourse"})
         with urllib.request.urlopen(req, timeout=10) as r:
             data = json.load(r)
-        for item in data.get("coins", [])[:10]:
+        for item in data.get("coins", [])[:15]:
             c = item["item"]
-            out[f"{c['symbol'].upper()}-USD"] = c["name"]
+            rang = c.get("market_cap_rank")
+            # seulement les cryptos établies (top 150) : les micro-jetons à la mode sont trop risqués
+            if rang and rang <= 150 and re.fullmatch(r"[A-Z0-9]{2,10}", c["symbol"].upper()):
+                out[f"{c['symbol'].upper()}-USD"] = c["name"]
     except Exception:
         pass
     return out
@@ -182,3 +258,41 @@ def cours_synthetiques(ticker: str, n: int = 1260) -> pd.DataFrame:
     dates = pd.date_range(end=pd.Timestamp.today().normalize(), periods=n, freq=freq)
     return pd.DataFrame({"Open": open_, "High": high, "Low": low, "Close": close,
                          "Volume": volume}, index=dates)
+
+
+# ----------------------------------------------------------------------------
+# Contexte économique (peur des marchés, taux, dollar, or, sentiment crypto)
+# ----------------------------------------------------------------------------
+MACRO_TICKERS = {"vix": "^VIX", "taux": "^TNX", "dollar": "DX-Y.NYB", "or": "GC=F"}
+
+
+def _fear_greed() -> pd.Series:
+    """Indice Fear & Greed crypto (alternative.me, gratuit, historique complet)."""
+    try:
+        req = urllib.request.Request("https://api.alternative.me/fng/?limit=0&format=json",
+                                     headers={"User-Agent": "radar-bourse"})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            brut = json.load(r).get("data", [])
+        s = pd.Series({pd.Timestamp(int(x["timestamp"]), unit="s").normalize(): float(x["value"])
+                       for x in brut})
+        return s.sort_index()
+    except Exception:
+        return pd.Series(dtype=float)
+
+
+def macro() -> dict[str, pd.Series]:
+    """Séries de contexte (cours de clôture), indexées par date. Vide si indisponible."""
+    if DEMO:
+        out = {}
+        for nom, t in MACRO_TICKERS.items():
+            out[nom] = cours_synthetiques(t)["Close"] / (5 if nom in ("vix", "taux") else 1)
+        idx = pd.date_range(end=pd.Timestamp.today().normalize(), periods=1260, freq="D")
+        rng = np.random.default_rng(7)
+        out["fng"] = pd.Series(np.clip(50 + np.cumsum(rng.normal(0, 4, len(idx))) % 80, 5, 95), index=idx)
+        return out
+    bruts = telecharger_plusieurs(list(MACRO_TICKERS.values()))
+    out = {nom: bruts[t]["Close"] for nom, t in MACRO_TICKERS.items() if t in bruts}
+    fng = _fear_greed()
+    if len(fng):
+        out["fng"] = fng
+    return out

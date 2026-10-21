@@ -15,10 +15,8 @@ on:
     branches: [main]
     paths: ["bourse_bot/**", "requirements.txt", ".github/workflows/**"]
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
+# Sécurité : aucun droit par défaut, chaque tâche reçoit seulement ce dont elle a besoin
+permissions: {}
 
 concurrency:
   group: radar
@@ -28,12 +26,23 @@ jobs:
   construire:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    permissions:
+      contents: write   # uniquement pour enregistrer l'historique des prédictions
     env:
       FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+      # Alertes Telegram (facultatives) : envoyées seulement lors du calcul du soir
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
+      TELEGRAM_CHAINE: ${{ vars.TELEGRAM_CHAINE }}
+      RADAR_ALERTES: ${{ github.event.schedule == '30 22 * * *' && '1' || '0' }}
       RADAR_CACHE_MAX_H: "0.5"
+      # Facultatif : code de vérification Google Search Console (Settings → Secrets and variables → Variables)
+      GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
       PYTHONUTF8: "1"
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - uses: actions/setup-python@v5
         with:
@@ -79,6 +88,9 @@ jobs:
   publier:
     needs: construire
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deploiement.outputs.page_url }}

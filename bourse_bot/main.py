@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import webbrowser
 from pathlib import Path
@@ -23,7 +24,7 @@ for flux in (sys.stdout, sys.stderr):
 from rich.console import Console
 from rich.table import Table
 
-from . import backtest, config, data, historique, indicators, model, news, report, scoring, site
+from . import alertes, backtest, config, data, fondamentaux, historique, indicators, model, news, report, scoring, site
 
 console = Console()
 COULEUR = {"ACHAT FORT": "bold green", "ACHAT": "green", "NEUTRE": "white",
@@ -58,9 +59,15 @@ def _univers(marches: list[str]) -> tuple[dict[str, str], dict[str, str]]:
 
 def _preparer(noms: dict[str, str], marche_de: dict[str, str]):
     """Télécharge tout en un lot puis calcule les indicateurs. Renvoie (données, bruts)."""
-    extra = set(config.BENCHMARK.values()) | {t for t, _ in site.INDICES}
+    extra = set(config.BENCHMARK.values()) | {t for t, _ in site.INDICES} | {"EURUSD=X"}
     with console.status(f"Téléchargement des cours ({len(noms)} titres)…"):
         bruts = data.telecharger_plusieurs(list(noms) + sorted(extra))
+    with console.status("Contexte économique (VIX, taux, dollar, or, sentiment crypto)…"):
+        try:
+            contexte = data.macro()
+        except Exception:
+            contexte = {}
+    bruts["__macro__"] = contexte
     donnees, ignores = {}, []
     for t in noms:
         brut = bruts.get(t)
@@ -69,7 +76,9 @@ def _preparer(noms: dict[str, str], marche_de: dict[str, str]):
             continue
         type_marche = "crypto" if t.endswith("-USD") else marche_de[t]
         bench = bruts.get(config.BENCHMARK.get(type_marche, "SPY"))
-        donnees[t] = indicators.calculer(brut, bench)
+        # le sentiment « Fear & Greed » ne concerne que les cryptos
+        ctx = contexte if type_marche == "crypto" else {k: v for k, v in contexte.items() if k != "fng"}
+        donnees[t] = indicators.calculer(brut, bench, ctx)
     if ignores:
         console.print(f"[dim]{len(ignores)} titre(s) ignoré(s) (introuvable ou moins d'un an "
                       f"d'historique) : {', '.join(ignores[:12])}{'…' if len(ignores) > 12 else ''}[/dim]")
@@ -138,6 +147,11 @@ def cmd_site(args):
                 actus_marche = news.enrichir(analyses)
             except Exception as e:  # les actus sont un bonus : elles ne doivent jamais bloquer le site
                 console.print(f"[yellow]Actualités indisponibles cette fois : {e}[/yellow]")
+    with console.status("Données fondamentales des entreprises…"):
+        try:
+            fondamentaux.enrichir(analyses)
+        except Exception as e:
+            console.print(f"[yellow]Fondamentaux indisponibles cette fois : {e}[/yellow]")
     if not args.demo:
         historique.enregistrer(analyses)
     suivi = historique.bilan(bruts if not args.demo else {})
@@ -155,6 +169,11 @@ def cmd_site(args):
     payload = site.construire(analyses, donnees, evaluation, suivi, bruts, demo=args.demo,
                               actus_marche=actus_marche)
     chemin = site.ecrire(payload)
+    etat_alertes = alertes.publier_si_active(payload)
+    if os.environ.get("RADAR_ALERTES") == "1":
+        console.print(f"Alertes Telegram : {etat_alertes}")
+    if args.apercu:  # version spéciale pour un aperçu hors du site (bibliothèque via CDN)
+        site.ecrire(payload, dossier=args.apercu, pour_artifact=True)
     console.print(f"✅ Site généré : {len(analyses)} titres analysés.")
     _ouvrir(chemin, args)
     return 0
@@ -220,6 +239,7 @@ def main(argv=None):
     p.add_argument("--sans-ml", action="store_true", help="désactive le modèle de machine learning")
     p.add_argument("--pas-de-navigateur", action="store_true", help="n'ouvre pas la page automatiquement")
     p.add_argument("--sans-actus", action="store_true", help="ne récupère pas les actualités")
+    p.add_argument("--apercu", metavar="DOSSIER", help=argparse.SUPPRESS)
     sp = p.add_subparsers(dest="cmd")
 
     s = sp.add_parser("site", aliases=["scan"], help="analyse les marchés et génère le site")

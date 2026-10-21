@@ -1,0 +1,11 @@
+# Sécurité : GitHub propose automatiquement les mises à jour des outils utilisés
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "monthly"
