@@ -87,7 +87,7 @@ class CalibrationPlatt:
         return c
 
 
-PARAMS_DEFAUT = {"profondeur": 3, "apprentissage": 0.04, "iterations": 250, "feuille": 300}
+PARAMS_DEFAUT = {"profondeur": 3, "apprentissage": 0.04, "iterations": 250, "feuille": 300, "l2": 2.0, "c_lin": 0.05}
 
 
 class Ensemble:
@@ -97,9 +97,9 @@ class Ensemble:
         P = {**PARAMS_DEFAUT, **(params or {})}
         self.gbm = HistGradientBoostingClassifier(max_depth=int(P["profondeur"]), learning_rate=float(P["apprentissage"]),
                                                   max_iter=int(P["iterations"]), min_samples_leaf=int(P["feuille"]),
-                                                  l2_regularization=2.0, random_state=0)
+                                                  l2_regularization=float(P["l2"]), random_state=0)
         self.lin = make_pipeline(SimpleImputer(strategy="median"), StandardScaler(),
-                                 LogisticRegression(C=0.05, max_iter=500))
+                                 LogisticRegression(C=float(P["c_lin"]), max_iter=500))
 
     def fit(self, X, y):
         self.gbm.fit(X, y)

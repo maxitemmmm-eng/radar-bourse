@@ -1,18 +1,21 @@
-"""Entraînement approfondi de l'IA de Radar Bourse (à lancer sur ton PC).
+"""Entraînement approfondi de l'IA de Radar Bourse (à lancer sur ton PC : double-clic sur entrainement_ia.bat).
 
-Double-clique sur entrainement_ia.bat. Le script :
-  1. télécharge beaucoup plus de données que les mises à jour en ligne : jusqu'à 20 ans d'historique,
-     plusieurs centaines d'actions, d'ETF et de cryptos, et des indicateurs économiques (taux, courbe
-     des taux, pétrole, cuivre, prime de risque du crédit, tension financière, chômage) ;
-  2. fait passer un examen aux IA : chaque façon de prévoir est testée uniquement sur des années
-     qu'elle n'a jamais vues (validation « walk-forward ») ;
-  3. compare la meilleure à celle qui tourne aujourd'hui sur ton site. Elle ne la remplace QUE si elle
-     fait mieux de façon prouvée (marge d'erreur à 95 %, en tirant des mois entiers au hasard) ;
-  4. écrit un rapport clair (dossier « rapports ») et, si l'IA a vraiment progressé, envoie la nouvelle
-     recette sur GitHub : le site se met à jour tout seul avec elle.
+Une fenêtre s'ouvre avec la progression, une jauge « ce que l'IA a appris » et le journal.
+  1. Collecte : jusqu'à 20 ans d'historique sur près de 300 actions, ETF et cryptos, plus des données
+     économiques (taux, courbe des taux, dollar, or, pétrole, cuivre, crédit, tension financière, chômage).
+     Chaque chiffre économique est décalé de son délai de publication : l'IA ne voit jamais l'avenir.
+  2. Règle anti-chance : les années les plus récentes sont mises sous clé. Toute la recherche se fait
+     sans elles ; elles ne servent qu'une fois, à la fin, pour l'examen final.
+  3. Recherche : des dizaines de réglages tirés au hasard, chacun testé sur des années jamais vues
+     (validation « walk-forward » avec purge). Les réglages prometteurs sont testés plus en profondeur.
+  4. Tri des indicateurs : un indicateur n'est gardé que s'il aide sur DEUX périodes différentes.
+  5. Examen final : les 3 meilleurs contre l'IA du site, sur les années sous clé. L'IA du site n'est
+     remplacée que si la nouvelle fait mieux de façon prouvée (marge d'erreur à 95 %) ET sur chacune
+     des deux moitiés de l'examen (pas seulement en moyenne).
+  6. Quand tu fermes la fenêtre ou cliques « Arrêter », l'IA passe l'examen final avec ce qu'elle a
+     appris, puis te propose de mettre à jour le site, suit sa publication et vérifie qu'il fonctionne.
 
-Options : --complet (plus de réglages testés, plus long), --sans-publier (rapport seulement),
---demo (données fictives, pour tester le script).
+Options : --complet (recherche plus large), --minutes N, --console (sans fenêtre), --demo (données fictives).
 """
 from __future__ import annotations
 
@@ -20,18 +23,22 @@ import argparse
 import html
 import json
 import os
+import queue
+import re
 import shutil
 import subprocess
 import sys
+import threading
 import time
+import traceback
+import urllib.request
 import webbrowser
-from datetime import datetime
+from datetime import datetime, timezone
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 os.chdir(ICI)
 sys.path.insert(0, ICI)
 
-# Titres supplémentaires pour l'entraînement (beaucoup de situations différentes = IA plus robuste)
 UNIVERS_ETENDU = {
     "us": ["MA", "ACN", "TMO", "ABT", "DHR", "LIN", "NEE", "PM", "MO", "RTX", "DE", "MMM", "LOW", "TGT", "BKNG",
            "ADP", "INTU", "NOW", "ISRG", "AMGN", "GILD", "MDT", "BMY", "CVS", "CI", "ELV", "SCHW", "BLK", "AXP",
@@ -47,28 +54,26 @@ UNIVERS_ETENDU = {
     "fr": ["RNO.PA", "ALO.PA", "BVI.PA", "ERF.PA", "URW.PA", "AC.PA", "TEP.PA", "SW.PA", "FGR.PA", "HO.PA",
            "AMUN.PA", "GET.PA"],
     "crypto": ["AAVE-USD", "XMR-USD", "VET-USD", "ICP-USD", "EOS-USD", "XTZ-USD", "MANA-USD", "SAND-USD",
-               "THETA-USD", "CRO-USD", "NEO-USD", "ZEC-USD", "DASH-USD", "KSM-USD"],
+               "THETA-USD", "NEO-USD", "ZEC-USD", "DASH-USD", "KSM-USD"],
 }
+MACRO = {"vix", "vix_chg", "taux_chg", "dollar_chg", "fng", "courbe_taux", "petrole_chg", "cuivre_chg",
+         "spread_credit", "spread_credit_chg", "conditions_fin", "chomage_tendance"}
+AUC_HASARD, AUC_EXCELLENT = 0.50, 0.58   # bornes de la jauge (0,58 serait exceptionnel en Bourse)
 
 
-def titre(texte):
-    print("\n" + "━" * 64 + f"\n {texte}\n" + "━" * 64, flush=True)
-
-
-def info(texte):
-    print("   " + texte, flush=True)
-
-
+# ----------------------------------------------------------------------------
+# Outils
+# ----------------------------------------------------------------------------
 def duree(secondes):
     m = int(secondes // 60)
-    return f"{m} min {int(secondes % 60)} s" if m else f"{int(secondes)} s"
+    return f"{m} min {int(secondes % 60):02d} s" if m else f"{int(secondes)} s"
 
 
 def verifier_dependances():
     try:
         import numpy, pandas, sklearn, yfinance  # noqa: F401
     except ImportError:
-        info("Installation des outils nécessaires (une seule fois)…")
+        print("Installation des outils nécessaires (une seule fois)…")
         subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", os.path.join(ICI, "requirements.txt")], check=False)
 
 
@@ -83,297 +88,554 @@ def trouver(nom):
     return None
 
 
-def git(*args, ok=(0,)):
-    g = trouver("git")
-    if not g:
-        return 1, "git introuvable"
-    r = subprocess.run([g, *args], cwd=ICI, capture_output=True, text=True, encoding="utf-8", errors="replace")
-    return r.returncode, (r.stdout + r.stderr).strip()
+def commande(prog, *args, timeout=300):
+    exe = trouver(prog)
+    if not exe:
+        return 1, f"{prog} introuvable"
+    try:
+        r = subprocess.run([exe, *args], cwd=ICI, capture_output=True, text=True, encoding="utf-8",
+                           errors="replace", timeout=timeout,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        return r.returncode, (r.stdout + r.stderr).strip()
+    except Exception as e:
+        return 1, str(e)
+
+
+def adresse_site() -> str:
+    try:
+        with open(os.path.join(ICI, ".radar_deploy.json"), encoding="utf-8") as f:
+            dom = json.load(f).get("domaine")
+        if dom:
+            return f"https://{dom}/"
+    except Exception:
+        pass
+    code, url = commande("git", "remote", "get-url", "origin")
+    m = re.search(r"github\.com[:/]([^/]+)/([^/.]+)", url or "")
+    if code != 0 or not m:
+        return ""
+    proprio, depot = m.group(1).lower(), m.group(2)
+    return f"https://{proprio}.github.io/" if depot.lower() == f"{proprio}.github.io" else f"https://{proprio}.github.io/{depot}/"
 
 
 # ----------------------------------------------------------------------------
-def preparer_donnees(args):
-    from bourse_bot import config, data, indicators
-    noms = {}
-    marche_de = {}
-    for m, univers in config.UNIVERS.items():
-        for t in univers:
-            noms[t], marche_de[t] = univers[t], m
-    base = config.entrainement_supplementaire()
-    etendu = {m: [t for t in v if t not in noms] for m, v in UNIVERS_ETENDU.items()}
-    tout_base = {t: m for m, v in base.items() for t in v if t not in noms}
-    tout_etendu = {t: m for m, v in etendu.items() for t in v if t not in noms and t not in tout_base}
-    a_telecharger = list(noms) + list(tout_base) + list(tout_etendu) + list(set(config.BENCHMARK.values()))
-    info(f"{len(a_telecharger)} titres à télécharger, jusqu'à {config.HISTORIQUE.replace('y', ' ans')} d'historique (Yahoo Finance, avec secours)…")
-    t0 = time.time()
-    bruts = data.telecharger_plusieurs(a_telecharger)
-    info(f"→ {len(bruts)} titres reçus en {duree(time.time() - t0)}.")
-    info("Indicateurs économiques : VIX, taux, courbe des taux, dollar, or, pétrole, cuivre, crédit, chômage…")
-    try:
-        contexte = data.macro()
-    except Exception:
-        contexte = {}
-    info(f"→ {len(contexte)} séries économiques reçues : {', '.join(sorted(contexte)) or 'aucune'}.")
+# Le moteur d'entraînement (tourne en arrière-plan, envoie des événements à la fenêtre)
+# ----------------------------------------------------------------------------
+class Moteur:
+    PHASES = [("collecte", 0.18), ("examen1", 0.12), ("recherche", 0.47), ("tri", 0.08), ("final", 0.15)]
 
-    def calc(t, m, minimum):
-        brut = bruts.get(t)
-        if brut is None or len(brut) < minimum:
-            return None
-        type_m = "crypto" if t.endswith("-USD") else m
-        bench = bruts.get(config.BENCHMARK.get(type_m, "SPY"))
-        ctx = contexte if type_m == "crypto" else {k: v for k, v in contexte.items() if k != "fng"}
-        try:
-            return indicators.calculer(brut, bench, ctx)
-        except Exception:
-            return None
-    info("Calcul de plus de 40 indicateurs par titre…")
-    affiches = {t: d for t in noms if (d := calc(t, marche_de[t], 260)) is not None}
-    supp_base = {t: d for t, m in tout_base.items() if (d := calc(t, m, 400)) is not None}
-    supp_etendu = {t: d for t, m in tout_etendu.items() if (d := calc(t, m, 400)) is not None}
-    marches = {t: ("crypto" if t.endswith("-USD") else m) for t, m in {**marche_de, **tout_base, **tout_etendu}.items()}
-    lignes = sum(len(d) for d in (*affiches.values(), *supp_base.values(), *supp_etendu.values()))
-    annees = max((len(d) for d in affiches.values()), default=0) / 252
-    info(f"→ {len(affiches)} titres du site + {len(supp_base) + len(supp_etendu)} titres d'apprentissage, "
-         f"{lignes:,} journées de cotation".replace(",", " ") + f", jusqu'à {annees:.0f} ans d'historique.")
-    return affiches, supp_base, supp_etendu, marches, contexte, etendu, lignes
+    def __init__(self, args, emettre):
+        self.args, self.emettre = args, emettre
+        self.arret = threading.Event()
+        self.resultat = None
+        self.depot_git = False
 
+    def log(self, texte):
+        self.emettre("log", texte=texte)
 
-def candidats(model, complet):
-    """Façons de prévoir testées : celles du site, la recette actuelle, et des réglages nouveaux."""
-    macro = {"vix", "vix_chg", "taux_chg", "dollar_chg", "fng", "courbe_taux", "petrole_chg", "cuivre_chg",
-             "spread_credit", "spread_credit_chg", "conditions_fin", "chomage_tendance"}
-    technique = [v for v in model.VARIABLES if v not in macro]
-    out = [(n, v, pm, p) for n, v, pm, p in model.configs_disponibles()]
-    noms = {c[0] for c in out}
-    nouveaux = [
-        ("Tous les indicateurs + économie, arbres plus profonds", model.VARIABLES, False,
-         {"profondeur": 4, "apprentissage": 0.03, "iterations": 350, "feuille": 400}),
-        ("Un modèle par marché, plus prudent", model.VARIABLES, True, {"profondeur": 3, "feuille": 600}),
-        ("Indicateurs techniques seulement (sans économie)", technique, False, {}),
-    ]
-    if complet:
-        nouveaux += [
-            ("Tous les indicateurs, apprentissage lent", model.VARIABLES, False,
-             {"profondeur": 3, "apprentissage": 0.02, "iterations": 500, "feuille": 300}),
-            ("Tous les indicateurs, très prudent", model.VARIABLES, False, {"profondeur": 2, "feuille": 800}),
-            ("Un modèle par marché, arbres plus profonds", model.VARIABLES, True,
-             {"profondeur": 4, "apprentissage": 0.03, "iterations": 350, "feuille": 400}),
-            ("Indicateurs de base + économie", model.VARIABLES_BASE + sorted(macro & set(model.VARIABLES)), False, {}),
-        ]
-    out += [c for c in nouveaux if c[0] not in noms]
-    return out
+    def etape(self, n, texte):
+        self.emettre("etape", n=n, texte=texte)
+        self.log(f"\n━━ {n}/6 · {texte}")
 
-
-def main():
-    p = argparse.ArgumentParser(description="Entraînement approfondi de l'IA de Radar Bourse")
-    p.add_argument("--complet", action="store_true", help="tester plus de réglages (plus long)")
-    p.add_argument("--sans-publier", action="store_true", help="faire le rapport sans rien envoyer sur le site")
-    p.add_argument("--demo", action="store_true", help="données fictives (pour tester le script)")
-    p.add_argument("--pas-de-navigateur", action="store_true")
-    args = p.parse_args()
-    debut = time.time()
-    print("🧠 Entraînement approfondi de l'IA de Radar Bourse" + ("  (DÉMO, données fictives)" if args.demo else ""))
-    print("   Durée : environ " + ("1 à 3 heures" if args.complet else "20 à 60 minutes") + " selon ton ordinateur.")
-    print("   Tu peux utiliser ton PC pendant ce temps. Ne ferme pas cette fenêtre.")
-    verifier_dependances()
-
-    titre("1/6 · Récupération de la dernière version du site")
-    depot_git = os.path.isdir(os.path.join(ICI, ".git")) and trouver("git")
-    if depot_git and not args.demo:
-        code, sortie = git("pull", "--rebase", "--autostash")
-        info("✅ À jour avec GitHub." if code == 0 else f"⚠️ Impossible de récupérer la dernière version ({sortie[-200:]}). On continue.")
-    else:
-        info("Dossier non relié à GitHub : le rapport sera fait, mais rien ne sera envoyé sur le site.")
-
-    from bourse_bot import config, data, model
-    data.DEMO = args.demo
-    config.HISTORIQUE = "20y"
-    config.DOSSIER_CACHE = ".cache_entrainement"
-    config.CACHE_MAX_H = 24
-    horizon = config.HORIZON_PREDICTION
-
-    titre("2/6 · Collecte des données : Bourse et économie")
-    affiches, supp_base, supp_etendu, marches, contexte, etendu, nb_lignes = preparer_donnees(args)
-    if len(affiches) < 20:
-        print("\n❌ Trop peu de données reçues (Yahoo bloque peut-être). Réessaie dans une heure.")
-        return 2
-
-    ancien = model._lire_fichier_modele() or {}
-    configs = {c[0]: c for c in model.configs_disponibles()}
-    champion_nom = ancien.get("configuration") if ancien.get("configuration") in configs else "Un seul modèle, tous les indicateurs"
-    _, v_ch, pm_ch, p_ch = configs[champion_nom]
-
-    titre("3/6 · Examen n°1 : plus de titres d'apprentissage aide-t-il vraiment ?")
-    info("Les IA sont testées sur les mêmes titres du site et les mêmes années, avec ou sans les titres en plus.")
-    import numpy as np
-    import pandas as pd
-    jeu_base = model.construire_jeu({**supp_base, **affiches}, marches, horizon)
-    jeu_etendu = model.construire_jeu({**supp_base, **supp_etendu, **affiches}, marches, horizon) if supp_etendu else None
-    garder_etendu, examen_donnees = False, {}
-
-    def oof_sur_site(jeu, v, pm, prm):
-        o = model.predictions_hors_echantillon(jeu, horizon, v, pm, params=prm, garder_ticker=True)
-        if o is None:
-            return None
-        o = o[o["ticker"].isin(list(affiches))]
-        return o.set_index(["ticker"], append=True).sort_index()
-    t0 = time.time()
-    o_base = oof_sur_site(jeu_base, v_ch, pm_ch, p_ch)
-    if jeu_etendu is not None and o_base is not None:
-        o_et = oof_sur_site(jeu_etendu, v_ch, pm_ch, p_ch)
-        commun = o_base.index.intersection(o_et.index) if o_et is not None else []
-        if len(commun) > 5000:
-            duo = pd.DataFrame({"cible": o_base.loc[commun, "cible"].to_numpy(), "pa": o_et.loc[commun, "proba"].to_numpy(),
-                                "pb": o_base.loc[commun, "proba"].to_numpy()}, index=commun.get_level_values(0))
-            auc_a, auc_b = model._auc(duo["cible"].to_numpy(), duo["pa"].to_numpy()), model._auc(duo["cible"].to_numpy(), duo["pb"].to_numpy())
-            boot = model.bootstrap_mois(duo, lambda d: np.array([model._auc(d["cible"].to_numpy(), d["pa"].to_numpy())
-                                                                 - model._auc(d["cible"].to_numpy(), d["pb"].to_numpy())]), graine=7)
-            ic = model._ic(boot[:, 0]) if len(boot) else None
-            garder_etendu = bool(ic and ic[0] > 0)
-            examen_donnees = {"auc_sans": auc_b, "auc_avec": auc_a, "ic_gain": ic, "nb_titres_en_plus": len(supp_etendu),
-                              "decision": garder_etendu}
-            info(f"Sans les titres en plus : AUC {auc_b:.4f} · avec : AUC {auc_a:.4f} · gain {auc_a - auc_b:+.4f}"
-                 + (f" (marge {ic[0]:+.4f} à {ic[1]:+.4f})" if ic else ""))
-            info("✅ Gain prouvé : les titres en plus seront utilisés." if garder_etendu
-                 else "➖ Gain non prouvé : on garde la liste actuelle (plus rapide en ligne).")
-    info(f"({duree(time.time() - t0)})")
-
-    jeu = jeu_etendu if garder_etendu else jeu_base
-
-    titre("4/6 · Examen n°2 : quelle façon de prévoir est la meilleure ?")
-    liste = candidats(model, args.complet)
-    info(f"{len(liste)} façons de prévoir testées, chacune sur des années qu'elle n'a jamais vues.")
-    resultats = []
-    for i, (nom, v, pm, prm) in enumerate(liste, 1):
-        t0 = time.time()
-        oof = model.predictions_hors_echantillon(jeu, horizon, v, pm, params=prm)
-        if oof is None or oof["cible"].nunique() < 2:
-            info(f"[{i}/{len(liste)}] {nom} : impossible à tester.")
-            continue
-        auc = model._auc(oof["cible"].to_numpy(), oof["proba"].to_numpy())
-        resultats.append((auc, nom, v, pm, oof, prm))
-        info(f"[{i}/{len(liste)}] {nom} : AUC {auc:.4f}{'  (en place sur le site)' if nom == champion_nom else ''}  · {duree(time.time() - t0)}")
-    if not resultats:
-        print("\n❌ Aucun modèle n'a pu être testé.")
-        return 3
-    resultats.sort(key=lambda r: r[0], reverse=True)
-
-    titre("5/6 · Décision : le site doit-il changer d'IA ?")
-    choix, decision = model._decision_champion(resultats, champion_nom)
-    auc_choix, nom_choix, v_c, pm_c, oof_c, prm_c = choix
-    ev, _ = model._evaluation(oof_c)
-    info(decision.get("raison", ""))
-    if decision.get("ic_gain_auc"):
-        a, b = decision["ic_gain_auc"]
-        info(f"Gain de la meilleure sur l'IA en place : entre {a:+.4f} et {b:+.4f} d'AUC (95 %).")
-    info(f"IA retenue : {nom_choix} · bonnes directions {ev.precision * 100:.1f} % "
-         + (f"(marge {ev.ic['precision'][0] * 100:.1f} à {ev.ic['precision'][1] * 100:.1f}) " if ev.ic.get("precision") else "")
-         + f"· {ev.verdict()}")
-    change = bool(decision.get("change")) or garder_etendu
-
-    entree = {"date": datetime.now().isoformat(timespec="minutes"), "mode": "complet" if args.complet else "rapide",
-              "demo": args.demo, "nb_titres": len(affiches) + len(supp_base) + (len(supp_etendu) if garder_etendu else 0),
-              "nb_lignes": int(len(jeu)), "series_economiques": sorted(contexte),
-              "candidats": [{"nom": n, "auc": a} for a, n, *_ in resultats], "en_place": champion_nom,
-              "retenu": nom_choix, "change_methode": bool(decision.get("change")), "raison": decision.get("raison"),
-              "ic_gain_auc": decision.get("ic_gain_auc"), "examen_donnees": examen_donnees,
-              "precision": ev.precision, "ic_precision": ev.ic.get("precision"), "auc": ev.auc,
-              "niveau_preuve": ev.niveau_preuve()}
-
-    titre("6/6 · Rapport et mise à jour du site")
-    os.makedirs(config.DOSSIER_HISTORIQUE, exist_ok=True)
-    m = dict(ancien)
-    m["entrainements"] = (m.get("entrainements") or [])[-19:] + [entree]
-    if decision.get("change"):
-        m["recette"] = {"nom": nom_choix, "variables": list(v_c), "par_marche": bool(pm_c), "params": prm_c,
-                        "date": entree["date"], "auc": auc_choix}
-        m["configuration"] = model.NOM_RECETTE
-        m["date"] = "2000-01-01T00:00:00"   # oblige le site à refaire un test complet avec la nouvelle recette
-        m.setdefault("version", 2)
-    if not args.demo:
-        with open(model.FICHIER_MODELE, "w", encoding="utf-8") as f:
-            json.dump(m, f, ensure_ascii=False, indent=1, default=lambda v: None)
-        if garder_etendu:
-            utiles = {mk: [t for t in liste_t if t in supp_etendu] for mk, liste_t in etendu.items()}
-            with open(os.path.join(config.DOSSIER_HISTORIQUE, "apprentissage.json"), "w", encoding="utf-8") as f:
-                json.dump({"date": entree["date"], "tickers": utiles}, f, ensure_ascii=False, indent=1)
-    chemin = ecrire_rapport(entree, resultats, champion_nom, ev, change)
-    info(f"📄 Rapport : {chemin}")
-
-    publie = False
-    if change and not args.sans_publier and not args.demo and depot_git:
-        git("add", "historique/modele.json", "historique/apprentissage.json")
-        git("commit", "-m", f"Entraînement approfondi du {datetime.now():%d/%m/%Y} : {nom_choix}")
-        for _ in range(3):
-            git("pull", "--rebase", "--autostash")
-            code, sortie = git("push")
-            if code == 0:
-                publie = True
+    def progres(self, phase, frac):
+        total = 0.0
+        for nom, poids in self.PHASES:
+            if nom == phase:
+                total += poids * max(0.0, min(1.0, frac))
                 break
-            time.sleep(5)
-        if publie:
-            gh = trouver("gh")
-            if gh:
-                subprocess.run([gh, "workflow", "run", "radar.yml"], cwd=ICI, capture_output=True)
-            info("✅ Nouvelle IA envoyée : le site va se mettre à jour tout seul (15 à 30 minutes).")
-        else:
-            info("⚠️ L'envoi sur GitHub a échoué. Relance mettre_en_ligne.bat, il enverra la nouvelle IA.")
-    elif not change:
-        if not args.demo and depot_git and not args.sans_publier:
-            git("add", "historique/modele.json")
-            git("commit", "-m", f"Entraînement approfondi du {datetime.now():%d/%m/%Y} : IA confirmée")
-            git("pull", "--rebase", "--autostash")
-            git("push")
-        info("✅ L'IA en place reste la meilleure (ou l'écart n'est pas prouvé) : le site ne change pas de méthode.")
+            total += poids
+        self.emettre("progres", pct=total)
 
-    print("\n" + "━" * 64)
-    print(f"🏁 Terminé en {duree(time.time() - debut)}.")
-    print("   Rappel : même la meilleure IA se trompe souvent. Rien n'est sûr en Bourse.")
-    if not args.pas_de_navigateur:
+    def lancer(self):
         try:
-            webbrowser.open("file://" + os.path.abspath(chemin))
+            self._lancer()
         except Exception:
-            pass
-    return 0
+            self.emettre("erreur", texte=traceback.format_exc())
+
+    def _lancer(self):
+        args = self.args
+        from bourse_bot import config, data, model
+        import numpy as np
+        import pandas as pd
+        self.np, self.pd, self.model = np, pd, model
+        data.DEMO = args.demo
+        config.HISTORIQUE = "20y"
+        config.DOSSIER_CACHE = ".cache_entrainement"
+        config.CACHE_MAX_H = 24
+        self.horizon = horizon = config.HORIZON_PREDICTION
+        budget = (args.minutes or (150 if args.complet else 35)) * 60
+        max_essais = 80 if args.complet else 20
+
+        self.etape(1, "Récupération de la dernière version du site")
+        self.depot_git = bool(os.path.isdir(os.path.join(ICI, ".git")) and trouver("git"))
+        if self.depot_git and not args.demo:
+            code, sortie = commande("git", "pull", "--rebase", "--autostash")
+            self.log("✅ À jour avec GitHub." if code == 0 else f"⚠️ Mise à jour depuis GitHub impossible ({sortie[-160:]}). On continue.")
+        else:
+            self.log("Dossier non relié à GitHub : l'entraînement se fera, mais rien ne pourra être envoyé sur le site.")
+
+        self.etape(2, "Collecte des données : Bourse et économie")
+        affiches, supp_base, supp_etendu, marches, contexte, etendu = self._donnees(config, data)
+        if len(affiches) < 20:
+            raise RuntimeError("Trop peu de données reçues (Yahoo bloque peut-être). Réessaie dans une heure.")
+
+        ancien = model._lire_fichier_modele() or {}
+        configs = {c[0]: c for c in model.configs_disponibles()}
+        champion = ancien.get("configuration") if ancien.get("configuration") in configs else "Un seul modèle, tous les indicateurs"
+        _, v_ch, pm_ch, p_ch = configs[champion]
+
+        jeu_base = model.construire_jeu({**supp_base, **affiches}, marches, horizon)
+        dates = np.array(sorted(jeu_base.dropna(subset=["cible"]).index.unique()))
+        coupure = dates[int(len(dates) * 0.8)]
+        self.log(f"🔒 Règle anti-chance : les années après le {pd.Timestamp(coupure):%d/%m/%Y} sont mises sous clé. "
+                 "La recherche se fait sans elles ; elles servent une seule fois, pour l'examen final.")
+
+        self.etape(3, "Examen n°1 : étudier plus de titres aide-t-il vraiment ?")
+        garder_etendu, examen_donnees = False, {}
+        jeu = jeu_base
+        if supp_etendu:
+            jeu_etendu = model.construire_jeu({**supp_base, **supp_etendu, **affiches}, marches, horizon)
+            self.progres("examen1", 0.1)
+            # examen fait AVANT les années sous clé (sur la fin de la zone de recherche), pour ne pas les user
+            zb, ze = self._zone_recherche(jeu_base, coupure), self._zone_recherche(jeu_etendu, coupure)
+            d_sel = np.array(sorted(zb.dropna(subset=["cible"]).index.unique()))
+            coupure_1 = d_sel[int(len(d_sel) * 0.75)]
+            o_b = self._final(zb, coupure_1, v_ch, pm_ch, p_ch)
+            self.progres("examen1", 0.55)
+            o_e = self._final(ze, coupure_1, v_ch, pm_ch, p_ch)
+            if o_b is not None and o_e is not None:
+                sel = lambda o: o[o["ticker"].isin(list(affiches))].set_index("ticker", append=True)
+                o_b, o_e = sel(o_b), sel(o_e)
+                commun = o_b.index.intersection(o_e.index)
+                if len(commun) > 2000:
+                    duo = pd.DataFrame({"cible": o_b.loc[commun, "cible"].to_numpy(), "pa": o_e.loc[commun, "proba"].to_numpy(),
+                                        "pb": o_b.loc[commun, "proba"].to_numpy()}, index=commun.get_level_values(0))
+                    ic, a_avec, a_sans, moities = self._comparer(duo)
+                    garder_etendu = bool(ic and ic[0] > 0 and moities)
+                    examen_donnees = {"auc_sans": a_sans, "auc_avec": a_avec, "ic_gain": ic,
+                                      "nb_titres_en_plus": len(supp_etendu), "decision": garder_etendu}
+                    self.log(f"Sans les {len(supp_etendu)} titres en plus : AUC {a_sans:.4f} · avec : {a_avec:.4f}"
+                             + (f" · marge du gain {ic[0]:+.4f} à {ic[1]:+.4f}" if ic else ""))
+                    self.log("✅ Gain prouvé et régulier : ils seront utilisés." if garder_etendu
+                             else "➖ Gain non prouvé : on garde la liste actuelle.")
+            if garder_etendu:
+                jeu = jeu_etendu
+        self.progres("examen1", 1)
+        jeu_sel = self._zone_recherche(jeu, coupure)
+
+        self.etape(4, "Recherche : des dizaines de façons de prévoir, testées sur des années jamais vues")
+        self.log("Tu peux arrêter quand tu veux (bouton « Arrêter » ou croix de la fenêtre) : "
+                 "l'IA passera alors l'examen final avec ce qu'elle a déjà appris.")
+        rng = np.random.default_rng(int(time.time()) % 100000)
+        essais, t0 = [], time.time()
+        meilleur_rapide = [0.0]
+
+        def tester(nom, v, pm, prm, force=False):
+            if self.arret.is_set() and not force:
+                return
+            ti = time.time()
+            # 1er tour rapide (3 périodes) ; seuls les réglages prometteurs passent le test complet (5 périodes)
+            o3 = model.predictions_hors_echantillon(jeu_sel, horizon, v, pm, n_plis=3, params=prm)
+            if o3 is None or o3["cible"].nunique() < 2:
+                return
+            a3 = model._auc(o3["cible"].to_numpy(), o3["proba"].to_numpy())
+            complet = force or a3 >= meilleur_rapide[0] - 0.004
+            meilleur_rapide[0] = max(meilleur_rapide[0], a3)
+            auc = a3
+            if complet:
+                o5 = model.predictions_hors_echantillon(jeu_sel, horizon, v, pm, n_plis=5, params=prm)
+                if o5 is not None and o5["cible"].nunique() == 2:
+                    auc = model._auc(o5["cible"].to_numpy(), o5["proba"].to_numpy())
+            essais.append({"nom": nom, "variables": list(v), "par_marche": bool(pm), "params": dict(prm),
+                           "auc_recherche": auc, "teste_completement": bool(complet)})
+            best = max((e["auc_recherche"] for e in essais if e["teste_completement"]), default=auc)
+            self.emettre("niveau", meilleur=best, essais=len(essais))
+            self.log(f"[{len(essais):>2}] AUC {auc:.4f}{' ★' if complet and auc >= best else ''}{'' if complet else ' (1er tour seulement)'} · "
+                     f"{nom}{'  ← IA du site' if nom == champion else ''} · {duree(time.time() - ti)}")
+            self.progres("recherche", min(1.0, (time.time() - t0) / budget))
+
+        for nom, v, pm, prm in model.configs_disponibles():
+            tester(nom, v, pm, prm, force=(nom == champion))
+        i = 1
+        while not self.arret.is_set() and len(essais) < max_essais and time.time() - t0 < budget:
+            tester(*self._tirer(rng, i))
+            i += 1
+        self.progres("recherche", 1)
+        if not any(e["nom"] == champion for e in essais):
+            tester(champion, v_ch, pm_ch, p_ch, force=True)
+        complets = sorted([e for e in essais if e["teste_completement"]], key=lambda e: -e["auc_recherche"])
+
+        self.etape(5, "Tri des indicateurs : lesquels aident vraiment ?")
+        imp = {}
+        if complets:
+            m0 = complets[0]
+            imp = self._importance(jeu_sel, m0)
+            if imp:
+                utiles = [k for k, (a, b) in sorted(imp.items(), key=lambda kv: -min(kv[1])) if a > 0 and b > 0]
+                self.log(f"{len(utiles)} indicateurs aident sur les deux périodes testées ; "
+                         f"{len(imp) - len(utiles)} n'apportent rien de sûr.")
+                if utiles:
+                    self.log("Les plus utiles : " + ", ".join(utiles[:8]))
+                if 8 <= len(utiles) < len(m0["variables"]):
+                    tester(f"Sélection automatique : {len(utiles)} indicateurs utiles", utiles, m0["par_marche"], m0["params"], force=True)
+                    complets = sorted([e for e in essais if e["teste_completement"]], key=lambda e: -e["auc_recherche"])
+        self.progres("tri", 1)
+
+        self.etape(6, "Examen final sur les années mises sous clé")
+        finalistes = complets[:3] + [e for e in essais if e["nom"] == champion and e not in complets[:3]]
+        resultats = []
+        for k, e in enumerate(finalistes, 1):
+            o = self._final(jeu, coupure, e["variables"], e["par_marche"], e["params"])
+            self.progres("final", k / len(finalistes))
+            if o is None:
+                continue
+            e["auc_final"] = model._auc(o["cible"].to_numpy(), o["proba"].to_numpy())
+            resultats.append((e, o))
+            self.log(f"AUC à l'examen final {e['auc_final']:.4f} · {e['nom']}{'  ← IA du site' if e['nom'] == champion else ''}")
+        if not resultats:
+            raise RuntimeError("Examen final impossible : pas assez d'années de données.")
+        resultats.sort(key=lambda r: -r[0]["auc_final"])
+        gagnant, o_g = resultats[0]
+        ref = next(((e, o) for e, o in resultats if e["nom"] == champion), None)
+        decision = {"change": False, "raison": "L'IA du site reste la meilleure à l'examen final."}
+        if ref and gagnant["nom"] != champion:
+            o_c = ref[1]
+            if len(o_g) == len(o_c) and (o_g.index.values == o_c.index.values).all():
+                duo = pd.DataFrame({"cible": o_g["cible"].to_numpy(), "pa": o_g["proba"].to_numpy(),
+                                    "pb": o_c["proba"].to_numpy()}, index=o_g.index)
+                ic, _, _, moities = self._comparer(duo)
+                if ic and ic[0] > 0 and moities:
+                    decision = {"change": True, "ic_gain_auc": ic,
+                                "raison": "La nouvelle IA fait mieux de façon prouvée (95 %) ET sur chaque moitié de l'examen final."}
+                elif ic and ic[0] > 0:
+                    decision = {"change": False, "ic_gain_auc": ic,
+                                "raison": "Meilleure en moyenne, mais pas sur chaque moitié de l'examen : pas assez régulière, on ne change pas."}
+                else:
+                    decision = {"change": False, "ic_gain_auc": ic,
+                                "raison": "Un meilleur score, mais l'écart peut venir du hasard : on garde l'IA du site."}
+        elif not ref:
+            decision = {"change": False, "raison": "L'IA du site n'a pas pu être évaluée : par prudence, rien ne change."}
+        retenu, o_r = (gagnant, o_g) if decision["change"] else (ref or (gagnant, o_g))
+        ev, _ = model._evaluation(o_r)
+        self.progres("final", 1)
+        self.log(decision["raison"])
+
+        entree = {"date": datetime.now().isoformat(timespec="minutes"), "mode": "complet" if args.complet else "rapide",
+                  "demo": args.demo, "arret_manuel": self.arret.is_set(),
+                  "nb_titres": len(affiches) + len(supp_base) + (len(supp_etendu) if garder_etendu else 0),
+                  "nb_lignes": int(len(jeu)), "series_economiques": sorted(contexte), "nb_essais": len(essais),
+                  "coupure": f"{pd.Timestamp(coupure):%Y-%m-%d}",
+                  "candidats": [{"nom": e["nom"], "auc_recherche": e["auc_recherche"], "auc_final": e.get("auc_final"),
+                                 "complet": e["teste_completement"]} for e in sorted(essais, key=lambda e: -e["auc_recherche"])],
+                  "importance": {k: min(v) for k, v in sorted(imp.items(), key=lambda kv: -min(kv[1]))[:15]} if imp else {},
+                  "en_place": champion, "retenu": retenu["nom"], "change_methode": decision["change"],
+                  "raison": decision["raison"], "ic_gain_auc": decision.get("ic_gain_auc"), "examen_donnees": examen_donnees,
+                  "precision": ev.precision, "ic_precision": ev.ic.get("precision"), "auc": ev.auc,
+                  "auc_recherche_retenu": retenu["auc_recherche"], "precision_base": ev.precision_base,
+                  "niveau_preuve": ev.niveau_preuve()}
+        recette = {"nom": retenu["nom"], "variables": retenu["variables"], "par_marche": retenu["par_marche"],
+                   "params": retenu["params"], "date": entree["date"], "auc": retenu.get("auc_final")}
+        apprentissage = {mk: [t for t in lst if t in supp_etendu] for mk, lst in etendu.items()} if garder_etendu else None
+        chemin = ecrire_rapport(entree, ev)
+        self.resultat = {"entree": entree, "decision": decision, "recette": recette, "ancien": ancien,
+                         "apprentissage": apprentissage, "rapport": chemin, "ev": ev, "garder_etendu": garder_etendu,
+                         "change": decision["change"] or garder_etendu}
+        self.emettre("final", auc=retenu.get("auc_final"), champion_auc=(ref[0]["auc_final"] if ref else None))
+        self.emettre("progres", pct=1.0)
+        self.emettre("resultat", resultat=self.resultat)
+
+    def _donnees(self, config, data):
+        from bourse_bot import indicators
+        noms, marche_de = {}, {}
+        for m, univers in config.UNIVERS.items():
+            for t in univers:
+                noms[t], marche_de[t] = univers[t], m
+        base = config.entrainement_supplementaire()
+        etendu = {m: [t for t in v if t not in noms] for m, v in UNIVERS_ETENDU.items()}
+        tout_base = {t: m for m, v in base.items() for t in v if t not in noms}
+        tout_etendu = {t: m for m, v in etendu.items() for t in v if t not in noms and t not in tout_base}
+        a_telecharger = list(dict.fromkeys(list(noms) + list(tout_base) + list(tout_etendu) + list(config.BENCHMARK.values())))
+        self.log(f"{len(a_telecharger)} titres à télécharger (jusqu'à 20 ans d'historique), par lots pour ne pas être bloqué par Yahoo…")
+        t0 = time.time()
+        bruts = data.telecharger_plusieurs(a_telecharger, progres=lambda f: self.progres("collecte", 0.7 * f))
+        manquants = [t for t in a_telecharger if t not in bruts]
+        self.log(f"✅ {len(bruts)} titres reçus sur {len(a_telecharger)} ({duree(time.time() - t0)})."
+                 + (f" Introuvables, ignorés sans conséquence : {', '.join(manquants[:12])}{'…' if len(manquants) > 12 else ''}" if manquants else ""))
+        self.log("Données économiques (VIX, taux, courbe des taux, dollar, or, pétrole, cuivre, crédit, chômage)…")
+        try:
+            contexte = data.macro()
+        except Exception:
+            contexte = {}
+        self.log(f"✅ {len(contexte)} séries économiques : {', '.join(sorted(contexte)) or 'aucune'}.")
+        self.progres("collecte", 0.8)
+
+        def calc(t, m, minimum):
+            brut = bruts.get(t)
+            if brut is None or len(brut) < minimum:
+                return None
+            type_m = "crypto" if t.endswith("-USD") else m
+            bench = bruts.get(config.BENCHMARK.get(type_m, "SPY"))
+            ctx = contexte if type_m == "crypto" else {k: v for k, v in contexte.items() if k != "fng"}
+            try:
+                return indicators.calculer(brut, bench, ctx)
+            except Exception:
+                return None
+        self.log("Calcul de plus de 50 indicateurs par titre…")
+        affiches = {t: d for t in noms if (d := calc(t, marche_de[t], 260)) is not None}
+        supp_base = {t: d for t, m in tout_base.items() if (d := calc(t, m, 400)) is not None}
+        supp_etendu = {t: d for t, m in tout_etendu.items() if (d := calc(t, m, 400)) is not None}
+        marches = {t: ("crypto" if t.endswith("-USD") else m) for t, m in {**marche_de, **tout_base, **tout_etendu}.items()}
+        lignes = sum(len(d) for d in (*affiches.values(), *supp_base.values(), *supp_etendu.values()))
+        annees = max((len(d) for d in affiches.values()), default=0) / 252
+        self.log(f"✅ {len(affiches)} titres du site + {len(supp_base) + len(supp_etendu)} titres d'apprentissage · "
+                 + f"{lignes:,}".replace(",", " ") + f" journées de cotation · jusqu'à {annees:.0f} ans.")
+        self.progres("collecte", 1)
+        return affiches, supp_base, supp_etendu, marches, contexte, etendu
+
+    def _zone_recherche(self, jeu, coupure):
+        np = self.np
+        dates = np.array(sorted(jeu.index.unique()))
+        i = int(np.searchsorted(dates, coupure))
+        return jeu[jeu.index <= dates[max(i - self.horizon - 2, 0)]]
+
+    def _final(self, jeu, coupure, v, pm, prm):
+        """Examen final : années sous clé, en deux moitiés, chacune prédite par une IA entraînée avant elle."""
+        np, pd, model = self.np, self.pd, self.model
+        et = jeu.dropna(subset=["cible"])
+        dates = np.array(sorted(et.index.unique()))
+        zone = dates[dates > coupure]
+        if len(zone) < 60:
+            return None
+        morceaux = []
+        for part in (zone[: len(zone) // 2], zone[len(zone) // 2:]):
+            i = int(np.searchsorted(dates, part[0]))
+            train = et[et.index <= dates[max(i - self.horizon - 2, 0)]]
+            test = et[(et.index >= part[0]) & (et.index <= part[-1])]
+            if len(train) < 2000 or test.empty:
+                continue
+            t = test[["cible", "rendement_futur", "marche", "ticker"]].copy()
+            t["technique"] = model.technique_haussiere(test).to_numpy()
+            t["proba"] = model.Predicteur(v, pm, "ia1", prm).fit(train).predict_proba(test)
+            morceaux.append(t)
+        return pd.concat(morceaux) if morceaux else None
+
+    def _comparer(self, duo):
+        """Gain d'AUC de pa sur pb : marge d'erreur (bootstrap par mois) et régularité (meilleur sur
+        chaque moitié de la période)."""
+        np, model = self.np, self.model
+        y = duo["cible"].to_numpy()
+        a, b = model._auc(y, duo["pa"].to_numpy()), model._auc(y, duo["pb"].to_numpy())
+        boot = model.bootstrap_mois(duo, lambda d: np.array([model._auc(d["cible"].to_numpy(), d["pa"].to_numpy())
+                                                             - model._auc(d["cible"].to_numpy(), d["pb"].to_numpy())]), graine=7)
+        ic = model._ic(boot[:, 0]) if len(boot) else None
+        dates = np.array(sorted(duo.index.unique()))
+        moities = True
+        for part in (dates[: len(dates) // 2], dates[len(dates) // 2:]):
+            d = duo[duo.index.isin(part)]
+            if len(d) and model._auc(d["cible"].to_numpy(), d["pa"].to_numpy()) <= model._auc(d["cible"].to_numpy(), d["pb"].to_numpy()):
+                moities = False
+        return ic, a, b, moities
+
+    def _tirer(self, rng, i):
+        model = self.model
+        technique = [v for v in model.VARIABLES if v not in MACRO]
+        groupes = {"tous les indicateurs + économie": list(model.VARIABLES),
+                   "indicateurs de base + économie": model.VARIABLES_BASE + sorted(MACRO & set(model.VARIABLES)),
+                   "indicateurs techniques seulement": technique, "indicateurs de base": list(model.VARIABLES_BASE)}
+        g = list(groupes)[rng.integers(len(groupes))]
+        prm = {"profondeur": int(rng.choice([2, 3, 4, 5])), "apprentissage": float(rng.choice([0.02, 0.03, 0.05, 0.08])),
+               "iterations": int(rng.choice([150, 250, 400, 600])), "feuille": int(rng.choice([150, 300, 600, 1000])),
+               "l2": float(rng.choice([0.5, 2.0, 5.0])), "c_lin": float(rng.choice([0.01, 0.05, 0.2]))}
+        pm = bool(rng.random() < 0.35)
+        return (f"Essai {i} : {g}, profondeur {prm['profondeur']}, {prm['iterations']} étapes"
+                + (", un modèle par marché" if pm else "")), groupes[g], pm, prm
+
+    def _importance(self, jeu_sel, e):
+        """Un indicateur n'est gardé que s'il aide sur DEUX périodes différentes (pas un hasard)."""
+        np, model = self.np, self.model
+        et = jeu_sel.dropna(subset=["cible"])
+        dates = np.array(sorted(et.index.unique()))
+        res = {}
+        for k, frac in enumerate((0.6, 0.8)):
+            cut = int(len(dates) * frac)
+            fin = min(int(len(dates) * (frac + 0.2)), len(dates)) - 1
+            train = et[et.index <= dates[max(cut - self.horizon - 2, 0)]]
+            valid = et[(et.index > dates[cut]) & (et.index <= dates[fin])]
+            if len(train) < 5000 or len(valid) < 2000:
+                return {}
+            mod = model.Predicteur(e["variables"], e["par_marche"], "ia1", e["params"]).fit(train)
+            y = valid["cible"].to_numpy()
+            base = model._auc(y, mod.predict_proba(valid))
+            rng = np.random.default_rng(11 + k)
+            for var in mod.vars_commun:
+                X = valid.copy()
+                X[var] = rng.permutation(X[var].to_numpy())
+                res.setdefault(var, [0.0, 0.0])[k] = base - model._auc(y, mod.predict_proba(X))
+            self.progres("tri", 0.5 * (k + 1))
+        return {k: tuple(v) for k, v in res.items()}
 
 
-def ecrire_rapport(e, resultats, champion_nom, ev, change):
+# ----------------------------------------------------------------------------
+# Enregistrement, publication et vérification du site
+# ----------------------------------------------------------------------------
+def enregistrer(res, demo):
+    from bourse_bot import config, model
+    entree, m = res["entree"], dict(res["ancien"])
+    m["entrainements"] = (m.get("entrainements") or [])[-19:] + [entree]
+    if res["decision"]["change"]:
+        m["recette"] = res["recette"]
+        m["configuration"] = model.NOM_RECETTE
+        m["date"] = "2000-01-01T00:00:00"   # le site refera un test complet avec la nouvelle recette
+        m.setdefault("version", 2)
+    if demo:
+        return
+    os.makedirs(config.DOSSIER_HISTORIQUE, exist_ok=True)
+    with open(model.FICHIER_MODELE, "w", encoding="utf-8") as f:
+        json.dump(m, f, ensure_ascii=False, indent=1, default=lambda v: None)
+    if res["apprentissage"]:
+        with open(os.path.join(config.DOSSIER_HISTORIQUE, "apprentissage.json"), "w", encoding="utf-8") as f:
+            json.dump({"date": entree["date"], "tickers": res["apprentissage"]}, f, ensure_ascii=False, indent=1)
+
+
+def publier(res, log) -> bool:
+    """Envoie le résultat sur GitHub et lance la mise à jour du site."""
+    commande("git", "add", "historique/modele.json", "historique/apprentissage.json")
+    msg = f"Entraînement du {datetime.now():%d/%m/%Y} : " + (res["recette"]["nom"] if res["decision"]["change"] else "IA confirmée")
+    commande("git", "commit", "-m", msg)
+    sortie = ""
+    for _ in range(3):
+        commande("git", "pull", "--rebase", "--autostash")
+        code, sortie = commande("git", "push")
+        if code == 0:
+            log("✅ Résultat envoyé sur GitHub.")
+            break
+        time.sleep(5)
+    else:
+        log(f"❌ Envoi impossible : {sortie[-300:]}")
+        return False
+    code, _ = commande("gh", "workflow", "run", "radar.yml")
+    if code != 0:
+        log("⚠️ La mise à jour du site n'a pas pu être lancée tout de suite : elle se fera à la prochaine heure.")
+        return False
+    log("🚀 Mise à jour du site lancée sur GitHub (15 à 30 minutes).")
+    return True
+
+
+def surveiller_site(depuis_iso, log, etat):
+    """Suit la mise à jour sur GitHub, puis analyse le site en ligne."""
+    run_id = None
+    for _ in range(20):
+        code, sortie = commande("gh", "run", "list", "-w", "radar.yml", "-L", "5", "--json", "databaseId,createdAt")
+        try:
+            runs = [r for r in json.loads(sortie) if r["createdAt"] >= depuis_iso]
+        except Exception:
+            runs = []
+        if runs:
+            run_id = runs[0]["databaseId"]
+            break
+        time.sleep(6)
+    if not run_id:
+        log("⚠️ Impossible de suivre la mise à jour. Regarde l'onglet Actions de ton dépôt GitHub.")
+        return
+    debut, conclusion = time.time(), None
+    while time.time() - debut < 100 * 60:
+        code, sortie = commande("gh", "run", "view", str(run_id), "--json", "status,conclusion")
+        try:
+            r = json.loads(sortie)
+        except Exception:
+            r = {}
+        etat(f"Mise à jour du site en cours sur GitHub… {duree(time.time() - debut)}")
+        if r.get("status") == "completed":
+            conclusion = r.get("conclusion")
+            break
+        time.sleep(20)
+    if conclusion != "success":
+        log(f"❌ La mise à jour en ligne s'est terminée avec le résultat : {conclusion or 'trop longue'}. "
+            "L'ancienne version du site reste en ligne. Ouvre l'onglet Actions de GitHub pour le détail.")
+        etat("Mise à jour en ligne échouée")
+        return
+    log(f"✅ Mise à jour terminée sur GitHub ({duree(time.time() - debut)}). Analyse du site en ligne…")
+    analyser_site(log, etat)
+
+
+def analyser_site(log, etat):
+    url = adresse_site()
+    if not url:
+        log("⚠️ Adresse du site inconnue : analyse impossible.")
+        return
+    for _ in range(12):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(f"{url}version.json?t={time.time():.0f}",
+                                                               headers={"Cache-Control": "no-cache"}), timeout=15) as r:
+                v = json.load(r)
+            age = (datetime.now() - datetime.fromisoformat(v["genere_le"])).total_seconds() / 60
+            with urllib.request.urlopen(url, timeout=20) as r:
+                page = r.read().decode("utf-8", "replace")
+            n = len(re.findall(r'"ticker":"', page))
+            verifs = [("Le site répond", True), ("Prévisions de moins de 3 heures", -120 < age < 180),
+                      ("Page complète", len(page) > 50000 and "Radar Bourse" in page), ("Titres présents", n >= 20),
+                      ("Pas de données de démonstration", '"demo":true' not in page)]
+            ok = all(b for _, b in verifs)
+            for nom, b in verifs:
+                log(f"   {'✅' if b else '❌'} {nom}")
+            log(f"{'✅' if ok else '⚠️'} Site analysé : {url} · prévisions générées il y a {max(0, age):.0f} min · {n} titres.")
+            etat("Site en ligne vérifié ✅" if ok else "Site en ligne : à vérifier ⚠️")
+            return
+        except Exception:
+            etat("Le site se met en ligne… (GitHub peut prendre 1 à 2 minutes)")
+            time.sleep(10)
+    log(f"⚠️ Le site {url} ne répond pas encore. Réessaie « Analyser le site » dans quelques minutes.")
+    etat("Site pas encore joignable")
+
+
+# ----------------------------------------------------------------------------
+# Rapport
+# ----------------------------------------------------------------------------
+def ecrire_rapport(e, ev):
     from bourse_bot import config
     os.makedirs(config.DOSSIER_RAPPORTS, exist_ok=True)
     chemin = os.path.join(config.DOSSIER_RAPPORTS, f"entrainement_{datetime.now():%Y%m%d_%H%M}.html")
     x = lambda s: html.escape(str(s))
+    fmt = lambda a: "–" if a is None else f"{a:.4f}"
+    barre = lambda a: f"<div class='b'><i style='width:{max(0, min(100, (a - AUC_HASARD) / (AUC_EXCELLENT - AUC_HASARD) * 100)):.0f}%'></i></div>" if a else ""
     lignes = "".join(
-        f"<tr><td>{x(n)}{' <b>(en place)</b>' if n == champion_nom else ''}{' <b>✓ retenue</b>' if n == e['retenu'] else ''}</td>"
-        f"<td>{a:.4f}</td><td><div class='b'><i style='width:{max(0, min(100, (a - 0.45) / 0.15 * 100)):.0f}%'></i></div></td></tr>"
-        for a, n, *_ in resultats)
-    D = e.get("examen_donnees") or {}
-    icp = e.get("ic_precision")
-    verdict = ("✅ L'IA a progressé de façon prouvée : la nouvelle version est envoyée sur le site." if change and not e["demo"]
-               else "✅ (Démo) L'IA aurait été mise à jour." if change else
-               "➖ Pas de progrès prouvé : le site garde son IA actuelle. C'est normal et sain : on ne change pas sur un coup de chance.")
+        f"<tr><td>{x(c['nom'])}{' <b>(IA du site)</b>' if c['nom'] == e['en_place'] else ''}{' <b>✓ retenue</b>' if c['nom'] == e['retenu'] else ''}"
+        f"{'' if c['complet'] else ' <span class=m>(1er tour)</span>'}</td>"
+        f"<td>{fmt(c['auc_recherche'])}</td><td>{fmt(c.get('auc_final'))}</td><td>{barre(c.get('auc_final') or c['auc_recherche'])}</td></tr>"
+        for c in e["candidats"][:30])
+    D, icp, imp = e.get("examen_donnees") or {}, e.get("ic_precision"), e.get("importance") or {}
+    verdict = ("✅ L'IA a progressé de façon prouvée et régulière à l'examen final." if e["change_methode"]
+               else "➖ Pas de progrès prouvé à l'examen final : l'IA du site est confirmée. C'est normal et sain : on ne change pas sur un coup de chance.")
+    optimisme = (e.get("auc_recherche_retenu") or 0) - (e.get("auc") or 0)
     page = f"""<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Entraînement de l'IA du {datetime.now():%d/%m/%Y}</title>
-<style>body{{font:16px/1.6 system-ui,sans-serif;max-width:860px;margin:0 auto;padding:24px 16px;color:#0f1b2d;background:#eef1f5}}
-.c{{background:#fff;border:1px solid #d9e0e8;border-radius:10px;padding:16px;margin:14px 0}}h1{{font-size:28px}}
-table{{width:100%;border-collapse:collapse}}td,th{{padding:8px;border-bottom:1px solid #d9e0e8;text-align:left}}
-.b{{height:10px;background:#eef1f5;border-radius:5px;min-width:120px}}.b i{{display:block;height:100%;background:#1d4fd8;border-radius:5px}}
+<style>body{{font:16px/1.6 system-ui,sans-serif;max-width:900px;margin:0 auto;padding:24px 16px;color:#0f1b2d;background:#eef1f5}}
+.c{{background:#fff;border:1px solid #d9e0e8;border-radius:10px;padding:16px;margin:14px 0;overflow-x:auto}}h1{{font-size:28px}}
+table{{width:100%;border-collapse:collapse}}td,th{{padding:8px;border-bottom:1px solid #d9e0e8;text-align:left;font-size:14.5px}}
+.b{{height:10px;background:#eef1f5;border-radius:5px;min-width:100px}}.b i{{display:block;height:100%;background:#1d4fd8;border-radius:5px}}
 .v{{font-size:18px;font-weight:700}}.m{{color:#5a6a80;font-size:14px}}</style></head><body>
-<h1>🧠 Rapport d'entraînement de l'IA</h1><p class="m">{x(e['date'])} · mode {x(e['mode'])}{' · DÉMO (données fictives)' if e['demo'] else ''}</p>
+<h1>🧠 Rapport d'entraînement de l'IA</h1><p class="m">{x(e['date'])} · {e['nb_essais']} façons de prévoir testées{' · arrêté à la main' if e.get('arret_manuel') else ''}{' · DÉMO (données fictives)' if e['demo'] else ''}</p>
 <div class="c"><p class="v">{x(verdict)}</p><p>{x(e.get('raison') or '')}</p></div>
 <div class="c"><h2>Ce que l'IA a étudié</h2><ul>
-<li><b>{e['nb_titres']}</b> actions, ETF et cryptos, <b>{e['nb_lignes']:,}</b> situations de marché analysées.</li>
-<li>Données économiques : {x(', '.join(e['series_economiques']) or 'aucune')}.</li>
-<li>Chaque façon de prévoir a été testée uniquement sur des années qu'elle n'avait jamais vues.</li></ul></div>
-<div class="c"><h2>Examen n°1 : plus de titres d'apprentissage ?</h2>{
-    f"<p>Sans les {D['nb_titres_en_plus']} titres en plus : AUC {D['auc_sans']:.4f}. Avec : AUC {D['auc_avec']:.4f}. "
+<li><b>{e['nb_titres']}</b> actions, ETF et cryptos, <b>{e['nb_lignes']:,}</b> situations de marché.</li>
+<li>Données économiques : {x(', '.join(e['series_economiques']) or 'aucune')}.</li></ul></div>
+<div class="c"><h2>Les protections contre la chance</h2><ul>
+<li><b>Années sous clé</b> : après le {x(e['coupure'])}, les données n'ont servi qu'à l'examen final, jamais à la recherche.</li>
+<li><b>Tests sur des années jamais vues</b>, avec une pause d'un mois entre apprentissage et test pour que rien du futur ne fuite.</li>
+<li><b>Marge d'erreur à 95 %</b> calculée en tirant des mois entiers au hasard.</li>
+<li><b>Régularité</b> : une nouvelle IA doit faire mieux sur chaque moitié de l'examen final, pas seulement en moyenne.</li>
+<li><b>Indicateurs</b> gardés seulement s'ils aident sur deux périodes différentes.</li>
+<li>Écart d'optimisme de l'IA retenue (recherche → examen final) : {optimisme:+.4f} d'AUC. Un grand écart positif signifie qu'elle avait eu de la chance pendant la recherche.</li></ul></div>
+<div class="c"><h2>Examen n°1 : étudier plus de titres ?</h2>{
+    f"<p>Sans les {D['nb_titres_en_plus']} titres en plus : AUC {D['auc_sans']:.4f}. Avec : {D['auc_avec']:.4f}. "
     + (f"Marge du gain : {D['ic_gain'][0]:+.4f} à {D['ic_gain'][1]:+.4f}. " if D.get('ic_gain') else "")
     + ("<b>Gain prouvé : utilisés désormais.</b>" if D.get('decision') else "<b>Gain non prouvé : liste actuelle conservée.</b>") + "</p>"
     if D else "<p>Pas assez de données pour cet examen.</p>"}</div>
-<div class="c"><h2>Examen n°2 : la meilleure façon de prévoir</h2>
-<p class="m">AUC : 0,5 = hasard, 1 = parfait. En Bourse, 0,52 à 0,56 est déjà un bon score : personne ne prévoit les marchés de façon fiable.</p>
-<table><tr><th>Façon de prévoir</th><th>AUC</th><th></th></tr>{lignes}</table></div>
+<div class="c"><h2>Recherche et examen final</h2>
+<p class="m">AUC : 0,5 = hasard, 1 = parfait. En Bourse, 0,52 à 0,56 est déjà un bon score. Seule la colonne « examen final » compte vraiment.</p>
+<table><tr><th>Façon de prévoir</th><th>Recherche</th><th>Examen final</th><th></th></tr>{lignes}</table></div>
+{"<div class='c'><h2>Les indicateurs les plus utiles</h2><p class='m'>Perte d'AUC quand on mélange l'indicateur au hasard (la plus faible des deux périodes).</p><table>" + "".join(f"<tr><td>{x(k)}</td><td>{v:+.4f}</td></tr>" for k, v in imp.items()) + "</table></div>" if imp else ""}
 <div class="c"><h2>L'IA retenue en chiffres simples</h2>
-<p>Sur 100 prévisions testées, elle a trouvé la bonne direction <b>{ev.precision * 100:.0f} fois</b>{f" (marge d'erreur : {icp[0] * 100:.0f} à {icp[1] * 100:.0f})" if icp else ""}.
+<p>À l'examen final, sur 100 prévisions, elle a trouvé la bonne direction <b>{ev.precision * 100:.0f} fois</b>{f" (marge d'erreur : {icp[0] * 100:.0f} à {icp[1] * 100:.0f})" if icp else ""}.
 En répondant toujours la même chose, on aurait eu raison {ev.precision_base * 100:.0f} fois.</p><p><b>{x(ev.verdict())}</b></p></div>
 <p class="m">Rien n'est sûr en Bourse : ce rapport mesure le passé, il ne garantit rien pour l'avenir.</p></body></html>"""
     with open(chemin, "w", encoding="utf-8") as f:
@@ -381,9 +643,269 @@ En répondant toujours la même chose, on aurait eu raison {ev.precision_base * 
     return chemin
 
 
-if __name__ == "__main__":
+# ----------------------------------------------------------------------------
+# Fenêtre
+# ----------------------------------------------------------------------------
+def fenetre(args):
+    import tkinter as tk
+    from tkinter import messagebox, ttk
+
+    q = queue.Queue()
+    moteur = Moteur(args, lambda type_, **kw: q.put((type_, kw)))
+    racine = tk.Tk()
+    racine.title("Radar Bourse · Entraînement de l'IA" + (" (démo)" if args.demo else ""))
+    racine.geometry("920x760")
+    racine.minsize(700, 560)
+    BG, INK, MUTED, ACC, UP, WARN = "#0f1b2d", "#e4ebf5", "#8c9bb0", "#7398ff", "#35c27d", "#e5b453"
+    racine.configure(bg=BG)
+    style = ttk.Style()
     try:
-        sys.exit(main())
+        style.theme_use("clam")
+    except tk.TclError:
+        pass
+    style.configure("Barre.Horizontal.TProgressbar", troughcolor="#22314a", background=ACC, thickness=22, bordercolor=BG)
+    police = ("Segoe UI", 11)
+    etat_fen = {"erreur": False, "en_attente": False}
+
+    tk.Label(racine, text="🧠 Entraînement de l'IA", font=("Segoe UI", 20, "bold"), fg=INK, bg=BG).pack(anchor="w", padx=18, pady=(14, 0))
+    lib_etape = tk.Label(racine, text="Démarrage…", font=("Segoe UI", 12), fg=MUTED, bg=BG)
+    lib_etape.pack(anchor="w", padx=18)
+
+    cadre = tk.Frame(racine, bg=BG)
+    cadre.pack(fill="x", padx=18, pady=(10, 4))
+    pct_var = tk.StringVar(value="0 %")
+    tk.Label(cadre, text="Progression de l'entraînement", font=police, fg=INK, bg=BG).grid(row=0, column=0, sticky="w")
+    tk.Label(cadre, textvariable=pct_var, font=("Segoe UI", 11, "bold"), fg=INK, bg=BG).grid(row=0, column=1, sticky="e")
+    barre = ttk.Progressbar(cadre, style="Barre.Horizontal.TProgressbar", maximum=1000)
+    barre.grid(row=1, column=0, columnspan=2, sticky="ew", pady=4)
+    cadre.columnconfigure(0, weight=1)
+
+    tk.Label(racine, text="Ce que l'IA a appris (testé sur des années qu'elle n'a jamais vues)",
+             font=police, fg=INK, bg=BG).pack(anchor="w", padx=18, pady=(10, 0))
+    jauge = tk.Canvas(racine, height=96, bg=BG, highlightthickness=0)
+    jauge.pack(fill="x", padx=18)
+    lib_niveau = tk.Label(racine, text="La jauge se remplit pendant la recherche.", font=police, fg=MUTED, bg=BG,
+                          justify="left", wraplength=860)
+    lib_niveau.pack(anchor="w", padx=18)
+    etat_j = {"meilleur": None, "champion": None, "final": None}
+
+    def dessiner_jauge():
+        jauge.delete("all")
+        w = max(300, jauge.winfo_width())
+        x0, x1, y = 12, w - 12, 44
+        xa = lambda a: x0 + (x1 - x0) * max(0, min(1, (a - AUC_HASARD) / (AUC_EXCELLENT - AUC_HASARD)))
+        for a, b, c in ((0.50, 0.51, "#3a1716"), (0.51, 0.53, "#33270d"), (0.53, 0.56, "#11301f"), (0.56, 0.58, "#145c39")):
+            jauge.create_rectangle(xa(a), y - 12, xa(b), y + 12, fill=c, outline="")
+        if etat_j["meilleur"] is not None:
+            jauge.create_rectangle(xa(0.50), y - 5, xa(etat_j["meilleur"]), y + 5, fill=ACC, outline="")
+        for a, t in ((0.50, "hasard"), (0.52, "léger"), (0.54, "bon"), (0.56, "très bon"), (0.58, "exceptionnel")):
+            jauge.create_text(xa(a), y + 28, text=t, fill=MUTED, font=("Segoe UI", 9),
+                              anchor="nw" if a == 0.50 else "ne" if a == 0.58 else "n")
+        if etat_j["champion"] is not None:
+            xc = xa(etat_j["champion"])
+            jauge.create_line(xc, y - 18, xc, y + 18, fill=WARN, width=3)
+            jauge.create_text(xc - 6, y - 20, text="IA du site", fill=WARN, font=("Segoe UI", 9, "bold"), anchor="se")
+        if etat_j["final"] is not None:
+            xf = xa(etat_j["final"])
+            jauge.create_oval(xf - 8, y - 8, xf + 8, y + 8, fill=UP, outline=INK, width=2)
+            jauge.create_text(xf + 6, y - 20, text="examen final", fill=UP, font=("Segoe UI", 9, "bold"), anchor="sw")
+    jauge.bind("<Configure>", lambda e: dessiner_jauge())
+
+    journal = tk.Text(racine, height=12, bg="#111a29", fg=INK, insertbackground=INK, font=("Consolas", 10), relief="flat", wrap="word")
+    journal.pack(fill="both", expand=True, padx=18, pady=(10, 6))
+    journal.configure(state="disabled")
+
+    bas = tk.Frame(racine, bg=BG)
+    bas.pack(fill="x", padx=18, pady=(0, 14))
+    lib_etat = tk.Label(bas, text="", font=police, fg=MUTED, bg=BG)
+    lib_etat.pack(side="left")
+    btn_arret = tk.Button(bas, text="⏹ Arrêter et passer à l'examen final", font=police, bg="#22314a", fg=INK,
+                          activebackground="#2b3d5c", relief="flat", padx=12, pady=6)
+    btn_arret.pack(side="right")
+    actions = tk.Frame(racine, bg=BG)
+    debut = time.time()
+
+    def ecrire(t):
+        journal.configure(state="normal")
+        journal.insert("end", t + "\n")
+        journal.see("end")
+        journal.configure(state="disabled")
+
+    def demander_arret():
+        if moteur.resultat is not None or moteur.arret.is_set():
+            return
+        if messagebox.askyesno("Arrêter l'entraînement ?",
+                               "L'IA va arrêter de chercher et passer l'examen final avec ce qu'elle a déjà appris "
+                               "(quelques minutes), puis te proposer de mettre à jour le site.\n\nArrêter maintenant ?"):
+            moteur.arret.set()
+            btn_arret.configure(state="disabled", text="Arrêt demandé : examen final en cours…")
+            ecrire("⏹ Arrêt demandé : l'IA termine l'essai en cours puis passe l'examen final.")
+
+    def fermer():
+        if moteur.resultat is None and not etat_fen["erreur"]:
+            demander_arret()
+            return
+        if etat_fen["en_attente"] and not messagebox.askyesno(
+                "Quitter ?", "Le résultat n'a pas été envoyé sur le site. Quitter quand même ?"):
+            return
+        racine.destroy()
+
+    btn_arret.configure(command=demander_arret)
+    racine.protocol("WM_DELETE_WINDOW", fermer)
+    journal_q = lambda t: q.put(("log", {"texte": t}))
+    etat_q = lambda t: q.put(("etat", {"texte": t}))
+
+    def proposer(res):
+        etat_fen["en_attente"] = True
+        btn_arret.pack_forget()
+        actions.pack(fill="x", padx=18, pady=(0, 14), before=bas)
+        d, ev = res["decision"], res["ev"]
+        txt = (("✅ L'IA a progressé de façon prouvée et régulière." if d["change"] else
+                "✅ Les titres en plus améliorent l'IA de façon prouvée." if res["change"] else
+                "➖ Pas de progrès prouvé : l'IA du site est confirmée (c'est normal et sain).")
+               + f"\n{d['raison']}\nÀ l'examen final : bonne direction {ev.precision * 100:.0f} fois sur 100"
+               + (f" (marge {ev.ic['precision'][0] * 100:.0f} à {ev.ic['precision'][1] * 100:.0f})" if ev.ic.get("precision") else "")
+               + f", contre {ev.precision_base * 100:.0f} en répondant toujours la même chose.")
+        tk.Label(actions, text=txt, font=("Segoe UI", 11, "bold"), fg=UP if res["change"] else WARN, bg=BG,
+                 justify="left", wraplength=860).pack(anchor="w", pady=(0, 8))
+        rangee = tk.Frame(actions, bg=BG)
+        rangee.pack(fill="x")
+        peut = moteur.depot_git and not args.demo
+
+        def envoyer():
+            etat_fen["en_attente"] = False
+            b_env.configure(state="disabled")
+            b_rien.configure(state="disabled")
+            depuis = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+            def tache():
+                enregistrer(res, args.demo)
+                if publier(res, journal_q):
+                    surveiller_site(depuis, journal_q, etat_q)
+                else:
+                    analyser_site(journal_q, etat_q)
+            threading.Thread(target=tache, daemon=True).start()
+
+        def garder_local():
+            etat_fen["en_attente"] = False
+            enregistrer(res, args.demo)
+            ecrire("Résultat gardé sur ton PC, rien n'a été envoyé sur le site.")
+
+        lib = "🚀 Mettre à jour le site avec la nouvelle IA" if res["change"] else "📤 Envoyer le résultat et vérifier le site"
+        b_env = tk.Button(rangee, text=lib, font=("Segoe UI", 11, "bold"), bg=ACC, fg="#0a111d", relief="flat", padx=12, pady=6,
+                          state="normal" if peut else "disabled", command=envoyer)
+        b_env.pack(side="left")
+        tk.Button(rangee, text="🔎 Analyser le site en ligne", font=police, bg="#22314a", fg=INK, relief="flat", padx=12, pady=6,
+                  command=lambda: threading.Thread(target=analyser_site, args=(journal_q, etat_q), daemon=True).start()
+                  ).pack(side="left", padx=8)
+        tk.Button(rangee, text="📄 Voir le rapport", font=police, bg="#22314a", fg=INK, relief="flat", padx=12, pady=6,
+                  command=lambda: webbrowser.open("file://" + os.path.abspath(res["rapport"]))).pack(side="left")
+        b_rien = tk.Button(rangee, text="Ne rien envoyer", font=police, bg=BG, fg=MUTED, relief="flat", padx=12, pady=6,
+                           command=garder_local)
+        b_rien.pack(side="right")
+        if not peut:
+            ecrire("ℹ️ Envoi impossible : " + ("mode démo." if args.demo else
+                                               "ce dossier n'est pas relié à GitHub (lance d'abord mettre_en_ligne.bat depuis ce dossier)."))
+
+    def relever():
+        try:
+            while True:
+                type_, kw = q.get_nowait()
+                if type_ == "log":
+                    ecrire(kw["texte"])
+                elif type_ == "etape":
+                    lib_etape.configure(text=f"Étape {kw['n']}/6 · {kw['texte']}")
+                elif type_ == "progres":
+                    barre["value"] = kw["pct"] * 1000
+                    ecoule = time.time() - debut
+                    reste = ecoule / kw["pct"] - ecoule if kw["pct"] > 0.05 else None
+                    pct_var.set(f"{kw['pct'] * 100:.0f} %" + (f" · encore ~{duree(reste)}" if reste and kw["pct"] < 1 else ""))
+                elif type_ == "niveau":
+                    etat_j["meilleur"] = m = kw["meilleur"]
+                    lib_niveau.configure(text=f"Meilleure trouvée : AUC {m:.4f}, soit {(m - 0.5) * 100:+.1f} points au-dessus du hasard · "
+                                              f"{kw['essais']} façons de prévoir testées. Ce score est un peu optimiste : "
+                                              "seul l'examen final dira la vérité.")
+                    dessiner_jauge()
+                elif type_ == "final":
+                    etat_j["final"], etat_j["champion"] = kw["auc"], kw["champion_auc"]
+                    lib_niveau.configure(text=f"Examen final (années sous clé) : AUC {kw['auc']:.4f} (rond vert)"
+                                              + (f" · IA du site : {kw['champion_auc']:.4f} (trait jaune)" if kw["champion_auc"] else ""))
+                    dessiner_jauge()
+                elif type_ == "resultat":
+                    lib_etape.configure(text="Entraînement terminé")
+                    lib_etat.configure(text=f"Durée : {duree(time.time() - debut)}")
+                    proposer(kw["resultat"])
+                elif type_ == "etat":
+                    lib_etat.configure(text=kw["texte"])
+                elif type_ == "erreur":
+                    etat_fen["erreur"] = True
+                    ecrire("❌ Problème : " + kw["texte"][-1500:])
+                    lib_etape.configure(text="Entraînement interrompu par une erreur (rien n'a été envoyé)")
+                    btn_arret.configure(state="disabled")
+        except queue.Empty:
+            pass
+        racine.after(120, relever)
+
+    threading.Thread(target=moteur.lancer, daemon=True).start()
+    racine.after(120, relever)
+    racine.mainloop()
+
+
+def console(args):
+    """Version sans fenêtre (Ctrl+C = arrêter la recherche et passer à l'examen final)."""
+    dernier = [0.0]
+
+    def emettre(type_, **kw):
+        if type_ == "log":
+            print("   " + kw["texte"], flush=True)
+        elif type_ == "progres" and kw["pct"] - dernier[0] >= 0.05:
+            dernier[0] = kw["pct"]
+            print(f"   ── progression : {kw['pct'] * 100:.0f} %", flush=True)
+        elif type_ == "erreur":
+            print("❌ " + kw["texte"], flush=True)
+    moteur = Moteur(args, emettre)
+    t = threading.Thread(target=moteur.lancer, daemon=True)
+    t.start()
+    try:
+        while t.is_alive():
+            t.join(0.5)
     except KeyboardInterrupt:
-        print("\nArrêté. Rien n'a été envoyé sur le site.")
-        sys.exit(1)
+        print("\n⏹ Arrêt demandé : examen final avec ce qui a été appris…", flush=True)
+        moteur.arret.set()
+        t.join()
+    res = moteur.resultat
+    if not res:
+        return 2
+    print(f"\n{res['decision']['raison']}\n📄 Rapport : {res['rapport']}")
+    if moteur.depot_git and not args.demo and input("Mettre à jour le site maintenant ? (o/n) ").strip().lower().startswith("o"):
+        enregistrer(res, args.demo)
+        depuis = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        if publier(res, print):
+            surveiller_site(depuis, print, lambda t: print("   " + t, flush=True))
+    else:
+        enregistrer(res, args.demo)
+    return 0
+
+
+def main():
+    p = argparse.ArgumentParser(description="Entraînement approfondi de l'IA de Radar Bourse")
+    p.add_argument("--complet", action="store_true", help="recherche plus large (~2 h 30)")
+    p.add_argument("--minutes", type=int, default=None, help="durée maximale de la recherche")
+    p.add_argument("--console", action="store_true", help="sans fenêtre")
+    p.add_argument("--demo", action="store_true", help="données fictives (pour tester)")
+    args = p.parse_args()
+    verifier_dependances()
+    if not args.console:
+        try:
+            import tkinter
+            tkinter.Tk().destroy()   # vérifie qu'une fenêtre peut s'ouvrir
+        except Exception:
+            print("(Fenêtre indisponible : passage en mode texte.)")
+            return console(args)
+        fenetre(args)
+        return 0
+    return console(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -66,28 +66,76 @@ def _nettoyer(df: pd.DataFrame) -> pd.DataFrame:
 # ----------------------------------------------------------------------------
 # Téléchargement
 # ----------------------------------------------------------------------------
-def _yahoo(tickers: list[str]) -> dict[str, pd.DataFrame]:
+PERIODES_YAHOO = {"1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
+TAILLE_LOT = 40   # Yahoo bloque les gros téléchargements d'un coup : on envoie des lots
+
+
+def _periode_yahoo() -> tuple[str, int | None]:
+    """Yahoo n'accepte que certaines durées (1y, 2y, 5y, 10y, max…). Pour « 20y », on demande « max »
+    puis on garde les 20 dernières années."""
+    p = config.HISTORIQUE
+    if p in PERIODES_YAHOO:
+        return p, None
+    m = re.fullmatch(r"(\d+)y", p)
+    return "max", (int(m.group(1)) if m else None)
+
+
+def _silencieux():
+    """Coupe les messages « Failed to download » de yfinance : le radar fait son propre bilan."""
+    import logging
+    for nom in ("yfinance", "yfinance.base", "yfinance.data", "peewee"):
+        logging.getLogger(nom).setLevel(logging.CRITICAL)
+        logging.getLogger(nom).propagate = False
+
+
+def _yahoo(tickers: list[str], progres=None) -> dict[str, pd.DataFrame]:
+    import contextlib
+    import io
     import yfinance as yf
+    _silencieux()
+    periode, annees = _periode_yahoo()
+    debut_min = pd.Timestamp.today() - pd.DateOffset(years=annees) if annees else None
     out: dict[str, pd.DataFrame] = {}
-    for tentative in range(3):
-        manquants = [t for t in tickers if t not in out]
-        if not manquants:
-            break
+
+    def garder(t, df):
+        df = _nettoyer(df.copy())
+        if debut_min is not None and not df.empty:
+            df = df[df.index >= debut_min]
+        if not df.empty:
+            out[t] = df
+
+    lots = [tickers[k:k + TAILLE_LOT] for k in range(0, len(tickers), TAILLE_LOT)]
+    for n, lot in enumerate(lots, 1):
+        for tentative in range(3):
+            manquants = [t for t in lot if t not in out]
+            if not manquants:
+                break
+            try:
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    brut = yf.download(manquants, period=periode, interval="1d", auto_adjust=True,
+                                       progress=False, group_by="ticker", threads=True)
+                for t in manquants:
+                    try:
+                        df = brut[t] if isinstance(brut.columns, pd.MultiIndex) else brut
+                    except KeyError:
+                        continue
+                    garder(t, df)
+            except Exception:
+                pass
+            if len([t for t in lot if t not in out]) and tentative < 2:
+                time.sleep(3 * (tentative + 1))   # pause plus longue si Yahoo freine
+        if progres:
+            progres(n / len(lots))
+        if n < len(lots):
+            time.sleep(1)
+    # rattrapage titre par titre (certains passent mieux seuls)
+    for t in [t for t in tickers if t not in out]:
         try:
-            brut = yf.download(manquants, period=config.HISTORIQUE, interval="1d",
-                               auto_adjust=True, progress=False, group_by="ticker", threads=True)
-            for t in manquants:
-                try:
-                    df = brut[t] if isinstance(brut.columns, pd.MultiIndex) else brut
-                except KeyError:
-                    continue
-                df = _nettoyer(df.copy())
-                if not df.empty:
-                    out[t] = df
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                garder(t, yf.Ticker(t).history(period=periode, interval="1d", auto_adjust=True))
         except Exception:
             pass
-        if tentative < 2 and len(out) < len(tickers):
-            time.sleep(2 * (tentative + 1))
+        time.sleep(0.3)
     return out
 
 
@@ -150,7 +198,7 @@ def _stooq(ticker: str) -> pd.DataFrame:
 SOURCES_UTILISEES: dict[str, str] = {}
 
 
-def telecharger_plusieurs(tickers: list[str], max_age_h: float | None = None) -> dict[str, pd.DataFrame]:
+def telecharger_plusieurs(tickers: list[str], max_age_h: float | None = None, progres=None) -> dict[str, pd.DataFrame]:
     """Renvoie {ticker: cours} pour tous les titres trouvés (les introuvables sont ignorés)."""
     tickers = list(dict.fromkeys(tickers))
     if max_age_h is None:
@@ -164,7 +212,7 @@ def telecharger_plusieurs(tickers: list[str], max_age_h: float | None = None) ->
         SOURCES_UTILISEES.setdefault(t, "Yahoo (cache récent)")
     a_telecharger = [t for t in tickers if t not in resultats]
     if a_telecharger:
-        frais = _yahoo(a_telecharger)
+        frais = _yahoo(a_telecharger, progres)
         for t in frais:
             SOURCES_UTILISEES[t] = "Yahoo"
         for t in a_telecharger:   # secours : Binance pour les cryptos, Stooq pour le reste

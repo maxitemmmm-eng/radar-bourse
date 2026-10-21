@@ -113,22 +113,32 @@ Le **défi pronostic** permet de parier (sans argent) contre le radar et de comp
 
 ## Entraînement approfondi de l'IA (sur ton PC)
 
-Double-clique sur **`entrainement_ia.bat`** (20 à 60 min) ou **`entrainement_ia_complet.bat`** (1 à 3 h,
-plus de réglages testés). L'IA :
+Double-clique sur **`entrainement_ia.bat`** (environ 45 min) ou **`entrainement_ia_complet.bat`**
+(environ 3 h, recherche plus large). Une fenêtre s'ouvre avec :
+- la **progression** en % et le temps restant ;
+- une **jauge « ce que l'IA a appris »**, de « hasard » à « exceptionnel », avec l'IA du site et le
+  résultat de l'examen final ;
+- le **journal** de tout ce que fait l'IA ;
+- un bouton **Arrêter** (ou la croix de la fenêtre) : l'IA passe alors l'examen final avec ce
+  qu'elle a déjà appris, puis te propose de **mettre à jour le site**, suit la publication sur GitHub
+  et **analyse le site en ligne** pour vérifier qu'il fonctionne.
 
-1. étudie **jusqu'à 20 ans** d'historique sur **près de 300 actions, ETF et cryptos** (France, Europe,
-   États-Unis, cryptos) et des **indicateurs économiques** : peur des marchés (VIX), taux longs et
-   courts, courbe des taux, dollar, or, pétrole, cuivre, prime de risque du crédit, tension
-   financière, inscriptions au chômage (Réserve fédérale de Saint-Louis). Chaque chiffre économique
-   est décalé de son délai de publication : l'IA ne « voit » jamais une donnée avant sa sortie ;
-2. passe deux examens sur des années qu'elle n'a jamais vues : plus de titres d'apprentissage
-   aident-ils vraiment ? quelle façon de prévoir est la meilleure ?
-3. ne remplace l'IA du site **que si le progrès est prouvé** (marge d'erreur à 95 %) ;
-4. écrit un rapport clair (dossier `rapports`) et, si elle a progressé, **envoie la nouvelle recette
-   sur GitHub** : le site se met à jour tout seul en 15 à 30 minutes.
+Ce qu'elle étudie : jusqu'à 20 ans d'historique sur près de 300 actions, ETF et cryptos, plus des
+données économiques (VIX, taux, courbe des taux, dollar, or, pétrole, cuivre, prime de risque du crédit,
+tension financière, chômage), chaque chiffre décalé de son délai de publication.
 
-Le résultat du dernier entraînement est affiché sur le site, rubrique « Peut-on lui faire confiance ? ».
-Ces données économiques sont aussi utilisées par les mises à jour automatiques en ligne.
+**Protections contre la chance** (pour qu'elle apprenne des choses vraies, pas des coïncidences) :
+1. les années les plus récentes sont **mises sous clé** : toute la recherche se fait sans elles, elles ne
+   servent qu'une fois, pour l'examen final ;
+2. chaque réglage est testé sur des années **jamais vues**, avec un mois de pause entre apprentissage et
+   test pour que rien du futur ne fuite ;
+3. un indicateur n'est gardé que s'il aide sur **deux périodes différentes** ;
+4. l'IA du site n'est remplacée que si la nouvelle fait mieux **de façon prouvée (95 %)** ET **sur chaque
+   moitié** de l'examen final ;
+5. le rapport affiche l'« écart d'optimisme » entre la recherche et l'examen final.
+
+Si l'entraînement n'apporte pas de progrès prouvé, l'IA du site est simplement confirmée : c'est le
+résultat le plus fréquent, et c'est normal.
 
 ## Nouveautés de la version 14 (fiabilité et clarté)
 
