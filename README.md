@@ -28,6 +28,9 @@ Le site s'ouvre tout seul dans ton navigateur (`site/index.html`). Il faut Inter
 
 ## Ce qu'affiche le site
 
+- **Météo du marché** : part des titres en tendance haussière, probabilité moyenne, signaux d'achat
+  et de vente, nombre de configurations de décollage.
+
 - **Bandeau des marchés** : CAC 40, S&P 500, Nasdaq, Bitcoin, avec la variation du jour.
 - **Ce que le radar prévoit** : les plus fortes probabilités de hausse et les « configurations de décollage »
   (cours proche du plus haut annuel, volatilité comprimée, volumes en hausse, tendance haussière…).
@@ -45,10 +48,13 @@ Le site s'ouvre tout seul dans ton navigateur (`site/index.html`). Il faut Inter
    3 tentatives. Si Internet coupe, le dernier cache est réutilisé.
 2. **19 indicateurs** par titre (tendance, RSI, MACD, ADX, Bollinger, volumes, force relative face à l'indice…)
    + des **classements entre titres** (ex : fait partie des 20 % qui ont le plus monté sur 3 mois).
-3. **Deux modèles combinés** : gradient boosting + régression logistique, moyennés pour plus de stabilité.
-4. **Validation walk-forward avec purge** : le modèle est entraîné sur le passé et testé sur la période
+3. **Deux modèles combinés** : gradient boosting + régression logistique, moyennés pour plus de stabilité,
+   avec des variables de « régime » (l'indice du marché est-il haussier, agité ?).
+4. **Probabilités calibrées** : elles sont recalées sur les fréquences réellement observées hors
+   échantillon. « 60 % » veut dire « dans des cas semblables, ça a monté environ 6 fois sur 10 ».
+5. **Validation walk-forward avec purge** : le modèle est entraîné sur le passé et testé sur la période
    suivante, sans jamais voir le futur. C'est ce chiffre que le site affiche.
-5. **Cône de prévision** : le centre vient du rendement réellement observé dans l'historique quand le
+6. **Cône de prévision** : le centre vient du rendement réellement observé dans l'historique quand le
    modèle donnait cette probabilité ; la largeur vient de la volatilité du titre.
 
 ### Comment lire la précision

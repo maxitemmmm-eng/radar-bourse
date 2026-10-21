@@ -1,15 +1,18 @@
-"""Met Radar Bourse en ligne sur GitHub Pages, automatiquement.
+"""Met Radar Bourse en ligne sur GitHub Pages (et le met à jour quand tu le relances).
 
-Lance-le avec un double-clic sur mettre_en_ligne.bat (ou : python mettre_en_ligne.py).
-Il te faut seulement un compte GitHub (gratuit). Le script s'occupe du reste :
-installation des outils, connexion, création du dépôt, envoi des fichiers,
-activation de l'hébergement et première mise à jour du site.
+Double-clique sur mettre_en_ligne.bat. Il te faut seulement un compte GitHub.
+Le script :
+  1. vérifie Python, installe Git et l'outil GitHub s'ils manquent (sans redémarrage) ;
+  2. te connecte à GitHub ;
+  3. teste le site sur ton PC avant d'envoyer quoi que ce soit ;
+  4. crée le dépôt (ou met à jour celui qui existe déjà), active l'hébergement ;
+  5. suit la mise en ligne, vérifie que le site répond et l'ouvre.
 
-Option : --simulation affiche les commandes sans rien exécuter.
+Tes réponses sont mémorisées dans .radar_deploy.json : la prochaine fois, il ne repose pas les questions.
+Option : --simulation affiche ce qui serait fait sans rien exécuter.
 """
 from __future__ import annotations
 
-import getpass
 import json
 import os
 import re
@@ -17,6 +20,9 @@ import shutil
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
 
 for flux in (sys.stdout, sys.stderr):
     try:
@@ -27,206 +33,423 @@ for flux in (sys.stdout, sys.stderr):
 ICI = os.path.dirname(os.path.abspath(__file__))
 SIMULATION = "--simulation" in sys.argv
 WINDOWS = os.name == "nt"
-
-
-def titre(t):
-    print(f"\n━━━ {t} ━━━")
-
-
-def stop(msg):
-    print(f"\n❌ {msg}")
-    if WINDOWS:
-        input("\nAppuie sur Entrée pour fermer…")
-    sys.exit(1)
-
-
-def lancer(cmd, ok_codes=(0,), capture=True, entree=None):
-    """Exécute une commande et renvoie (code, sortie)."""
-    print("  $ " + " ".join(c if " " not in c else f'"{c}"' for c in cmd))
-    if SIMULATION:
-        return 0, ""
-    r = subprocess.run(cmd, cwd=ICI, text=True, input=entree, encoding="utf-8", errors="replace",
-                       capture_output=capture)
-    sortie = ((r.stdout or "") + (r.stderr or "")).strip() if capture else ""
-    if r.returncode not in ok_codes:
-        stop(f"La commande a échoué :\n{sortie}")
-    return r.returncode, sortie
-
-
-def demander(question, defaut=""):
-    if SIMULATION:
-        print(f"{question} → {defaut or '(vide)'}")
-        return defaut
-    rep = input(f"{question}{f' [{defaut}]' if defaut else ''} : ").strip()
-    return rep or defaut
+MEMOIRE = os.path.join(ICI, ".radar_deploy.json")
+JOURNAL = os.path.join(ICI, "erreur_mise_en_ligne.txt")
+GIT, GH = "git", "gh"
+ETAPES = 8
 
 
 # ----------------------------------------------------------------------------
-def verifier_outils():
-    titre("1/7 · Vérification des outils")
-    manquants = [nom for nom, exe in (("Git", "git"), ("GitHub CLI", "gh")) if not shutil.which(exe)]
-    if not manquants or SIMULATION:
-        print("  ✅ Git et GitHub CLI sont installés.")
-        return
-    print(f"  Il manque : {', '.join(manquants)}.")
-    if WINDOWS and shutil.which("winget"):
-        if demander("  Je les installe maintenant ? (o/n)", "o").lower().startswith("o"):
-            ids = {"Git": "Git.Git", "GitHub CLI": "GitHub.cli"}
-            for nom in manquants:
-                lancer(["winget", "install", "--id", ids[nom], "-e", "--silent",
-                        "--accept-package-agreements", "--accept-source-agreements"],
-                       ok_codes=(0, -1978335189), capture=False)  # ce code = déjà installé
-            stop("Installation terminée. FERME cette fenêtre et relance mettre_en_ligne.bat "
-                 "(Windows doit recharger les nouveaux programmes).")
-    stop("Installe Git (https://git-scm.com) et GitHub CLI (https://cli.github.com), puis relance.")
+# Affichage et utilitaires
+# ----------------------------------------------------------------------------
+def etape(n, texte):
+    print(f"\n[{n}/{ETAPES}] {texte}")
 
 
-def connexion():
-    titre("2/7 · Connexion à GitHub")
+def ok(texte):
+    print(f"   ✅ {texte}")
+
+
+def info(texte):
+    print(f"   {texte}")
+
+
+def fermer(code=0):
+    if WINDOWS and not SIMULATION:
+        input("\nAppuie sur Entrée pour fermer cette fenêtre…")
+    sys.exit(code)
+
+
+def stop(msg, details=""):
+    print(f"\n❌ {msg}")
+    if details:
+        with open(JOURNAL, "w", encoding="utf-8") as f:
+            f.write(f"{datetime.now():%Y-%m-%d %H:%M}\n{msg}\n\n{details}\n")
+        print(f"   Les détails sont dans « {os.path.basename(JOURNAL)} » : envoie ce fichier ou une capture si tu as besoin d'aide.")
+    fermer(1)
+
+
+def run(cmd, ok_codes=(0,), capture=True, entree=None, montrer=True):
+    """Exécute une commande. Renvoie (code, sortie)."""
+    if montrer:
+        print("   › " + " ".join(os.path.basename(c) if i == 0 else c for i, c in enumerate(cmd)))
+    if SIMULATION:
+        return 0, ""
+    try:
+        r = subprocess.run(cmd, cwd=ICI, text=True, input=entree, encoding="utf-8", errors="replace",
+                           capture_output=capture)
+    except FileNotFoundError:
+        stop(f"Programme introuvable : {cmd[0]}")
+    sortie = ((r.stdout or "") + (r.stderr or "")).strip() if capture else ""
+    if r.returncode not in ok_codes:
+        stop("Une commande a échoué.", f"Commande : {' '.join(cmd)}\nCode : {r.returncode}\n\n{sortie}")
+    return r.returncode, sortie
+
+
+def silencieux(cmd):
+    if SIMULATION:
+        return 1, ""
+    r = subprocess.run(cmd, cwd=ICI, text=True, capture_output=True, encoding="utf-8", errors="replace")
+    return r.returncode, ((r.stdout or "") + (r.stderr or "")).strip()
+
+
+def question(texte, defaut=""):
+    if SIMULATION:
+        print(f"   {texte} → {defaut or '(vide)'}")
+        return defaut
+    rep = input(f"   {texte}{f' [{defaut}]' if defaut else ''} : ").strip()
+    return rep or defaut
+
+
+def oui(texte, defaut=True):
+    rep = question(f"{texte} (o/n)", "o" if defaut else "n").lower()
+    return rep.startswith(("o", "y"))
+
+
+def charger_memoire() -> dict:
+    try:
+        return json.load(open(MEMOIRE, encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def sauver_memoire(m: dict):
     if not SIMULATION:
-        st = subprocess.run(["gh", "auth", "status", "-h", "github.com"], capture_output=True, text=True)
-        if st.returncode == 0:
-            # le droit « workflow » est nécessaire pour envoyer le fichier de mise à jour automatique
-            if "workflow" not in (st.stdout + st.stderr):
-                print("  Ton navigateur va s'ouvrir pour accorder un droit en plus à l'outil GitHub.")
-                lancer(["gh", "auth", "refresh", "-h", "github.com", "-s", "workflow"], capture=False)
-            _, login = lancer(["gh", "api", "user", "--jq", ".login"])
-            print(f"  ✅ Connectée en tant que {login}")
-            return login
-    print("  Ton navigateur va s'ouvrir : connecte-toi à GitHub et colle le code affiché ici.")
-    lancer(["gh", "auth", "login", "-h", "github.com", "-p", "https", "-w", "-s", "workflow"], capture=False)
-    _, login = lancer(["gh", "api", "user", "--jq", ".login"])
-    return login or "ton-pseudo"
+        json.dump(m, open(MEMOIRE, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
 
-def infos_legales():
-    titre("3/7 · Mentions légales")
+# ----------------------------------------------------------------------------
+# 1. Outils
+# ----------------------------------------------------------------------------
+EMPLACEMENTS = {
+    "git": [r"C:\Program Files\Git\cmd\git.exe", r"C:\Program Files (x86)\Git\cmd\git.exe",
+            os.path.expandvars(r"%LOCALAPPDATA%\Programs\Git\cmd\git.exe")],
+    "gh": [r"C:\Program Files\GitHub CLI\gh.exe", r"C:\Program Files (x86)\GitHub CLI\gh.exe",
+           os.path.expandvars(r"%LOCALAPPDATA%\Programs\GitHub CLI\gh.exe")],
+}
+
+
+def trouver(nom):
+    chemin = shutil.which(nom)
+    if chemin:
+        return chemin
+    for c in EMPLACEMENTS.get(nom, []) if WINDOWS else []:
+        if os.path.exists(c):
+            return c
+    return None
+
+
+def outils():
+    global GIT, GH
+    etape(1, "Vérification des outils")
+    if sys.version_info < (3, 10):
+        stop(f"Python {sys.version.split()[0]} est trop ancien. Installe Python 3.10 ou plus récent depuis python.org.")
+    if SIMULATION:
+        ok("Python, Git et l'outil GitHub sont prêts.")
+        return
+    manquants = [n for n in ("git", "gh") if not trouver(n)]
+    if manquants:
+        noms = {"git": "Git", "gh": "l'outil GitHub (GitHub CLI)"}
+        info("Il manque : " + " et ".join(noms[n] for n in manquants) + ".")
+        if not (WINDOWS and shutil.which("winget")):
+            stop("Installe Git (https://git-scm.com) et GitHub CLI (https://cli.github.com), puis relance ce script.")
+        if not oui("Je les installe maintenant ?"):
+            fermer(1)
+        ids = {"git": "Git.Git", "gh": "GitHub.cli"}
+        for n in manquants:
+            info(f"Installation de {noms[n]} (1 à 3 minutes, une fenêtre de Windows peut demander ton accord)…")
+            run(["winget", "install", "--id", ids[n], "-e", "--silent",
+                 "--accept-package-agreements", "--accept-source-agreements"],
+                ok_codes=(0, -1978335189, 2316632107), capture=False)
+        manquants = [n for n in ("git", "gh") if not trouver(n)]
+        if manquants:
+            stop("L'installation semble terminée, mais Windows ne trouve pas encore les outils. "
+                 "Redémarre ton PC puis relance mettre_en_ligne.bat.")
+    GIT, GH = trouver("git"), trouver("gh")
+    ok("Python, Git et l'outil GitHub sont prêts.")
+
+
+# ----------------------------------------------------------------------------
+# 2. Connexion GitHub
+# ----------------------------------------------------------------------------
+def connexion(m) -> str:
+    etape(2, "Connexion à GitHub")
+    if SIMULATION:
+        ok("Connectée en tant que ton-pseudo")
+        return m.get("login", "ton-pseudo")
+    code, sortie = silencieux([GH, "auth", "status", "-h", "github.com"])
+    if code != 0:
+        info("Comment ça se passe :")
+        info("  1. Appuie sur Entrée quand on te le demande : ton navigateur s'ouvre.")
+        info("  2. Le code est déjà copié : dans la page GitHub, fais Ctrl+V (ou recopie-le).")
+        info("  3. Clique « Continue » puis « Authorize », et reviens ici.")
+        info("⚠️  N'appuie jamais sur Ctrl+C dans cette fenêtre : ça arrête le script.")
+        run([GH, "auth", "login", "-h", "github.com", "-p", "https", "-w", "-s", "workflow"], capture=False)
+    elif "workflow" not in sortie:
+        info("Il faut accorder un droit en plus à l'outil GitHub (pour la mise à jour automatique).")
+        info("Ton navigateur va s'ouvrir : colle le code avec Ctrl+V et valide.")
+        run([GH, "auth", "refresh", "-h", "github.com", "-s", "workflow"], capture=False)
+    run([GH, "auth", "setup-git"], montrer=False)
+    _, login = run([GH, "api", "user", "--jq", ".login"], montrer=False)
+    if not login:
+        stop("Impossible de lire ton nom d'utilisateur GitHub.")
+    ok(f"Connectée en tant que {login}")
+    return login
+
+
+# ----------------------------------------------------------------------------
+# 3. Mentions légales
+# ----------------------------------------------------------------------------
+def mentions(m, login):
+    etape(3, "Mentions légales (affichées sur le site)")
     chemin = os.path.join(ICI, "bourse_bot", "config.py")
     texte = open(chemin, encoding="utf-8").read()
-    if "[ton prénom ou pseudo]" not in texte and "[ton adresse e-mail de contact]" not in texte:
-        print("  ✅ Déjà remplies.")
-        return
-    print("  La loi impose de pouvoir contacter l'éditeur d'un site. Un pseudo et un e-mail suffisent.")
-    nom = demander("  Ton prénom ou pseudo", "")
-    mail = demander("  Ton e-mail de contact", "")
-    while not SIMULATION and (not nom or "@" not in mail):
-        print("  Il faut un pseudo et une adresse e-mail valide.")
-        nom = demander("  Ton prénom ou pseudo", nom)
-        mail = demander("  Ton e-mail de contact", mail)
+    actuel_nom = re.search(r'RADAR_EDITEUR", "([^"]*)"', texte).group(1)
+    actuel_mail = re.search(r'RADAR_CONTACT", "([^"]*)"', texte).group(1)
+
+    nom = m.get("editeur") or (actuel_nom if not actuel_nom.startswith("[") and "@" not in actuel_nom else login)
+    mail = m.get("contact") or ""
+    lien_github = f"https://github.com/{login}/{m.get('depot', 'radar-bourse')}/issues"
+    if not (m.get("editeur") and m.get("contact")):
+        info("Le site doit indiquer qui l'édite et comment le contacter. Un pseudo suffit.")
+        while True:
+            nom = question("Pseudo affiché (pas ton e-mail)", nom)
+            if nom and "@" not in nom:
+                break
+            info("Mets un pseudo, sans @ (par exemple ton nom GitHub).")
+        info("Contact : tu peux donner un e-mail, OU appuyer juste sur Entrée pour que les visiteurs")
+        info("te contactent via la page GitHub du projet (aucun e-mail ni téléphone affiché).")
+        while True:
+            mail = question("E-mail de contact (ou Entrée = contact via GitHub)", "")
+            if not mail:
+                mail = lien_github
+                break
+            if re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", mail):
+                break
+            info("Adresse e-mail invalide. Réessaie, ou appuie juste sur Entrée pour passer par GitHub.")
+        m["editeur"], m["contact"] = nom, mail
+        sauver_memoire(m)
+    propre = lambda v: v.replace("\\", "").replace('"', "'")
+    texte = re.sub(r'(RADAR_EDITEUR", ")[^"]*(")', lambda x: x.group(1) + propre(nom) + x.group(2), texte)
+    texte = re.sub(r'(RADAR_CONTACT", ")[^"]*(")', lambda x: x.group(1) + propre(mail) + x.group(2), texte)
     if not SIMULATION:
-        texte = texte.replace("[ton prénom ou pseudo]", nom.replace('"', "'"))
-        texte = texte.replace("[ton adresse e-mail de contact]", mail.replace('"', "'"))
         open(chemin, "w", encoding="utf-8").write(texte)
-    print("  ✅ Enregistré dans bourse_bot/config.py")
+    ok(f"Éditeur : {nom} · contact : {mail}")
 
 
-def envoyer(login):
-    titre("4/7 · Création du dépôt et envoi des fichiers")
-    depot = demander("  Nom du dépôt", "radar-bourse")
-    depot = re.sub(r"[^A-Za-z0-9._-]", "-", depot)
-    complet = f"{login}/{depot}"
-
-    if not os.path.isdir(os.path.join(ICI, ".git")):
-        lancer(["git", "init", "-b", "main"])
-    # identité des commits : adresse « noreply » de GitHub pour ne pas publier ton vrai e-mail
+# ----------------------------------------------------------------------------
+# 4. Test local
+# ----------------------------------------------------------------------------
+def test_local():
+    etape(4, "Test du site sur ton PC (données de démo, 20 secondes)")
     if not SIMULATION:
-        _, uid = lancer(["gh", "api", "user", "--jq", ".id"])
-        lancer(["git", "config", "user.name", login])
-        lancer(["git", "config", "user.email", f"{uid}+{login}@users.noreply.github.com"])
-    lancer(["git", "add", "-A"])
-    lancer(["git", "commit", "-m", "Mise en ligne de Radar Bourse"], ok_codes=(0, 1))
+        silencieux([sys.executable, "-m", "pip", "install", "-q", "--disable-pip-version-check",
+                    "-r", "requirements.txt"])
+    code, sortie = run([sys.executable, "-m", "bourse_bot", "--demo", "--sans-ml", "--pas-de-navigateur",
+                        "site", "--marches", "crypto", "etf"], ok_codes=(0, 1, 2), montrer=False)
+    if code != 0:
+        stop("Le site ne se génère pas correctement sur ton PC : je n'envoie rien.", sortie)
+    ok("Le site se génère sans erreur.")
 
-    existe = SIMULATION is False and subprocess.run(
-        ["gh", "repo", "view", complet], capture_output=True).returncode == 0
-    if existe:
-        print(f"  Le dépôt {complet} existe déjà : je le mets à jour.")
-        distant = subprocess.run(["git", "remote"], cwd=ICI, capture_output=True, text=True).stdout
-        if "origin" not in distant:
-            lancer(["git", "remote", "add", "origin", f"https://github.com/{complet}.git"])
-        # le robot GitHub ajoute l'historique des prédictions chaque soir : on le récupère d'abord
-        lancer(["git", "pull", "--rebase", "-X", "theirs", "origin", "main"], ok_codes=(0, 1))
-        lancer(["git", "push", "-u", "origin", "main"], capture=False)
+
+# ----------------------------------------------------------------------------
+# 5-6. Dépôt et envoi
+# ----------------------------------------------------------------------------
+def depot(m, login) -> str:
+    etape(5, "Dépôt GitHub et hébergement")
+    nom = m.get("depot") or question("Nom du dépôt (Entrée pour garder)", "radar-bourse")
+    nom = re.sub(r"[^A-Za-z0-9._-]", "-", nom).strip("-") or "radar-bourse"
+    m["depot"], m["login"] = nom, login
+    sauver_memoire(m)
+    complet = f"{login}/{nom}"
+    existe, _ = silencieux([GH, "repo", "view", complet])
+    if existe == 0 and not SIMULATION:
+        ok(f"Le dépôt {complet} existe déjà : je le mets à jour.")
     else:
-        lancer(["gh", "repo", "create", complet, "--public", "--source", ".", "--push",
-                "--description", "Radar Bourse : analyse et prévisions éducatives"], capture=False)
-    print(f"  ✅ Fichiers envoyés sur https://github.com/{complet}")
+        run([GH, "repo", "create", complet, "--public",
+             "--description", "Radar Bourse : analyse et prévisions boursières éducatives"])
+        ok(f"Dépôt créé : https://github.com/{complet}")
+    # GitHub Pages en mode « GitHub Actions » (avant l'envoi, pour que la 1re publication passe)
+    for essai in range(4):
+        c, _ = silencieux([GH, "api", "-X", "POST", f"repos/{complet}/pages", "-f", "build_type=workflow"])
+        if c != 0:
+            c, _ = silencieux([GH, "api", "-X", "PUT", f"repos/{complet}/pages", "-f", "build_type=workflow"])
+        if c == 0 or SIMULATION:
+            break
+        time.sleep(3)
+    else:
+        info("⚠️ Je n'ai pas pu activer l'hébergement automatiquement. Fais-le à la main : "
+             "Settings → Pages → Source : GitHub Actions.")
+    ok("Hébergement GitHub Pages activé.")
     return complet
 
 
-def activer_pages(complet):
-    titre("5/7 · Activation de l'hébergement (GitHub Pages)")
-    if SIMULATION:
-        lancer(["gh", "api", "-X", "POST", f"repos/{complet}/pages", "-f", "build_type=workflow"])
+def envoyer(complet):
+    etape(6, "Envoi des fichiers")
+    distant = f"https://github.com/{complet}.git"
+    if not os.path.isdir(os.path.join(ICI, ".git")):
+        run([GIT, "init", "-q"], montrer=False)
+    run([GIT, "symbolic-ref", "HEAD", "refs/heads/main"], montrer=False, ok_codes=(0, 1, 128))
+    if not SIMULATION:
+        _, uid = run([GH, "api", "user", "--jq", ".id"], montrer=False)
+        _, login = run([GH, "api", "user", "--jq", ".login"], montrer=False)
+        run([GIT, "config", "user.name", login], montrer=False)
+        run([GIT, "config", "user.email", f"{uid}+{login}@users.noreply.github.com"], montrer=False)
+        run([GIT, "config", "core.autocrlf", "false"], montrer=False)
+    code, _ = silencieux([GIT, "remote", "get-url", "origin"])
+    run([GIT, "remote", "set-url" if code == 0 else "add", "origin", distant], montrer=False)
+
+    # Récupère ce qui est déjà en ligne (dont l'historique des prédictions écrit par le robot)
+    silencieux([GIT, "fetch", "-q", "origin"])
+    distant_existe = silencieux([GIT, "rev-parse", "--verify", "-q", "origin/main"])[0] == 0
+    local_existe = silencieux([GIT, "rev-parse", "--verify", "-q", "HEAD"])[0] == 0
+    if distant_existe and not local_existe:
+        run([GIT, "reset", "-q", "--mixed", "origin/main"], montrer=False)
+    if distant_existe:
+        silencieux([GIT, "checkout", "origin/main", "--", "historique"])
+
+    run([GIT, "add", "-A"], montrer=False)
+    code, _ = run([GIT, "commit", "-q", "-m", f"Mise à jour du site ({datetime.now():%d/%m/%Y %H:%M})"],
+                  ok_codes=(0, 1), montrer=False)
+    nouveau = code == 0
+    if distant_existe and local_existe:
+        run([GIT, "pull", "-q", "--rebase", "-X", "theirs", "origin", "main"], ok_codes=(0, 1), montrer=False)
+    info("Envoi en cours…")
+    run([GIT, "push", "-q", "-u", "origin", "main"], montrer=False)
+    ok("Fichiers envoyés." if nouveau else "Rien de nouveau à envoyer : je relance juste une mise à jour.")
+    return nouveau
+
+
+# ----------------------------------------------------------------------------
+# 7. Clé Finnhub (optionnelle)
+# ----------------------------------------------------------------------------
+def finnhub(m, complet):
+    etape(7, "Actions US en direct (optionnel)")
+    if m.get("finnhub_demande"):
+        ok("Déjà réglé lors d'un passage précédent.")
         return
-    r = subprocess.run(["gh", "api", "-X", "POST", f"repos/{complet}/pages", "-f", "build_type=workflow"],
-                       capture_output=True, text=True)
-    if r.returncode != 0:  # déjà activé : on s'assure juste du bon mode
-        lancer(["gh", "api", "-X", "PUT", f"repos/{complet}/pages", "-f", "build_type=workflow"])
-    print("  ✅ GitHub Pages activé.")
-
-
-def cle_finnhub(complet):
-    titre("6/7 · Actions US en direct (optionnel)")
-    print("  Crée un compte gratuit sur https://finnhub.io et copie ta clé API.")
-    print("  Laisse vide et appuie sur Entrée pour passer (tu pourras l'ajouter plus tard).")
-    cle = "" if SIMULATION else getpass.getpass("  Clé Finnhub (invisible quand tu tapes) : ").strip()
-    if cle:
-        lancer(["gh", "secret", "set", "FINNHUB_KEY", "-R", complet], entree=cle)
-        print("  ✅ Clé enregistrée en secret sur GitHub.")
+    info("Avec une clé gratuite Finnhub, les actions américaines bougent en direct sur ton site.")
+    if oui("Tu veux l'ajouter maintenant ?", defaut=False):
+        info("1. Crée un compte sur https://finnhub.io  2. Copie ta « API key »")
+        info("3. Colle-la ici avec un clic droit (ou Ctrl+V), puis Entrée.")
+        cle = question("Clé Finnhub").strip()
+        if cle:
+            run([GH, "secret", "set", "FINNHUB_KEY", "-R", complet], entree=cle, montrer=False)
+            ok("Clé enregistrée. Elle sera active à la prochaine mise à jour.")
     else:
-        print("  Passé.")
+        info("Passé. Relance ce script plus tard pour l'ajouter.")
+    m["finnhub_demande"] = True
+    sauver_memoire(m)
 
 
-def premiere_mise_a_jour(complet, login):
-    titre("7/7 · Première mise à jour du site")
-    for essai in range(10):  # GitHub met parfois quelques secondes à repérer le fichier de workflow
-        if SIMULATION:
-            lancer(["gh", "workflow", "run", "radar.yml", "-R", complet])
-            break
-        r = subprocess.run(["gh", "workflow", "run", "radar.yml", "-R", complet],
-                           capture_output=True, text=True)
-        if r.returncode == 0:
+# ----------------------------------------------------------------------------
+# 8. Publication et vérification
+# ----------------------------------------------------------------------------
+def dernier_run(complet, depuis):
+    code, sortie = silencieux([GH, "run", "list", "-R", complet, "-w", "radar.yml", "-L", "5",
+                               "--json", "databaseId,createdAt,status,conclusion"])
+    if code != 0 or not sortie:
+        return None
+    try:
+        runs = json.loads(sortie)
+    except ValueError:
+        return None
+    recents = [r for r in runs if r["createdAt"] >= depuis]
+    return recents[0] if recents else None
+
+
+def publier(complet, login):
+    etape(8, "Publication (3 à 6 minutes)")
+    depuis = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if SIMULATION:
+        run([GH, "workflow", "run", "radar.yml", "-R", complet])
+        return f"https://{login.lower()}.github.io/{complet.split('/')[1]}/"
+    time.sleep(5)
+    r = None
+    for _ in range(8):  # l'envoi déclenche normalement la mise à jour tout seul
+        r = dernier_run(complet, depuis)
+        if r:
             break
         time.sleep(5)
+    if not r:
+        for _ in range(6):
+            if silencieux([GH, "workflow", "run", "radar.yml", "-R", complet])[0] == 0:
+                break
+            time.sleep(5)
+        for _ in range(12):
+            r = dernier_run(complet, depuis)
+            if r:
+                break
+            time.sleep(5)
+    if not r:
+        stop("La mise à jour automatique ne démarre pas. Ouvre https://github.com/"
+             f"{complet}/actions, active les workflows si GitHub le demande, puis relance ce script.")
+
+    info("Le robot GitHub télécharge les cours, entraîne le modèle et construit le site.")
+    info("Tu peux suivre ici (ne ferme pas la fenêtre) :")
+    rid = str(r["databaseId"])
+    code = subprocess.run([GH, "run", "watch", rid, "-R", complet, "--exit-status", "-i", "15"],
+                          cwd=ICI).returncode
+    if code != 0:
+        _, logs = silencieux([GH, "run", "view", rid, "-R", complet, "--log-failed"])
+        stop("La mise à jour en ligne a échoué.", logs[-15000:])
+    ok("Mise à jour terminée.")
+
+    url = f"https://{login.lower()}.github.io/{complet.split('/')[1]}/"
+    info("Vérification que le site répond…")
+    for _ in range(24):  # jusqu'à 2 minutes : GitHub met parfois un peu de temps à servir la page
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers={"Cache-Control": "no-cache"}),
+                                        timeout=10) as rep:
+                if rep.status == 200:
+                    ok("Le site répond.")
+                    break
+        except (urllib.error.URLError, TimeoutError):
+            pass
+        time.sleep(5)
     else:
-        print("  ⚠️ Je n'ai pas pu lancer la mise à jour. Va dans l'onglet Actions du dépôt et clique "
-              "« Mise à jour du Radar » → « Run workflow ».")
-        return
-    print("  Lancée ! Ça prend 3 à 6 minutes. Je te montre l'avancement :")
-    if not SIMULATION:
-        time.sleep(8)
-        _, rid = lancer(["gh", "run", "list", "-R", complet, "-w", "radar.yml", "-L", "1",
-                         "--json", "databaseId", "--jq", ".[0].databaseId"])
-        if rid:
-            subprocess.run(["gh", "run", "watch", rid, "-R", complet, "--exit-status"], cwd=ICI)
+        info("⚠️ Le site ne répond pas encore. Attends 2-3 minutes puis ouvre le lien.")
+    return url
 
 
 def main():
-    print("🚀 Mise en ligne de Radar Bourse" + (" (SIMULATION)" if SIMULATION else ""))
+    print("🚀 Mise en ligne de Radar Bourse" + ("  (SIMULATION)" if SIMULATION else ""))
+    print("   ⚠️ Pendant tout le script : n'appuie jamais sur Ctrl+C (ça l'arrête). Réponds puis Entrée.")
     if not os.path.isdir(os.path.join(ICI, "bourse_bot")):
         stop("Lance ce script depuis le dossier Radar Bourse dézippé.")
-    verifier_outils()
-    login = connexion()
-    infos_legales()
-    complet = envoyer(login)
-    activer_pages(complet)
-    cle_finnhub(complet)
-    premiere_mise_a_jour(complet, login)
-    depot = complet.split("/")[1]
-    url = f"https://{login.lower()}.github.io/{depot}/"
-    print(f"\n🎉 Terminé ! Ton site : {url}")
-    print("   Il se met à jour tout seul chaque heure. Si la page affiche une erreur 404,"
-          " attends 2 minutes et rafraîchis.")
+    m = charger_memoire()
+    outils()
+    login = connexion(m)
+    mentions(m, login)
+    test_local()
+    complet = depot(m, login)
+    envoyer(complet)
+    finnhub(m, complet)
+    url = publier(complet, login)
+
+    if not SIMULATION:
+        with open(os.path.join(ICI, "Mon site Radar Bourse.url"), "w", encoding="utf-8") as f:
+            f.write(f"[InternetShortcut]\nURL={url}\n")
+        if os.path.exists(JOURNAL):
+            os.remove(JOURNAL)
+    print("\n" + "━" * 60)
+    print(f"🎉 Ton site est en ligne : {url}")
+    print("   • Il se met à jour tout seul chaque heure en semaine.")
+    print("   • Les cryptos bougent en direct quand la page est ouverte.")
+    print("   • Raccourci créé dans ce dossier : « Mon site Radar Bourse ».")
+    print("   • Pour envoyer une nouvelle version du code : relance ce script.")
+    print("━" * 60)
     if WINDOWS and not SIMULATION:
         try:
             os.startfile(url)
         except Exception:
             pass
-        input("\nAppuie sur Entrée pour fermer…")
+    fermer(0)
 
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\nArrêté.")
+        print("\n\nArrêté (Ctrl+C). Relance mettre_en_ligne.bat pour reprendre : tes réponses sont gardées.")
+        fermer(1)

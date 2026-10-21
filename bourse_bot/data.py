@@ -89,9 +89,11 @@ def _yahoo(tickers: list[str]) -> dict[str, pd.DataFrame]:
     return out
 
 
-def telecharger_plusieurs(tickers: list[str], max_age_h: float = 12) -> dict[str, pd.DataFrame]:
+def telecharger_plusieurs(tickers: list[str], max_age_h: float | None = None) -> dict[str, pd.DataFrame]:
     """Renvoie {ticker: cours} pour tous les titres trouvés (les introuvables sont ignorés)."""
     tickers = list(dict.fromkeys(tickers))
+    if max_age_h is None:
+        max_age_h = config.CACHE_MAX_H
     if DEMO:
         return {t: cours_synthetiques(t) for t in tickers}
 

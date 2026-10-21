@@ -77,6 +77,9 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False) 
         item["serie"] = _serie(d)
         item["backtest"] = _backtest(a.ticker, d)
         item["prev_close"] = float(d["Close"].iloc[-2]) if len(d) > 1 else None
+        item["spark"] = [_arrondi(v) for v in d["Close"].iloc[-63:]]
+        x = d.iloc[-1]
+        item["au_dessus_200"] = bool(x["Close"] > x["sma200"]) if x["sma200"] == x["sma200"] else None
         titres.append(item)
 
     indices = []

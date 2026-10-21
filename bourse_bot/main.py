@@ -120,6 +120,14 @@ def cmd_site(args):
     if not donnees:
         console.print("[red]Aucune donnée récupérée. Vérifie ta connexion Internet puis relance.[/red]")
         return 1
+    # Garde-fou : si Yahoo n'a renvoyé qu'une partie des titres principaux, on ne publie pas
+    # un site à moitié vide (en ligne, l'ancienne version reste affichée).
+    principaux = [t for t in noms if marche_de[t] != "tendances"]
+    couverture = sum(t in donnees for t in principaux) / max(len(principaux), 1)
+    if couverture < 0.6:
+        console.print(f"[red]Seulement {couverture:.0%} des titres ont pu être téléchargés : "
+                      f"Yahoo bloque sans doute temporairement. Site non mis à jour, réessaie plus tard.[/red]")
+        return 2
     analyses, evaluation = _analyser(donnees, noms, marche_de, args)
     if not args.demo:
         historique.enregistrer(analyses)

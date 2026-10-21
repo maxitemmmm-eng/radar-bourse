@@ -5,7 +5,9 @@ Ce qui le rend plus fiable que la version 1 :
 - variables de classement entre titres (ex : « fait partie des 20 % qui montent le plus ») ;
 - ensemble de deux modèles différents (gradient boosting + régression logistique) ;
 - validation walk-forward avec purge : testé uniquement sur des périodes jamais vues ;
-- table de calibration : « quand le modèle dit 60 %, ça monte vraiment combien de fois ? ».
+- variables de « régime » : le marché global est-il haussier, agité ?
+- calibration isotonique : les probabilités affichées sont recalées sur les fréquences réellement
+  observées hors échantillon (« 60 % » veut dire « ça a monté 6 fois sur 10 dans ce cas-là »).
 """
 from __future__ import annotations
 
@@ -15,6 +17,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.impute import SimpleImputer
+from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.pipeline import make_pipeline
@@ -123,8 +126,13 @@ def evaluer_walk_forward(jeu: pd.DataFrame, horizon: int, n_plis: int = 6):
         morceaux.append(t)
 
     if not morceaux:
-        return Evaluation(np.nan, np.nan, np.nan, 0)
+        return Evaluation(np.nan, np.nan, np.nan, 0), None
     oof = pd.concat(morceaux)
+    calibreur = None
+    if len(oof) >= 2000:
+        calibreur = IsotonicRegression(y_min=0.03, y_max=0.97, out_of_bounds="clip")
+        calibreur.fit(oof["proba"], oof["cible"])
+        oof["proba"] = calibreur.predict(oof["proba"])
     y, p = oof["cible"].to_numpy(), oof["proba"].to_numpy()
 
     calibration = []
@@ -143,13 +151,13 @@ def evaluer_walk_forward(jeu: pd.DataFrame, horizon: int, n_plis: int = 6):
         precision=float(((p > 0.5) == (y == 1)).mean()),
         precision_base=float(max(y.mean(), 1 - y.mean())),
         auc=float(roc_auc_score(y, p)) if len(set(y)) > 1 else np.nan,
-        nb_tests=len(y), calibration=calibration, par_marche=par_marche, periode=periode)
+        nb_tests=len(y), calibration=calibration, par_marche=par_marche, periode=periode), calibreur
 
 
 def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICTION):
     """Renvoie ({ticker: proba de hausse}, Evaluation)."""
     jeu = construire_jeu(donnees, marches, horizon)
-    evaluation = evaluer_walk_forward(jeu, horizon)
+    evaluation, calibreur = evaluer_walk_forward(jeu, horizon)
     etiquete = jeu.dropna(subset=["cible"])
     modele = Ensemble().fit(etiquete[VARIABLES], etiquete["cible"])
 
@@ -164,4 +172,6 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
     for c in COLS_RANG:
         actuel[f"rang_{c}"] = actuel[c].rank(pct=True)
     probas = modele.predict_proba(actuel[VARIABLES])
+    if calibreur is not None:
+        probas = calibreur.predict(probas)
     return dict(zip(actuel["ticker"], map(float, probas))), evaluation

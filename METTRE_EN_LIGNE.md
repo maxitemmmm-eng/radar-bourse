@@ -11,13 +11,17 @@ Une fois ces étapes faites, le site est en ligne 24 h/24 à une adresse du type
 
 ## ⚡ Méthode rapide : le script automatique
 
-1. Crée un compte gratuit sur https://github.com (ton pseudo apparaîtra dans l'adresse du site).
+1. Aie un compte GitHub (gratuit, sur https://github.com).
 2. Double-clique sur **`mettre_en_ligne.bat`**.
-3. Réponds aux questions : le script installe les outils, te connecte à GitHub via ton navigateur,
-   crée le dépôt, envoie les fichiers, active l'hébergement et lance la première mise à jour.
+3. Réponds aux questions (souvent juste Entrée). **N'appuie jamais sur Ctrl+C** : ça arrête le script.
 
-Si Windows dit qu'il a installé des outils, ferme la fenêtre et relance `mettre_en_ligne.bat`.
-Pour mettre à jour le site plus tard après une modification du code, relance simplement le même script.
+Le script installe les outils manquants sans redémarrage, te connecte à GitHub (le code de connexion
+est copié tout seul : fais Ctrl+V dans la page GitHub), teste le site sur ton PC, crée ou met à jour
+le dépôt, active l'hébergement, suit la publication et vérifie que le site répond.
+Il crée à la fin un raccourci « Mon site Radar Bourse » dans le dossier.
+
+Tes réponses sont mémorisées : pour envoyer une nouvelle version plus tard, relance-le, il ne
+repose pas les questions. En cas d'erreur, il écrit les détails dans `erreur_mise_en_ligne.txt`.
 
 ---
 

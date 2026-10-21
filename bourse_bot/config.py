@@ -49,10 +49,13 @@ DOSSIER_HISTORIQUE = "historique"
 # --- Site en ligne -----------------------------------------------------------
 import os as _os
 
+# Durée de validité du cache des cours (heures). En ligne, le robot GitHub la met à 0,5 h.
+CACHE_MAX_H = float(_os.environ.get("RADAR_CACHE_MAX_H", "12"))
+
 # Clé gratuite Finnhub (finnhub.io) pour les cours US en direct. Laisse vide pour s'en passer.
 # Sur GitHub, mets-la dans Settings → Secrets → Actions sous le nom FINNHUB_KEY.
 FINNHUB_CLE = _os.environ.get("FINNHUB_KEY", "")
 
 # Mentions légales : à compléter avant la mise en ligne (un pseudo suffit pour un particulier).
-EDITEUR = _os.environ.get("RADAR_EDITEUR", "maxitemmmm@gmail.com")
-CONTACT = _os.environ.get("RADAR_CONTACT", "maxitemmmm@gmail.com")
+EDITEUR = _os.environ.get("RADAR_EDITEUR", "maxitemmmm")
+CONTACT = _os.environ.get("RADAR_CONTACT", "https://github.com/maxitemmmm-eng/radar-bourse/issues")

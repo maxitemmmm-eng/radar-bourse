@@ -2,6 +2,7 @@
 # - toutes les heures pendant les heures de marché (lundi → vendredi)
 # - toutes les 3 heures le week-end (les cryptos ne ferment jamais)
 # - un calcul complet chaque soir, qui sauvegarde aussi l'historique des prédictions
+# Si Yahoo bloque, le site n'est pas republié : l'ancienne version reste en ligne.
 name: Mise à jour du Radar
 
 on:
@@ -10,6 +11,9 @@ on:
     - cron: "5 */3 * * 0,6"     # toutes les 3 h le week-end
     - cron: "30 22 * * *"       # chaque soir à 22h30 UTC (après la clôture de Wall Street)
   workflow_dispatch:            # bouton « Run workflow » pour lancer à la main
+  push:
+    branches: [main]
+    paths: ["bourse_bot/**", "requirements.txt", ".github/workflows/**"]
 
 permissions:
   contents: write
@@ -23,9 +27,11 @@ concurrency:
 jobs:
   construire:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     env:
       FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+      RADAR_CACHE_MAX_H: "0.5"
+      PYTHONUTF8: "1"
     steps:
       - uses: actions/checkout@v4
 
@@ -37,8 +43,20 @@ jobs:
       - name: Installer les dépendances
         run: pip install -r requirements.txt
 
+      # Le cache des cours sert de secours si Yahoo ne répond pas pour certains titres
+      - uses: actions/cache@v4
+        with:
+          path: .cache_cours
+          key: cours-${{ github.run_id }}
+          restore-keys: cours-
+
       - name: Analyser les marchés et générer le site
-        run: python -m bourse_bot --pas-de-navigateur site
+        run: |
+          for essai in 1 2 3; do
+            python -m bourse_bot --pas-de-navigateur site && exit 0
+            echo "Essai $essai raté, nouvelle tentative dans 90 s…"; sleep 90
+          done
+          exit 1
 
       - name: Sauvegarder l'historique des prédictions (le soir seulement)
         if: github.event.schedule == '30 22 * * *' || github.event_name == 'workflow_dispatch'
@@ -46,8 +64,11 @@ jobs:
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
           git add historique/predictions.csv
-          git commit -m "Prédictions du $(date +%F)" || echo "Rien de nouveau à enregistrer"
-          git push
+          git commit -m "Prédictions du $(date +%F)" || exit 0
+          for essai in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push && exit 0
+            sleep 10
+          done
 
       - uses: actions/configure-pages@v5
 

@@ -1,12 +1,38 @@
 @echo off
-chcp 65001 >nul
 cd /d "%~dp0"
-echo Installation / verification des dependances...
-python -m pip install -q --disable-pip-version-check -r requirements.txt
-if errorlevel 1 (
-  echo Erreur : Python ou pip introuvable. Installe Python depuis python.org en cochant "Add Python to PATH".
+if not exist "bourse_bot\main.py" (
+  echo.
+  echo Le dossier n'est pas extrait correctement.
+  echo Fais clic droit sur radar_bourse.zip, choisis "Extraire tout",
+  echo puis lance ce fichier depuis le dossier extrait.
+  echo.
   pause
   exit /b 1
 )
-python -m bourse_bot site
+set "PY="
+python --version >nul 2>nul
+if not errorlevel 1 set "PY=python"
+if not defined PY (
+  py -3 --version >nul 2>nul
+  if not errorlevel 1 set "PY=py -3"
+)
+if not defined PY (
+  for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python3*") do (
+    if exist "%%D\python.exe" set PY="%%D\python.exe"
+  )
+)
+if not defined PY (
+  echo.
+  echo Python est introuvable sur ce PC.
+  echo Installe-le depuis https://www.python.org/downloads/
+  echo IMPORTANT : coche la case "Add Python to PATH" pendant l'installation.
+  echo Ensuite, relance ce fichier.
+  echo.
+  pause
+  exit /b 1
+)
+chcp 65001 >nul
+echo Installation / verification des dependances...
+%PY% -m pip install -q --disable-pip-version-check -r requirements.txt
+%PY% -m bourse_bot site
 pause

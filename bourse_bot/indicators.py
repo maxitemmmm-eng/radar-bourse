@@ -90,11 +90,16 @@ def calculer(df: pd.DataFrame, benchmark: pd.DataFrame | None = None) -> pd.Data
     d["var_jour"] = c.pct_change()
 
     # Force relative face au marché (le titre fait-il mieux que son indice ?)
+    # + « régime » du marché : l'indice est-il en tendance haussière ? est-il agité ?
     if benchmark is not None and not benchmark.empty:
         b = benchmark["Close"].reindex(d.index).ffill()
         d["force_relative_63j"] = c.pct_change(63) - b.pct_change(63)
+        d["marche_tendance"] = b / b.rolling(200, min_periods=150).mean() - 1
+        d["marche_vol"] = b.pct_change().rolling(20).std() * np.sqrt(252)
     else:
         d["force_relative_63j"] = np.nan
+        d["marche_tendance"] = np.nan
+        d["marche_vol"] = np.nan
 
     return d.replace([np.inf, -np.inf], np.nan)
 
@@ -104,5 +109,5 @@ FEATURES = [
     "dist_sma50", "dist_sma200", "pente_sma50", "adx", "rsi", "macd_hist_norm",
     "ret_5j", "ret_21j", "ret_63j", "ret_126j", "vol_20j", "atr_pct", "bb_position",
     "bb_largeur", "drawdown", "dist_plus_haut", "volume_ratio", "obv_pente",
-    "force_relative_63j",
+    "force_relative_63j", "marche_tendance", "marche_vol",
 ]
