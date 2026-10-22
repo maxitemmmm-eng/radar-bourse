@@ -134,7 +134,7 @@ def _dernier_entrainement():
             return None
         e = liste[-1]
         return {k: e.get(k) for k in ("date", "mode", "nb_titres", "nb_lignes", "retenu", "en_place", "change_methode",
-                                      "raison", "series_economiques", "examen_donnees", "precision", "ic_precision")}
+                                      "raison", "series_economiques", "examen_donnees", "precision", "ic_precision", "connaissances")}
     except Exception:
         return None
 

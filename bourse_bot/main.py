@@ -174,6 +174,16 @@ def cmd_site(args):
     except model.ErreurControle as e:
         console.print(f"[red]Contrôle de cohérence échoué : {e}. Site non publié : l'ancienne version reste en ligne.[/red]")
         return 3
+    # Apprendre de ses erreurs : les prévisions passées, vérifiées, recalent la confiance des IA
+    correction = historique.correction_erreurs(bruts if not args.demo else {})
+    for a in analyses:
+        a.proba_brute = a.proba_hausse
+        a.proba_hausse = historique.appliquer_correction(a.proba_hausse, correction)
+        if a.signal_fort and not (a.proba_hausse >= model.SEUIL_FORT):
+            a.signal_fort = False
+    if correction and correction.get("active"):
+        console.print(f"Correction d'après les vraies erreurs ({correction['n']} prévisions vérifiées) : {correction['raison']}")
+    args._correction = correction
     controle = qualite.controler(donnees)
     qualite.appliquer(analyses, controle)
     r = controle["resume"]
@@ -208,6 +218,7 @@ def cmd_site(args):
 
     payload = site.construire(analyses, donnees, evaluation, suivi, bruts, demo=args.demo,
                               actus_marche=actus_marche, qualite=controle)
+    payload["correction_erreurs"] = getattr(args, "_correction", None)
     if not args.demo and os.environ.get("RADAR_SELECTION") == "1":
         seo.archiver_point(payload)   # le point du jour est archivé chaque soir
     chemin = site.ecrire(payload)

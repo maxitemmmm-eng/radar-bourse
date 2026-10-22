@@ -35,7 +35,16 @@ from . import config
 from .indicators import FEATURES
 
 COLS_RANG = ["ret_21j", "ret_63j", "ret_126j", "vol_20j", "force_relative_63j", "dist_plus_haut"]
-VARIABLES = FEATURES + ["est_crypto"] + [f"rang_{c}" for c in COLS_RANG]
+# Version 19 : comme les professionnels, les règles du manuel sont aussi utilisées en CLASSEMENT entre titres
+# le même jour (« fait partie des 10 % au meilleur momentum »), ce qui les rend comparables d'une époque à l'autre.
+COLS_RANG_MANUEL = ["cx_momentum_12m", "cx_momentum_6m", "cx_retournement_1m", "cx_plus_haut_52s_52s",
+                    "cx_faible_volatilite_60j", "cx_volatilite_propre_60j", "cx_loterie_1m", "cx_illiquidite_60j",
+                    "cx_momentum_regulier_12m", "cx_beta_faible_1an"]
+COLS_RANG = COLS_RANG + [c for c in COLS_RANG_MANUEL if c in FEATURES]
+# Santé du marché tout entier, calculée chaque jour sur tous les titres suivis :
+# part des titres en tendance haussière (« largeur », Zweig) et écart entre gagnants et perdants (« dispersion »)
+TRANSVERSAL = ["marche_largeur", "marche_dispersion"]
+VARIABLES = FEATURES + ["est_crypto"] + [f"rang_{c}" for c in COLS_RANG] + TRANSVERSAL
 TRANCHES = [0.0, 0.40, 0.45, 0.50, 0.55, 0.60, 1.0]
 NOMS_TRANCHES = ["< 40 %", "40–45 %", "45–50 %", "50–55 %", "55–60 %", "> 60 %"]
 SEUIL_FORT = 0.55  # probabilité calibrée minimale pour un « signal fort »
@@ -101,9 +110,9 @@ class Ensemble:
         self.lin = make_pipeline(SimpleImputer(strategy="median"), StandardScaler(),
                                  LogisticRegression(C=float(P["c_lin"]), max_iter=500))
 
-    def fit(self, X, y):
-        self.gbm.fit(X, y)
-        self.lin.fit(X, y)
+    def fit(self, X, y, poids=None):
+        self.gbm.fit(X, y, sample_weight=poids)
+        self.lin.fit(X, y, logisticregression__sample_weight=poids)
         return self
 
     def predict_proba(self, X):
@@ -118,10 +127,11 @@ class Foret:
         P = params or {}
         self.m = make_pipeline(SimpleImputer(strategy="median"),
                                ExtraTreesClassifier(n_estimators=120, min_samples_leaf=int(P.get("feuille_foret", 400)), max_features=0.4,
+                                                    bootstrap=True, max_samples=0.4,   # chaque arbre voit 40 % des cas : 2 à 3 fois plus rapide
                                                     n_jobs=-1, random_state=1))
 
-    def fit(self, X, y):
-        self.m.fit(X, y)
+    def fit(self, X, y, poids=None):
+        self.m.fit(X, y, extratreesclassifier__sample_weight=poids)
         return self
 
     def predict_proba(self, X):
@@ -129,6 +139,59 @@ class Foret:
 
 
 ALGOS = {"ia1": Ensemble, "ia2": Foret}
+
+
+class Comite:
+    """La décision commune des deux IA : au lieu d'une simple moyenne, on apprend (sur des années jamais
+    vues) quelle confiance accorder à chacune, et comment réagir quand elles se contredisent."""
+
+    def __init__(self):
+        self.lr = LogisticRegression(C=1.0)
+
+    @staticmethod
+    def _X(p1, p2):
+        z = lambda p: np.log(np.clip(np.asarray(p, float), 1e-4, 1 - 1e-4) / (1 - np.clip(np.asarray(p, float), 1e-4, 1 - 1e-4)))
+        z1, z2 = z(p1), z(p2)
+        return np.column_stack([z1, z2, z1 * z2])
+
+    def fit(self, p1, p2, y):
+        self.lr.fit(self._X(p1, p2), np.asarray(y))
+        return self
+
+    def predict(self, p1, p2):
+        return self.lr.predict_proba(self._X(p1, p2))[:, 1]
+
+    def poids(self):
+        a, b = abs(float(self.lr.coef_[0][0])), abs(float(self.lr.coef_[0][1]))
+        return (a / (a + b), b / (a + b)) if a + b > 0 else (0.5, 0.5)
+
+    def vers_dict(self):
+        return {"coef": [float(c) for c in self.lr.coef_[0]], "intercept": float(self.lr.intercept_[0]), "type": "comite"}
+
+    @classmethod
+    def depuis_dict(cls, d):
+        if not d:
+            return None
+        c = cls()
+        c.lr.classes_ = np.array([0.0, 1.0])
+        c.lr.coef_ = np.array([d["coef"]])
+        c.lr.intercept_ = np.array([d["intercept"]])
+        c.lr.n_features_in_ = len(d["coef"])
+        return c
+
+
+def _charger_calibs(d):
+    return {k: (Comite.depuis_dict(v) if (v or {}).get("type") == "comite" else CalibrationPlatt.depuis_dict(v))
+            for k, v in (d or {}).items()}
+
+
+def jours_alternes(jeu, pas=2):
+    """Pour aller plus vite pendant les tests : un jour sur deux. Deux jours voisins ont un résultat à un
+    mois presque identique (19 jours sur 20 en commun), donc on ne perd presque aucune information."""
+    dates = np.array(sorted(jeu.index.unique()))
+    if len(dates) < 1500 or pas <= 1:
+        return jeu
+    return jeu[jeu.index.isin(dates[::pas])]
 
 
 # ----------------------------------------------------------------------------
@@ -264,10 +327,23 @@ CHAMPS_CACHE = ("precision", "precision_base", "auc", "nb_tests", "calibration",
                 "ia", "accord", "champion", "date_evaluation")
 
 
-def _ajouter_rangs(jeu: pd.DataFrame) -> pd.DataFrame:
+def ajouter_transversal(df: pd.DataFrame, par_date: bool = True) -> pd.DataFrame:
+    """Classements entre titres et santé du marché : par date (apprentissage) ou entre les dernières lignes."""
+    grp = df.groupby(level=0) if par_date else None
     for c in COLS_RANG:
-        jeu[f"rang_{c}"] = jeu.groupby(level=0)[c].rank(pct=True)
-    return jeu
+        df[f"rang_{c}"] = grp[c].rank(pct=True) if par_date else df[c].rank(pct=True)
+    haut = (df["dist_sma200"] > 0).astype(float).where(df["dist_sma200"].notna())
+    if par_date:
+        df["marche_largeur"] = haut.groupby(level=0).transform("mean")
+        df["marche_dispersion"] = grp["ret_21j"].transform("std")
+    else:
+        df["marche_largeur"] = float(haut.mean())
+        df["marche_dispersion"] = float(df["ret_21j"].std())
+    return df
+
+
+def _ajouter_rangs(jeu: pd.DataFrame) -> pd.DataFrame:
+    return ajouter_transversal(jeu, par_date=True)
 
 
 def construire_jeu(donnees: dict[str, pd.DataFrame], marches: dict[str, str], horizon: int) -> pd.DataFrame:
@@ -303,6 +379,10 @@ NOM_RECETTE = "Recette de l'entraînement approfondi"
 
 def recette_vers_config(r: dict):
     """Recette trouvée par entrainement_ia.py (enregistrée dans historique/modele.json)."""
+    if r.get("membres"):
+        membres = [{**m, "variables": [v for v in m.get("variables", []) if v in VARIABLES] or VARIABLES} for m in r["membres"]]
+        tout = sorted({v for m in membres for v in m["variables"]})
+        return (NOM_RECETTE, tout, False, {"membres": membres})
     variables = [v for v in r.get("variables", []) if v in VARIABLES] or VARIABLES
     return (NOM_RECETTE, variables, bool(r.get("par_marche")), dict(r.get("params") or {}))
 
@@ -331,17 +411,35 @@ class Predicteur:
         """Retire les colonnes vides ou constantes (ex : sentiment crypto pour les actions)."""
         return [v for v in variables if df[v].nunique(dropna=True) > 1]
 
+    def _poids(self, df):
+        """Mémoire qui s'estompe : les années récentes comptent plus que les anciennes (si la recette le demande).
+        Les marchés changent ; une demi-vie de 6 ans veut dire qu'une année d'il y a 6 ans compte moitié moins."""
+        dv = self.params.get("demi_vie")
+        if not dv:
+            return None
+        dates = pd.to_datetime(df.index)
+        age = (dates.max() - dates).days.to_numpy() / 365.25
+        return np.power(0.5, age / float(dv))
+
     def fit(self, df):
+        membres = self.params.get("membres")
+        if membres:   # comité de plusieurs recettes : on fait la moyenne de leurs avis
+            self.sous = [Predicteur([v for v in m["variables"] if v in df.columns], bool(m.get("par_marche")), self.algo,
+                                    dict(m.get("params") or {})).fit(df) for m in membres]
+            self.vars_commun = sorted({v for p in self.sous for v in p.vars_commun})
+            return self
         self.vars_commun = self._utiles(df, self.variables)
-        self.commun = ALGOS[self.algo](self.params).fit(df[self.vars_commun], df["cible"])
+        self.commun = ALGOS[self.algo](self.params).fit(df[self.vars_commun], df["cible"], self._poids(df))
         if self.par_marche:
             for g, sous in df.groupby("est_crypto"):
                 if len(sous) >= 3000 and sous["cible"].nunique() == 2:
                     vs = self._utiles(sous, self.variables)
-                    self.groupes[g] = (vs, ALGOS[self.algo](self.params).fit(sous[vs], sous["cible"]))
+                    self.groupes[g] = (vs, ALGOS[self.algo](self.params).fit(sous[vs], sous["cible"], self._poids(sous)))
         return self
 
     def predict_proba(self, df):
+        if getattr(self, "sous", None):
+            return np.mean([p.predict_proba(df) for p in self.sous], axis=0)
         p = self.commun.predict_proba(df[self.vars_commun])
         if self.groupes:
             g = df["est_crypto"].to_numpy()
@@ -596,12 +694,13 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
         _, variables, par_marche, params = {c[0]: c for c in configs_disponibles()}[cache["configuration"]]
         ev = cache["evaluation"]
         evaluation = Evaluation(**{k: ev[k] for k in CHAMPS_CACHE if k in ev})
-        calibs = {k: CalibrationPlatt.depuis_dict(v) for k, v in (cache.get("platt") or {}).items()}
+        calibs = _charger_calibs(cache.get("platt"))
         mode = cache.get("mode", "commun")
     else:
         resultats = []
+        jeu_eval = jours_alternes(jeu)   # tests plus rapides ; le modèle final apprend sur tous les jours
         for nom, variables, par_marche, params in configs_disponibles():
-            oof = predictions_hors_echantillon(jeu, horizon, variables, par_marche, params=params)
+            oof = predictions_hors_echantillon(jeu_eval, horizon, variables, par_marche, params=params)
             if oof is None or oof["cible"].nunique() < 2:
                 continue
             resultats.append((_auc(oof["cible"].to_numpy(), oof["proba"].to_numpy()), nom, variables, par_marche, oof, params))
@@ -613,8 +712,10 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
         _, nom, variables, par_marche, oof, params = choix
 
         # IA n°2 sur les mêmes périodes de test, puis combinaison des deux
-        oof2 = predictions_hors_echantillon(jeu, horizon, variables, par_marche, algos=("ia2",), params=params)
-        calibs = {"ia1": None, "ia2": None, "final": None, "relatif": None}
+        # L'IA n°2 connaît TOUTES les techniques (tous les indicateurs, l'économie et tout le manuel de Bourse),
+        # quelle que soit la sélection de l'IA n°1 : deux points de vue différents qui se complètent.
+        oof2 = predictions_hors_echantillon(jeu_eval, horizon, VARIABLES, par_marche, algos=("ia2",))
+        calibs = {"ia1": None, "ia2": None, "final": None, "relatif": None, "comite": None}
         mode = "ia1"
         ia = {}
         if oof2 is not None and len(oof2) == len(oof) and np.array_equal(oof2.index.values, oof.index.values):
@@ -627,10 +728,23 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
             comb = 0.5 * (oof["proba_ia1"] + oof["proba_ia2"])
             for cle, pp in (("ia1", c1), ("ia2", c2), ("commun", comb)):
                 ia[cle] = {"auc": _auc(y, pp), "precision": _precision(y, CalibrationPlatt().fit(pp, y).predict(pp))}
-            # la combinaison n'est retenue que si elle ne fait pas moins bien que l'IA n°1 seule
+            # la moyenne n'est retenue que si elle ne fait pas moins bien que l'IA n°1 seule
             if ia["commun"]["auc"] >= ia["ia1"]["auc"] - 0.002:
                 mode = "commun"
                 oof["proba"] = comb
+            # Décision commune apprise : entraînée sur la 1re moitié des années, jugée sur la 2de (jamais vue)
+            dates_o = np.array(sorted(oof.index.unique()))
+            m_ = oof.index < dates_o[len(dates_o) // 2]
+            if m_.sum() > 2000 and (~m_).sum() > 2000:
+                essai = Comite().fit(c1[m_], c2[m_], y[m_])
+                a_comite = _auc(y[~m_], essai.predict(c1[~m_], c2[~m_]))
+                a_ref = _auc(y[~m_], np.asarray(oof["proba"])[~m_])
+                ia["comite"] = {"auc_test": a_comite, "auc_reference_test": a_ref}
+                if a_comite >= a_ref:
+                    calibs["comite"] = Comite().fit(c1, c2, y)
+                    mode = "comite"
+                    oof["proba"] = calibs["comite"].predict(c1, c2)
+                    ia["comite"]["poids"] = calibs["comite"].poids()
             oof["accord"] = (c1 > 0.5) == (c2 > 0.5)
         evaluation, calibs["final"] = _evaluation(oof)
         evaluation.configuration = nom
@@ -650,11 +764,11 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
                                  "ic_accord": _ic(boot[:, 0]) if len(boot) else None,
                                  "ic_desaccord": _ic(boot[:, 1]) if len(boot) else None}
         try:
-            evaluation.fourchette = fiabilite_fourchettes(jeu, horizon, variables)
+            evaluation.fourchette = fiabilite_fourchettes(jeu_eval, horizon, variables)
         except Exception:
             evaluation.fourchette = {}
         try:
-            evaluation.relatif, calibs["relatif"] = evaluer_relatif(jeu, horizon, variables, par_marche)
+            evaluation.relatif, calibs["relatif"] = evaluer_relatif(jeu_eval, horizon, variables, par_marche)
         except Exception:
             evaluation.relatif, calibs["relatif"] = {}, None
         evaluation.date_evaluation = datetime.now().isoformat(timespec="minutes")
@@ -668,7 +782,7 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
 def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, evaluation, params=None):
     etiquete = jeu.dropna(subset=["cible"])
     ia1 = Predicteur(variables, par_marche, "ia1", params).fit(etiquete)
-    ia2 = Predicteur(variables, par_marche, "ia2", params).fit(etiquete) if calibs.get("ia2") is not None else None
+    ia2 = Predicteur(VARIABLES, par_marche, "ia2").fit(etiquete) if calibs.get("ia2") is not None else None
     try:
         vs_q, mods_q = _modeles_quantiles(etiquete, variables)
     except Exception:
@@ -690,14 +804,16 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
         ligne["ticker"] = ticker
         dernieres.append(ligne)
     actuel = pd.concat(dernieres).reset_index(drop=True)
-    for c in COLS_RANG:
-        actuel[f"rang_{c}"] = actuel[c].rank(pct=True)
+    ajouter_transversal(actuel, par_date=False)
     garde = actuel["ticker"].isin(list(donnees)).to_numpy()
     tks = actuel["ticker"].to_numpy()
 
     p1 = ia1.predict_proba(actuel)
     p2 = ia2.predict_proba(actuel) if ia2 is not None else None
-    brut = 0.5 * (p1 + p2) if (mode == "commun" and p2 is not None) else p1
+    if mode == "comite" and p2 is not None and calibs.get("comite") is not None:
+        brut = calibs["comite"].predict(calibs["ia1"].predict(p1), calibs["ia2"].predict(p2))
+    else:
+        brut = 0.5 * (p1 + p2) if (mode == "commun" and p2 is not None) else p1
     final = calibs["final"].predict(brut) if calibs.get("final") is not None else brut
     if p2 is not None:
         c1, c2 = calibs["ia1"].predict(p1), calibs["ia2"].predict(p2)

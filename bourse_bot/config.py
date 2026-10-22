@@ -95,7 +95,7 @@ def benchmark_de(ticker: str, marche: str = "") -> str:
         return "^STOXX50E"
     return BENCHMARK.get(marche, "SPY")
 
-HISTORIQUE = "10y"          # profondeur d'historique téléchargée (plus de données = IA plus robuste)
+HISTORIQUE = "25y"          # tout l'historique disponible (jusqu'à 25 ans) : plus de situations vécues = IA plus robuste
 HORIZON_PREDICTION = 20     # le modèle prédit la direction sur N séances (~1 mois)
 FRAIS_PAR_ORDRE = 0.001     # 0,1 % de frais par achat/vente dans les backtests
 DOSSIER_CACHE = ".cache_cours"

@@ -15,7 +15,11 @@ Une fenêtre s'ouvre avec la progression, une jauge « ce que l'IA a appris » e
   6. Quand tu fermes la fenêtre ou cliques « Arrêter », l'IA passe l'examen final avec ce qu'elle a
      appris, puis te propose de mettre à jour le site, suit sa publication et vérifie qu'il fonctionne.
 
-Options : --complet (recherche plus large), --minutes N, --console (sans fenêtre), --demo (données fictives).
+Au démarrage, la fenêtre te demande la durée : Rapide (≈ 20 min), Normal (≈ 50 min) ou Expert (≈ 2 h 30).
+L'IA garde en mémoire ses essais (historique/essais_ia.json) : d'un entraînement à l'autre, elle explore
+autour de ses meilleures idées au lieu de repartir de zéro.
+
+Options : --duree rapide|normal|expert, --minutes N, --console (sans fenêtre), --demo (données fictives).
 """
 from __future__ import annotations
 
@@ -57,7 +61,19 @@ UNIVERS_ETENDU = {
                "THETA-USD", "NEO-USD", "ZEC-USD", "DASH-USD", "KSM-USD"],
 }
 MACRO = {"vix", "vix_chg", "taux_chg", "dollar_chg", "fng", "courbe_taux", "petrole_chg", "cuivre_chg",
-         "spread_credit", "spread_credit_chg", "conditions_fin", "chomage_tendance"}
+         "spread_credit", "spread_credit_chg", "conditions_fin", "chomage_tendance", "vix_structure",
+         "marche_largeur", "marche_dispersion"}
+SEUIL_INDICATEUR = 0.0003   # gain d'AUC minimal, sur chacune des deux périodes, pour garder un indicateur
+SEUIL_REGLE = 0.001         # plus exigeant pour les règles du manuel (beaucoup de versions testées)
+# Durées proposées : temps de recherche, nombre maximal d'essais, 1 jour sur N gardé pendant la recherche.
+# Garder 1 jour sur 2 ou 3 ne fait presque rien perdre : deux jours voisins ont des résultats à un mois
+# presque identiques (ils se chevauchent sur 19 jours sur 20). L'examen final, lui, utilise TOUS les jours.
+DUREES = {
+    "rapide": {"nom": "Rapide", "minutes": 12, "essais": 14, "pas": 3, "resume": "≈ 20 min · pour vérifier que tout va bien"},
+    "normal": {"nom": "Normal", "minutes": 35, "essais": 35, "pas": 2, "resume": "≈ 50 min · le bon choix la plupart du temps"},
+    "expert": {"nom": "Expert", "minutes": 140, "essais": 120, "pas": 1, "resume": "≈ 2 h 30 · recherche très large, précision maximale"},
+}
+FICHIER_ESSAIS = os.path.join("historique", "essais_ia.json")   # mémoire des essais d'un entraînement à l'autre
 AUC_HASARD, AUC_EXCELLENT = 0.50, 0.58   # bornes de la jauge (0,58 serait exceptionnel en Bourse)
 
 
@@ -121,20 +137,21 @@ def adresse_site() -> str:
 # Le moteur d'entraînement (tourne en arrière-plan, envoie des événements à la fenêtre)
 # ----------------------------------------------------------------------------
 class Moteur:
-    PHASES = [("collecte", 0.18), ("examen1", 0.12), ("recherche", 0.47), ("tri", 0.08), ("final", 0.15)]
+    PHASES = [("collecte", 0.16), ("examen1", 0.10), ("manuel", 0.09), ("recherche", 0.42), ("tri", 0.08), ("final", 0.15)]
 
     def __init__(self, args, emettre):
         self.args, self.emettre = args, emettre
         self.arret = threading.Event()
         self.resultat = None
         self.depot_git = False
+        self.cols_utiles = []
 
     def log(self, texte):
         self.emettre("log", texte=texte)
 
     def etape(self, n, texte):
         self.emettre("etape", n=n, texte=texte)
-        self.log(f"\n━━ {n}/6 · {texte}")
+        self.log(f"\n━━ {n}/7 · {texte}")
 
     def progres(self, phase, frac):
         total = 0.0
@@ -162,8 +179,10 @@ class Moteur:
         config.DOSSIER_CACHE = ".cache_entrainement"
         config.CACHE_MAX_H = 24
         self.horizon = horizon = config.HORIZON_PREDICTION
-        budget = (args.minutes or (150 if args.complet else 35)) * 60
-        max_essais = 80 if args.complet else 20
+        reglage = DUREES[args.duree]
+        budget = (args.minutes or reglage["minutes"]) * 60
+        max_essais = reglage["essais"]
+        self.log(f"Durée choisie : {reglage['nom']} ({reglage['resume']}).")
 
         self.etape(1, "Récupération de la dernière version du site")
         self.depot_git = bool(os.path.isdir(os.path.join(ICI, ".git")) and trouver("git"))
@@ -221,12 +240,25 @@ class Moteur:
                 jeu = jeu_etendu
         self.progres("examen1", 1)
         jeu_sel = self._zone_recherche(jeu, coupure)
+        if reglage["pas"] > 1:   # recherche plus rapide : 1 jour sur N (l'examen final garde tous les jours)
+            jours = np.array(sorted(jeu_sel.index.unique()))[::reglage["pas"]]
+            jeu_sel = jeu_sel[jeu_sel.index.isin(jours)]
+            self.log(f"⚡ Recherche accélérée : 1 jour sur {reglage['pas']} (les jours voisins se ressemblent presque "
+                     "tous à un mois d'horizon). L'examen final utilisera tous les jours.")
 
-        self.etape(4, "Recherche : des dizaines de façons de prévoir, testées sur des années jamais vues")
+        self.etape(4, "Examen du manuel de Bourse : les règles connues marchent-elles vraiment ?")
+        verdicts, cols_utiles = self._examen_manuel(jeu_sel)
+
+        self.etape(5, "Recherche : des dizaines de façons de prévoir, testées sur des années jamais vues")
         self.log("Tu peux arrêter quand tu veux (bouton « Arrêter » ou croix de la fenêtre) : "
                  "l'IA passera alors l'examen final avec ce qu'elle a déjà appris.")
         rng = np.random.default_rng(int(time.time()) % 100000)
         essais, t0 = [], time.time()
+        memoire = self._lire_memoire()
+        deja = {self._signature(e) for e in memoire}
+        if memoire:
+            self.log(f"🧠 Mémoire : {len(memoire)} essais des entraînements précédents. L'IA va explorer autour des "
+                     "meilleurs (sans les refaire à l'identique) et essayer aussi des idées nouvelles.")
         meilleur_rapide = [0.0]
 
         def tester(nom, v, pm, prm, force=False):
@@ -247,6 +279,7 @@ class Moteur:
                     auc = model._auc(o5["cible"].to_numpy(), o5["proba"].to_numpy())
             essais.append({"nom": nom, "variables": list(v), "par_marche": bool(pm), "params": dict(prm),
                            "auc_recherche": auc, "teste_completement": bool(complet)})
+            deja.add(self._signature(essais[-1]))
             best = max((e["auc_recherche"] for e in essais if e["teste_completement"]), default=auc)
             self.emettre("niveau", meilleur=best, essais=len(essais))
             self.log(f"[{len(essais):>2}] AUC {auc:.4f}{' ★' if complet and auc >= best else ''}{'' if complet else ' (1er tour seulement)'} · "
@@ -257,20 +290,33 @@ class Moteur:
             tester(nom, v, pm, prm, force=(nom == champion))
         i = 1
         while not self.arret.is_set() and len(essais) < max_essais and time.time() - t0 < budget:
-            tester(*self._tirer(rng, i))
+            # moitié exploration (idées nouvelles), moitié amélioration des meilleurs essais (y compris passés)
+            meilleurs = sorted([e for e in essais + memoire if e.get("teste_completement", True)
+                                and "membres" not in (e.get("params") or {})],
+                               key=lambda e: -e["auc_recherche"])[:5]
+            for _ in range(20):
+                cand = self._muter(rng, meilleurs, i) if (i % 2 == 0 and meilleurs) else self._tirer(rng, i)
+                if self._signature({"variables": cand[1], "par_marche": cand[2], "params": cand[3]}) not in deja:
+                    break
+            tester(*cand)
             i += 1
         self.progres("recherche", 1)
         if not any(e["nom"] == champion for e in essais):
             tester(champion, v_ch, pm_ch, p_ch, force=True)
         complets = sorted([e for e in essais if e["teste_completement"]], key=lambda e: -e["auc_recherche"])
 
-        self.etape(5, "Tri des indicateurs : lesquels aident vraiment ?")
+        self._ecrire_memoire(memoire, essais)
+        if cols_utiles:   # l'IA améliore son manuel : seulement les règles prouvées, dans leur meilleure version
+            tester(f"Indicateurs de base + {len(cols_utiles)} connaissances prouvées", model.VARIABLES_BASE + cols_utiles, False, {}, force=True)
+            complets = sorted([e for e in essais if e["teste_completement"]], key=lambda e: -e["auc_recherche"])
+
+        self.etape(6, "Tri des indicateurs : lesquels aident vraiment ?")
         imp = {}
         if complets:
             m0 = complets[0]
             imp = self._importance(jeu_sel, m0)
             if imp:
-                utiles = [k for k, (a, b) in sorted(imp.items(), key=lambda kv: -min(kv[1])) if a > 0 and b > 0]
+                utiles = [k for k, (a, b) in sorted(imp.items(), key=lambda kv: -min(kv[1])) if a > SEUIL_INDICATEUR and b > SEUIL_INDICATEUR]
                 self.log(f"{len(utiles)} indicateurs aident sur les deux périodes testées ; "
                          f"{len(imp) - len(utiles)} n'apportent rien de sûr.")
                 if utiles:
@@ -280,7 +326,7 @@ class Moteur:
                     complets = sorted([e for e in essais if e["teste_completement"]], key=lambda e: -e["auc_recherche"])
         self.progres("tri", 1)
 
-        self.etape(6, "Examen final sur les années mises sous clé")
+        self.etape(7, "Examen final sur les années mises sous clé")
         finalistes = complets[:3] + [e for e in essais if e["nom"] == champion and e not in complets[:3]]
         resultats = []
         for k, e in enumerate(finalistes, 1):
@@ -293,6 +339,20 @@ class Moteur:
             self.log(f"AUC à l'examen final {e['auc_final']:.4f} · {e['nom']}{'  ← IA du site' if e['nom'] == champion else ''}")
         if not resultats:
             raise RuntimeError("Examen final impossible : pas assez d'années de données.")
+        # Comité des meilleures recettes : la moyenne de plusieurs bonnes IA différentes est souvent plus juste
+        # et plus stable que chacune seule (technique très utilisée par les professionnels). Jugé lui aussi à l'examen.
+        membres = [(e, o) for e, o in resultats if e["nom"] != champion][:3]
+        if len(membres) >= 2 and all(len(o) == len(membres[0][1]) for _, o in membres):
+            o_c = membres[0][1].copy()
+            o_c["proba"] = np.mean([o["proba"].to_numpy() for _, o in membres], axis=0)
+            ec = {"nom": f"Comité des {len(membres)} meilleures recettes", "variables": sorted({v for e, _ in membres for v in e["variables"]}),
+                  "par_marche": False, "params": {"membres": [{"variables": e["variables"], "par_marche": e["par_marche"],
+                                                               "params": e["params"]} for e, _ in membres]},
+                  "auc_recherche": float(np.mean([e["auc_recherche"] for e, _ in membres])), "teste_completement": True}
+            ec["auc_final"] = model._auc(o_c["cible"].to_numpy(), o_c["proba"].to_numpy())
+            essais.append(ec)
+            resultats.append((ec, o_c))
+            self.log(f"AUC à l'examen final {ec['auc_final']:.4f} · {ec['nom']} (moyenne de leurs avis)")
         resultats.sort(key=lambda r: -r[0]["auc_final"])
         gagnant, o_g = resultats[0]
         ref = next(((e, o) for e, o in resultats if e["nom"] == champion), None)
@@ -318,8 +378,9 @@ class Moteur:
         ev, _ = model._evaluation(o_r)
         self.progres("final", 1)
         self.log(decision["raison"])
+        erreurs = self._analyse_erreurs(o_r)
 
-        entree = {"date": datetime.now().isoformat(timespec="minutes"), "mode": "complet" if args.complet else "rapide",
+        entree = {"date": datetime.now().isoformat(timespec="minutes"), "mode": args.duree,
                   "demo": args.demo, "arret_manuel": self.arret.is_set(),
                   "nb_titres": len(affiches) + len(supp_base) + (len(supp_etendu) if garder_etendu else 0),
                   "nb_lignes": int(len(jeu)), "series_economiques": sorted(contexte), "nb_essais": len(essais),
@@ -331,8 +392,9 @@ class Moteur:
                   "raison": decision["raison"], "ic_gain_auc": decision.get("ic_gain_auc"), "examen_donnees": examen_donnees,
                   "precision": ev.precision, "ic_precision": ev.ic.get("precision"), "auc": ev.auc,
                   "auc_recherche_retenu": retenu["auc_recherche"], "precision_base": ev.precision_base,
-                  "niveau_preuve": ev.niveau_preuve()}
+                  "niveau_preuve": ev.niveau_preuve(), "connaissances": verdicts, "erreurs": erreurs}
         recette = {"nom": retenu["nom"], "variables": retenu["variables"], "par_marche": retenu["par_marche"],
+                   **({"membres": retenu["params"]["membres"]} if "membres" in retenu["params"] else {}),
                    "params": retenu["params"], "date": entree["date"], "auc": retenu.get("auc_final")}
         apprentissage = {mk: [t for t in lst if t in supp_etendu] for mk, lst in etendu.items()} if garder_etendu else None
         chemin = ecrire_rapport(entree, ev)
@@ -438,18 +500,98 @@ class Moteur:
     def _tirer(self, rng, i):
         model = self.model
         technique = [v for v in model.VARIABLES if v not in MACRO]
-        groupes = {"tous les indicateurs + économie": list(model.VARIABLES),
+        cx = [v for v in model.VARIABLES if v.startswith("cx_")]
+        groupes = {"tous les indicateurs + économie + manuel": list(model.VARIABLES),
                    "indicateurs de base + économie": model.VARIABLES_BASE + sorted(MACRO & set(model.VARIABLES)),
-                   "indicateurs techniques seulement": technique, "indicateurs de base": list(model.VARIABLES_BASE)}
+                   "indicateurs de base + manuel de Bourse": model.VARIABLES_BASE + cx,
+                   "indicateurs de base + manuel prouvé": model.VARIABLES_BASE + (self.cols_utiles or cx),
+                   "indicateurs techniques seulement": [v for v in technique if not v.startswith("cx_")],
+                   "indicateurs de base": list(model.VARIABLES_BASE)}
         g = list(groupes)[rng.integers(len(groupes))]
         prm = {"profondeur": int(rng.choice([2, 3, 4, 5])), "apprentissage": float(rng.choice([0.02, 0.03, 0.05, 0.08])),
                "iterations": int(rng.choice([150, 250, 400, 600])), "feuille": int(rng.choice([150, 300, 600, 1000])),
                "l2": float(rng.choice([0.5, 2.0, 5.0])), "c_lin": float(rng.choice([0.01, 0.05, 0.2]))}
+        dv = rng.choice([0, 0, 3, 6, 10])   # mémoire qui s'estompe (0 = toutes les années comptent pareil)
+        if dv:
+            prm["demi_vie"] = int(dv)
         pm = bool(rng.random() < 0.35)
         return (f"Essai {i} : {g}, profondeur {prm['profondeur']}, {prm['iterations']} étapes"
                 + (", un modèle par marché" if pm else "")), groupes[g], pm, prm
 
-    def _importance(self, jeu_sel, e):
+    def _analyse_erreurs(self, o):
+        """Apprendre de ses erreurs : où l'IA se trompe-t-elle le plus à l'examen final ?"""
+        np = self.np
+        y, p = o["cible"].to_numpy(), o["proba"].to_numpy()
+        juste = (p > 0.5) == (y == 1)
+        noms = {"fr": "actions françaises", "eu": "actions européennes", "us": "actions américaines",
+                "crypto": "cryptos", "etf": "ETF et indices", "tendances": "titres en tendance"}
+        par_marche = [{"nom": noms.get(m, m), "nb": int(g.sum()), "precision": float(juste[g].mean())}
+                      for m in sorted(set(o["marche"])) if (g := (o["marche"] == m).to_numpy()).sum() >= 200]
+        conf = np.abs(p - 0.5)
+        par_conf = []
+        for nom, a, b in (("avis prudents (45–55 %)", 0, 0.05), ("avis nets (55–60 % ou 40–45 %)", 0.05, 0.10),
+                          ("avis très nets (plus de 60 % ou moins de 40 %)", 0.10, 1)):
+            g = (conf >= a) & (conf < b)
+            if g.sum() >= 100:
+                par_conf.append({"nom": nom, "nb": int(g.sum()), "precision": float(juste[g].mean())})
+        if par_marche:
+            pire = min(par_marche, key=lambda x: x["precision"])
+            meilleur = max(par_marche, key=lambda x: x["precision"])
+            self.log(f"🔍 Erreurs : l'IA se trompe le plus sur les {pire['nom']} ({pire['precision'] * 100:.0f} % justes) "
+                     f"et le moins sur les {meilleur['nom']} ({meilleur['precision'] * 100:.0f} %).")
+        if len(par_conf) >= 2 and par_conf[-1]["precision"] <= par_conf[0]["precision"]:
+            self.log("🔍 Ses avis les plus tranchés ne sont pas plus justes que les prudents : le site les adoucira "
+                     "(la correction par les vraies erreurs s'en charge en ligne).")
+        return {"par_marche": par_marche, "par_confiance": par_conf}
+
+    @staticmethod
+    def _signature(e):
+        return json.dumps([sorted(e["variables"]), bool(e["par_marche"]), sorted((e.get("params") or {}).items())])
+
+    def _lire_memoire(self):
+        try:
+            with open(FICHIER_ESSAIS, encoding="utf-8") as f:
+                m = json.load(f)
+            vars_ok = set(self.model.VARIABLES)
+            return [e for e in m.get("essais", []) if set(e["variables"]) <= vars_ok][-400:]
+        except (OSError, ValueError, KeyError):
+            return []
+
+    def _ecrire_memoire(self, memoire, essais):
+        if self.args.demo:
+            return
+        try:
+            os.makedirs("historique", exist_ok=True)
+            nouveaux = [{**e, "date": datetime.now().strftime("%Y-%m-%d")} for e in essais if e.get("teste_completement")]
+            with open(FICHIER_ESSAIS, "w", encoding="utf-8") as f:
+                json.dump({"essais": (memoire + nouveaux)[-400:]}, f, ensure_ascii=False)
+        except OSError:
+            pass
+
+    def _muter(self, rng, meilleurs, i):
+        """Amélioration : reprend un des meilleurs essais et change un ou deux réglages."""
+        base = meilleurs[int(rng.integers(len(meilleurs)))]
+        prm = dict(base.get("params") or {})
+        defaut = {"profondeur": 3, "apprentissage": 0.04, "iterations": 250, "feuille": 300, "l2": 2.0, "c_lin": 0.05,
+                  "demi_vie": 6}
+        for _ in range(int(rng.integers(1, 3))):
+            k = list(defaut)[int(rng.integers(len(defaut)))]
+            v = prm.get(k, defaut[k])
+            if k == "profondeur":
+                prm[k] = int(min(6, max(2, v + rng.choice([-1, 1]))))
+            elif k == "iterations":
+                prm[k] = int(min(900, max(100, v * rng.choice([0.7, 1.4]))))
+            elif k == "demi_vie":
+                prm[k] = int(rng.choice([3, 4, 6, 8, 10, 15]))
+            elif k == "feuille":
+                prm[k] = int(min(2000, max(100, v * rng.choice([0.5, 2.0]))))
+            else:
+                prm[k] = float(round(v * rng.choice([0.6, 1.6]), 4))
+        pm = base["par_marche"] if rng.random() > 0.15 else not base["par_marche"]
+        nom = f"Amélioration {i} (variante d'un des meilleurs : " + ", ".join(f"{k} {prm[k]}" for k in sorted(prm)) + ")"
+        return nom, list(base["variables"]), bool(pm), prm
+
+    def _importance(self, jeu_sel, e, colonnes=None, phase="tri"):
         """Un indicateur n'est gardé que s'il aide sur DEUX périodes différentes (pas un hasard)."""
         np, model = self.np, self.model
         et = jeu_sel.dropna(subset=["cible"])
@@ -466,12 +608,60 @@ class Moteur:
             y = valid["cible"].to_numpy()
             base = model._auc(y, mod.predict_proba(valid))
             rng = np.random.default_rng(11 + k)
-            for var in mod.vars_commun:
+            for var in [v for v in mod.vars_commun if colonnes is None or v in colonnes]:
                 X = valid.copy()
                 X[var] = rng.permutation(X[var].to_numpy())
                 res.setdefault(var, [0.0, 0.0])[k] = base - model._auc(y, mod.predict_proba(X))
-            self.progres("tri", 0.5 * (k + 1))
+            self.progres(phase, 0.5 * (k + 1))
         return {k: tuple(v) for k, v in res.items()}
+
+    def _examen_manuel(self, jeu_sel):
+        """Chaque règle du manuel est vérifiée : aide-t-elle l'IA sur DEUX périodes jamais vues ?
+        Va-t-elle dans le sens annoncé par les chercheurs ? Quelle variante marche le mieux ?"""
+        from bourse_bot import connaissances
+        model, pd = self.model, self.pd
+        cx = [v for v in model.VARIABLES if v.startswith("cx_")]
+        self.cols_utiles = []
+        if not cx:
+            return {}, []
+        imp = self._importance(jeu_sel, {"variables": list(model.VARIABLES), "par_marche": False, "params": {}},
+                               colonnes=set(cx), phase="manuel")
+        et = jeu_sel.dropna(subset=["cible"])
+        echant = et.sample(min(len(et), 200000), random_state=3) if len(et) else et
+        verdicts, utiles = {}, []
+        for r in connaissances.REGLES:
+            meilleure, score, sens = None, None, None
+            for v in r["variantes"]:
+                col = connaissances.nom_colonne(r["cle"], v)
+                if col not in imp:
+                    continue
+                s = min(imp[col])
+                if score is None or s > score:
+                    meilleure, score = v, s
+                    x = echant[col]
+                    ok = x.notna()
+                    sens = (float(pd.Series(x[ok].rank()).corr(pd.Series(echant.loc[ok, "rendement_futur"].rank())))
+                            if ok.sum() > 1000 else None)
+            if meilleure is None:
+                verdicts[r["cle"]] = {"nom": r["nom"], "statut": "non testable", "variante": None}
+                self.log(f"   ⚪ {r['nom']} : pas assez de données pour la tester.")
+                continue
+            # seuil exigeant : 17 versions de règles sont testées, une seule pourrait passer par pur hasard
+            prouvee = all(i > SEUIL_REGLE for i in imp[connaissances.nom_colonne(r["cle"], meilleure)])
+            dans_le_sens = sens is not None and sens * r["sens"] > 0
+            statut = "utile" if prouvee else "pas d'effet prouvé"
+            verdicts[r["cle"]] = {"nom": r["nom"], "statut": statut, "variante": meilleure, "importance": score,
+                                  "sens_observe": sens, "dans_le_sens_annonce": dans_le_sens if sens is not None else None}
+            if prouvee:
+                utiles.append(connaissances.nom_colonne(r["cle"], meilleure))
+            self.log(f"   {'🟢' if prouvee else '⚪'} {r['nom']} · meilleure version : {meilleure} · "
+                     + ("aide l'IA sur les deux périodes" if prouvee else "aucun effet prouvé")
+                     + ("" if sens is None else (" · va dans le sens annoncé" if dans_le_sens else " · va plutôt dans le sens inverse aujourd'hui")))
+        self.cols_utiles = utiles
+        self.log(f"→ {len(utiles)} règle(s) sur {len(connaissances.REGLES)} prouvée(s) utile(s). Les autres restent "
+                 "disponibles, mais l'IA ne leur fait pas confiance pour l'instant.")
+        self.progres("manuel", 1)
+        return verdicts, utiles
 
 
 # ----------------------------------------------------------------------------
@@ -498,7 +688,7 @@ def enregistrer(res, demo):
 
 def publier(res, log) -> bool:
     """Envoie le résultat sur GitHub et lance la mise à jour du site."""
-    commande("git", "add", "historique/modele.json", "historique/apprentissage.json")
+    commande("git", "add", "historique/modele.json", "historique/apprentissage.json", FICHIER_ESSAIS.replace(os.sep, "/"))
     msg = f"Entraînement du {datetime.now():%d/%m/%Y} : " + (res["recette"]["nom"] if res["decision"]["change"] else "IA confirmée")
     commande("git", "commit", "-m", msg)
     sortie = ""
@@ -633,6 +823,8 @@ table{{width:100%;border-collapse:collapse}}td,th{{padding:8px;border-bottom:1px
 <div class="c"><h2>Recherche et examen final</h2>
 <p class="m">AUC : 0,5 = hasard, 1 = parfait. En Bourse, 0,52 à 0,56 est déjà un bon score. Seule la colonne « examen final » compte vraiment.</p>
 <table><tr><th>Façon de prévoir</th><th>Recherche</th><th>Examen final</th><th></th></tr>{lignes}</table></div>
+{"<div class='c'><h2>Le manuel de Bourse : verdict de l'IA</h2><p class='m'>Chaque règle connue a été vérifiée sur deux périodes jamais vues. 🟢 = aide vraiment l'IA. ⚪ = pas d'effet prouvé (la règle n'est pas forcément fausse, mais l'IA ne lui fait pas confiance).</p><table><tr><th>Règle</th><th>Verdict</th><th>Meilleure version</th><th>Sens</th></tr>" + "".join(f"<tr><td>{x(v['nom'])}</td><td>{'🟢 utile' if v['statut'] == 'utile' else '⚪ ' + x(v['statut'])}</td><td>{x(v.get('variante') or '–')}</td><td>{'comme annoncé' if v.get('dans_le_sens_annonce') else 'inverse' if v.get('dans_le_sens_annonce') is False else '–'}</td></tr>" for v in (e.get('connaissances') or {}).values()) + "</table></div>" if e.get('connaissances') else ""}
+{"<div class='c'><h2>Apprendre de ses erreurs : où l'IA se trompe-t-elle ?</h2><table>" + "".join(f"<tr><td>{x(g['nom'])}</td><td>{g['nb']:,} cas</td><td>{g['precision'] * 100:.0f} % justes</td></tr>" for g in ((e.get('erreurs') or {}).get('par_marche', []) + (e.get('erreurs') or {}).get('par_confiance', []))) + "</table><p class='m'>Les marchés où elle se trompe le plus sont ceux où ses prochaines recherches (un modèle par marché, d'autres indicateurs) ont le plus à gagner.</p></div>" if e.get('erreurs') else ""}
 {"<div class='c'><h2>Les indicateurs les plus utiles</h2><p class='m'>Perte d'AUC quand on mélange l'indicateur au hasard (la plus faible des deux périodes).</p><table>" + "".join(f"<tr><td>{x(k)}</td><td>{v:+.4f}</td></tr>" for k, v in imp.items()) + "</table></div>" if imp else ""}
 <div class="c"><h2>L'IA retenue en chiffres simples</h2>
 <p>À l'examen final, sur 100 prévisions, elle a trouvé la bonne direction <b>{ev.precision * 100:.0f} fois</b>{f" (marge d'erreur : {icp[0] * 100:.0f} à {icp[1] * 100:.0f})" if icp else ""}.
@@ -814,7 +1006,7 @@ def fenetre(args):
                 if type_ == "log":
                     ecrire(kw["texte"])
                 elif type_ == "etape":
-                    lib_etape.configure(text=f"Étape {kw['n']}/6 · {kw['texte']}")
+                    lib_etape.configure(text=f"Étape {kw['n']}/7 · {kw['texte']}")
                 elif type_ == "progres":
                     barre["value"] = kw["pct"] * 1000
                     ecoule = time.time() - debut
@@ -846,7 +1038,33 @@ def fenetre(args):
             pass
         racine.after(120, relever)
 
-    threading.Thread(target=moteur.lancer, daemon=True).start()
+    def demarrer():
+        nonlocal debut
+        debut = time.time()
+        threading.Thread(target=moteur.lancer, daemon=True).start()
+
+    if args.duree:
+        demarrer()
+    else:   # écran de choix de la durée, posé par-dessus la fenêtre
+        choix = tk.Frame(racine, bg=BG)
+        choix.place(relx=0, rely=0, relwidth=1, relheight=1)
+        tk.Label(choix, text="🧠 Combien de temps veux-tu entraîner l'IA ?", font=("Segoe UI", 18, "bold"), fg=INK, bg=BG
+                 ).pack(anchor="w", padx=24, pady=(28, 4))
+        tk.Label(choix, text="Plus l'entraînement est long, plus l'IA essaie d'idées. Tu pourras l'arrêter à tout moment : "
+                             "elle passera alors l'examen final avec ce qu'elle a déjà appris.",
+                 font=police, fg=MUTED, bg=BG, wraplength=840, justify="left").pack(anchor="w", padx=24, pady=(0, 18))
+
+        def choisir(cle):
+            args.duree = cle
+            choix.destroy()
+            demarrer()
+        for cle, r in DUREES.items():
+            b = tk.Button(choix, text=f"{r['nom']}\n{r['resume']}", font=("Segoe UI", 13, "bold"), justify="left", anchor="w",
+                          bg=ACC if cle == "normal" else "#22314a", fg="#0a111d" if cle == "normal" else INK,
+                          activebackground="#2b3d5c", relief="flat", padx=18, pady=12, command=lambda c=cle: choisir(c))
+            b.pack(fill="x", padx=24, pady=6)
+        tk.Label(choix, text="Conseil : « Normal » une fois par semaine suffit. « Expert » de temps en temps, par exemple la nuit.",
+                 font=police, fg=MUTED, bg=BG, wraplength=840, justify="left").pack(anchor="w", padx=24, pady=(14, 0))
     racine.after(120, relever)
     racine.mainloop()
 
@@ -863,6 +1081,10 @@ def console(args):
             print(f"   ── progression : {kw['pct'] * 100:.0f} %", flush=True)
         elif type_ == "erreur":
             print("❌ " + kw["texte"], flush=True)
+    if not args.duree:
+        print("Durée : 1 = Rapide (≈ 20 min) · 2 = Normal (≈ 50 min) · 3 = Expert (≈ 2 h 30)")
+        r = input("Ton choix [2] : ").strip()
+        args.duree = {"1": "rapide", "3": "expert"}.get(r, "normal")
     moteur = Moteur(args, emettre)
     t = threading.Thread(target=moteur.lancer, daemon=True)
     t.start()
@@ -889,11 +1111,14 @@ def console(args):
 
 def main():
     p = argparse.ArgumentParser(description="Entraînement approfondi de l'IA de Radar Bourse")
-    p.add_argument("--complet", action="store_true", help="recherche plus large (~2 h 30)")
+    p.add_argument("--duree", choices=list(DUREES), default=None, help="rapide, normal ou expert (sinon la fenêtre demande)")
+    p.add_argument("--complet", action="store_true", help="(ancien nom de --duree expert)")
     p.add_argument("--minutes", type=int, default=None, help="durée maximale de la recherche")
     p.add_argument("--console", action="store_true", help="sans fenêtre")
     p.add_argument("--demo", action="store_true", help="données fictives (pour tester)")
     args = p.parse_args()
+    if args.complet and not args.duree:
+        args.duree = "expert"
     verifier_dependances()
     if not args.console:
         try:

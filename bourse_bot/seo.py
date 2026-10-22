@@ -54,7 +54,7 @@ GLOSSAIRE = [
 ]
 
 CSS_PAGE = """:root{--bg:#eef1f5;--surface:#fff;--ink:#0f1b2d;--muted:#5a6a80;--line:#d9e0e8;--accent:#1d4fd8;--up:#07743f;--down:#b42a25;
---f:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--d:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;--m:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+--f:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--d:"Newsreader",Georgia,"Times New Roman",serif;--m:"IBM Plex Mono",ui-monospace,Consolas,monospace}
 @media (prefers-color-scheme:dark){:root{--bg:#0a111d;--surface:#111a29;--ink:#e4ebf5;--muted:#8c9bb0;--line:#22314a;--accent:#7398ff;--up:#35c27d;--down:#ff6b62;color-scheme:dark}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--f)}
 .w{max-width:860px;margin:0 auto;padding-block:28px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -179,7 +179,7 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 <style>{CSS_PAGE}</style>
 </head>
 <body><div class="w">
-<nav class="fil"><a href="{prefixe}index.html">{NOM}</a> · <a href="{prefixe}point.html">Le point du jour</a> · <a href="{prefixe}resultats.html">Résultats réels</a> · <a href="{prefixe}apprendre.html">Apprendre</a> · <a href="{prefixe}titres.html">Tous les titres</a> · <a href="{prefixe}glossaire.html">Glossaire</a> · <a href="{prefixe}en/index.html" hreflang="en">English</a></nav>
+<nav class="fil"><a href="{prefixe}index.html">{NOM}</a> · <a href="{prefixe}point.html">Le point du jour</a> · <a href="{prefixe}resultats.html">Résultats réels</a> · <a href="{prefixe}connaissances.html">Ce que sait l'IA</a> · <a href="{prefixe}apprendre.html">Apprendre</a> · <a href="{prefixe}titres.html">Tous les titres</a> · <a href="{prefixe}glossaire.html">Glossaire</a> · <a href="{prefixe}en/index.html" hreflang="en">English</a></nav>
 {corps}
 <p class="avert"><b>Rien n'est sûr en Bourse.</b> {NOM} est un projet éducatif : ces informations sont générées automatiquement,
 peuvent contenir des erreurs et ne constituent pas un conseil en investissement. Tu peux perdre tout l'argent investi.
@@ -505,6 +505,11 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
 
     # Résultats réels, image du jour à partager, version anglaise
     try:
+        _page_connaissances(base, payload, dossier, csp)
+        urls.append(("connaissances.html", "weekly", "0.7"))
+    except Exception as e:
+        print(f"Page connaissances non générée : {e}")
+    try:
         _page_resultats(base, payload, dossier, csp)
         urls.append(("resultats.html", "daily", "0.8"))
     except Exception as e:
@@ -807,3 +812,45 @@ def _image_du_jour(payload: dict, chemin: str, base: str = "") -> bool:
     dr.text((M, H - 86), site_txt or "Projet éducatif gratuit", font=police(28, True), fill=gris)
     img.save(chemin, optimize=True)
     return True
+
+
+# ----------------------------------------------------------------------------
+# Page « Ce que sait l'IA » : son manuel de Bourse et le verdict de ses tests
+# ----------------------------------------------------------------------------
+def _page_connaissances(base, payload, dossier, csp):
+    from . import connaissances
+    E = payload.get("entrainement") or {}
+    V = E.get("connaissances") or {}
+    quand = ""
+    if E.get("date"):
+        try:
+            quand = date_longue(E["date"][:10])
+        except ValueError:
+            quand = E["date"][:10]
+    corps = ("<h1>Ce que sait l'IA du radar</h1>"
+             "<p class='muted'>On a donné à l'IA un « manuel de Bourse » : des règles connues, étudiées par des chercheurs "
+             "en finance. Mais elle ne les croit pas sur parole. Lors de chaque entraînement, elle vérifie chaque règle "
+             "sur des années qu'elle n'a jamais vues, teste plusieurs versions, et ne fait confiance qu'à celles qui aident "
+             "vraiment. Beaucoup d'effets célèbres se sont affaiblis depuis leur découverte : c'est pour ça qu'on les teste.</p>"
+             + (f"<div class='carte'><b>Dernier examen du manuel : {_e(quand)}.</b> "
+                f"{sum(1 for v in V.values() if v.get('statut') == 'utile')} règle(s) sur {len(connaissances.REGLES)} prouvée(s) utile(s).</div>"
+                if V else "<div class='carte'>Les règles seront vérifiées au prochain entraînement approfondi de l'IA.</div>"))
+    for r in connaissances.REGLES:
+        v = V.get(r["cle"]) or {}
+        if v.get("statut") == "utile":
+            badge = "<span class='up'><b>✓ Utile : vérifiée par l'IA</b></span>"
+        elif v.get("statut"):
+            badge = f"<span class='muted'><b>○ {_e(v['statut'].capitalize())}</b> : l'IA ne lui fait pas confiance pour l'instant</span>"
+        else:
+            badge = "<span class='muted'>Pas encore testée</span>"
+        sens = ("" if v.get("dans_le_sens_annonce") is None else
+                " · va dans le sens annoncé par les chercheurs" if v["dans_le_sens_annonce"] else " · va plutôt dans le sens inverse ces dernières années")
+        corps += (f"<div class='carte'><h2 style='margin-top:0'>{_e(r['nom'])}</h2><p>{_e(r['idee'])}</p>"
+                  f"<p class='muted' style='font-size:14px'>Source : {_e(r['source'])}</p><p>{badge}"
+                  f"{(' · meilleure version : ' + _e(v['variante'])) if v.get('variante') else ''}{_e(sens)}</p></div>")
+    corps += ("<p>Rien n'est sûr : une règle utile sur le passé peut cesser de fonctionner. Voir aussi les "
+              "<a href='resultats.html'>résultats réels</a> du radar.</p>")
+    with open(os.path.join(dossier, "connaissances.html"), "w", encoding="utf-8") as f:
+        f.write(_page(base, f"Ce que sait l'IA : les règles de Bourse vérifiées | {NOM}",
+                      "Momentum, faible volatilité, saisons, retournement… les règles de Bourse connues, et ce que l'IA du radar en a vraiment vérifié.",
+                      "connaissances.html", corps, csp=csp))

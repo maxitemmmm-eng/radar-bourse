@@ -253,7 +253,16 @@ def calculer(df: pd.DataFrame, benchmark: pd.DataFrame | None = None,
     d["spread_credit"] = spread if spread is not None else np.nan
     d["spread_credit_chg"] = spread.diff(20) if spread is not None else np.nan
     d["conditions_fin"] = condfin if condfin is not None else np.nan
+    vix3m = aligne("vix3m")
+    # Structure de la peur (Simon et Campasano, 2014) : au-dessus de 0, la peur immédiate dépasse la peur à
+    # 3 mois, signe de panique ; ces moments ont souvent été suivis de rebonds, mais pas toujours.
+    d["vix_structure"] = (vix / vix3m - 1) if (vix is not None and vix3m is not None) else np.nan
     d["chomage_tendance"] = (chomage.rolling(20).mean() / chomage.rolling(120).mean() - 1) if chomage is not None else np.nan
+
+    # Connaissances de Bourse (règles étudiées par les chercheurs), testées ensuite par l'entraînement
+    from . import connaissances
+    crypto = len(d) > 0 and float((pd.DatetimeIndex(d.index).dayofweek >= 5).mean()) > 0.1
+    connaissances.ajouter(d, benchmark, crypto=crypto)
 
     return d.replace([np.inf, -np.inf], np.nan)
 
@@ -270,5 +279,8 @@ FEATURES = [
     "vix", "vix_chg", "taux_chg", "dollar_chg", "fng",
     # ajoutés en version 15 : contexte économique
     "courbe_taux", "petrole_chg", "cuivre_chg", "spread_credit", "spread_credit_chg", "conditions_fin",
-    "chomage_tendance",
+    "chomage_tendance", "vix_structure",
 ]
+# version 17 : le « manuel de Bourse » de l'IA (voir connaissances.py)
+from .connaissances import COLONNES as _COLONNES_CONNAISSANCES  # noqa: E402
+FEATURES += _COLONNES_CONNAISSANCES

@@ -111,10 +111,71 @@ Le **défi pronostic** permet de parier (sans argent) contre le radar et de comp
 - **Alertes Telegram** (facultatif) : chaque soir, le robot publie les signaux forts sur ta chaîne.
   Pour l'activer plus tard : double-clique sur `alertes_telegram.bat`.
 
+## Nouveautés de la version 20 : un site plus soigné
+
+- Nouvelle typographie : titres en Newsreader (police éditoriale), textes en IBM Plex. Fini les petites étiquettes en MAJUSCULES.
+- En haut de la page, « Aujourd'hui en bref » : un court texte écrit automatiquement à partir des chiffres du jour (humeur des indices, avis des deux IA, rappel de leur taux de réussite réel).
+- Nouvelle section « Nos engagements » : on montre nos erreurs, rien à vendre, on explique tout, contact par la page GitHub du projet (aucune identité publiée).
+- Pied de page rangé en colonnes : pages du site, informations légales, avertissement.
+
+## Nouveautés de la version 19 : les techniques des professionnels
+
+Personne n'est « imbattable » en Bourse (les meilleurs fonds ont raison autour de 52 à 55 % du temps), mais
+voici ce que les gérants quantitatifs utilisent vraiment pour être plus précis, et que les IA ont appris :
+- **Classements entre titres** : chaque règle du manuel est aussi utilisée en rang du jour (« ce titre fait
+  partie des 10 % au meilleur momentum »), comparable d'une époque à l'autre.
+- **Santé du marché entier** : part des titres en tendance haussière (« largeur ») et écart entre gagnants
+  et perdants (« dispersion »), recalculés chaque jour.
+- **Structure de la peur** : VIX comparé au VIX à 3 mois (panique immédiate ou pas).
+- **Mémoire qui s'estompe** : l'entraînement teste si les années récentes doivent compter davantage.
+- **Comité des meilleures recettes** : à l'examen final, la moyenne des 3 meilleures recettes est jugée
+  aussi ; si elle gagne de façon prouvée, le site l'utilise.
+
+## Nouveautés de la version 18 : deux IA expertes qui décident ensemble
+
+- **Les deux IA connaissent toutes les techniques** : l'IA n°1 est une spécialiste (les indicateurs qui ont
+  fait leurs preuves), l'IA n°2 utilise TOUT : indicateurs techniques, économie et les 23 règles du manuel.
+- **Décision commune apprise** : chaque soir, le radar teste si une décision « apprise » (combien faire
+  confiance à chacune, comment réagir quand elles se contredisent) fait mieux qu'une simple moyenne, sur des
+  années jamais vues. Elle n'est utilisée que si c'est le cas. La fiche de chaque titre montre l'avis de
+  chaque IA et la décision commune.
+- **Tous les cours depuis le début** : jusqu'à 25 ans d'historique, relus à chaque mise à jour (toutes les
+  heures). Grâce à la **mise à jour express**, seul le dernier mois est téléchargé puis collé à l'historique
+  en mémoire (tout est retéléchargé si un dividende ou une division d'actions a modifié les anciens prix).
+- **Apprendre de ses erreurs** : quand au moins 300 prévisions publiées ont été vérifiées, les vraies erreurs
+  recalent la confiance des IA (seulement pour les rendre plus prudentes, jamais plus sûres d'elles).
+  L'entraînement sur PC analyse aussi où l'IA se trompe le plus (par marché, par niveau de confiance).
+- **Plus rapide** : tests sur un jour sur deux, forêt d'arbres 2 à 3 fois plus rapide, entraînement sur PC
+  avec choix de durée et mémoire de ses essais.
+
+## Le manuel de Bourse de l'IA (bourse_bot/connaissances.py)
+
+L'IA a reçu 23 règles de Bourse étudiées par des chercheurs en finance, chacune avec sa source :
+momentum (3, 6, 12 mois), retournement à court et à long terme, proximité du plus haut sur un an, cassure
+du plus haut, croisements de moyennes mobiles, faible volatilité, volatilité propre au titre, pari contre le
+bêta, bêta de baisse, effet « ticket de loterie », asymétrie des rendements, prime d'illiquidité, régularité
+de la hausse (« frog in the pan »), momentum des nuits, suivi de tendance, prime des volumes, « Sell in May »,
+effet janvier, retour vers la moyenne, momentum face au marché, momentum des cryptos, et le cycle du halving
+Bitcoin (croyance populaire, testée elle aussi). Chaque règle a
+une ou plusieurs versions (ex : momentum sur 3, 6 ou 12 mois) et sa source.
+
+L'IA ne les croit pas sur parole : à chaque entraînement, elle vérifie chaque règle sur deux périodes
+jamais vues, garde la meilleure version de celles qui aident vraiment, et construit une IA « indicateurs
+de base + connaissances prouvées » qui doit ensuite gagner l'examen final. Le verdict est publié sur la
+page **« Ce que sait l'IA »** du site (`connaissances.html`).
+
+**Ajouter une connaissance** : ouvre `bourse_bot/connaissances.py`, copie un bloc de la liste `REGLES`,
+change la clé, le nom, l'idée, la source et le calcul. Au prochain entraînement, l'IA la testera seule.
+
 ## Entraînement approfondi de l'IA (sur ton PC)
 
-Double-clique sur **`entrainement_ia.bat`** (environ 45 min) ou **`entrainement_ia_complet.bat`**
-(environ 3 h, recherche plus large). Une fenêtre s'ouvre avec :
+Double-clique sur **`entrainement_ia.bat`** : une fenêtre te demande la durée, **Rapide** (≈ 20 min),
+**Normal** (≈ 50 min) ou **Expert** (≈ 2 h 30). `entrainement_ia_complet.bat` lance directement le mode
+Expert. Pendant la recherche, l'IA garde 1 jour sur 2 ou 3 (deux jours voisins ont presque le même
+résultat à un mois) : chaque essai va deux à trois fois plus vite, et l'examen final utilise tous les jours.
+Elle **se souvient de ses essais** d'un entraînement à l'autre (`historique/essais_ia.json`) : la moitié
+de ses essais améliore ses meilleures idées passées, l'autre moitié explore des idées nouvelles.
+La fenêtre affiche ensuite :
 - la **progression** en % et le temps restant ;
 - une **jauge « ce que l'IA a appris »**, de « hasard » à « exceptionnel », avec l'IA du site et le
   résultat de l'examen final ;

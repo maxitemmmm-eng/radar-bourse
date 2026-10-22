@@ -8,7 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230f1b2d'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%237398ff' stroke-width='1.5'/%3E%3Cpath d='M16 16 L27 9' stroke='%2335c27d' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%2335c27d'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <!--__LIB__-->
 <style>
 /* Layout : un « pupitre de marché » — bandeau des indices, prédictions du jour, fiabilité, puis la liste complète ; chaque titre s'ouvre dans un panneau de détail. */
@@ -16,7 +16,7 @@
   --bg:#eef1f5; --surface:#ffffff; --surface-2:#f6f8fb; --ink:#0f1b2d; --muted:#5a6a80; --line:#d9e0e8;
   --accent:#1d4fd8; --accent-soft:#e3eafc; --up:#07743f; --up-soft:#dcf2e6; --down:#b42a25; --down-soft:#fbe3e1;
   --warn:#855c08; --warn-soft:#fbf0d6; --cone:#1d4fd8; --sur-couleur:#ffffff;
-  --f-display:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-display:"Newsreader",Georgia,"Times New Roman",serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
   --r:10px;
@@ -36,11 +36,12 @@ body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);margin:0}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
 .gutter{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .wrap{max-width:1240px;margin:0 auto}
-h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
-h2{font-size:20px;font-weight:700}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.005em;font-optical-sizing:auto}
+h2{font-size:23px;font-weight:600;line-height:1.2}
+h3{font-weight:600}
 .num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
-.label{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.label{font-size:13px;color:var(--muted);font-weight:500}
 .up{color:var(--up)}.down{color:var(--down)}
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -49,7 +50,7 @@ button{font:inherit;color:inherit}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
 .top .wrap{display:flex;align-items:center;gap:16px;padding-block:12px;flex-wrap:wrap}
 .brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
-.brand h1{font-size:22px;font-weight:800;white-space:nowrap}
+.brand h1{font-size:24px;font-weight:700;white-space:nowrap}
 @media (max-width:520px){.brand{flex-wrap:wrap;row-gap:0}.brand .stamp{flex-basis:100%;margin-left:19px}}
 .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--up);display:inline-block;box-shadow:0 0 0 3px var(--up-soft)}
 .stamp{font-size:13px;color:var(--muted)}
@@ -107,7 +108,7 @@ section{margin-top:36px}
 .search{flex:1 1 200px;max-width:280px;padding:7px 12px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px}
 .tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
 table{width:100%;border-collapse:collapse;font-size:14px}
-th{position:sticky;top:0;background:var(--surface);text-align:left;font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+th{position:sticky;top:0;background:var(--surface);text-align:left;font-weight:600;font-size:12px;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
 th[aria-sort]::after{content:" ↓"}th[aria-sort="ascending"]::after{content:" ↑"}
 td{padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}
 tbody tr{cursor:pointer}tbody tr:hover td{background:var(--surface-2)}
@@ -146,7 +147,7 @@ tbody tr:last-child td{border-bottom:0}
 .bulle.acc{background:var(--accent);color:var(--sur-couleur)}.bulle.warn{background:var(--warn);color:var(--sur-couleur)}
 @media (max-width:700px){.bulle{font-size:11px;padding:4px 7px}.bulle small{display:none}}
 .sep{position:absolute;top:0;bottom:0;border-left:2px dashed var(--ink);opacity:.55}
-.sep-lab{position:absolute;top:10px;font:700 11px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--ink);background:var(--surface);padding:3px 7px;border-radius:5px;border:1px solid var(--line);white-space:nowrap}
+.sep-lab{position:absolute;top:10px;font:600 12px var(--f-body);color:var(--ink);background:var(--surface);padding:3px 7px;border-radius:5px;border:1px solid var(--line);white-space:nowrap}
 .sep-lab.gauche{transform:translateX(calc(-100% - 8px))}
 .sep-lab.droite{transform:translateX(8px);color:var(--accent);border-color:var(--accent)}
 
@@ -319,14 +320,29 @@ tbody tr:last-child td{border-bottom:0}
 .fact{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px}
 .fact .v{font-family:var(--f-mono);font-size:15px}
 .disclaimer{font-size:12.5px;color:var(--muted);max-width:75ch}
-footer{margin-top:48px;border-top:1px solid var(--line);padding-block:20px 40px;display:grid;gap:12px}
+footer{margin-top:56px;border-top:2px solid var(--ink);padding-block:28px 48px;display:grid;gap:18px}
+.pied{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,1fr));gap:24px 40px}
+@media (max-width:760px){.pied{grid-template-columns:1fr}}
+.pied .marque{font-family:var(--f-display);font-size:22px;font-weight:700;margin:0 0 6px}
+.pied h3{font-family:var(--f-body);font-size:14px;font-weight:600;margin:0 0 8px}
 footer nav{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13.5px}
+.pied nav{flex-direction:column;align-items:flex-start;gap:7px}
+footer a{color:var(--accent);text-underline-offset:3px}
 .lnk{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-size:inherit}
 
 /* Accroche */
-.hero{padding-block:28px 4px;max-width:760px}
-.hero h2{font-size:clamp(28px,4.4vw,44px);font-weight:800;letter-spacing:-.025em;line-height:1.05}
-.hero p{margin:12px 0 0;color:var(--muted);font-size:16px;max-width:62ch}
+.hero{padding-block:36px 8px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px 48px;align-items:start}
+@media (max-width:860px){.hero{grid-template-columns:1fr;padding-block:24px 4px}}
+.hero h2{font-size:clamp(32px,4.6vw,50px);font-weight:600;letter-spacing:-.015em;line-height:1.06}
+.hero .intro{margin:14px 0 0;color:var(--muted);font-size:16.5px;line-height:1.6;max-width:58ch}
+.bref{border-left:3px solid var(--accent);padding:4px 0 4px 20px;margin-top:6px}
+.bref h3{font-size:15px;font-family:var(--f-body);font-weight:600;color:var(--muted);margin-bottom:8px}
+.bref p{font-family:var(--f-display);font-size:clamp(18px,1.8vw,21px);line-height:1.5;margin:0;max-width:44ch}
+.bref .sig{font-family:var(--f-body);font-size:13px;color:var(--muted);margin-top:10px}
+.engag{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px 32px;margin:0;padding:0;list-style:none}
+.engag li{border-top:2px solid var(--ink);padding-top:12px}
+.engag b{display:block;font-family:var(--f-display);font-size:19px;font-weight:600;margin-bottom:4px}
+.engag p{margin:0;color:var(--muted);font-size:14.5px;line-height:1.55}
 
 /* Signaux forts */
 .fort-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:20px}
@@ -343,7 +359,7 @@ footer nav{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13.5px}
 .fcard:hover{border-color:var(--accent)}
 .fcard .tete{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
 .fcard .tete b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.badge-fort{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--accent-soft);color:var(--accent);margin-left:6px;vertical-align:middle}
+.badge-fort{display:inline-block;font-size:12px;font-weight:600;padding:2px 7px;border-radius:5px;background:var(--accent-soft);color:var(--accent);margin-left:6px;vertical-align:middle}
 
 /* Actualités */
 .news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
@@ -382,7 +398,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 /* Météo du marché */
 .mood{margin-top:14px;display:grid;grid-template-columns:auto 1fr;gap:10px 28px;align-items:center}
 .mood .mot{font-family:var(--f-display);font-size:30px;font-weight:800;line-height:1}
-.mood .mot small{display:block;font-family:var(--f-body);font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.mood .mot small{display:block;font-family:var(--f-body);font-size:13.5px;font-weight:500;color:var(--muted);margin-bottom:6px}
 .mood .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
 .mood .st b{display:block;font-family:var(--f-mono);font-size:18px;font-weight:500}
 .mood .st span{font-size:12.5px;color:var(--muted)}
@@ -406,7 +422,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 @keyframes pulse{50%{opacity:.35}}
 .flash-up{background:var(--up-soft)!important}.flash-down{background:var(--down-soft)!important}
 @media (prefers-reduced-motion:no-preference){[data-px]{transition:background .6s}}
-.src{font-size:10.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-left:4px}
+.src{font-size:12px;color:var(--muted);margin-left:4px}
 
 /* Bandeau d'avertissement (premier passage) */
 .consent{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(5,10,20,.12);padding-bottom:max(14px,env(safe-area-inset-bottom,0px))}
@@ -492,6 +508,12 @@ html.simple .expert{display:none!important}
 .freq .phrase{font-size:15px;margin:0}
 .freq .phrase b{font-size:18px}
 
+/* Débat des deux IA dans la fiche */
+.debat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;max-width:560px}
+.debat > div{display:grid;gap:2px;padding:8px 10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line)}
+.debat .dec{border:2px solid var(--accent)}
+.debat b{font-size:18px;font-weight:600}
+@media (max-width:520px){.debat{grid-template-columns:1fr}}
 /* Accord des deux IA */
 .accord{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:3px 9px;border-radius:99px}
 .accord.oui{background:var(--up-soft);color:var(--up)}
@@ -600,16 +622,19 @@ html.calme *{animation:none!important;transition:none!important}
 <nav class="wrap nav-sec" id="nav-sec" aria-label="Sections du site">
   <a href="#previsions">Prévisions</a><a href="#simulation">Simulation</a><a href="#portefeuille">Portefeuille</a>
   <a href="#signaux">Signaux forts</a><a href="#carte-sec">Carte du marché</a><a href="#confiance">Fiabilité</a>
-  <a href="#tous">Tous les titres</a><a href="resultats.html" class="ext lien-site">Résultats réels</a>
+  <a href="#tous">Tous les titres</a><a href="resultats.html" class="ext lien-site">Résultats réels</a><a href="connaissances.html" class="ext lien-site">Ce que sait l'IA</a>
   <a href="point.html" class="ext lien-site">Point du jour</a><a href="apprendre.html" class="ext lien-site">Apprendre</a>
 </nav></header>
 <div class="demo gutter" id="demo" hidden role="region" aria-label="Avertissement : données de démonstration"><div class="wrap">Données fictives de démonstration. Lance <span class="num">python -m bourse_bot site</span> sur ton PC pour afficher les vrais cours.</div></div>
 
 <main class="gutter" id="contenu" tabindex="-1"><div class="wrap">
   <div class="hero">
-    <h2>Les marchés, lus par les chiffres.</h2>
-    <p>Chaque heure, deux intelligences artificielles estiment les chances de hausse et de baisse de plus de 80 actions et cryptos pour le mois qui vient. Elles se trompent souvent : ici, on te montre exactement combien. Un projet éducatif et gratuit, pas un conseil.</p>
+   <div>
+    <h2>Les marchés, lus calmement par les chiffres.</h2>
+    <p class="intro">Chaque heure, deux intelligences artificielles relisent les cours de plus de 80 actions et cryptos et estiment leurs chances de monter d'ici un mois. Elles se trompent souvent, et on te montre exactement combien. C'est un projet éducatif et gratuit, pas un conseil.</p>
     <div class="hero-liens"><a class="btn" href="#simulation">À combien dans un mois ?</a><a class="btn ghost" href="#portefeuille">Portefeuille virtuel</a><a class="btn ghost lien-site" href="resultats.html">Résultats réels</a><a class="btn ghost lien-site" href="apprendre.html">Apprendre la Bourse</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
+   </div>
+   <aside class="bref" id="bref" aria-labelledby="bref-t" hidden><h3 id="bref-t">Aujourd'hui en bref</h3><p id="bref-txt"></p><p class="sig" id="bref-sig"></p></aside>
   </div>
   <div class="alerte-fav" id="alerte-fav" hidden role="status"></div>
   <div class="depart" id="depart" hidden>
@@ -760,6 +785,16 @@ html.calme *{animation:none!important;transition:none!important}
       </tr></thead><tbody id="rows"></tbody></table></div>
   </section>
 
+  <section aria-labelledby="h-eng" id="engagements">
+    <div class="sec-head"><h2 id="h-eng">Nos engagements</h2></div>
+    <ul class="engag">
+      <li><b>On montre nos erreurs</b><p>Chaque prévision est notée un mois plus tard, juste ou fausse, et le résultat reste en ligne. Rien n'est effacé.</p></li>
+      <li><b>Rien à te vendre</b><p>Pas de publicité, pas d'abonnement, pas de lien d'affiliation vers un courtier. Personne ici ne gagne d'argent si tu achètes.</p></li>
+      <li><b>On explique tout</b><p>Chaque chiffre a une définition à un clic, et la méthode complète est publique. Si un mot n'est pas clair, c'est à nous de le corriger.</p></li>
+      <li><b>On t'écoute</b><p>Une erreur, une question, une idée : écris-nous sur la <a id="eng-contact" href="#" target="_blank" rel="noopener">page du projet</a>. On lit tous les messages.</p></li>
+    </ul>
+  </section>
+
   <section aria-labelledby="h-faq">
     <div class="sec-head"><h2 id="h-faq">Questions fréquentes</h2></div>
     <div class="panel faq-liste"><!--__FAQ__--></div>
@@ -783,16 +818,26 @@ html.calme *{animation:none!important;transition:none!important}
   </section>
 
   <footer>
+    <div class="pied">
+      <div>
+        <p class="marque">Radar Bourse</p>
+        <p class="disclaimer">Un projet éducatif et gratuit, fait avec soin pour apprendre à lire les marchés sans se raconter d'histoires. Les données viennent de sources publiques et sont mises à jour toutes les heures.</p>
+      </div>
+      <div><h3>Pour aller plus loin</h3><nav aria-label="Pages du site">
+        <a class="lien-site" href="resultats.html">Résultats réels</a>
+        <a class="lien-site" href="en/index.html" hreflang="en" lang="en">English version</a>
+        <a href="#engagements">Nos engagements</a>
+        <a href="#prevention">Besoin d'aide ?</a>
+      </nav></div>
+      <div><h3>Informations légales</h3><nav aria-label="Informations légales">
+        <button class="lnk" data-legal="risques">Avertissement sur les risques</button>
+        <button class="lnk" data-legal="conditions">Conditions d'utilisation</button>
+        <button class="lnk" data-legal="methodologie">Méthodologie et conflits d'intérêts</button>
+        <button class="lnk" data-legal="mentions">Mentions légales</button>
+        <button class="lnk" data-legal="confidentialite">Confidentialité</button>
+      </nav></div>
+    </div>
     <p class="disclaimer"><b>Rien n'est sûr en Bourse.</b> Radar Bourse est un projet éducatif. Les informations publiées sont générées automatiquement, peuvent contenir des erreurs et ne constituent ni un conseil en investissement, ni une recommandation personnalisée, ni une incitation à acheter ou vendre. Investir comporte un risque de perte totale du capital. L'éditeur décline toute responsabilité quant à l'usage fait de ces informations.</p>
-    <nav aria-label="Informations légales">
-      <button class="lnk" data-legal="risques">Avertissement sur les risques</button>
-      <button class="lnk" data-legal="conditions">Conditions d'utilisation</button>
-      <button class="lnk" data-legal="methodologie">Méthodologie et conflits d'intérêts</button>
-      <button class="lnk" data-legal="mentions">Mentions légales</button>
-      <button class="lnk" data-legal="confidentialite">Confidentialité</button>
-      <a class="lien-site" href="resultats.html">Résultats réels</a>
-      <a class="lien-site" href="en/index.html" hreflang="en" lang="en">English version</a>
-    </nav>
     <!--__LIENS_SEO__-->
     <p class="disclaimer" id="sources-txt"></p>
     <p class="disclaimer">Graphiques réalisés avec <a href="https://www.tradingview.com/lightweight-charts/" target="_blank" rel="noopener noreferrer">TradingView Lightweight Charts™</a>, hébergé sur ce site (licence Apache 2.0).</p>
@@ -1091,6 +1136,30 @@ function rendreTape(){
   $("#tape").innerHTML = DATA.indices.map(i => `<div class="tick"><span class="n">${esc(i.nom)}</span>${spark(i.spark)}<span><span class="p num" data-px="${esc(i.ticker)}">${px(i.prix,i.devise)}</span> <span data-j1="${esc(i.ticker)}">${pct(i.var_jour,2)}</span></span></div>`).join("");
 }
 rendreTape();
+
+/* ---------- Aujourd'hui en bref : une phrase écrite à partir des chiffres ---------- */
+(function bref(){
+  const avec = DATA.titres.filter(t => t.proba_hausse != null);
+  if(avec.length < 5) return;
+  const moy = avec.reduce((a,t) => a + t.proba_hausse, 0) / avec.length;
+  const idx = (DATA.indices || []).filter(i => i.var_jour != null);
+  const hausse = idx.filter(i => i.var_jour > 0).length;
+  const jour = !idx.length ? "" : hausse === idx.length ? "Les grands indices sont tous dans le vert aujourd'hui. "
+    : hausse === 0 ? "Les grands indices reculent tous aujourd'hui. "
+    : `Journée partagée : ${hausse} grand${hausse>1?"s":""} indice${hausse>1?"s":""} sur ${idx.length} en hausse. `;
+  const ton = moy >= .56 ? "plutôt confiantes" : moy <= .48 ? "plutôt prudentes" : "assez partagées";
+  const tri = [...avec].sort((a,b) => b.proba_hausse - a.proba_hausse);
+  const tete = tri.slice(0,2).filter(t => t.proba_hausse >= .55).map(t => esc(t.nom));
+  let txt = jour + `Pour le mois qui vient, les deux IA sont ${ton} : en moyenne ${Math.round(moy*100)} % de chances de hausse par titre`;
+  txt += tete.length ? `, avec ${tete.join(" et ")} en tête de liste. ` : ", sans titre qui se détache vraiment. ";
+  const prec = DATA.suivi && DATA.suivi.nb_verifiees >= 30 ? DATA.suivi.precision : null;
+  txt += prec != null ? `Pour rappel, sur ${DATA.suivi.nb_verifiees} prévisions déjà vérifiées, elles ont vu juste ${Math.round(prec*100)} fois sur 100.`
+    : "Rappel honnête : même leurs meilleurs avis se trompent souvent.";
+  $("#bref-txt").innerHTML = txt;
+  const d = new Date(DATA.genere_le || Date.now());
+  $("#bref-sig").textContent = `Texte écrit automatiquement à partir des chiffres du ${isNaN(d) ? "jour" : d.toLocaleDateString("fr-FR",{day:"numeric",month:"long"})}. Ce n'est pas un conseil.`;
+  $("#bref").hidden = false;
+})();
 
 /* ---------- Prédictions ---------- */
 const T = DATA.titres;
@@ -1511,6 +1580,19 @@ const M = DATA.modele;
       ${A.precision_desaccord != null ? barreStat("Quand elles ne le sont pas", A.precision_desaccord, A.ic_desaccord, true) : ""}
       <p class="muted" style="margin:0;font-size:13px">${A.ic_desaccord && A.ic_desaccord[0] <= .5 && A.ic_desaccord[1] >= .5 ? "Quand elles ne sont pas d'accord, elles ne font pas mieux que pile ou face : le radar l'affiche clairement et ne donne alors jamais de signal fort." : "Le radar affiche toujours si elles sont d'accord ou non."}</p></div>`);
   }
+  if(I.comite || I.mode){
+    const poids = I.comite && I.comite.poids;
+    blocs.push(`<div class="panel"><h3>Comment les deux IA décident ensemble</h3>
+      <p style="margin:0;font-size:14px">L'IA n°1 est une spécialiste (les indicateurs qui ont fait leurs preuves) ; l'IA n°2 connaît toutes les techniques (indicateurs, économie, manuel de Bourse). ${
+        I.mode === "comite" && poids ? `Leur décision commune a été apprise sur des années jamais vues : l'avis de l'IA n°1 compte pour environ <b>${Math.round(poids[0]*100)} %</b>, celui de l'IA n°2 pour <b>${Math.round(poids[1]*100)} %</b>.`
+        : I.mode === "commun" ? "Leurs avis sont combinés à parts égales (une décision plus fine n'a pas fait mieux lors du test)." : "Pour l'instant, l'IA n°1 seule a fait mieux lors du test : c'est elle qui décide."}</p></div>`);
+  }
+  const CE = DATA.correction_erreurs;
+  if(CE){
+    blocs.push(`<div class="panel"><h3>Apprendre de ses erreurs</h3>
+      <p style="margin:0;font-size:14px">Chaque prévision publiée est vérifiée un mois plus tard. Les vraies erreurs servent à recaler la confiance des IA (seulement pour les rendre plus prudentes, jamais plus sûres d'elles).</p>
+      <p class="muted" style="margin:0;font-size:13px">${CE.active ? `Actif : ${esc(CE.raison)} (${CE.n.toLocaleString("fr-FR")} prévisions vérifiées).` : `Pas encore actif : ${esc(CE.raison || "")} (${(CE.n||0).toLocaleString("fr-FR")} vérifiées pour l'instant).`}</p></div>`);
+  }
   if(F.couverture != null){
     blocs.push(`<div class="panel"><h3>Les fourchettes tiennent-elles ? ${aide("fourchette")}</h3>
       <p style="margin:0;font-size:14px">Promesse : le prix final reste dans la fourchette 80 fois sur 100.</p>
@@ -1730,6 +1812,10 @@ function resumeSimple(t){
       ${t.proba_marche != null ? `<p><span class="badge-marche">Face à son marché</span>${aide("marche")} ${Math.round(t.proba_marche * 100)} chances sur 100 de faire <b>mieux que ${esc(t.indice_nom || "son marché")}</b> sur la même période.</p>` : ""}
       ${t.fourchette_elargie ? `<p class="muted" style="font-size:13.5px">📅 Résultats de l'entreprise avant l'échéance : la fourchette a été élargie par prudence.</p>` : ""}
       ${accordTxt ? `<p>${accordTxt} ${aide("accord")}</p>` : ""}
+      ${t.proba_ia1 != null && t.proba_ia2 != null ? `<div class="debat" role="group" aria-label="Avis des deux IA">
+        <div><span class="label">IA n°1 · spécialiste</span><b class="num">${Math.round(t.proba_ia1*100)} %</b></div>
+        <div><span class="label">IA n°2 · toutes les techniques</span><b class="num">${Math.round(t.proba_ia2*100)} %</b></div>
+        <div class="dec"><span class="label">Décision commune</span><b class="num">${Math.round(p*100)} %</b></div></div>` : ""}
       ${t.actu_contredit ? `<p class="muted" style="font-size:13.5px">📰 Les actualités récentes vont plutôt dans l'autre sens : prudence.</p>` : ""}</div></div>`;
 }
 
@@ -2725,8 +2811,10 @@ if(DATA.stats) $("#conf-stats").hidden = false;
 document.querySelectorAll(".leg-editeur").forEach(e => e.textContent = LEG.editeur || "l'Éditeur");
 document.querySelectorAll(".leg-conflits").forEach(e => e.textContent = LEG.conflits || "Aucun conflit d'intérêts déclaré.");
 if(/^https:\/\/github\.com\//.test(LEG.contact || "")){
+  $("#eng-contact").href = LEG.contact;
   $("#m-contact").innerHTML = `<a href="${esc(LEG.contact)}" target="_blank" rel="noopener">page du projet sur GitHub</a> (onglet « Issues »)`;
 } else $("#m-contact").textContent = LEG.contact || "—";
+if(!/^https:\/\/github\.com\//.test(LEG.contact || "")) $("#eng-contact").closest("p").textContent = "Une erreur, une question, une idée : le contact est indiqué dans les mentions légales, en bas de page. On lit tous les messages.";
 const ONGLETS = ["risques", "conditions", "methodologie", "mentions", "confidentialite"];
 function ouvrirLegal(tab){
   document.querySelectorAll("[data-pane]").forEach(p => p.hidden = p.dataset.pane !== tab);

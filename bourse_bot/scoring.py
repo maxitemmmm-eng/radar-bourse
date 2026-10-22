@@ -46,6 +46,7 @@ class Analyse:
     proba_ia2: float = float("nan")            # avis de l'IA n°2
     accord_ia: bool | None = None              # les deux IA vont-elles dans le même sens ?
     actu_contredit: bool = False               # les actus récentes contredisent l'avis de l'IA
+    proba_brute: float = float("nan")          # probabilité avant la correction apprise des vraies erreurs
 
     def to_dict(self) -> dict:
         return propre(self.__dict__.copy())

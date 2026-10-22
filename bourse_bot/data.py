@@ -88,12 +88,12 @@ def _silencieux():
         logging.getLogger(nom).propagate = False
 
 
-def _yahoo(tickers: list[str], progres=None) -> dict[str, pd.DataFrame]:
+def _yahoo(tickers: list[str], progres=None, periode_forcee: str | None = None) -> dict[str, pd.DataFrame]:
     import contextlib
     import io
     import yfinance as yf
     _silencieux()
-    periode, annees = _periode_yahoo()
+    periode, annees = (periode_forcee, None) if periode_forcee else _periode_yahoo()
     debut_min = pd.Timestamp.today() - pd.DateOffset(years=annees) if annees else None
     out: dict[str, pd.DataFrame] = {}
 
@@ -210,6 +210,27 @@ def telecharger_plusieurs(tickers: list[str], max_age_h: float | None = None, pr
     resultats = {t: df for t in tickers if not (df := _lire_cache(t, max_age_h)).empty}
     for t in resultats:
         SOURCES_UTILISEES.setdefault(t, "Yahoo (cache récent)")
+    # Mise à jour express : pour les titres déjà en mémoire (moins de 10 jours), on ne télécharge que le
+    # dernier mois et on le colle à l'historique. Bien plus rapide, et Yahoo bloque moins.
+    anciens = {t: df for t in tickers if t not in resultats and len(df := _lire_cache(t, 24 * 10)) > 200}
+    if anciens:
+        recents = _yahoo(list(anciens), periode_forcee="1mo")
+        for t, neuf in recents.items():
+            vieux = anciens[t]
+            commun = vieux.index.intersection(neuf.index)
+            # si un dividende ou une division d'actions a changé les anciens prix ajustés, on retélécharge tout
+            if len(commun) >= 3:
+                ecart = (neuf.loc[commun, "Close"] / vieux.loc[commun, "Close"] - 1).abs().max()
+                if ecart > 0.005:
+                    continue
+            elif len(commun) == 0 and neuf.index.min() > vieux.index.max() + pd.Timedelta(days=5):
+                continue
+            df = pd.concat([vieux[~vieux.index.isin(neuf.index)], neuf]).sort_index()
+            df.to_csv(_chemin_cache(t))
+            resultats[t] = df
+            SOURCES_UTILISEES[t] = "Yahoo (mise à jour express)"
+        if progres:
+            progres(0.1)
     a_telecharger = [t for t in tickers if t not in resultats]
     if a_telecharger:
         frais = _yahoo(a_telecharger, progres)
@@ -317,7 +338,9 @@ def cours_synthetiques(ticker: str, n: int = 1260) -> pd.DataFrame:
 # ----------------------------------------------------------------------------
 MACRO_TICKERS = {"vix": "^VIX", "taux": "^TNX", "dollar": "DX-Y.NYB", "or": "GC=F",
                  # économie : pétrole, cuivre (thermomètre de l'industrie), taux court américain (3 mois)
-                 "petrole": "CL=F", "cuivre": "HG=F", "taux_court": "^IRX"}
+                 "petrole": "CL=F", "cuivre": "HG=F", "taux_court": "^IRX",
+                 # peur à 3 mois : comparée à la peur à 1 mois (VIX), elle dit si la panique est immédiate
+                 "vix3m": "^VIX3M"}
 
 # Indicateurs économiques de la Réserve fédérale de Saint-Louis (FRED), gratuits et sans clé.
 # Le décalage (jours) reproduit le délai de publication : l'IA ne voit jamais un chiffre avant

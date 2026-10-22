@@ -12,7 +12,8 @@ from . import config
 from .model import wilson
 
 FICHIER = os.path.join(config.DOSSIER_HISTORIQUE, "predictions.csv")
-COLS = ["date", "ticker", "prix", "proba", "score", "signal", "fort", "bas", "haut", "proba_marche", "indice", "accord"]
+COLS = ["date", "ticker", "prix", "proba", "score", "signal", "fort", "bas", "haut", "proba_marche", "indice", "accord",
+        "proba_brute"]
 TRANCHES = [(0.0, 0.45, "< 45 %"), (0.45, 0.50, "45–50 %"), (0.50, 0.55, "50–55 %"), (0.55, 0.60, "55–60 %"),
             (0.60, 1.01, "> 60 %")]
 
@@ -37,7 +38,8 @@ def enregistrer(analyses) -> None:
             "bas": a.prix * np.exp(q[0]) if len(q) == 3 else np.nan,
             "haut": a.prix * np.exp(q[2]) if len(q) == 3 else np.nan,
             "proba_marche": getattr(a, "proba_marche", np.nan), "indice": getattr(a, "indice_ref", "") or "",
-            "accord": {True: 1, False: 0}.get(getattr(a, "accord_ia", None), np.nan)})
+            "accord": {True: 1, False: 0}.get(getattr(a, "accord_ia", None), np.nan),
+            "proba_brute": getattr(a, "proba_brute", np.nan)})
     nouvelles = pd.DataFrame(lignes, columns=COLS)
     if os.path.exists(FICHIER):
         anciennes = pd.read_csv(FICHIER)
@@ -162,3 +164,58 @@ def bilan(donnees: dict[str, pd.DataFrame], horizon: int = config.HORIZON_PREDIC
         "toutes": v.sort_values("date", ascending=False).head(300)[colonnes].to_dict("records"),
         "detail": detail,
     }
+
+
+def correction_erreurs(donnees: dict, horizon: int = config.HORIZON_PREDICTION) -> dict | None:
+    """Apprendre de ses erreurs réelles : on compare les probabilités publiées à ce qui s'est vraiment passé.
+    Si les IA ont été trop sûres d'elles, leurs prochaines probabilités sont rendues moins tranchées.
+    Par prudence, la correction ne peut que RAPPROCHER les probabilités de 50 %, jamais les exagérer."""
+    if not os.path.exists(FICHIER):
+        return None
+    try:
+        h = pd.read_csv(FICHIER)
+    except (OSError, ValueError):
+        return None
+    if "proba_brute" not in h.columns:
+        h["proba_brute"] = np.nan
+    h["p"] = pd.to_numeric(h["proba_brute"], errors="coerce").fillna(pd.to_numeric(h["proba"], errors="coerce"))
+    h = h.dropna(subset=["p"])
+    p_l, y_l, dates = [], [], set()
+    for r in h.itertuples(index=False):
+        d = donnees.get(r.ticker)
+        if d is None or len(d) == 0:
+            continue
+        fin, _ = _prix_apres(d, r.date, horizon)
+        prix = _num(r.prix)
+        if fin is None or not prix or np.isnan(prix):
+            continue
+        p_l.append(float(r.p))
+        y_l.append(1.0 if fin > prix else 0.0)
+        dates.add(r.date)
+    n = len(p_l)
+    if n < 300 or len(dates) < 15:
+        return {"n": n, "jours": len(dates), "active": False,
+                "raison": "pas encore assez de prévisions vérifiées (il en faut au moins 300 sur 15 jours)"}
+    p, y = np.clip(np.array(p_l), 0.02, 0.98), np.array(y_l)
+    z = np.log(p / (1 - p))
+    from sklearn.linear_model import LogisticRegression
+    lr = LogisticRegression(C=1.0).fit(z.reshape(-1, 1), y)
+    a = float(np.clip(lr.coef_[0][0], 0.3, 1.0))
+    b = float(np.clip(lr.intercept_[0], -0.25, 0.25))
+    pc = 1 / (1 + np.exp(-(a * z + b)))
+    perte = lambda q: float(-np.mean(y * np.log(q) + (1 - y) * np.log(1 - q)))
+    avant, apres = perte(p), perte(pc)
+    active = apres < avant - 1e-4
+    return {"n": n, "jours": len(dates), "a": a, "b": b, "active": bool(active),
+            "perte_avant": avant, "perte_apres": apres,
+            "raison": ("les vraies erreurs montrent que les IA étaient trop sûres d'elles : leurs probabilités sont adoucies"
+                       if active and a < 0.98 else "corrigé d'un léger biais constaté sur les vrais résultats" if active
+                       else "les vrais résultats ne demandent aucune correction")}
+
+
+def appliquer_correction(p: float, corr: dict | None) -> float:
+    if not corr or not corr.get("active") or p is None or p != p:
+        return p
+    q = min(max(p, 0.02), 0.98)
+    z = np.log(q / (1 - q))
+    return float(1 / (1 + np.exp(-(corr["a"] * z + corr["b"]))))
