@@ -111,6 +111,20 @@ Le **défi pronostic** permet de parier (sans argent) contre le radar et de comp
 - **Alertes Telegram** (facultatif) : chaque soir, le robot publie les signaux forts sur ta chaîne.
   Pour l'activer plus tard : double-clique sur `alertes_telegram.bat`.
 
+## Ton bilan privé : combien de fois les IA ont eu raison
+
+Double-clique sur `mon_bilan_ia.bat`. Le script récupère les prévisions que le site enregistre chaque soir sur GitHub.
+Il télécharge ensuite les cours pour vérifier chacune d'elles un mois plus tard, puis ouvre une page dans ton navigateur :
+- Le nombre de fois où les IA ont eu raison (« X fois sur Y »), avec sa marge d'erreur et un verdict honnête.
+- La comparaison avec la stratégie paresseuse, qui parie toujours sur le sens le plus fréquent.
+- L'évolution : 7 derniers jours, 30 derniers jours, mois par mois.
+- Les cas où on peut lui faire confiance : IA sûre d'elle ou hésitante, deux IA d'accord ou non, signaux forts, achats et ventes.
+- Les résultats par marché, les titres où elle réussit et ceux où elle rate, ses plus beaux coups et ses pires erreurs.
+- L'évolution de tes bilans successifs.
+
+Ce rapport est **privé**. Il est créé dans le dossier `rapports/` de ton PC, qui n'est jamais envoyé sur GitHub ni sur le site.
+Les premiers résultats arrivent environ un mois après la mise en ligne, le temps que les premières prévisions puissent être vérifiées.
+
 ## Nouveautés de la version 20 : un site plus soigné
 
 - Nouvelle typographie : titres en Newsreader (police éditoriale), textes en IBM Plex. Fini les petites étiquettes en MAJUSCULES.
