@@ -272,3 +272,42 @@ def niveaux_confiance(oof, marge):
             lo, hi = wilson(int(juste[m].sum()), int(m.sum()))
             out[n] = {"part": float(m.mean()), "precision": float(juste[m].mean()), "nb": int(m.sum()), "ic": [lo, hi]}
     return out
+
+
+# ----------------------------------------------------------------------------
+# 5. Jeu « Remonte le temps » : des moments du passé que l'IA n'avait jamais vus
+# ----------------------------------------------------------------------------
+def echantillon_jeu(oof, proba, donnees, horizon, n=300, avant=120):
+    """Tire au hasard n moments passés (titre + date) parmi les prévisions faites sur des périodes
+    JAMAIS vues par l'IA. Pour chacun : 120 séances avant, la suite à l'horizon, l'avis de l'IA et la vérité.
+    Les prix sont ramenés à 100 à la date du jeu (on ne voit ni le nom ni le vrai prix avant la réponse)."""
+    if "ticker" not in oof:
+        return []
+    d = pd.DataFrame({"ticker": oof["ticker"].to_numpy(), "p": np.asarray(proba), "y": oof["cible"].to_numpy(),
+                      "r": oof["rendement_futur"].to_numpy()}, index=oof.index)
+    d = d[d["ticker"].isin(list(donnees))]
+    if d.empty:
+        return []
+    rng = np.random.default_rng()
+    out, vus = [], set()
+    for k in rng.permutation(len(d))[: n * 4]:
+        ligne = d.iloc[int(k)]
+        t, date = ligne["ticker"], d.index[int(k)]
+        if (t, date.year, date.month) in vus:
+            continue
+        c = donnees[t]["Close"]
+        try:
+            pos = c.index.get_loc(date)
+        except KeyError:
+            continue
+        if not isinstance(pos, (int, np.integer)) or pos < avant or pos + horizon >= len(c):
+            continue
+        serie = c.iloc[pos - avant: pos + horizon + 1].to_numpy() / float(c.iloc[pos]) * 100
+        if not np.isfinite(serie).all():
+            continue
+        vus.add((t, date.year, date.month))
+        out.append({"t": t, "d": f"{date:%Y-%m-%d}", "p": round(float(ligne["p"]), 3), "y": int(ligne["y"]),
+                    "r": round(float(ligne["r"]), 4), "s": [round(float(v), 2) for v in serie], "a": avant})
+        if len(out) >= n:
+            break
+    return out

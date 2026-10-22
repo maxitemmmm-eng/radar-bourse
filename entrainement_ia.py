@@ -537,7 +537,12 @@ class Moteur:
         self.progres("final", 1)
         self.log(decision["raison"])
         erreurs = self._analyse_erreurs(o_r)
-        horizons = None
+        horizons, crises = None, None
+        if args.duree != "rapide" and not self.arret.is_set():
+            try:
+                crises = self._examen_crises(jeu, retenu)
+            except Exception as ex:
+                self.log(f"(Examen des crises impossible cette fois : {ex})")
         if args.duree != "rapide" and not self.arret.is_set():
             try:
                 horizons = self._examen_horizons(coupure, retenu, reglage["pas"])
@@ -558,7 +563,7 @@ class Moteur:
                   "auc_recherche_retenu": retenu["auc_recherche"], "precision_base": ev.precision_base,
                   "niveau_preuve": ev.niveau_preuve(), "connaissances": verdicts, "erreurs": erreurs,
                   "guidage": getattr(self, "guidage", None), "lecons": getattr(self, "lecons", None),
-                  "horizons": horizons}
+                  "horizons": horizons, "crises": crises}
         recette = {"nom": retenu["nom"], "variables": retenu["variables"], "par_marche": retenu["par_marche"],
                    **({"membres": retenu["params"]["membres"]} if "membres" in retenu["params"] else {}),
                    "params": retenu["params"], "date": entree["date"], "auc": retenu.get("auc_final")}
@@ -713,6 +718,81 @@ class Moteur:
     @staticmethod
     def _signature(e):
         return json.dumps([sorted(e["variables"]), bool(e["par_marche"]), sorted((e.get("params") or {}).items())])
+
+    CRISES = (("Le krach de 2008", "2008-09-01", "2009-03-09"),
+              ("La crise de l'euro (2011)", "2011-07-01", "2011-10-04"),
+              ("La chute des marchés chinois (2015-2016)", "2015-08-10", "2016-02-11"),
+              ("Le krach des cryptos (2018)", "2018-01-08", "2018-12-15"),
+              ("Le krach du Covid (2020)", "2020-02-19", "2020-04-30"),
+              ("La hausse des taux (2022)", "2022-01-03", "2022-10-12"))
+
+    def _examen_crises(self, jeu, e, n_hasard=6):
+        """Comment l'IA s'en serait-elle sortie pendant les grandes crises, comparé à des périodes tirées
+        AU HASARD ? Pour chaque période, l'IA n'apprend QUE sur ce qui précède (comme si on y était).
+        Ce n'est pas pour l'entraîner davantage sur ces crises (elle apprendrait l'histoire par cœur),
+        mais pour connaître ses points faibles et prévenir sur le site quand le marché leur ressemble."""
+        np, pd, model = self.np, self.pd, self.model
+        if "membres" in (e.get("params") or {}):
+            e = {"variables": model.VARIABLES_BASE, "par_marche": False, "params": {}}
+        et = jeu.dropna(subset=["cible"])
+        dates = np.array(sorted(et.index.unique()))
+        if len(dates) < 1500:
+            return None
+        h = self.horizon
+        self.log("🌪️ Examen des crises : l'IA rejoue les grandes crises et des périodes tirées au hasard, "
+                 "en n'apprenant que sur ce qui précède chacune.")
+
+        def jouer(nom, debut, fin, type_):
+            debut, fin = pd.Timestamp(debut), pd.Timestamp(fin)
+            avant = dates[dates < debut]
+            if len(avant) < 1000:
+                return None
+            fin_train = avant[max(len(avant) - h - 2, 0)]   # pause d'un mois : rien du futur ne fuite
+            train = model.jours_alternes(et[et.index <= fin_train])
+            test = et[(et.index >= debut) & (et.index <= fin)]
+            if len(train) < 20000 or len(test) < 200 or test["cible"].nunique() < 2:
+                return None
+            p = model.Predicteur(e["variables"], e["par_marche"], "ia1", e.get("params")).fit(train).predict_proba(test)
+            y = test["cible"].to_numpy()
+            r = {"nom": nom, "type": type_, "debut": f"{debut:%Y-%m-%d}", "fin": f"{fin:%Y-%m-%d}", "nb": int(len(test)),
+                 "precision": float(((p > 0.5) == (y == 1)).mean()), "base": float(max(y.mean(), 1 - y.mean())),
+                 "auc": model._auc(y, p), "hausse": float(y.mean())}
+            self.log(f"   {nom} : bonne direction {r['precision'] * 100:.0f} % "
+                     f"(toujours la même réponse : {r['base'] * 100:.0f} %) · {r['nb']:,} cas".replace(",", " "))
+            return r
+
+        res = []
+        for nom, d0, d1 in self.CRISES:
+            if self.arret.is_set():
+                break
+            r = jouer(nom, d0, d1, "crise")
+            if r:
+                res.append(r)
+        # périodes de 3 mois tirées au hasard (différentes à chaque entraînement), loin des crises
+        rng = np.random.default_rng(int(time.time()))
+        exclus = [(pd.Timestamp(a) - pd.Timedelta(days=60), pd.Timestamp(b) + pd.Timedelta(days=60)) for _, a, b in self.CRISES]
+        candidats = dates[1000:len(dates) - 70]
+        tires = 0
+        for _ in range(200):
+            if tires >= n_hasard or self.arret.is_set() or not len(candidats):
+                break
+            d0 = pd.Timestamp(candidats[int(rng.integers(len(candidats)))])
+            d1 = d0 + pd.Timedelta(days=91)
+            if any(a <= d1 and d0 <= b for a, b in exclus):
+                continue
+            exclus.append((d0 - pd.Timedelta(days=30), d1 + pd.Timedelta(days=30)))
+            r = jouer(f"Période au hasard : {d0:%m/%Y}", d0, d1, "hasard")
+            if r:
+                res.append(r)
+                tires += 1
+        moy = lambda t: (float(np.average([r["precision"] for r in res if r["type"] == t],
+                                          weights=[r["nb"] for r in res if r["type"] == t]))
+                         if any(r["type"] == t for r in res) else None)
+        resume = {"crise": moy("crise"), "hasard": moy("hasard"), "periodes": res}
+        if resume["crise"] is not None and resume["hasard"] is not None:
+            self.log(f"   → En crise : {resume['crise'] * 100:.0f} % de bonnes directions · "
+                     f"en période ordinaire tirée au hasard : {resume['hasard'] * 100:.0f} %")
+        return resume
 
     def _examen_horizons(self, coupure, e, pas):
         """À quel horizon l'IA est-elle la plus fiable ? Même recette, testée à 1 semaine, 1 mois et 3 mois,
@@ -910,17 +990,40 @@ def enregistrer(res, demo):
             json.dump({"date": entree["date"], "tickers": res["apprentissage"]}, f, ensure_ascii=False, indent=1)
 
 
+def _fusion_avec_github():
+    """Le site réécrit modele.json chaque soir : on fusionne sa version avec les connaissances de l'IA
+    (au lieu d'en écraser une), pour que rien de ce qui a été appris ne se perde."""
+    from bourse_bot import savoir
+    commande("git", "fetch", "-q", "origin")
+    distant = {}
+    for nom in savoir.FICHIERS:
+        code, txt = commande("git", "show", f"origin/main:historique/{nom}")
+        try:
+            distant[nom] = json.loads(txt) if code == 0 else None
+        except ValueError:
+            distant[nom] = None
+    savoir.ecrire(savoir.fusionner(savoir.lire(), distant))
+
+
 def publier(res, log) -> bool:
     """Envoie le résultat sur GitHub et lance la mise à jour du site."""
-    commande("git", "add", "historique/modele.json", "historique/apprentissage.json", FICHIER_ESSAIS.replace(os.sep, "/"))
+    fichiers = ("historique/modele.json", "historique/apprentissage.json", FICHIER_ESSAIS.replace(os.sep, "/"))
     msg = f"Entraînement du {datetime.now():%d/%m/%Y} : " + (res["recette"]["nom"] if res["decision"]["change"] else "IA confirmée")
-    commande("git", "commit", "-m", msg)
+    if os.path.isdir(os.path.join(".git", "rebase-merge")) or os.path.isdir(os.path.join(".git", "rebase-apply")):
+        commande("git", "rebase", "--abort")
     sortie = ""
     for _ in range(3):
-        commande("git", "pull", "--rebase", "--autostash")
-        code, sortie = commande("git", "push")
+        _fusion_avec_github()
+        commande("git", "add", *[f for f in fichiers if os.path.exists(f)])
+        commande("git", "commit", "-q", "-m", msg)
+        code, _ = commande("git", "pull", "--rebase", "-X", "theirs", "--autostash", "origin", "main")
+        if code != 0:   # conflit : on annule et on reprend proprement au tour suivant
+            commande("git", "rebase", "--abort")
+            commande("git", "reset", "-q", "--soft", "origin/main")
+            continue
+        code, sortie = commande("git", "push", "origin", "HEAD:main")
         if code == 0:
-            log("✅ Résultat envoyé sur GitHub.")
+            log("✅ Résultat envoyé sur GitHub (connaissances fusionnées avec la version en ligne).")
             break
         time.sleep(5)
     else:
@@ -1015,6 +1118,21 @@ def appris_cette_fois(e):
     return "\nCe que cette séance a appris : " + " ; ".join(morceaux) + "."
 
 
+def section_crises(e, x):
+    c = e.get("crises") or {}
+    if not c.get("periodes"):
+        return ""
+    lignes = "".join(f"<tr><td>{'🌪️' if r['type'] == 'crise' else '🎲'} {x(r['nom'])}</td><td>{x(r['debut'])} → {x(r['fin'])}</td>"
+                     f"<td>{r['precision'] * 100:.0f} %</td><td>{r['base'] * 100:.0f} %</td><td>{r['nb']:,}</td></tr>".replace(",", " ")
+                     for r in c["periodes"])
+    pc = lambda v: "–" if v is None else f"{v * 100:.0f} %"
+    return ("<div class='c'><h2>Examen des crises</h2><p class='m'>Pour chaque période, l'IA n'apprend que sur ce qui précède, "
+            "comme si on y était. Les périodes 🎲 sont tirées au hasard à chaque entraînement, pour comparer avec des temps ordinaires.</p>"
+            f"<p><b>En crise : {pc(c.get('crise'))}</b> de bonnes directions · <b>en temps ordinaire : {pc(c.get('hasard'))}</b>.</p>"
+            "<table><tr><th>Période</th><th>Dates</th><th>Bonne direction</th><th>Toujours la même réponse</th><th>Cas</th></tr>"
+            + lignes + "</table></div>")
+
+
 def section_guidage(e, x):
     g, lecons = e.get("guidage") or {}, e.get("lecons") or []
     if not g and not lecons:
@@ -1076,6 +1194,7 @@ table{{width:100%;border-collapse:collapse}}td,th{{padding:8px;border-bottom:1px
 <p class="m">AUC : 0,5 = hasard, 1 = parfait. En Bourse, 0,52 à 0,56 est déjà un bon score. Seule la colonne « examen final » compte vraiment.</p>
 <table><tr><th>Façon de prévoir</th><th>Recherche</th><th>Examen final</th><th></th></tr>{lignes}</table></div>
 {section_guidage(e, x)}
+{section_crises(e, x)}
 {"<div class='c'><h2>À quelle échéance l'IA est-elle la plus fiable ?</h2><p class='m'>Même recette, testée sur la zone de recherche à trois horizons. Plus l'AUC est au-dessus de 0,5, mieux c'est. Comparer aussi la bonne direction à « toujours la même réponse ».</p><table><tr><th>Horizon</th><th>AUC</th><th>Bonne direction</th><th>Toujours la même réponse</th></tr>" + "".join(f"<tr><td>{x(h['nom'])}</td><td>{h['auc']:.4f}</td><td>{h['precision'] * 100:.1f} %</td><td>{h['base'] * 100:.1f} %</td></tr>" for h in e['horizons']) + "</table></div>" if e.get('horizons') else ""}
 {"<div class='c'><h2>Le manuel de Bourse : verdict de l'IA</h2><p class='m'>Chaque règle connue a été vérifiée sur deux périodes jamais vues. 🟢 = aide vraiment l'IA. ⚪ = pas d'effet prouvé (la règle n'est pas forcément fausse, mais l'IA ne lui fait pas confiance).</p><table><tr><th>Règle</th><th>Verdict</th><th>Meilleure version</th><th>Sens</th></tr>" + "".join(f"<tr><td>{x(v['nom'])}</td><td>{'🟢 utile' if v['statut'] == 'utile' else '⚪ ' + x(v['statut'])}</td><td>{x(v.get('variante') or '–')}</td><td>{'comme annoncé' if v.get('dans_le_sens_annonce') else 'inverse' if v.get('dans_le_sens_annonce') is False else '–'}</td></tr>" for v in (e.get('connaissances') or {}).values()) + "</table></div>" if e.get('connaissances') else ""}
 {"<div class='c'><h2>Apprendre de ses erreurs : où l'IA se trompe-t-elle ?</h2><table>" + "".join(f"<tr><td>{x(g['nom'])}</td><td>{g['nb']:,} cas</td><td>{g['precision'] * 100:.0f} % justes</td></tr>" for g in ((e.get('erreurs') or {}).get('par_marche', []) + (e.get('erreurs') or {}).get('par_confiance', []))) + "</table><p class='m'>Les marchés où elle se trompe le plus sont ceux où ses prochaines recherches (un modèle par marché, d'autres indicateurs) ont le plus à gagner.</p></div>" if e.get('erreurs') else ""}

@@ -133,8 +133,14 @@ def _dernier_entrainement():
         if not liste:
             return None
         e = liste[-1]
-        return {k: e.get(k) for k in ("date", "mode", "nb_titres", "nb_lignes", "retenu", "en_place", "change_methode",
-                                      "raison", "series_economiques", "examen_donnees", "precision", "ic_precision", "connaissances")}
+        out = {k: e.get(k) for k in ("date", "mode", "nb_titres", "nb_lignes", "retenu", "en_place", "change_methode",
+                                     "raison", "series_economiques", "examen_donnees", "precision", "ic_precision", "connaissances")}
+        # l'examen des crises n'est fait qu'en mode Normal ou Expert : on garde le plus récent disponible
+        avec = [x for x in liste if x.get("crises")]
+        if avec:
+            out["crises"] = avec[-1]["crises"]
+            out["crises_date"] = avec[-1].get("date")
+        return out
     except Exception:
         return None
 
@@ -279,6 +285,20 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
     if os.path.isdir(os.path.join(dossier, "donnees")):
         shutil.rmtree(os.path.join(dossier, "donnees"))
     pour_page = {k: v for k, v in payload.items() if k != "resultats"}
+    # jeu « Remonte le temps » : fichier à part en ligne (chargé seulement si on joue), intégré sinon
+    try:
+        with open(os.path.join(config.DOSSIER_HISTORIQUE, "jeu_temps.json"), encoding="utf-8") as f:
+            jeu_temps = json.load(f).get("items") or []
+    except (OSError, ValueError, AttributeError):
+        jeu_temps = []
+    if jeu_temps:
+        if decouper:
+            os.makedirs(dossier, exist_ok=True)
+            with open(os.path.join(dossier, "jeu_temps.json"), "w", encoding="utf-8") as f:
+                json.dump(jeu_temps, f, ensure_ascii=False, separators=(",", ":"))
+            pour_page["jeu_temps"] = "jeu_temps.json"
+        else:
+            pour_page["jeu_temps"] = jeu_temps[:80]
     page = gabarit.replace("/*__DATA__*/null", _json_sur(_decouper(pour_page, dossier) if decouper else pour_page))
     tete, corps = page.split("<!--__CORPS__-->", 1)
     corps = corps.replace("<!--__FAQ__-->", seo.html_faq(), 1)

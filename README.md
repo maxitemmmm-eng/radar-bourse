@@ -111,6 +111,30 @@ Le **défi pronostic** permet de parier (sans argent) contre le radar et de comp
 - **Alertes Telegram** (facultatif) : chaque soir, le robot publie les signaux forts sur ta chaîne.
   Pour l'activer plus tard : double-clique sur `alertes_telegram.bat`.
 
+## Être trouvé sur Google : `google.bat`
+
+Double-clique sur `google.bat` : il te guide pas à pas pour inscrire le site sur Google Search Console. Il ouvre la page, tu colles le code, il l'ajoute au site et republie, puis il te dit quoi valider. Compte 5 minutes.
+
+## Mettre à jour en un clic (version 24)
+
+1. Télécharge le nouveau `radar_bourse.zip`. Laisse-le dans Téléchargements, inutile de le dézipper.
+2. Double-clique sur `mettre_a_jour.bat`, dans ton dossier Radar Bourse habituel.
+
+Le script trouve le zip, remplace le code par la nouvelle version, puis met le site en ligne avec tes réponses habituelles. Il ne touche jamais :
+- à l'historique ;
+- aux connaissances de l'IA ;
+- à tes réglages.
+
+Il renomme ensuite le zip en « …_installe_… », pour ne pas le réinstaller par erreur.
+
+## Version 24 : l'IA garde tout ce qu'elle apprend, crises et jeu
+
+- **Les connaissances de l'IA ne se perdent plus.** Avant, `mettre_en_ligne` remplaçait le dossier `historique/` de ton PC par la version en ligne. La mémoire des essais d'entraînement (et une recette non envoyée) pouvaient être écrasées. Maintenant les deux versions sont **fusionnées** : on garde l'évaluation la plus récente du site ET les connaissances les plus récentes de l'IA. Pareil quand l'entraînement envoie son résultat : plus de conflit possible avec la mise à jour du soir.
+- **Examen des crises** (entraînement Normal et Expert). L'IA rejoue le krach de 2008, la crise de l'euro, la Chine 2015, le krach crypto 2018, le Covid et la hausse des taux 2022. Elle rejoue aussi des périodes **tirées au hasard**, différentes à chaque fois. Pour chacune, elle n'apprend que sur ce qui précède. Le site montre la comparaison « en crise / en temps ordinaire ». Quand la peur des marchés est forte (VIX ≥ 30), le résumé du jour prévient.
+- **Jeu « Remonte le temps ».** Un moment du passé est tiré au hasard. Le graphique s'arrête ce jour-là, tu devines la suite face à l'IA, puis on révèle le titre, la date et le résultat. L'IA n'avait jamais vu ces périodes. Le score se garde dans ton navigateur.
+- **Plus de pourcentages par IA sur le site.** Seule la décision commune des deux IA est affichée.
+- **Pages Google** : les titres contiennent maintenant « cours, analyse et prévision », comme les recherches des gens.
+
 ## Version 23 : confiance claire, nouveaux classements, corrections
 
 - **Une seule échelle de confiance** (faible / moyenne / forte), avec pour chaque niveau ce qu'il a vraiment donné sur des années jamais vues. Elle apparaît dans le tableau (petites barres) et sur chaque fiche.

@@ -308,14 +308,27 @@ def envoyer(complet):
     if distant_existe and not local_existe:
         run([GIT, "reset", "-q", "--mixed", "origin/main"], montrer=False)
     if distant_existe:
+        # On récupère l'historique écrit par le robot en ligne, SANS perdre ce que l'IA a appris sur ce PC :
+        # les connaissances locales (recette, mémoire des essais) sont fusionnées avec la version en ligne.
+        from bourse_bot import savoir
+        local = savoir.lire(os.path.join(ICI, "historique"))
         silencieux([GIT, "checkout", "origin/main", "--", "historique"])
+        distant = savoir.lire(os.path.join(ICI, "historique"))
+        savoir.ecrire(savoir.fusionner(local, distant), os.path.join(ICI, "historique"))
+        if any(local.values()):
+            ok("Connaissances de l'IA gardées (recette, mémoire des essais) et fusionnées avec la version en ligne.")
 
     run([GIT, "add", "-A"], montrer=False)
     code, _ = run([GIT, "commit", "-q", "-m", f"Mise à jour du site ({datetime.now():%d/%m/%Y %H:%M})"],
                   ok_codes=(0, 1), montrer=False)
     nouveau = code == 0
+    if os.path.isdir(os.path.join(ICI, ".git", "rebase-merge")) or os.path.isdir(os.path.join(ICI, ".git", "rebase-apply")):
+        silencieux([GIT, "rebase", "--abort"])   # une ancienne mise à jour interrompue ne doit pas tout bloquer
     if distant_existe and local_existe:
-        run([GIT, "pull", "-q", "--rebase", "-X", "theirs", "origin", "main"], ok_codes=(0, 1), montrer=False)
+        c, _ = run([GIT, "pull", "-q", "--rebase", "-X", "theirs", "origin", "main"], ok_codes=(0, 1, 128), montrer=False)
+        if c != 0:
+            silencieux([GIT, "rebase", "--abort"])
+            run([GIT, "pull", "-q", "--no-rebase", "-X", "ours", "origin", "main"], ok_codes=(0, 1), montrer=False)
     info("Envoi en cours…")
     run([GIT, "push", "-q", "-u", "origin", "main"], montrer=False)
     ok("Fichiers envoyés." if nouveau else "Rien de nouveau à envoyer : je relance juste une mise à jour.")
@@ -431,6 +444,43 @@ def statistiques(m, complet):
     ok("Raccourci créé dans ce dossier : « Mes statistiques de visites ».")
     m["stats_demande"], m["stats_code"] = True, code
     sauver_memoire(m)
+
+
+# ----------------------------------------------------------------------------
+# Google Search Console (seulement avec google.bat)
+# ----------------------------------------------------------------------------
+def google(m, complet, login):
+    if "--google" not in sys.argv:
+        if m.get("google"):
+            ok("Google Search Console : site vérifié.")
+        return
+    adresse = f"https://{m['domaine']}/" if m.get("domaine") else f"https://{login.lower()}.github.io/{complet.split('/')[1]}/"
+    print("\n🔎 Inscrire le site sur Google (gratuit, 5 minutes)")
+    info("1. Va sur https://search.google.com/search-console (connecte-toi avec un compte Google).")
+    info("2. Clique « Ajouter une propriété », choisis « Préfixe de l'URL » et colle :")
+    info(f"      {adresse}")
+    info("3. Méthode de validation : « Balise HTML ». Google affiche une ligne comme :")
+    info('      <meta name="google-site-verification" content="AbC123...xyz" />')
+    info("   Copie seulement ce qu'il y a entre les guillemets après content= (ou toute la ligne, ça marche aussi).")
+    info("   Ne clique PAS encore sur « Valider ».")
+    if not SIMULATION and WINDOWS:
+        try:
+            os.startfile("https://search.google.com/search-console")
+        except Exception:
+            pass
+    code = question("Colle le code ici").strip()
+    trouve = re.search(r'content="([^"]+)"', code)
+    code = (trouve.group(1) if trouve else code).strip().strip('"')
+    if not re.fullmatch(r"[A-Za-z0-9_-]{10,100}", code):
+        info("⚠️ Ce code ne semble pas valide. Relance google.bat pour réessayer.")
+        return
+    run([GH, "variable", "set", "GOOGLE_SITE_VERIFICATION", "-R", complet, "--body", code], montrer=False)
+    m["google"] = code
+    sauver_memoire(m)
+    ok("Code enregistré. Le site va être republié avec ce code (3 à 6 minutes).")
+    info("4. Quand la publication est finie, retourne sur Search Console et clique « Valider ».")
+    info("5. Puis menu de gauche « Sitemaps » : tape  sitemap.xml  et clique « Envoyer ».")
+    info(f"   (adresse complète : {adresse}sitemap.xml)")
 
 
 # ----------------------------------------------------------------------------
@@ -564,6 +614,7 @@ def main():
     telegram(m, complet)
     statistiques(m, complet)
     domaine(m, complet)
+    google(m, complet, login)
     MEMOIRE_DOMAINE[0] = m.get("domaine", "")
     url = publier(complet, login)
 
@@ -577,7 +628,7 @@ def main():
     print("   • Il se met à jour tout seul chaque heure en semaine.")
     print("   • Les cryptos bougent en direct quand la page est ouverte.")
     print("   • Raccourci créé dans ce dossier : « Mon site Radar Bourse ».")
-    print("   • Pour envoyer une nouvelle version du code : relance ce script.")
+    print("   • Nouvelle version reçue en zip : double-clique sur mettre_a_jour.bat (sans dézipper).")
     print("━" * 60)
     if WINDOWS and not SIMULATION:
         try:

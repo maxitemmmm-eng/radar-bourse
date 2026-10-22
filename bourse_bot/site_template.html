@@ -331,6 +331,13 @@ footer nav{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13.5px}
 footer a{color:var(--accent);text-underline-offset:3px}
 .lnk{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-size:inherit}
 
+.jeu{display:grid;gap:12px}
+.jeu-tete{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.jeu-tete p{margin:0}.jeu-score{font-size:14px}
+#jeu-svg{width:100%;height:230px;background:var(--surface-2);border-radius:8px}
+#jeu-zone{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.jeu-res{display:grid;gap:6px;font-size:15px}.jeu-res p{margin:0}
+.jeu-verdict{font-family:var(--f-display);font-size:22px;font-weight:600}
 /* Version 22 : avis net, raisons, agitation */
 .conf-ic{display:inline-flex;gap:2px;align-items:flex-end;height:14px;vertical-align:middle}
 .conf-ic i{display:block;width:4px;border-radius:1px;background:var(--line)}
@@ -528,12 +535,6 @@ html.simple .expert{display:none!important}
 .freq .phrase{font-size:15px;margin:0}
 .freq .phrase b{font-size:18px}
 
-/* Débat des deux IA dans la fiche */
-.debat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;max-width:560px}
-.debat > div{display:grid;gap:2px;padding:8px 10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line)}
-.debat .dec{border:2px solid var(--accent)}
-.debat b{font-size:18px;font-weight:600}
-@media (max-width:520px){.debat{grid-template-columns:1fr}}
 /* Accord des deux IA */
 .accord{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:3px 9px;border-radius:99px}
 .accord.oui{background:var(--up-soft);color:var(--up)}
@@ -640,7 +641,7 @@ html.calme *{animation:none!important;transition:none!important}
   <button class="theme-btn" id="theme" aria-label="Changer de thème" title="Thème clair / sombre"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg></button>
 </div>
 <nav class="wrap nav-sec" id="nav-sec" aria-label="Sections du site">
-  <a href="#previsions">Prévisions</a><a href="#simulation">Simulation</a><a href="#portefeuille">Portefeuille</a>
+  <a href="#previsions">Prévisions</a><a href="#simulation">Simulation</a><a href="#remonte">Remonte le temps</a><a href="#portefeuille">Portefeuille</a>
   <a href="#signaux">Signaux forts</a><a href="#carte-sec">Carte du marché</a><a href="#confiance">Fiabilité</a>
   <a href="#tous">Tous les titres</a><a href="resultats.html" class="ext lien-site">Résultats réels</a><a href="connaissances.html" class="ext lien-site">Ce que sait l'IA</a>
   <a href="point.html" class="ext lien-site">Point du jour</a><a href="apprendre.html" class="ext lien-site">Apprendre</a>
@@ -754,6 +755,19 @@ html.calme *{animation:none!important;transition:none!important}
       <div class="sec-head" style="margin-bottom:8px"><h3 style="font-size:18px">Défi pronostic : toi contre le radar</h3>
         <p>Parie (sans argent) sur la hausse ou la baisse d'un titre. À l'échéance, le site compare ton pronostic à celui du radar. Tout reste dans ton navigateur.</p></div>
       <div id="defis"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-temps" id="remonte">
+    <div class="sec-head"><h2 id="h-temps">Remonte le temps</h2>
+      <p>Un moment du passé, tiré au hasard. Le graphique s'arrête ce jour-là : devine la suite, face à l'IA. Elle n'avait jamais vu cette période, elle a dû la prévoir comme si on y était.</p></div>
+    <div class="panel jeu">
+      <div class="jeu-tete"><p class="muted" id="jeu-info">Titre et date mystères, révélés après ta réponse. Le pointillé bleu marque le jour mystère.</p><p class="jeu-score" id="jeu-score" aria-live="polite"></p></div>
+      <svg id="jeu-svg" viewBox="0 0 640 230" preserveAspectRatio="none" role="img" aria-labelledby="jeu-svg-t"><title id="jeu-svg-t">Évolution du prix avant le jour mystère</title></svg>
+      <div id="jeu-zone">
+        <button class="btn" id="jeu-debut">Commencer une partie</button>
+      </div>
+      <div id="jeu-res" aria-live="polite"></div>
     </div>
   </section>
 
@@ -1185,6 +1199,8 @@ rendreTape();
   txt += tete.length ? `, avec ${tete.join(" et ")} en tête de liste. ` : ", sans titre qui se détache vraiment. ";
   if(hesite) txt += hesite === avec.length ? "Elles n'ont aucun avis net aujourd'hui. " : `Sur ${hesite} titre${hesite > 1 ? "s" : ""}, elles n'ont pas d'avis net. `;
   if(agites >= 3) txt += `${agites} titres s'annoncent plus agités que d'habitude. `;
+  const vix = (DATA.contexte || []).find(c => c.cle === "vix"), CR = (DATA.entrainement || {}).crises || {};
+  if(vix && vix.valeur >= 30) txt += `<b>Attention : la peur des marchés est forte (VIX à ${Math.round(vix.valeur)}), comme pendant les crises.</b> ${CR.crise != null ? `Dans les crises passées, les IA n'ont vu juste que ${Math.round(CR.crise * 100)} fois sur 100 : prudence. ` : "En période de crise, les prévisions sont encore moins sûres que d'habitude. "}`;
   const prec = DATA.suivi && DATA.suivi.nb_verifiees >= 30 ? DATA.suivi.precision : null;
   txt += prec != null ? `Pour rappel, sur ${DATA.suivi.nb_verifiees} prévisions déjà vérifiées, elles ont vu juste ${Math.round(prec*100)} fois sur 100.`
     : "Rappel honnête : même leurs meilleurs avis se trompent souvent.";
@@ -1224,6 +1240,64 @@ $("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t
   <div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(t.nom)}</b><span class="num">score ${Math.round(t.score)}</span></div>
   <div class="why">${esc((t.alertes[0]||"").replace(/^🚀 Configuration de hausse potentielle : /,""))}</div></button>`).join("")
   || `<div class="empty">Aucune configuration de décollage aujourd'hui. Le radar ne force pas les signaux quand le marché n'en donne pas.</div>`;
+
+
+/* ---------- Jeu « Remonte le temps » ---------- */
+(function(){
+  const CLE = "radar-bourse-jeu-temps";
+  let items = Array.isArray(DATA.jeu_temps) ? DATA.jeu_temps : null, actuel = null, score = {toi: 0, ia: 0, n: 0}, deja = new Set();
+  try{ score = Object.assign(score, JSON.parse(localStorage.getItem(CLE) || "{}")); }catch(e){}
+  const sec = $("#remonte");
+  if(!DATA.jeu_temps){ sec.hidden = true; document.querySelector('#nav-sec a[href="#remonte"]')?.remove(); return; }
+  const svg = $("#jeu-svg"), zone = $("#jeu-zone"), res = $("#jeu-res");
+  const montrerScore = () => { $("#jeu-score").innerHTML = score.n ? `Ton score : <b>${score.toi} sur ${score.n}</b> · l'IA : <b>${score.ia} sur ${score.n}</b>` : ""; };
+  montrerScore();
+  function dessiner(it, revele){
+    const s = it.s, a = it.a, vis = revele ? s : s.slice(0, a + 1);
+    const lo = Math.min(...vis), hi = Math.max(...vis), W = 640, H = 230, m = 12;
+    const x = i => m + i / (s.length - 1) * (W - 2 * m), y = v => H - m - (v - lo) / ((hi - lo) || 1) * (H - 2 * m);
+    const pts = arr => arr.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+    const passe = `<polyline points="${pts(s.slice(0, a + 1))}" fill="none" stroke="var(--ink)" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+    const futur = revele ? `<polyline points="${s.slice(a).map((v, i) => `${x(a + i).toFixed(1)},${y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${it.r > 0 ? "var(--up)" : "var(--down)"}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>` : "";
+    const ligne = `<line x1="${x(a)}" x2="${x(a)}" y1="0" y2="${H}" stroke="var(--accent)" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>`;
+    svg.innerHTML = `<title id="jeu-svg-t">${revele ? "Le prix avant et après le jour mystère" : "Le prix avant le jour mystère"}</title>${ligne}${passe}${futur}`;
+  }
+  function tirer(){
+    const libres = items.filter((_, i) => !deja.has(i));
+    if(!libres.length) deja.clear();
+    let k; do { k = Math.floor(Math.random() * items.length); } while(deja.has(k) && deja.size < items.length);
+    deja.add(k); actuel = items[k];
+    dessiner(actuel, false);
+    res.innerHTML = "";
+    zone.innerHTML = `<span>Dans un mois, le prix sera…</span><button class="btn" data-pari="1">Plus haut ↑</button><button class="btn" data-pari="0">Plus bas ↓</button>`;
+    zone.querySelector("[data-pari]").focus();
+  }
+  function repondre(pari){
+    const it = actuel, vrai = it.r > 0 ? 1 : 0, iaDit = it.p > .5 ? 1 : 0;
+    const marge = (((DATA.modele || {}).avis_net) || {}).marge, hesite = marge != null && Math.abs(it.p - .5) < marge;
+    score.n++; if(pari === vrai) score.toi++; if(iaDit === vrai) score.ia++;
+    try{ localStorage.setItem(CLE, JSON.stringify(score)); }catch(e){}
+    dessiner(it, true); montrerScore();
+    const t = T.find(x => x.ticker === it.t), nom = t ? t.nom : it.t;
+    res.innerHTML = `<div class="jeu-res">
+      <p class="jeu-verdict ${pari === vrai ? "up" : "down"}">${pari === vrai ? "Bien vu !" : "Raté !"}</p>
+      <p>C'était <b>${esc(nom)}</b>, le ${fmtDate(it.d)}. Un mois plus tard : <b class="${it.r > 0 ? "up" : "down"}">${it.r > 0 ? "+" : ""}${(it.r * 100).toFixed(1).replace(".", ",")} %</b>.</p>
+      <p>L'IA donnait <b>${Math.round(it.p * 100)} % de chances de hausse</b> : elle penchait pour ${iaDit ? "la hausse" : "la baisse"}${hesite ? ", mais sans avis net" : ""}. Elle ${iaDit === vrai ? "a vu juste" : "s'est trompée"}.</p></div>`;
+    zone.innerHTML = `<button class="btn" id="jeu-suivant">Une autre période au hasard</button>${score.n ? `<button class="btn ghost" id="jeu-raz">Remettre le score à zéro</button>` : ""}`;
+    $("#jeu-suivant").focus();
+  }
+  async function charger(){
+    if(items) return true;
+    try{ const r = await fetch(DATA.jeu_temps); items = await r.json(); items = items.items || items; return Array.isArray(items) && items.length > 0; }
+    catch(e){ res.innerHTML = `<p class="muted">Impossible de charger les périodes du jeu. Vérifie ta connexion puis réessaie.</p>`; return false; }
+  }
+  zone.addEventListener("click", async e => {
+    const b = e.target.closest("button"); if(!b) return;
+    if(b.id === "jeu-debut" || b.id === "jeu-suivant"){ if(await charger()) tirer(); }
+    else if(b.dataset.pari != null) repondre(Number(b.dataset.pari));
+    else if(b.id === "jeu-raz"){ score = {toi: 0, ia: 0, n: 0}; try{ localStorage.removeItem(CLE); }catch(err){} montrerScore(); b.remove(); }
+  });
+})();
 
 /* ---------- Sécurité ---------- */
 const urlSure = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "#";
@@ -1634,7 +1708,7 @@ const M = DATA.modele;
     const poids = I.comite && I.comite.poids;
     blocs.push(`<div class="panel"><h3>Comment les deux IA décident ensemble</h3>
       <p style="margin:0;font-size:14px">L'IA n°1 est une spécialiste (les indicateurs qui ont fait leurs preuves) ; l'IA n°2 connaît toutes les techniques (indicateurs, économie, manuel de Bourse). ${
-        I.mode === "comite" && poids ? `Leur décision commune a été apprise sur des années jamais vues : l'avis de l'IA n°1 compte pour environ <b>${Math.round(poids[0]*100)} %</b>, celui de l'IA n°2 pour <b>${Math.round(poids[1]*100)} %</b>.`
+        I.mode === "comite" && poids ? "Leur façon de décider ensemble a été apprise sur des années qu'elles n'avaient jamais vues : chacune compte selon ce qu'elle a vraiment apporté."
         : I.mode === "commun" ? "Leurs avis sont combinés à parts égales (une décision plus fine n'a pas fait mieux lors du test)." : "Pour l'instant, l'IA n°1 seule a fait mieux lors du test : c'est elle qui décide."}</p></div>`);
   }
   const AN = M.avis_net || {};
@@ -1655,6 +1729,16 @@ const M = DATA.modele;
       ${RQ.concordance_naif != null ? barreStat("Méthode naïve (« comme ces dernières semaines »)", RQ.concordance_naif, null, true) : ""}
       ${RQ.erreur_ia != null ? `<p style="margin:0;font-size:14px">Pour estimer le <b>niveau</b> d'agitation, l'IA se trompe en général de ${Math.round(RQ.erreur_ia*100)} %, contre ${Math.round(RQ.erreur_naif*100)} % pour la méthode naïve.</p>` : ""}
       <p class="muted" style="margin:0;font-size:13px">${RQ.prouve ? "L'IA fait mieux que la méthode naïve de façon prouvée : c'est elle qui est utilisée." : "L'IA ne fait pas mieux que la méthode naïve de façon prouvée : le site utilise donc la méthode naïve."} Mesuré sur ${(RQ.nb||0).toLocaleString("fr-FR")} cas jamais vus (${esc(RQ.periode || "")}).</p></div>`);
+  }
+  const CR = (DATA.entrainement || {}).crises || {};
+  if(CR.periodes && CR.periodes.length){
+    const lignes = CR.periodes.map(r => `<li><span aria-hidden="true">${r.type === "crise" ? "🌪️" : "🎲"}</span><span><b>${esc(r.nom)}</b> <span class="muted">· ${Math.round(r.precision * 100)} % de bonnes directions</span></span></li>`).join("");
+    blocs.push(`<div class="panel"><h3>Et pendant les crises ?</h3>
+      <p style="margin:0;font-size:14px">Les IA ont rejoué les grandes crises (2008, Covid…) et des périodes tirées au hasard, en n'apprenant à chaque fois que sur ce qui précède, comme si on y était.</p>
+      ${CR.crise != null ? barreStat("Pendant les crises", CR.crise, null) : ""}
+      ${CR.hasard != null ? barreStat("En temps ordinaire (au hasard)", CR.hasard, null, true) : ""}
+      <details><summary class="muted" style="font-size:13px;cursor:pointer">Voir chaque période</summary><ul class="controles">${lignes}</ul></details>
+      <p class="muted" style="margin:0;font-size:13px">Quand la peur des marchés est très forte, le résumé du jour le signale.</p></div>`);
   }
   const CE = DATA.correction_erreurs;
   if(CE){
@@ -1700,7 +1784,7 @@ if(M && M.precision!=null){
     const ip = document.createElement("p");
     ip.className = "muted"; ip.style.cssText = "font-size:13.5px;margin:10px 0 0";
     const f = v => v == null ? "–" : v.toFixed(3).replace(".", ",");
-    ip.innerHTML = `<b>Les deux IA :</b> IA n°1 (gradient boosting + régression) AUC ${f(M.ia.ia1.auc)} · IA n°2 (forêt d'arbres) AUC ${f(M.ia.ia2 && M.ia.ia2.auc)} · combinées AUC ${f(M.ia.commun && M.ia.commun.auc)}${M.ia.mode === "commun" ? " (retenu)" : " (IA n°1 seule retenue)"}.${M.ic && M.ic.auc ? ` Marge d'erreur de l'AUC : ${f(M.ic.auc[0])} à ${f(M.ic.auc[1])}.` : ""}${M.brier && M.brier.progres != null ? ` Score de Brier ${f(M.brier.brier)} (référence ${f(M.brier.reference)}, progrès ${(M.brier.progres*100).toFixed(1).replace(".", ",")} %).` : ""}`;
+    ip.innerHTML = `<b>Les deux IA</b> décident ensemble ; seule leur décision commune est publiée.${M.ic && M.ic.auc ? ` Marge d'erreur de l'AUC : ${f(M.ic.auc[0])} à ${f(M.ic.auc[1])}.` : ""}${M.brier && M.brier.progres != null ? ` Score de Brier ${f(M.brier.brier)} (référence ${f(M.brier.reference)}, progrès ${(M.brier.progres*100).toFixed(1).replace(".", ",")} %).` : ""}`;
     vd.after(ip);
   }
   if(M.fourchette && M.fourchette.couverture != null){
@@ -1885,10 +1969,6 @@ function resumeSimple(t){
       ${t.fourchette_elargie ? `<p class="muted" style="font-size:13.5px">📅 Résultats de l'entreprise avant l'échéance : la fourchette a été élargie par prudence.</p>` : ""}
       ${accordTxt ? `<p>${accordTxt} ${aide("accord")}</p>` : ""}
       ${ligneConfiance(t)}${lignePalmares(t)}
-      ${t.proba_ia1 != null && t.proba_ia2 != null ? `<div class="debat" role="group" aria-label="Avis des deux IA">
-        <div><span class="label">IA n°1 · spécialiste</span><b class="num">${Math.round(t.proba_ia1*100)} %</b></div>
-        <div><span class="label">IA n°2 · toutes les techniques</span><b class="num">${Math.round(t.proba_ia2*100)} %</b></div>
-        <div class="dec"><span class="label">Décision commune</span><b class="num">${Math.round(p*100)} %</b></div></div>` : ""}
       ${t.actu_contredit ? `<p class="muted" style="font-size:13.5px">📰 Les actualités récentes vont plutôt dans l'autre sens : prudence.</p>` : ""}</div></div>
     ${blocRaisons(t)}${blocAgitation(t)}`;
 }

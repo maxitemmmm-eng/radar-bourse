@@ -205,7 +205,7 @@ def _page_titre(base, t, horizon, date, csp, modele):
     pourquoi = "".join(f"<li><b>{_e(r['famille'])}</b> : pousse vers la {'hausse' if r['effet'] > 0 else 'baisse'}"
                        + (f" ({_e(r['etat'])})" if r.get("etat") else "") + "</li>" for r in (t.get("raisons_ia") or []))
     nom, tk = t["nom"], t["ticker"]
-    titre = f"{nom} ({tk}) : analyse et prévision à un mois | {NOM}"
+    titre = f"{nom} ({tk}) : cours, analyse et prévision à un mois | {NOM}"
     desc = (f"{nom} ({tk}) au {date} : tendance {LIB_SIGNAL.get(t['signal'], 'neutre')}, "
             + (f"{sur10} chances sur 10 d'être plus haut dans un mois selon le modèle, " if sur10 is not None else "")
             + (f"scénario central {_px(med, dev)}. " if med else "")
@@ -227,7 +227,7 @@ def _page_titre(base, t, horizon, date, csp, modele):
                 f"<b>{round(modele['precision']*100)} %</b> de bonnes directions (référence naïve "
                 f"{round(modele['precision_base']*100)} %). Une prévision reste une probabilité.</p>")
     corps = f"""
-<h1>{_e(nom)} ({_e(tk)}) : analyse et prévision</h1>
+<h1>{_e(nom)} ({_e(tk)}) : cours, analyse et prévision</h1>
 <p class="muted">Mise à jour automatique · cours au {_e(date)}</p>
 <div class="carte grille">
   <div class="k"><b>{_px(prix, dev)}</b><span>dernier cours</span></div>

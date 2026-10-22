@@ -706,7 +706,7 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
         resultats = []
         jeu_eval = jours_alternes(jeu)   # tests plus rapides ; le modèle final apprend sur tous les jours
         for nom, variables, par_marche, params in configs_disponibles():
-            oof = predictions_hors_echantillon(jeu_eval, horizon, variables, par_marche, params=params)
+            oof = predictions_hors_echantillon(jeu_eval, horizon, variables, par_marche, params=params, garder_ticker=True)
             if oof is None or oof["cible"].nunique() < 2:
                 continue
             resultats.append((_auc(oof["cible"].to_numpy(), oof["proba"].to_numpy()), nom, variables, par_marche, oof, params))
@@ -786,6 +786,21 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
             if "accord" in oof:
                 d_niv["accord"] = oof["accord"].to_numpy()
             evaluation.avis_net["niveaux"] = comprendre.niveaux_confiance(d_niv, evaluation.avis_net.get("marge"))
+            # jeu « Remonte le temps » : moments du passé jamais vus par l'IA, tirés au hasard
+            # (renouvelé une fois par semaine seulement, pour ne pas alourdir l'historique GitHub)
+            f_jeu = os.path.join(config.DOSSIER_HISTORIQUE, "jeu_temps.json")
+            try:
+                with open(f_jeu, encoding="utf-8") as f:
+                    date_jeu = json.load(f).get("date", "")
+            except (OSError, ValueError, AttributeError):
+                date_jeu = ""
+            if date_jeu < (datetime.now() - pd.Timedelta(days=7)).isoformat():
+                items = comprendre.echantillon_jeu(oof, pc, donnees, horizon, n=200, avant=90)
+                if items:
+                    os.makedirs(config.DOSSIER_HISTORIQUE, exist_ok=True)
+                    with open(f_jeu, "w", encoding="utf-8") as f:
+                        json.dump({"date": datetime.now().isoformat(timespec="minutes"), "items": items}, f,
+                                  ensure_ascii=False, separators=(",", ":"))
         except Exception:
             evaluation.avis_net = {}
         # prévoir le risque (l'agitation du mois prochain), jugé face à la méthode naïve
