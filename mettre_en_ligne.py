@@ -208,7 +208,6 @@ def mentions(m, login):
     chemin = os.path.join(ICI, "bourse_bot", "config.py")
     texte = open(chemin, encoding="utf-8").read()
     actuel_nom = re.search(r'RADAR_EDITEUR", "([^"]*)"', texte).group(1)
-    actuel_mail = re.search(r'RADAR_CONTACT", "([^"]*)"', texte).group(1)
 
     nom = m.get("editeur") or (actuel_nom if not actuel_nom.startswith("[") and "@" not in actuel_nom else login)
     mail = m.get("contact") or ""

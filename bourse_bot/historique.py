@@ -13,7 +13,7 @@ from .model import wilson
 
 FICHIER = os.path.join(config.DOSSIER_HISTORIQUE, "predictions.csv")
 COLS = ["date", "ticker", "prix", "proba", "score", "signal", "fort", "bas", "haut", "proba_marche", "indice", "accord",
-        "proba_brute"]
+        "proba_brute", "confiance", "mouvement"]
 TRANCHES = [(0.0, 0.45, "< 45 %"), (0.45, 0.50, "45–50 %"), (0.50, 0.55, "50–55 %"), (0.55, 0.60, "55–60 %"),
             (0.60, 1.01, "> 60 %")]
 
@@ -39,7 +39,9 @@ def enregistrer(analyses) -> None:
             "haut": a.prix * np.exp(q[2]) if len(q) == 3 else np.nan,
             "proba_marche": getattr(a, "proba_marche", np.nan), "indice": getattr(a, "indice_ref", "") or "",
             "accord": {True: 1, False: 0}.get(getattr(a, "accord_ia", None), np.nan),
-            "proba_brute": getattr(a, "proba_brute", np.nan)})
+            "proba_brute": getattr(a, "proba_brute", np.nan),
+            "confiance": getattr(a, "confiance", "") or "",
+            "mouvement": (getattr(a, "risque_prevu", None) or {}).get("mouvement", np.nan)})
     nouvelles = pd.DataFrame(lignes, columns=COLS)
     if os.path.exists(FICHIER):
         anciennes = pd.read_csv(FICHIER)
@@ -154,6 +156,8 @@ def bilan(donnees: dict[str, pd.DataFrame], horizon: int = config.HORIZON_PREDIC
                    "precision_desaccord": taux(acc.loc[~acc["accord"].astype(bool), "juste"].astype(float))},
         "ic_precision": ic(v["juste"]), "nb_jours": int(v["date"].nunique()),
         "premiere": str(v["date"].min()), "derniere": str(v["date"].max()),
+        # palmarès par titre : [prévisions vérifiées, justes]
+        "par_titre": {str(t): [int(len(g)), int(g["juste"].sum())] for t, g in v.groupby("ticker")},
     }
     colonnes = ["date", "ticker", "proba", "signal", "fort", "rendement_reel", "juste", "dans_fourchette"]
     return {

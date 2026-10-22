@@ -111,6 +111,36 @@ Le **défi pronostic** permet de parier (sans argent) contre le radar et de comp
 - **Alertes Telegram** (facultatif) : chaque soir, le robot publie les signaux forts sur ta chaîne.
   Pour l'activer plus tard : double-clique sur `alertes_telegram.bat`.
 
+## Version 23 : confiance claire, nouveaux classements, corrections
+
+- **Une seule échelle de confiance** (faible / moyenne / forte), avec pour chaque niveau ce qu'il a vraiment donné sur des années jamais vues. Elle apparaît dans le tableau (petites barres) et sur chaque fiche.
+- **Palmarès sur chaque fiche.** « Sur ce titre, les IA ont vu juste X fois sur Y », dès que 5 prévisions ont été vérifiées.
+- **Trois classements** dans « Ce que le radar prévoit » : chances de hausse, mieux que leur marché, les plus calmes.
+- **Agitation prévue dans le tableau**, colonne Risque (triable).
+- **Résumé du jour plus honnête.** Il parle aussi des titres sans avis net et des titres plus agités que d'habitude.
+- **Pages Google et version anglaise** : elles affichent aussi « pas d'avis net », l'agitation et les raisons de l'avis. Les titres hésitants ne sont plus mis en avant dans les tops ni dans les alertes Telegram.
+- **Entraînement.** Il est impossible de lancer deux entraînements en même temps (message clair). Le nouvel « examen des horizons » (modes Normal et Expert) dit à quelle échéance l'IA est la plus fiable : 1 semaine, 1 mois ou 3 mois.
+- **Bilan privé** (`mon_bilan_ia.bat`). Il donne le taux de réussite par niveau de confiance, et vérifie si l'agitation prévue a été tenue.
+- **Corrections.**
+  - Un « signal fort » ne peut plus apparaître sur un avis jugé non fiable.
+  - En mode simple, la liste des prévisions n'est plus coincée dans une demi-largeur.
+  - Le nom et le code des titres ne sont plus collés dans la liste.
+  - Une variable inutilisée a été retirée du script de mise en ligne.
+
+## Version 22 : une IA plus juste et plus lisible
+
+- **Agitation prévue.** Une IA prévoit de combien chaque titre risque de bouger le mois prochain (par exemple « ±9 %, comme d'habitude »). C'est beaucoup plus prévisible que la direction. Elle n'est utilisée que si elle bat la méthode naïve de façon prouvée ; sinon le site prend la méthode naïve et le dit.
+- **Pourquoi cet avis ?** Chaque fiche montre les 3 éléments qui ont le plus pesé dans l'avis des deux IA (tendance de fond, nervosité du marché, règle du manuel…), dans quel sens et de combien. Ce sont les raisons du calcul, mesurées, pas inventées.
+- **Savoir dire « je ne sais pas ».** Chaque soir, on mesure à partir de quel écart à 50 % les avis ont vraiment été plus justes que le hasard. En dessous, le site affiche « pas d'avis net » au lieu de faire semblant.
+- Deux nouvelles cartes dans « Fiabilité » montrent ces mesures, avec leurs marges d'erreur.
+
+## Entraînement intelligent (version 21)
+
+- **Recherche guidée.** L'entraînement dessine une « carte » à partir de tous ses essais, passés et présents, pour prévoir quels réglages ont le plus de chances de faire mieux. Il teste ceux-là en priorité. Un essai sur quatre reste une idée neuve tirée au hasard, pour ne pas tourner en rond.
+- **Pas de questions en double.** Les réglages identiques ou trop proches d'un essai déjà fait sont écartés.
+- **Notes remises à jour.** Les meilleurs essais des séances passées sont rejoués sur les données du jour. Une vieille note n'est jamais comparée telle quelle à une note d'aujourd'hui.
+- **Bilan de chaque séance.** Même quand l'IA du site ne change pas, l'entraînement dit ce qu'il a appris : réglages mémorisés, anciens réglages revérifiés, familles de réglages qui marchent le mieux. Le rapport contient une section « Recherche intelligente ».
+
 ## Ton bilan privé : combien de fois les IA ont eu raison
 
 Double-clique sur `mon_bilan_ia.bat`. Le script récupère les prévisions que le site enregistre chaque soir sur GitHub.

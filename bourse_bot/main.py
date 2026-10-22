@@ -24,7 +24,7 @@ for flux in (sys.stdout, sys.stderr):
 from rich.console import Console
 from rich.table import Table
 
-from . import alertes, backtest, config, data, fondamentaux, historique, qualite, seo, indicators, model, news, report, scoring, site
+from . import comprendre, alertes, backtest, config, data, fondamentaux, historique, qualite, seo, indicators, model, news, report, scoring, site
 
 console = Console()
 COULEUR = {"ACHAT FORT": "bold green", "ACHAT": "green", "NEUTRE": "white",
@@ -127,6 +127,8 @@ def _analyser(donnees, noms, marche_de, args):
                     a.proba_ia1 = evaluation.proba_ia1.get(a.ticker, float("nan"))
                     a.proba_ia2 = evaluation.proba_ia2.get(a.ticker, float("nan"))
                     a.accord_ia = evaluation.accord_titres.get(a.ticker)
+                    a.risque_prevu = evaluation.risque_titres.get(a.ticker)
+                    a.raisons_ia = evaluation.explications.get(a.ticker, [])
                     a.indice_ref = config.benchmark_de(a.ticker, a.marche)
                     tech = bool(model.technique_haussiere(donnees[a.ticker].iloc[[-1]]).iloc[0])
                     # signal fort : IA confiante, tendance technique haussière ET les deux IA d'accord
@@ -181,6 +183,13 @@ def cmd_site(args):
         a.proba_hausse = historique.appliquer_correction(a.proba_hausse, correction)
         if a.signal_fort and not (a.proba_hausse >= model.SEUIL_FORT):
             a.signal_fort = False
+        marge = (getattr(evaluation, "avis_net", None) or {}).get("marge") if evaluation else None
+        if a.proba_hausse == a.proba_hausse and evaluation is not None and evaluation.avis_net:
+            # « je ne sais pas » : en dessous de la marge prouvée, l'avis n'a pas été plus juste que le hasard
+            a.avis_net = bool(marge is not None and abs(a.proba_hausse - 0.5) >= marge)
+            if a.avis_net is False:   # pas de « signal fort » sur un avis qui n'a pas été fiable
+                a.signal_fort = False
+            a.confiance = comprendre.niveau(a.proba_hausse, a.accord_ia, marge)
     if correction and correction.get("active"):
         console.print(f"Correction d'après les vraies erreurs ({correction['n']} prévisions vérifiées) : {correction['raison']}")
     args._correction = correction

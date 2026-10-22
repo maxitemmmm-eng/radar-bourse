@@ -196,6 +196,14 @@ def _page_titre(base, t, horizon, date, csp, modele):
     verdict = ("plutôt à la hausse" if p >= .58 else "légèrement à la hausse" if p >= .52 else
                "sans direction claire" if p > .48 else "légèrement à la baisse" if p > .42 else
                "plutôt à la baisse") if p is not None else "non disponible"
+    if p is not None and t.get("avis_net") is False:
+        verdict = "sans avis net (les IA hésitent : dans ces cas-là, elles n'ont pas fait mieux que le hasard)"
+    rq = t.get("risque_prevu") or {}
+    agitation = (f"<p>Agitation prévue le mois prochain : en général, le prix bougera d'environ <b class='m'>±{round(rq['mouvement'] * 100)} %</b>"
+                 + (", plus que d'habitude" if (rq.get("habitude") or 1) > 1.25 else ", moins que d'habitude" if (rq.get("habitude") or 1) < 0.8 else "")
+                 + ", dans un sens ou dans l'autre.</p>") if rq.get("mouvement") else ""
+    pourquoi = "".join(f"<li><b>{_e(r['famille'])}</b> : pousse vers la {'hausse' if r['effet'] > 0 else 'baisse'}"
+                       + (f" ({_e(r['etat'])})" if r.get("etat") else "") + "</li>" for r in (t.get("raisons_ia") or []))
     nom, tk = t["nom"], t["ticker"]
     titre = f"{nom} ({tk}) : analyse et prévision à un mois | {NOM}"
     desc = (f"{nom} ({tk}) au {date} : tendance {LIB_SIGNAL.get(t['signal'], 'neutre')}, "
@@ -234,6 +242,8 @@ def _page_titre(base, t, horizon, date, csp, modele):
 {"<b>Signal fort</b> : le modèle et la tendance technique vont dans le même sens." if t.get("signal_fort") else ""}
 {f"Probabilité de faire mieux que {_e(t.get('indice_nom') or 'son marché')} sur la même période : <b>{round(t['proba_marche'] * 100)} %</b>." if t.get("proba_marche") is not None else ""}
 {"Fourchette élargie par prudence : l'entreprise publie ses résultats avant l'échéance." if t.get("fourchette_elargie") else ""}</p>
+{agitation}
+{f"<h2>Pourquoi cet avis ?</h2><p class='muted'>Ce qui a le plus pesé dans le calcul des deux IA.</p><ul>{pourquoi}</ul>" if pourquoi else ""}
 <p><a class="btn" href="{lien_app}">Voir le graphique interactif et le simulateur</a></p>
 {f"<h2>Ce que montrent les indicateurs</h2><ul>{raisons}</ul>" if raisons else ""}
 {f"<h2>Niveaux à surveiller</h2><div class='carte'><table>{niveaux}</table></div>" if niveaux else ""}
@@ -787,7 +797,7 @@ def _image_du_jour(payload: dict, chemin: str, base: str = "") -> bool:
     # plus fortes probabilités de hausse
     dr.text((M, y), "Plus forte probabilité de hausse à un mois", font=police(32, True), fill=blanc)
     y += 58
-    top = sorted([t for t in titres if t.get("proba_hausse") is not None and t.get("qualite_ok", True)],
+    top = sorted([t for t in titres if t.get("proba_hausse") is not None and t.get("qualite_ok", True) and t.get("avis_net") is not False],
                  key=lambda t: -t["proba_hausse"])[:4]
     for t in top:
         dr.rounded_rectangle((M, y, W - M, y + 88), radius=16, fill=carte)

@@ -136,6 +136,118 @@ def adresse_site() -> str:
 # ----------------------------------------------------------------------------
 # Le moteur d'entraînement (tourne en arrière-plan, envoie des événements à la fenêtre)
 # ----------------------------------------------------------------------------
+
+class CarteRecherche:
+    """Recherche guidée : l'IA apprend, à partir de TOUS ses essais (passés et présents), quels réglages
+    marchent, puis choisit le prochain essai là où elle s'attend au meilleur gain.
+
+    - Chaque essai est décrit par quelques chiffres (profondeur, vitesse d'apprentissage, nombre et type d'indicateurs…).
+    - Les notes de jours différents ne sont pas comparables (les données changent) : chaque note est donc
+      exprimée par rapport à la moyenne de SA séance. Seul l'écart compte, pas la note brute.
+    - Une forêt d'arbres prévoit l'écart attendu ET son incertitude. On teste en priorité ce qui est
+      prometteur ou encore inconnu (« optimisme face à l'inconnu »), de moins en moins au fil de la séance.
+    - Un candidat trop proche d'un essai déjà fait est écarté : il n'apprendrait rien de nouveau.
+    """
+    PARAMS = (("profondeur", 3, False), ("apprentissage", 0.04, True), ("iterations", 250, True),
+              ("feuille", 300, True), ("l2", 2.0, True), ("c_lin", 0.05, True), ("demi_vie", 0, False))
+    MINIMUM = 12
+
+    def __init__(self, np, macro):
+        self.np, self.macro = np, macro
+        self.foret, self.X, self.y = None, None, None
+
+    def decrire(self, variables, par_marche, params):
+        np, prm = self.np, params or {}
+        x = []
+        for k, d, log in self.PARAMS:
+            v = float(prm.get(k, d) or 0)
+            x.append(np.log(max(v, 1e-4)) if log else v)
+        v = set(variables)
+        x += [float(bool(par_marche)), len(v), sum(c.startswith("cx_") for c in v), len(v & self.macro),
+              sum(c.startswith("rang_") for c in v)]
+        return np.array(x, dtype=float)
+
+    def apprendre(self, anciens, actuels):
+        """anciens : essais des séances passées (avec leur date) ; actuels : essais de cette séance."""
+        np = self.np
+        lignes = [(e, e.get("date") or "ancien") for e in anciens if "membres" not in (e.get("params") or {})]
+        lignes += [(e, "maintenant") for e in actuels if "membres" not in (e.get("params") or {})]
+        if len(lignes) < self.MINIMUM:
+            self.foret = None
+            return False
+        par_seance = {}
+        for e, s in lignes:
+            par_seance.setdefault(s, []).append(e["auc_recherche"])
+        moy = {s: float(np.mean(v)) for s, v in par_seance.items()}
+        X = np.array([self.decrire(e["variables"], e["par_marche"], e.get("params")) for e, _ in lignes])
+        y = np.array([e["auc_recherche"] - moy[s] for e, s in lignes])
+        # une séance avec un seul essai n'apprend rien sur les écarts : poids nul
+        w = np.array([0.0 if len(par_seance[s]) < 2 else (0.6 if not e.get("teste_completement", True) else 1.0)
+                      for e, s in lignes])
+        if (w > 0).sum() < self.MINIMUM:
+            self.foret = None
+            return False
+        from sklearn.ensemble import RandomForestRegressor
+        self.foret = RandomForestRegressor(n_estimators=150, min_samples_leaf=2, max_features=0.6,
+                                           random_state=0, n_jobs=-1).fit(X, y, sample_weight=w)
+        self.X, self.y = X, y
+        return True
+
+    def prevoir(self, candidats):
+        np = self.np
+        X = np.array([self.decrire(c[1], c[2], c[3]) for c in candidats])
+        arbres = np.array([a.predict(X) for a in self.foret.estimators_])
+        return arbres.mean(axis=0), arbres.std(axis=0), X
+
+    def choisir(self, candidats, avancement):
+        """avancement de 0 à 1 : au début on explore l'inconnu, à la fin on vise ce qui est sûr."""
+        np = self.np
+        moy, inc, X = self.prevoir(candidats)
+        kappa = 1.5 * (1 - avancement) + 0.3
+        score = moy + kappa * inc
+        if self.X is not None and len(self.X):
+            echelle = self.X.std(axis=0) + 1e-6
+            dist = np.min(np.abs((X[:, None, :] - self.X[None, :, :]) / echelle).sum(axis=2), axis=1)
+            score = np.where(dist < 0.35, -np.inf, score)   # quasi-doublon d'un essai déjà fait
+        k = int(np.argmax(score))
+        if not np.isfinite(score[k]):
+            return None, None, None
+        return candidats[k], float(moy[k]), float(inc[k])
+
+    def lecons(self, anciens, actuels):
+        """Ce que la carte a appris, en phrases simples (moyennes des écarts par famille de réglages)."""
+        np = self.np
+        lignes = [(e, e.get("date") or "ancien") for e in anciens + [dict(a, date="maintenant") for a in actuels]
+                  if "membres" not in (e.get("params") or {})]
+        if len(lignes) < 20:
+            return []
+        par_seance = {}
+        for e, s in lignes:
+            par_seance.setdefault(s, []).append(e["auc_recherche"])
+        moy = {s: float(np.mean(v)) for s, v in par_seance.items()}
+        ecarts = [(e, e["auc_recherche"] - moy[s]) for e, s in lignes if len(par_seance[s]) >= 2]
+        familles = {
+            "arbres peu profonds (2–3)": lambda e: (e.get("params") or {}).get("profondeur", 3) <= 3,
+            "arbres profonds (4 et plus)": lambda e: (e.get("params") or {}).get("profondeur", 3) >= 4,
+            "un modèle séparé par marché": lambda e: bool(e["par_marche"]),
+            "un seul modèle pour tous les marchés": lambda e: not e["par_marche"],
+            "donner plus de poids aux années récentes": lambda e: bool((e.get("params") or {}).get("demi_vie")),
+            "toutes les années comptent pareil": lambda e: not (e.get("params") or {}).get("demi_vie"),
+            "apprentissage lent (≤ 0,03)": lambda e: (e.get("params") or {}).get("apprentissage", 0.04) <= 0.03,
+            "apprentissage rapide (≥ 0,05)": lambda e: (e.get("params") or {}).get("apprentissage", 0.04) >= 0.05,
+            "avec les règles du manuel de Bourse": lambda e: any(v.startswith("cx_") for v in e["variables"]),
+            "sans les règles du manuel": lambda e: not any(v.startswith("cx_") for v in e["variables"]),
+            "avec les données économiques": lambda e: bool(set(e["variables"]) & self.macro),
+            "peu d'indicateurs (moins de 30)": lambda e: len(e["variables"]) < 30,
+        }
+        res = []
+        for nom, f in familles.items():
+            v = [d for e, d in ecarts if f(e)]
+            if len(v) >= 6:
+                res.append((nom, float(np.mean(v)), len(v)))
+        res.sort(key=lambda r: -r[1])
+        return res
+
 class Moteur:
     PHASES = [("collecte", 0.16), ("examen1", 0.10), ("manuel", 0.09), ("recherche", 0.42), ("tri", 0.08), ("final", 0.15)]
 
@@ -238,6 +350,8 @@ class Moteur:
                              else "➖ Gain non prouvé : on garde la liste actuelle.")
             if garder_etendu:
                 jeu = jeu_etendu
+        self.donnees_jeu = {**supp_base, **(supp_etendu if garder_etendu else {}), **affiches}
+        self.marches_jeu = marches
         self.progres("examen1", 1)
         jeu_sel = self._zone_recherche(jeu, coupure)
         if reglage["pas"] > 1:   # recherche plus rapide : 1 jour sur N (l'examen final garde tous les jours)
@@ -256,9 +370,10 @@ class Moteur:
         essais, t0 = [], time.time()
         memoire = self._lire_memoire()
         deja = {self._signature(e) for e in memoire}
+        carte = CarteRecherche(np, MACRO)
         if memoire:
-            self.log(f"🧠 Mémoire : {len(memoire)} essais des entraînements précédents. L'IA va explorer autour des "
-                     "meilleurs (sans les refaire à l'identique) et essayer aussi des idées nouvelles.")
+            self.log(f"🧠 Mémoire : {len(memoire)} essais des entraînements précédents, sur {len({e.get('date') for e in memoire})} séance(s). "
+                     "Ils servent à guider la recherche, et les meilleurs sont revérifiés sur les données d'aujourd'hui.")
         meilleur_rapide = [0.0]
 
         def tester(nom, v, pm, prm, force=False):
@@ -288,18 +403,61 @@ class Moteur:
 
         for nom, v, pm, prm in model.configs_disponibles():
             tester(nom, v, pm, prm, force=(nom == champion))
-        i = 1
+        # Revérification : les meilleurs essais des séances passées sont rejoués sur les données d'aujourd'hui.
+        # Une vieille note n'est jamais comparée telle quelle à une note d'aujourd'hui (les données ont changé).
+        a_reverifier = self._meilleurs_passes(memoire, {self._signature(e) for e in essais}, n=4 if max_essais < 30 else 6)
+        if a_reverifier:
+            self.log(f"🔁 Revérification de {len(a_reverifier)} des meilleurs essais passés sur les données d'aujourd'hui…")
+        for e in a_reverifier:
+            if self.arret.is_set() or time.time() - t0 > budget * 0.45:
+                break
+            avant = e["auc_recherche"]
+            tester("Revérifié : " + re.sub(r"^(Revérifié : |🧭 )+", "", e["nom"])[:90], e["variables"], e["par_marche"],
+                   dict(e.get("params") or {}), force=True)
+            if essais and essais[-1]["nom"].startswith("Revérifié"):
+                essais[-1]["auc_avant"] = avant
+        i, guides, aleatoires = 1, 0, 0
         while not self.arret.is_set() and len(essais) < max_essais and time.time() - t0 < budget:
-            # moitié exploration (idées nouvelles), moitié amélioration des meilleurs essais (y compris passés)
-            meilleurs = sorted([e for e in essais + memoire if e.get("teste_completement", True)
+            # les meilleurs essais de CETTE séance (tous notés sur les mêmes données)
+            meilleurs = sorted([e for e in essais if e.get("teste_completement", True)
                                 and "membres" not in (e.get("params") or {})],
                                key=lambda e: -e["auc_recherche"])[:5]
-            for _ in range(20):
-                cand = self._muter(rng, meilleurs, i) if (i % 2 == 0 and meilleurs) else self._tirer(rng, i)
-                if self._signature({"variables": cand[1], "par_marche": cand[2], "params": cand[3]}) not in deja:
-                    break
+            cand, attendu = None, None
+            # 3 essais sur 4 sont choisis par la carte ; 1 sur 4 reste une idée neuve tirée au hasard
+            if i % 4 and carte.apprendre(memoire, essais):
+                pool = []
+                for k in range(300):
+                    c = self._muter(rng, meilleurs, i) if (k % 2 == 0 and meilleurs) else self._tirer(rng, i)
+                    if self._signature({"variables": c[1], "par_marche": c[2], "params": c[3]}) not in deja:
+                        pool.append(c)
+                if pool:
+                    cand, attendu, incertitude = carte.choisir(pool, min(1.0, (time.time() - t0) / budget))
+                if cand is not None:
+                    guides += 1
+                    cand = ("🧭 " + cand[0], *cand[1:])
+                    if guides <= 3 or guides % 5 == 0:
+                        self.log(f"   🧭 Choix guidé par la carte : gain attendu {attendu:+.4f} (± {incertitude:.4f}) par rapport à la moyenne")
+            if cand is None:
+                for _ in range(20):
+                    cand = self._muter(rng, meilleurs, i) if (i % 2 == 0 and meilleurs) else self._tirer(rng, i)
+                    if self._signature({"variables": cand[1], "par_marche": cand[2], "params": cand[3]}) not in deja:
+                        break
+                aleatoires += 1
             tester(*cand)
             i += 1
+        self.guidage = {"guides": guides, "aleatoires": aleatoires,
+                        "reverifies": [{"nom": e["nom"], "avant": e.get("auc_avant"), "apres": e["auc_recherche"]}
+                                       for e in essais if e["nom"].startswith("Revérifié")]}
+        for r in self.guidage["reverifies"]:
+            if r["avant"] is not None:
+                self.log(f"   🔁 {r['nom'][:70]} : {r['avant']:.4f} autrefois → {r['apres']:.4f} aujourd'hui")
+        self.lecons = carte.lecons(memoire, [e for e in essais if "membres" not in (e.get("params") or {})])
+        if self.lecons:
+            self.log("📚 Ce que la carte a appris de tous les essais (écart moyen par rapport aux autres) :")
+            for nom, d, n in self.lecons[:3]:
+                self.log(f"   ↑ {nom} : {d:+.4f} ({n} essais)")
+            for nom, d, n in self.lecons[-2:]:
+                self.log(f"   ↓ {nom} : {d:+.4f} ({n} essais)")
         self.progres("recherche", 1)
         if not any(e["nom"] == champion for e in essais):
             tester(champion, v_ch, pm_ch, p_ch, force=True)
@@ -379,6 +537,12 @@ class Moteur:
         self.progres("final", 1)
         self.log(decision["raison"])
         erreurs = self._analyse_erreurs(o_r)
+        horizons = None
+        if args.duree != "rapide" and not self.arret.is_set():
+            try:
+                horizons = self._examen_horizons(coupure, retenu, reglage["pas"])
+            except Exception as ex:
+                self.log(f"(Examen des horizons impossible cette fois : {ex})")
 
         entree = {"date": datetime.now().isoformat(timespec="minutes"), "mode": args.duree,
                   "demo": args.demo, "arret_manuel": self.arret.is_set(),
@@ -392,7 +556,9 @@ class Moteur:
                   "raison": decision["raison"], "ic_gain_auc": decision.get("ic_gain_auc"), "examen_donnees": examen_donnees,
                   "precision": ev.precision, "ic_precision": ev.ic.get("precision"), "auc": ev.auc,
                   "auc_recherche_retenu": retenu["auc_recherche"], "precision_base": ev.precision_base,
-                  "niveau_preuve": ev.niveau_preuve(), "connaissances": verdicts, "erreurs": erreurs}
+                  "niveau_preuve": ev.niveau_preuve(), "connaissances": verdicts, "erreurs": erreurs,
+                  "guidage": getattr(self, "guidage", None), "lecons": getattr(self, "lecons", None),
+                  "horizons": horizons}
         recette = {"nom": retenu["nom"], "variables": retenu["variables"], "par_marche": retenu["par_marche"],
                    **({"membres": retenu["params"]["membres"]} if "membres" in retenu["params"] else {}),
                    "params": retenu["params"], "date": entree["date"], "auc": retenu.get("auc_final")}
@@ -548,23 +714,81 @@ class Moteur:
     def _signature(e):
         return json.dumps([sorted(e["variables"]), bool(e["par_marche"]), sorted((e.get("params") or {}).items())])
 
+    def _examen_horizons(self, coupure, e, pas):
+        """À quel horizon l'IA est-elle la plus fiable ? Même recette, testée à 1 semaine, 1 mois et 3 mois,
+        sur la zone de recherche (les années sous clé ne sont pas utilisées)."""
+        np, model = self.np, self.model
+        if "membres" in (e.get("params") or {}):
+            e = {"variables": model.VARIABLES_BASE, "par_marche": False, "params": {}}
+        self.log("🔭 Examen des horizons : à quelle échéance l'IA est-elle la plus fiable ?")
+        out = []
+        for h, nom in ((5, "1 semaine"), (20, "1 mois"), (60, "3 mois")):
+            if self.arret.is_set():
+                break
+            jeu_h = model.construire_jeu(self.donnees_jeu, self.marches_jeu, h)
+            z = self._zone_recherche(jeu_h, coupure)
+            jours = np.array(sorted(z.index.unique()))[::max(pas, 3)]
+            z = z[z.index.isin(jours)]
+            o = model.predictions_hors_echantillon(z, h, e["variables"], e["par_marche"], n_plis=3, params=e.get("params"))
+            if o is None or o["cible"].nunique() < 2:
+                continue
+            y, p = o["cible"].to_numpy(), o["proba"].to_numpy()
+            auc = model._auc(y, p)
+            base = float(max(y.mean(), 1 - y.mean()))
+            prec = model._precision(y, p)
+            out.append({"horizon": h, "nom": nom, "auc": auc, "precision": prec, "base": base, "nb": int(len(o))})
+            self.log(f"   {nom} : AUC {auc:.4f} · bonne direction {prec * 100:.1f} % (toujours la même réponse : {base * 100:.1f} %)")
+        if out:
+            m = max(out, key=lambda x: x["auc"])
+            self.log(f"   → L'IA est la plus fiable à {m['nom']}. (Le site garde un mois ; c'est une information pour la suite.)")
+        return out
+
+    def _fichier_essais(self):
+        # en démo (données fictives), la mémoire est rangée à part pour ne jamais se mélanger aux vrais essais
+        return os.path.join(".cache_entrainement", "essais_demo.json") if self.args.demo else FICHIER_ESSAIS
+
+    def _meilleurs_passes(self, memoire, exclus, n=6):
+        """Les meilleurs essais passés, classés par écart à la moyenne de leur propre séance."""
+        np = self.np
+        par_seance = {}
+        for e in memoire:
+            par_seance.setdefault(e.get("date") or "ancien", []).append(e["auc_recherche"])
+        moy = {k: float(np.mean(v)) for k, v in par_seance.items()}
+        vus, res = set(exclus), []
+        for e in sorted(memoire, key=lambda e: -(e["auc_recherche"] - moy[e.get("date") or "ancien"])):
+            sig = self._signature(e)
+            if sig in vus or "membres" in (e.get("params") or {}):
+                continue
+            vus.add(sig)
+            res.append(e)
+            if len(res) >= n:
+                break
+        return res
+
     def _lire_memoire(self):
         try:
-            with open(FICHIER_ESSAIS, encoding="utf-8") as f:
+            with open(self._fichier_essais(), encoding="utf-8") as f:
                 m = json.load(f)
             vars_ok = set(self.model.VARIABLES)
-            return [e for e in m.get("essais", []) if set(e["variables"]) <= vars_ok][-400:]
+            return [e for e in m.get("essais", []) if set(e["variables"]) <= vars_ok][-600:]
         except (OSError, ValueError, KeyError):
             return []
 
     def _ecrire_memoire(self, memoire, essais):
-        if self.args.demo:
-            return
         try:
-            os.makedirs("historique", exist_ok=True)
-            nouveaux = [{**e, "date": datetime.now().strftime("%Y-%m-%d")} for e in essais if e.get("teste_completement")]
-            with open(FICHIER_ESSAIS, "w", encoding="utf-8") as f:
-                json.dump({"essais": (memoire + nouveaux)[-400:]}, f, ensure_ascii=False)
+            os.makedirs(os.path.dirname(self._fichier_essais()), exist_ok=True)
+            jour = datetime.now().strftime("%Y-%m-%d")
+            nouveaux = [{k: v for k, v in e.items() if k not in ("auc_avant", "auc_final")} | {"date": jour}
+                        for e in essais if e.get("teste_completement") and "membres" not in (e.get("params") or {})]
+            # une seule note par réglage et par jour (la plus récente)
+            tout, vus = [], set()
+            for e in reversed(memoire + nouveaux):
+                cle = (self._signature(e), e.get("date"))
+                if cle not in vus:
+                    vus.add(cle)
+                    tout.append(e)
+            with open(self._fichier_essais(), "w", encoding="utf-8") as f:
+                json.dump({"essais": list(reversed(tout))[-600:]}, f, ensure_ascii=False)
         except OSError:
             pass
 
@@ -780,6 +1004,34 @@ def analyser_site(log, etat):
 # ----------------------------------------------------------------------------
 # Rapport
 # ----------------------------------------------------------------------------
+def appris_cette_fois(e):
+    """Même quand l'IA du site ne change pas, la séance n'est pas perdue : on dit ce qui a été appris."""
+    g, lecons = e.get("guidage") or {}, e.get("lecons") or []
+    morceaux = [f"{e.get('nb_essais', 0)} nouveaux réglages testés et mémorisés pour guider les prochaines séances"]
+    if g.get("reverifies"):
+        morceaux.append(f"{len(g['reverifies'])} anciens réglages revérifiés sur les données d'aujourd'hui")
+    if lecons:
+        morceaux.append(f"ce qui marche le mieux jusqu'ici : {lecons[0][0]}")
+    return "\nCe que cette séance a appris : " + " ; ".join(morceaux) + "."
+
+
+def section_guidage(e, x):
+    g, lecons = e.get("guidage") or {}, e.get("lecons") or []
+    if not g and not lecons:
+        return ""
+    fmt = lambda a: "–" if a is None else f"{a:.4f}"
+    rev = "".join(f"<tr><td>{x(r['nom'])}</td><td>{fmt(r['avant'])}</td><td>{fmt(r['apres'])}</td></tr>"
+                  for r in g.get("reverifies", []))
+    lec = "".join(f"<tr><td>{'↑' if d > 0 else '↓'} {x(n)}</td><td>{d:+.4f}</td><td>{k}</td></tr>" for n, d, k in lecons)
+    return ("<div class='c'><h2>Recherche intelligente</h2>"
+            f"<p>{g.get('guides', 0)} essais choisis par la carte (là où un gain était le plus probable), "
+            f"{g.get('aleatoires', 0)} idées neuves tirées au hasard pour ne pas tourner en rond. "
+            "Les réglages trop proches d'un essai déjà fait sont écartés : chaque essai apprend quelque chose de nouveau.</p>"
+            + (f"<h3>Meilleurs essais passés, revérifiés sur les données d'aujourd'hui</h3><table><tr><th>Réglage</th><th>Note autrefois</th><th>Note aujourd'hui</th></tr>{rev}</table>" if rev else "")
+            + (f"<h3>Ce que la carte a appris (tous les essais, toutes les séances)</h3><p class='m'>Écart moyen d'AUC par rapport aux autres essais de la même séance. Positif = cette famille de réglages marche mieux.</p><table><tr><th>Famille de réglages</th><th>Écart moyen</th><th>Essais</th></tr>{lec}</table>" if lec else "")
+            + "</div>")
+
+
 def ecrire_rapport(e, ev):
     from bourse_bot import config
     os.makedirs(config.DOSSIER_RAPPORTS, exist_ok=True)
@@ -823,6 +1075,8 @@ table{{width:100%;border-collapse:collapse}}td,th{{padding:8px;border-bottom:1px
 <div class="c"><h2>Recherche et examen final</h2>
 <p class="m">AUC : 0,5 = hasard, 1 = parfait. En Bourse, 0,52 à 0,56 est déjà un bon score. Seule la colonne « examen final » compte vraiment.</p>
 <table><tr><th>Façon de prévoir</th><th>Recherche</th><th>Examen final</th><th></th></tr>{lignes}</table></div>
+{section_guidage(e, x)}
+{"<div class='c'><h2>À quelle échéance l'IA est-elle la plus fiable ?</h2><p class='m'>Même recette, testée sur la zone de recherche à trois horizons. Plus l'AUC est au-dessus de 0,5, mieux c'est. Comparer aussi la bonne direction à « toujours la même réponse ».</p><table><tr><th>Horizon</th><th>AUC</th><th>Bonne direction</th><th>Toujours la même réponse</th></tr>" + "".join(f"<tr><td>{x(h['nom'])}</td><td>{h['auc']:.4f}</td><td>{h['precision'] * 100:.1f} %</td><td>{h['base'] * 100:.1f} %</td></tr>" for h in e['horizons']) + "</table></div>" if e.get('horizons') else ""}
 {"<div class='c'><h2>Le manuel de Bourse : verdict de l'IA</h2><p class='m'>Chaque règle connue a été vérifiée sur deux périodes jamais vues. 🟢 = aide vraiment l'IA. ⚪ = pas d'effet prouvé (la règle n'est pas forcément fausse, mais l'IA ne lui fait pas confiance).</p><table><tr><th>Règle</th><th>Verdict</th><th>Meilleure version</th><th>Sens</th></tr>" + "".join(f"<tr><td>{x(v['nom'])}</td><td>{'🟢 utile' if v['statut'] == 'utile' else '⚪ ' + x(v['statut'])}</td><td>{x(v.get('variante') or '–')}</td><td>{'comme annoncé' if v.get('dans_le_sens_annonce') else 'inverse' if v.get('dans_le_sens_annonce') is False else '–'}</td></tr>" for v in (e.get('connaissances') or {}).values()) + "</table></div>" if e.get('connaissances') else ""}
 {"<div class='c'><h2>Apprendre de ses erreurs : où l'IA se trompe-t-elle ?</h2><table>" + "".join(f"<tr><td>{x(g['nom'])}</td><td>{g['nb']:,} cas</td><td>{g['precision'] * 100:.0f} % justes</td></tr>" for g in ((e.get('erreurs') or {}).get('par_marche', []) + (e.get('erreurs') or {}).get('par_confiance', []))) + "</table><p class='m'>Les marchés où elle se trompe le plus sont ceux où ses prochaines recherches (un modèle par marché, d'autres indicateurs) ont le plus à gagner.</p></div>" if e.get('erreurs') else ""}
 {"<div class='c'><h2>Les indicateurs les plus utiles</h2><p class='m'>Perte d'AUC quand on mélange l'indicateur au hasard (la plus faible des deux périodes).</p><table>" + "".join(f"<tr><td>{x(k)}</td><td>{v:+.4f}</td></tr>" for k, v in imp.items()) + "</table></div>" if imp else ""}
@@ -957,7 +1211,8 @@ def fenetre(args):
                 "➖ Pas de progrès prouvé : l'IA du site est confirmée (c'est normal et sain).")
                + f"\n{d['raison']}\nÀ l'examen final : bonne direction {ev.precision * 100:.0f} fois sur 100"
                + (f" (marge {ev.ic['precision'][0] * 100:.0f} à {ev.ic['precision'][1] * 100:.0f})" if ev.ic.get("precision") else "")
-               + f", contre {ev.precision_base * 100:.0f} en répondant toujours la même chose.")
+               + f", contre {ev.precision_base * 100:.0f} en répondant toujours la même chose."
+               + appris_cette_fois(res["entree"]))
         tk.Label(actions, text=txt, font=("Segoe UI", 11, "bold"), fg=UP if res["change"] else WARN, bg=BG,
                  justify="left", wraplength=860).pack(anchor="w", pady=(0, 8))
         rangee = tk.Frame(actions, bg=BG)
@@ -1098,7 +1353,7 @@ def console(args):
     res = moteur.resultat
     if not res:
         return 2
-    print(f"\n{res['decision']['raison']}\n📄 Rapport : {res['rapport']}")
+    print(f"\n{res['decision']['raison']}{appris_cette_fois(res['entree'])}\n📄 Rapport : {res['rapport']}")
     if moteur.depot_git and not args.demo and input("Mettre à jour le site maintenant ? (o/n) ").strip().lower().startswith("o"):
         enregistrer(res, args.demo)
         depuis = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -1109,7 +1364,45 @@ def console(args):
     return 0
 
 
+_VERROU = None
+
+
+def prendre_verrou() -> bool:
+    """Empêche deux entraînements en même temps (ils écriraient dans les mêmes fichiers).
+    Le verrou est tenu par le système : il disparaît tout seul si la fenêtre est fermée ou plante."""
+    global _VERROU
+    os.makedirs(".cache_entrainement", exist_ok=True)
+    try:
+        f = open(os.path.join(".cache_entrainement", "en_cours.lock"), "a+")
+        if os.name == "nt":
+            import msvcrt
+            f.seek(0)
+            msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        return False
+    _VERROU = f
+    return True
+
+
 def main():
+    if not prendre_verrou():
+        msg = ("Un entraînement est déjà en cours sur ce PC.\n"
+               "Attends qu'il se termine (ou ferme sa fenêtre) avant d'en lancer un autre : "
+               "deux entraînements en même temps se gêneraient et n'iraient pas plus vite.")
+        print(msg)
+        try:
+            import tkinter
+            from tkinter import messagebox
+            r = tkinter.Tk()
+            r.withdraw()
+            messagebox.showinfo("Radar Bourse", msg)
+            r.destroy()
+        except Exception:
+            pass
+        return 4
     p = argparse.ArgumentParser(description="Entraînement approfondi de l'IA de Radar Bourse")
     p.add_argument("--duree", choices=list(DUREES), default=None, help="rapide, normal ou expert (sinon la fenêtre demande)")
     p.add_argument("--complet", action="store_true", help="(ancien nom de --duree expert)")

@@ -47,6 +47,10 @@ class Analyse:
     accord_ia: bool | None = None              # les deux IA vont-elles dans le même sens ?
     actu_contredit: bool = False               # les actus récentes contredisent l'avis de l'IA
     proba_brute: float = float("nan")          # probabilité avant la correction apprise des vraies erreurs
+    risque_prevu: dict | None = None           # agitation prévue le mois prochain (vol, mouvement typique, vs habitude)
+    raisons_ia: list = field(default_factory=list)  # ce qui a le plus pesé dans l'avis des IA
+    confiance: str = ""                         # faible / moyenne / forte (échelle unique, mesurée)
+    avis_net: bool | None = None               # l'avis est-il assez tranché pour avoir été fiable ? (None = inconnu)
 
     def to_dict(self) -> dict:
         return propre(self.__dict__.copy())

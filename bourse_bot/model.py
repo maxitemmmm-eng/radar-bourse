@@ -31,7 +31,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-from . import config
+from . import comprendre, config
 from .indicators import FEATURES
 
 COLS_RANG = ["ret_21j", "ret_63j", "ret_126j", "vol_20j", "force_relative_63j", "dist_plus_haut"]
@@ -279,6 +279,10 @@ class Evaluation:
     proba_ia2: dict = field(default_factory=dict)
     accord_titres: dict = field(default_factory=dict)
     extremes: dict = field(default_factory=dict)       # {ticker: (bas 5 %, haut 95 %)} log-rendements
+    risque: dict = field(default_factory=dict)         # fiabilité de la prévision du risque (agitation)
+    avis_net: dict = field(default_factory=dict)       # à partir de quel écart à 50 % un avis est fiable
+    risque_titres: dict = field(default_factory=dict)  # {ticker: agitation prévue}
+    explications: dict = field(default_factory=dict)   # {ticker: [les raisons de l'avis]}
 
     @property
     def avantage(self) -> float:
@@ -319,12 +323,13 @@ class Evaluation:
                 "comparaison": self.comparaison, "fourchette": self.fourchette,
                 "relatif": self.relatif, "ic": self.ic, "brier": self.brier, "ia": self.ia,
                 "accord": self.accord, "champion": self.champion, "controles": self.controles,
-                "date_evaluation": self.date_evaluation, "horizon": config.HORIZON_PREDICTION}
+                "date_evaluation": self.date_evaluation, "horizon": config.HORIZON_PREDICTION,
+                "risque": {k: v for k, v in (self.risque or {}).items() if k != "variables"}, "avis_net": self.avis_net}
 
 
 CHAMPS_CACHE = ("precision", "precision_base", "auc", "nb_tests", "calibration", "signaux_forts", "top_confiance",
                 "fourchette", "configuration", "comparaison", "par_marche", "periode", "relatif", "ic", "brier",
-                "ia", "accord", "champion", "date_evaluation")
+                "ia", "accord", "champion", "date_evaluation", "risque", "avis_net")
 
 
 def ajouter_transversal(df: pd.DataFrame, par_date: bool = True) -> pd.DataFrame:
@@ -354,6 +359,7 @@ def construire_jeu(donnees: dict[str, pd.DataFrame], marches: dict[str, str], ho
         m["est_crypto"] = float(marches.get(ticker) == "crypto")
         futur = futurs[ticker]
         m["rendement_futur"] = futur
+        m["vol_futur"] = comprendre.vol_futur(d["Close"], horizon)
         m["cible"] = np.where(futur.isna(), np.nan, (futur > 0).astype(float))
         ref = config.benchmark_de(ticker, marches.get(ticker, ""))
         if ref != ticker and ref in futurs:
@@ -771,6 +777,22 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
             evaluation.relatif, calibs["relatif"] = evaluer_relatif(jeu_eval, horizon, variables, par_marche)
         except Exception:
             evaluation.relatif, calibs["relatif"] = {}, None
+        # savoir dire « je ne sais pas » : marge à partir de laquelle un avis a vraiment été fiable
+        try:
+            pc = calibs["final"].predict(oof["proba"]) if calibs.get("final") is not None else oof["proba"].to_numpy()
+            evaluation.avis_net = comprendre.seuil_avis_net(pd.DataFrame({"cible": oof["cible"].to_numpy(), "proba": pc},
+                                                                         index=oof.index))
+            d_niv = pd.DataFrame({"cible": oof["cible"].to_numpy(), "proba": pc}, index=oof.index)
+            if "accord" in oof:
+                d_niv["accord"] = oof["accord"].to_numpy()
+            evaluation.avis_net["niveaux"] = comprendre.niveaux_confiance(d_niv, evaluation.avis_net.get("marge"))
+        except Exception:
+            evaluation.avis_net = {}
+        # prévoir le risque (l'agitation du mois prochain), jugé face à la méthode naïve
+        try:
+            evaluation.risque = comprendre.evaluer_risque(jeu_eval, horizon, VARIABLES_BASE)
+        except Exception:
+            evaluation.risque = {}
         evaluation.date_evaluation = datetime.now().isoformat(timespec="minutes")
         _sauver_selection(evaluation, calibs, mode, ancien.get("recette"), ancien.get("entrainements"))
 
@@ -808,13 +830,28 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
     garde = actuel["ticker"].isin(list(donnees)).to_numpy()
     tks = actuel["ticker"].to_numpy()
 
-    p1 = ia1.predict_proba(actuel)
-    p2 = ia2.predict_proba(actuel) if ia2 is not None else None
-    if mode == "comite" and p2 is not None and calibs.get("comite") is not None:
-        brut = calibs["comite"].predict(calibs["ia1"].predict(p1), calibs["ia2"].predict(p2))
-    else:
-        brut = 0.5 * (p1 + p2) if (mode == "commun" and p2 is not None) else p1
-    final = calibs["final"].predict(brut) if calibs.get("final") is not None else brut
+    def decision(df):
+        """L'avis final des deux IA, du calcul brut à la probabilité calibrée."""
+        q1 = ia1.predict_proba(df)
+        q2 = ia2.predict_proba(df) if ia2 is not None else None
+        if mode == "comite" and q2 is not None and calibs.get("comite") is not None:
+            b = calibs["comite"].predict(calibs["ia1"].predict(q1), calibs["ia2"].predict(q2))
+        else:
+            b = 0.5 * (q1 + q2) if (mode == "commun" and q2 is not None) else q1
+        return (calibs["final"].predict(b) if calibs.get("final") is not None else b), q1, q2
+
+    final, p1, p2 = decision(actuel)
+    try:   # les raisons de chaque avis
+        evaluation.explications = comprendre.expliquer(
+            lambda df: decision(df)[0], actuel, comprendre.references(etiquete, actuel.columns), garde)
+    except Exception:
+        evaluation.explications = {}
+    try:   # l'agitation prévue pour le mois prochain (IA seulement si elle bat la méthode naïve de façon prouvée)
+        evaluation.risque_titres = comprendre.predire_risque(
+            jeu, actuel, donnees, config.HORIZON_PREDICTION, VARIABLES_BASE,
+            utiliser_ia=bool((evaluation.risque or {}).get("prouve")))
+    except Exception:
+        evaluation.risque_titres = {}
     if p2 is not None:
         c1, c2 = calibs["ia1"].predict(p1), calibs["ia2"].predict(p2)
         evaluation.proba_ia1 = {t: float(v) for t, v, g in zip(tks, c1, garde) if g}

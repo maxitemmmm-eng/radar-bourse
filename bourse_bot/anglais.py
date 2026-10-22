@@ -71,6 +71,8 @@ def _page_titre(base, t, horizon, date, csp, modele):
     sur10 = round(p * 10) if p is not None else None
     verdict = ("leaning higher" if p >= .58 else "slightly higher" if p >= .52 else "no clear direction" if p > .48
                else "slightly lower" if p > .42 else "leaning lower") if p is not None else "not available"
+    if p is not None and t.get("avis_net") is False:
+        verdict = "without a clear call (the AIs hesitate: in such cases they did no better than chance)"
     nom, tk = t["nom"], t["ticker"]
     s = seo.slug(tk)
     chemin = f"en/stocks/{s}.html"
@@ -135,7 +137,7 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
             f.write(page)
         urls.append((chemin, "daily", "0.5"))
 
-    avec_p = sorted([t for t in titres if t.get("proba_hausse") is not None], key=lambda t: -t["proba_hausse"])
+    avec_p = sorted([t for t in titres if t.get("proba_hausse") is not None and t.get("avis_net") is not False], key=lambda t: -t["proba_hausse"])
     lien = lambda t: f"<a href='stocks/{seo.slug(t['ticker'])}.html'>{_e(t['nom'])}</a>"
     top = "".join(f"<tr><td>{lien(t)} <span class='muted'>({_e(t['ticker'])})</span></td><td class='m'>{round(t['proba_hausse'] * 100)}%</td></tr>"
                   for t in avec_p[:10])

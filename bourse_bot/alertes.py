@@ -46,7 +46,7 @@ def resume(payload: dict) -> str:
     titres = payload.get("titres", [])
     date = datetime.now().strftime("%d/%m/%Y")
     forts = sorted([t for t in titres if t.get("signal_fort")], key=lambda t: -(t.get("proba_hausse") or 0))
-    meilleurs = sorted([t for t in titres if t.get("proba_hausse") is not None and not t.get("signal_fort")],
+    meilleurs = sorted([t for t in titres if t.get("proba_hausse") is not None and not t.get("signal_fort") and t.get("avis_net") is not False],
                        key=lambda t: -t["proba_hausse"])[:3]
 
     def ligne(t):

@@ -248,7 +248,7 @@ def _json_sur(payload: dict) -> str:
 
 
 CHAMPS_DETAIL = ("serie", "rendements", "cone", "chandeliers", "backtest", "niveaux", "actus",
-                 "fondamentaux", "raisons_pour", "raisons_contre")
+                 "fondamentaux", "raisons_pour", "raisons_contre", "raisons_ia")
 TOUJOURS_COMPLETS = {"^FCHI"}  # premier graphique de l'accueil : affiché tout de suite (les autres sont chargés au clic)
 
 

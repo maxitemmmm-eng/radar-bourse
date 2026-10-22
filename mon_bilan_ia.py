@@ -113,7 +113,10 @@ def verifier(hist: pd.DataFrame, donnees: dict, horizon: int) -> tuple[pd.DataFr
             "signal": str(r.signal), "fort": historique._num(getattr(r, "fort", 0)) == 1,
             "reel": reel, "juste": (proba > 0.5) == (reel > 0),
             "dans_fourchette": None if np.isnan(bas) or np.isnan(haut) else bool(bas <= fin <= haut),
-            "accord": None if np.isnan(acc) else acc == 1, "fin": str(jour_fin)[:10]})
+            "accord": None if np.isnan(acc) else acc == 1, "fin": str(jour_fin)[:10],
+            "confiance": str(getattr(r, "confiance", "") or "") if str(getattr(r, "confiance", "")) != "nan" else "",
+            "mouvement": historique._num(getattr(r, "mouvement", np.nan)),
+            "bouge": abs(np.log(fin / prix))})
     return pd.DataFrame(lignes), attente
 
 
@@ -147,6 +150,10 @@ def analyser(v: pd.DataFrame, attente: int, noms: dict) -> dict:
         "accord": taux(v.loc[v["accord"] == True, "juste"]),      # noqa: E712
         "desaccord": taux(v.loc[v["accord"] == False, "juste"]),  # noqa: E712
         "fourchette": taux(v["dans_fourchette"]),
+        "confiance": [(lib, taux(v.loc[v["confiance"] == n, "juste"])) for n, lib in
+                      (("forte", "Confiance forte"), ("moyenne", "Confiance moyenne"), ("faible", "Confiance faible"))
+                      if (v["confiance"] == n).sum() >= 5],
+        "agitation": None,
         "par_type": sorted([(k, taux(g["juste"])) for k, g in v.groupby("type")], key=lambda x: -x[1]["n"]),
         "par_mois": [(k, taux(g["juste"])) for k, g in v.groupby(v["date"].str[:7])],
         "tranches": [],
@@ -154,6 +161,10 @@ def analyser(v: pd.DataFrame, attente: int, noms: dict) -> dict:
     for a, b, nom in historique.TRANCHES:
         sel = v[(v["proba"] >= a) & (v["proba"] < b)]
         r["tranches"].append((nom, len(sel), float((sel["reel"] > 0).mean()) if len(sel) else None))
+    # agitation prévue : la prévision « ±X % » a-t-elle été tenue ? (le vrai mouvement est resté dans ±X % ?)
+    ag = v.dropna(subset=["mouvement"])
+    if len(ag) >= 20:
+        r["agitation"] = taux(ag["bouge"] <= ag["mouvement"])
     par_titre = [(t, taux(g["juste"])) for t, g in v.groupby("ticker") if len(g) >= 5]
     par_titre.sort(key=lambda x: x[1]["taux"])
     r["meilleurs_titres"] = [(noms.get(t, t), x) for t, x in par_titre[::-1][:6]]
@@ -301,6 +312,8 @@ des fois (ça a monté {pc(r["base_hausse"])} du temps). Sur les barres, ce rep�
 {ligne("Conseils « achat »", r["achat"], ref, "le prix a bien monté")}
 {ligne("Conseils « vente »", r["vente"], ref, "le prix a bien baissé")}
 {ligne("Prix final dans la fourchette", r["fourchette"], 0.8, "promis : 8 fois sur 10")}
+{"".join(ligne(n, t, ref) for n, t in r["confiance"])}
+{ligne("Agitation prévue tenue", r["agitation"], 0.68, "le prix a bougé de moins de ±X % (repère : environ 2 fois sur 3)") if r["agitation"] else ""}
 </table></div>
 
 <h2>Par marché</h2><div class="carte"><table>{"".join(ligne(n, t, ref) for n, t in r["par_type"])}</table></div>

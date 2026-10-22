@@ -71,11 +71,12 @@ section{margin-top:36px}
 /* Prédictions du jour */
 .duo{display:grid;grid-template-columns:1.35fr 1fr;gap:20px}
 @media (max-width:900px){.duo{grid-template-columns:1fr}}
+.simple #duo-pred{grid-template-columns:minmax(0,820px)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
 .picks{display:grid;gap:8px}
 .pick{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border-radius:8px;background:var(--surface-2);border:1px solid transparent;cursor:pointer;text-align:left;width:100%}
 .pick:hover{border-color:var(--line)}
-.pick .t{font-weight:600}.pick .s{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick .t{font-weight:600;display:block}.pick .s{display:block;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gauge{position:relative;height:8px;border-radius:4px;background:var(--line)}
 .gauge i{position:absolute;inset:0 auto 0 0;border-radius:4px;background:var(--accent)}
 .gauge b{position:absolute;left:50%;top:-3px;bottom:-3px;width:1.5px;background:var(--muted);opacity:.7}
@@ -329,6 +330,25 @@ footer nav{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13.5px}
 .pied nav{flex-direction:column;align-items:flex-start;gap:7px}
 footer a{color:var(--accent);text-underline-offset:3px}
 .lnk{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-size:inherit}
+
+/* Version 22 : avis net, raisons, agitation */
+.conf-ic{display:inline-flex;gap:2px;align-items:flex-end;height:14px;vertical-align:middle}
+.conf-ic i{display:block;width:4px;border-radius:1px;background:var(--line)}
+.conf-ic i:nth-child(1){height:6px}.conf-ic i:nth-child(2){height:10px}.conf-ic i:nth-child(3){height:14px}
+.conf-ic.c-faible i:nth-child(1),.conf-ic.c-moyenne i:nth-child(-n+2),.conf-ic.c-forte i{background:var(--ink)}
+.agit-cell{display:block;font-family:var(--f-mono);font-size:12px;color:var(--muted);font-weight:400}
+.vue-picks{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.ligne-conf{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14px}
+.sans-avis{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.sans-avis .gauge{opacity:.35;filter:grayscale(1)}
+.raisons-ia h3,.agit h3{font-size:18px;margin-bottom:10px}
+.raisons-ia ol{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.raisons-ia .r-tete{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14.5px}
+.raisons-ia p{margin:4px 0 0;color:var(--muted);font-size:13.5px}
+.r-barre{height:6px;background:var(--surface-2);border-radius:3px;margin-top:5px;overflow:hidden}
+.r-barre i{display:block;height:100%;border-radius:3px}.r-barre.h i{background:var(--up)}.r-barre.b i{background:var(--down)}
+.agit-l{display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-size:14.5px}
+.agit-v{font-family:var(--f-display);font-size:36px;font-weight:600;line-height:1}
 
 /* Accroche */
 .hero{padding-block:36px 8px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px 48px;align-items:start}
@@ -678,7 +698,9 @@ html.calme *{animation:none!important;transition:none!important}
     <div class="sec-head"><h2 id="h-pred">Ce que le radar prévoit</h2>
       <p id="pred-sub"></p></div>
     <div class="duo" id="duo-pred">
-      <div class="panel"><div class="label" style="margin-bottom:10px">Plus fortes chances de hausse</div><div class="picks" id="picks"></div></div>
+      <div class="panel"><div class="vue-picks" role="group" aria-label="Classer les titres par">
+        <button class="chip" data-vp="hausse" aria-pressed="true">Chances de hausse</button><button class="chip" data-vp="marche" aria-pressed="false">Mieux que leur marché</button><button class="chip" data-vp="calme" aria-pressed="false">Les plus calmes</button></div>
+        <p class="muted" id="vp-note" style="font-size:13px;margin:0 0 10px"></p><div class="picks" id="picks"></div></div>
       <div class="panel expert"><div class="label" style="margin-bottom:10px">Configurations de décollage</div><div class="rocket-list" id="rockets"></div></div>
     </div>
     <p class="note-pred">Calculs statistiques automatiques, identiques pour tout le monde. Ce ne sont pas des recommandations d'achat ou de vente. <button class="lnk" data-legal="risques">Lire l'avertissement sur les risques</button></p>
@@ -781,7 +803,7 @@ html.calme *{animation:none!important;transition:none!important}
       <thead><tr>
         <th data-k="ticker" scope="col">Titre</th><th data-k="prix" scope="col">Cours</th><th data-k="j1" scope="col">1 jour</th><th data-k="m1" scope="col">1 mois</th><th data-k="m3" scope="col">3 mois</th>
         <th data-k="score" aria-sort="descending" scope="col" class="expert">Score</th><th data-k="signal" scope="col">Signal</th>
-        <th data-k="proba" scope="col">Chances de hausse</th><th data-k="marche" scope="col" title="Probabilité de faire mieux que son indice de référence">Mieux que l'indice</th><th data-k="actus" scope="col" class="expert">Actus</th><th data-k="risque" scope="col">Risque</th><th data-k="rocket" scope="col" class="expert"><span class="sr">Décollage</span></th>
+        <th data-k="proba" scope="col">Chances de hausse</th><th data-k="marche" scope="col" title="Probabilité de faire mieux que son indice de référence">Mieux que l'indice</th><th data-k="actus" scope="col" class="expert">Actus</th><th data-k="risque" scope="col" title="Niveau de risque et agitation prévue le mois prochain">Risque</th><th data-k="rocket" scope="col" class="expert"><span class="sr">Décollage</span></th>
       </tr></thead><tbody id="rows"></tbody></table></div>
   </section>
 
@@ -1094,14 +1116,21 @@ function spark(vals, w=90, h=32){
   const last = pts.split(" ").at(-1).split(",");
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="${last[0]}" cy="${last[1]}" r="2.4" fill="${col}"/></svg>`;
 }
-function gauge(p, accord){
+const LIB_CONF = {faible: "Confiance faible", moyenne: "Confiance moyenne", forte: "Confiance forte"};
+const barresConf = c => !LIB_CONF[c] ? "" : `<span class="conf-ic c-${c}" role="img" aria-label="${LIB_CONF[c]}" title="${LIB_CONF[c]}"><i></i><i></i><i></i></span>`;
+function gauge(p, accord, net, conf){
   if(p==null) return `<span class="muted">–</span>`;
+  if(net === false) return `<div class="sans-avis" title="Avis trop peu tranché : dans ces cas-là, les IA n'ont pas fait mieux que le hasard"><div class="gauge" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span><span class="num">${Math.round(p*100)} %</span> · pas d'avis net</span></div>`;
   const desaccord = accord === false ? ` <span title="Les deux IA ne sont pas d'accord : avis peu fiable" role="img" aria-label="Les deux IA ne sont pas d'accord" style="color:var(--warn);font-weight:700">⚠</span>` : "";
-  return `<div style="display:flex;align-items:center;gap:8px"><div class="gauge ${p<0.5?'lo':''}" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span class="num">${Math.round(p*100)} %</span>${desaccord}</div>`;
+  return `<div style="display:flex;align-items:center;gap:8px"><div class="gauge ${p<0.5?'lo':''}" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span class="num">${Math.round(p*100)} %</span>${barresConf(conf)}${desaccord}</div>`;
 }
 
 /* ---------- Définitions des mots compliqués (bouton « ? ») ---------- */
 const DEFS = {
+  confiance: ["Niveau de confiance", "Une seule échelle pour tout le site. Faible : les IA hésitent ou ne sont pas d'accord. Moyenne : avis net. Forte : avis très tranché et les deux IA d'accord. Chaque niveau affiche ce qu'il a vraiment donné sur des années jamais vues."],
+  avis_net: ["Pas d'avis net", "Quand les chances de hausse sont proches de 50 %, les IA hésitent. Testé sur des années qu'elles n'avaient jamais vues : dans ces cas-là, elles n'ont pas fait mieux que le hasard. Le radar le dit franchement plutôt que de faire semblant de savoir."],
+  agitation: ["Agitation prévue", "De combien le prix risque de bouger le mois prochain, à la hausse comme à la baisse. Les périodes agitées ont tendance à durer : c'est beaucoup plus prévisible que la direction du prix. « ±6 % » veut dire qu'en général, le prix finira le mois entre 6 % plus bas et 6 % plus haut, mais il peut en sortir."],
+  raisons: ["Les raisons de l'avis", "Pour chaque titre, on retire tour à tour chaque famille d'indicateurs et on regarde de combien l'avis des IA change. Les familles qui le font le plus bouger sont affichées. Ce sont les raisons du calcul, pas des certitudes sur l'avenir."],
   proba: ["Chances de hausse", "Sur 100 situations passées qui ressemblaient à celle d'aujourd'hui, combien de fois le prix était plus haut un mois après. 50 % = pile ou face : le radar ne sait pas."],
   fourchette: ["Fourchette", "L'écart de prix entre un scénario bas et un scénario haut. Testée sur le passé, elle a contenu le vrai prix final environ 8 fois sur 10. Donc 2 fois sur 10, le prix en sort."],
   central: ["Scénario central", "Le prix « du milieu » : il y a autant de chances de finir au-dessus qu'en dessous. Ce n'est pas une promesse."],
@@ -1148,10 +1177,14 @@ rendreTape();
     : hausse === 0 ? "Les grands indices reculent tous aujourd'hui. "
     : `Journée partagée : ${hausse} grand${hausse>1?"s":""} indice${hausse>1?"s":""} sur ${idx.length} en hausse. `;
   const ton = moy >= .56 ? "plutôt confiantes" : moy <= .48 ? "plutôt prudentes" : "assez partagées";
-  const tri = [...avec].sort((a,b) => b.proba_hausse - a.proba_hausse);
+  const tri = avec.filter(t => t.avis_net !== false).sort((a,b) => b.proba_hausse - a.proba_hausse);
   const tete = tri.slice(0,2).filter(t => t.proba_hausse >= .55).map(t => esc(t.nom));
+  const hesite = avec.filter(t => t.avis_net === false).length;
+  const agites = avec.filter(t => t.risque_prevu && t.risque_prevu.habitude > 1.25).length;
   let txt = jour + `Pour le mois qui vient, les deux IA sont ${ton} : en moyenne ${Math.round(moy*100)} % de chances de hausse par titre`;
   txt += tete.length ? `, avec ${tete.join(" et ")} en tête de liste. ` : ", sans titre qui se détache vraiment. ";
+  if(hesite) txt += hesite === avec.length ? "Elles n'ont aucun avis net aujourd'hui. " : `Sur ${hesite} titre${hesite > 1 ? "s" : ""}, elles n'ont pas d'avis net. `;
+  if(agites >= 3) txt += `${agites} titres s'annoncent plus agités que d'habitude. `;
   const prec = DATA.suivi && DATA.suivi.nb_verifiees >= 30 ? DATA.suivi.precision : null;
   txt += prec != null ? `Pour rappel, sur ${DATA.suivi.nb_verifiees} prévisions déjà vérifiées, elles ont vu juste ${Math.round(prec*100)} fois sur 100.`
     : "Rappel honnête : même leurs meilleurs avis se trompent souvent.";
@@ -1165,10 +1198,27 @@ rendreTape();
 const T = DATA.titres;
 $("#pred-sub").innerHTML = `Les chances, selon les deux IA, que le prix soit plus haut dans ${H} séances (environ un mois). 50 % = pile ou face. ${aide("proba")}`;
 const avecProba = T.filter(t => t.proba_hausse!=null).sort((a,b)=>b.proba_hausse-a.proba_hausse);
-$("#picks").innerHTML = avecProba.slice(0,7).map(t => `<button class="pick" data-t="${esc(t.ticker)}">
+const VUES_PICKS = {
+  hausse: {note: "Les titres avec le plus de chances d'être plus hauts dans un mois.",
+    liste: () => avecProba, droite: t => gauge(t.proba_hausse, t.accord_ia, t.avis_net, t.confiance)},
+  marche: {note: "Les titres avec le plus de chances de faire mieux que leur indice (CAC 40, S&P 500, Bitcoin…). Utile même quand tout le marché baisse.",
+    liste: () => T.filter(t => t.proba_marche != null).sort((a,b) => b.proba_marche - a.proba_marche),
+    droite: t => `<span class="num ${t.proba_marche >= .55 ? "up" : ""}">${Math.round(t.proba_marche*100)} %</span><span class="muted" style="font-size:12px"> vs ${esc(t.indice_nom || "son indice")}</span>`},
+  calme: {note: "Les titres dont l'IA prévoit qu'ils bougeront le moins le mois prochain : moins de surprises, à la hausse comme à la baisse.",
+    liste: () => T.filter(t => t.risque_prevu && t.risque_prevu.mouvement != null).sort((a,b) => a.risque_prevu.mouvement - b.risque_prevu.mouvement),
+    droite: t => `<span class="num">±${(t.risque_prevu.mouvement*100).toFixed(1).replace(".", ",")} %</span><span class="muted" style="font-size:12px"> en un mois</span>`},
+};
+function rendrePicks(vue){
+  const V = VUES_PICKS[vue] || VUES_PICKS.hausse;
+  document.querySelectorAll("[data-vp]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.vp === vue)));
+  $("#vp-note").textContent = V.note;
+  $("#picks").innerHTML = V.liste().slice(0,7).map(t => `<button class="pick" data-t="${esc(t.ticker)}">
   <span style="min-width:0"><span class="t">${esc(t.nom)}</span><span class="s">${esc(t.ticker)} · ${NOM_MARCHE[t.marche]||""}</span></span>
-  <span class="pick-mid">${spark(t.spark,64,22)}${gauge(t.proba_hausse, t.accord_ia)}</span>
-  <span class="pill ${SIG[t.signal]}">${esc(LIB[t.signal] || t.signal)}</span></button>`).join("") || `<div class="empty">Le modèle n'a pas pu être entraîné (pas assez de données).</div>`;
+  <span class="pick-mid">${spark(t.spark,64,22)}${V.droite(t)}</span>
+  <span class="pill ${SIG[t.signal]}">${esc(LIB[t.signal] || t.signal)}</span></button>`).join("") || `<div class="empty">Pas encore de données pour ce classement.</div>`;
+}
+document.querySelectorAll("[data-vp]").forEach(b => b.addEventListener("click", () => rendrePicks(b.dataset.vp)));
+rendrePicks("hausse");
 const rockets = T.filter(t => t.potentiel_hausse).sort((a,b)=>b.score-a.score);
 $("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t="${esc(t.ticker)}">
   <div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(t.nom)}</b><span class="num">score ${Math.round(t.score)}</span></div>
@@ -1587,6 +1637,25 @@ const M = DATA.modele;
         I.mode === "comite" && poids ? `Leur décision commune a été apprise sur des années jamais vues : l'avis de l'IA n°1 compte pour environ <b>${Math.round(poids[0]*100)} %</b>, celui de l'IA n°2 pour <b>${Math.round(poids[1]*100)} %</b>.`
         : I.mode === "commun" ? "Leurs avis sont combinés à parts égales (une décision plus fine n'a pas fait mieux lors du test)." : "Pour l'instant, l'IA n°1 seule a fait mieux lors du test : c'est elle qui décide."}</p></div>`);
   }
+  const AN = M.avis_net || {};
+  if(AN.marge != null || "marge" in AN){
+    blocs.push(`<div class="panel"><h3>Savoir dire « je ne sais pas » ${aide("avis_net")}</h3>${AN.marge != null ? `
+      <p style="margin:0;font-size:14px">Quand les IA sont tranchées (moins de ${Math.round((.5 - AN.marge) * 100)} % ou plus de ${Math.round((.5 + AN.marge) * 100)} % de chances de hausse), c'est-à-dire ${Math.round(AN.part * 100)} fois sur 100 :</p>
+      ${barreStat("Avis nets", AN.precision, null)}
+      ${AN.precision_reste != null ? barreStat("Avis hésitants", AN.precision_reste, null, true) : ""}
+      ${["faible","moyenne","forte"].map(n => AN.niveaux && AN.niveaux[n] ? barreStat(`${LIB_CONF[n]} (${Math.round(AN.niveaux[n].part*100)} % des cas)`, AN.niveaux[n].precision, AN.niveaux[n].ic, n === "faible") : "").join("")}
+      <p class="muted" style="margin:0;font-size:13px">Les avis hésitants sont marqués « pas d'avis net » sur le site. Gain des avis nets sur « toujours la même réponse » : de ${(AN.ic_gain[0]*100).toFixed(1).replace(".", ",")} à ${(AN.ic_gain[1]*100).toFixed(1).replace(".", ",")} points (marge d'erreur).</p>`
+      : `<p style="margin:0;font-size:14px">Pour l'instant, même leurs avis les plus tranchés n'ont pas fait mieux que le hasard de façon prouvée. Tous les avis sont donc marqués « pas d'avis net » : à lire comme de simples indications.</p>`}</div>`);
+  }
+  const RQ = M.risque || {};
+  if(RQ.concordance_ia != null){
+    blocs.push(`<div class="panel"><h3>Prévoir l'agitation ${aide("agitation")}</h3>
+      <p style="margin:0;font-size:14px">Deviner de combien un prix va bouger est bien plus facile que deviner dans quel sens. Sur deux titres pris au hasard, qui sera le plus agité le mois suivant ?</p>
+      ${barreStat("L'IA de l'agitation", RQ.concordance_ia, null)}
+      ${RQ.concordance_naif != null ? barreStat("Méthode naïve (« comme ces dernières semaines »)", RQ.concordance_naif, null, true) : ""}
+      ${RQ.erreur_ia != null ? `<p style="margin:0;font-size:14px">Pour estimer le <b>niveau</b> d'agitation, l'IA se trompe en général de ${Math.round(RQ.erreur_ia*100)} %, contre ${Math.round(RQ.erreur_naif*100)} % pour la méthode naïve.</p>` : ""}
+      <p class="muted" style="margin:0;font-size:13px">${RQ.prouve ? "L'IA fait mieux que la méthode naïve de façon prouvée : c'est elle qui est utilisée." : "L'IA ne fait pas mieux que la méthode naïve de façon prouvée : le site utilise donc la méthode naïve."} Mesuré sur ${(RQ.nb||0).toLocaleString("fr-FR")} cas jamais vus (${esc(RQ.periode || "")}).</p></div>`);
+  }
   const CE = DATA.correction_erreurs;
   if(CE){
     blocs.push(`<div class="panel"><h3>Apprendre de ses erreurs</h3>
@@ -1689,7 +1758,7 @@ $("#suivi").innerHTML = S.nb_verifiees ? `
 /* ---------- Tableau ---------- */
 let filtre = "all", tri = {k:"score", asc:false};
 const val = (t,k) => ({ticker:t.ticker, prix:t.prix, j1:t.perf["1 jour"], m1:t.perf["1 mois"], m3:t.perf["3 mois"], score:t.score,
-  signal:t.score, proba:t.proba_hausse ?? -1, marche:t.proba_marche ?? -1, risque:RISK[t.risque], rocket:t.potentiel_hausse?1:0, actus:t.tonalite ?? -9})[k];
+  signal:t.score, proba:t.proba_hausse ?? -1, marche:t.proba_marche ?? -1, risque:(t.risque_prevu && t.risque_prevu.mouvement != null ? t.risque_prevu.mouvement * 100 : RISK[t.risque]), rocket:t.potentiel_hausse?1:0, actus:t.tonalite ?? -9})[k];
 function rendre(){
   const q = $("#q").value.trim().toLowerCase();
   let L = T.filter(t => !filtre || filtre==="all" || (filtre==="rocket" ? t.potentiel_hausse : filtre==="fort" ? t.signal_fort : filtre==="fav" ? FAV.has(t.ticker) : t.marche===filtre))
@@ -1702,7 +1771,7 @@ function rendre(){
     <td class="spk"><span>${spark(t.spark,72,24)}</span><span>${pct(t.perf["3 mois"],0)}</span></td>
     <td class="expert"><span class="score"><span class="num">${Math.round(t.score)}</span><span class="mini"><i style="width:${t.score}%"></i></span></span></td>
     <td><span class="pill ${SIG[t.signal]}">${esc(LIB[t.signal] || t.signal)}</span>${t.signal_fort?'<span class="badge-fort">Fort</span>':''}</td>
-    <td>${gauge(t.proba_hausse, t.accord_ia)}</td><td>${t.proba_marche != null ? `<span class="num ${t.proba_marche >= .55 ? "up" : t.proba_marche <= .45 ? "down" : ""}" title="vs ${esc(t.indice_nom || "son indice")}">${Math.round(t.proba_marche*100)} %</span>` : '<span class="muted">–</span>'}</td><td class="expert">${ton(t.tonalite)}</td><td class="risk r${RISK[t.risque]}">${esc(t.risque)}</td>
+    <td>${gauge(t.proba_hausse, t.accord_ia, t.avis_net, t.confiance)}</td><td>${t.proba_marche != null ? `<span class="num ${t.proba_marche >= .55 ? "up" : t.proba_marche <= .45 ? "down" : ""}" title="vs ${esc(t.indice_nom || "son indice")}">${Math.round(t.proba_marche*100)} %</span>` : '<span class="muted">–</span>'}</td><td class="expert">${ton(t.tonalite)}</td><td class="risk r${RISK[t.risque]}">${esc(t.risque)}${t.risque_prevu && t.risque_prevu.mouvement != null ? `<span class="agit-cell" title="Agitation prévue le mois prochain">±${Math.round(t.risque_prevu.mouvement*100)} %</span>` : ""}</td>
     <td class="expert">${t.potentiel_hausse?'<span title="Configuration de décollage" role="img" aria-label="Configuration de décollage">🚀</span>':''}</td></tr>`).join("")
     || `<tr><td colspan="12" class="empty">${filtre === "fav" ? "Pas encore de favori : ouvre un titre et clique sur « ☆ Suivre » pour le retrouver ici." : "Aucun titre ne correspond."}</td></tr>`;
 }
@@ -1801,22 +1870,69 @@ function compteur(p){
 function resumeSimple(t){
   const p = t.proba_hausse;
   if(p == null) return "";
-  const titre = p >= .58 ? "Plutôt à la hausse" : p >= .52 ? "Légèrement à la hausse" : p > .48 ? "Pile ou face" : p > .42 ? "Légèrement à la baisse" : "Plutôt à la baisse";
+  const sansAvis = t.avis_net === false;
+  const titre = sansAvis ? "Pas d'avis net" : p >= .58 ? "Plutôt à la hausse" : p >= .52 ? "Légèrement à la hausse" : p > .48 ? "Pile ou face" : p > .42 ? "Légèrement à la baisse" : "Plutôt à la baisse";
+  const AN = (DATA.modele || {}).avis_net || {};
   const med = t.cone ? t.cone.mediane.at(-1) : null;
   const accordTxt = t.accord_ia === true ? `<span class="accord oui">✓ Les deux IA sont d'accord</span>`
     : t.accord_ia === false ? `<span class="accord non">⚠ Les deux IA ne sont pas d'accord : avis peu fiable</span>` : "";
   return `<div class="panel resume"><div class="freq">${points100(p)}<p class="phrase muted" style="font-size:13px;max-width:260px">Sur 100 situations passées comme celle-ci, <b class="up">${Math.round(p*100)}</b> ont fini plus haut un mois après.</p><span class="expert">${compteur(p)}</span></div>
     <div><div class="label">En résumé, pour le mois qui vient ${aide("proba")}</div>
-      <div class="verdict-grand ${p >= .52 ? "up" : p <= .48 ? "down" : ""}">${titre}</div>
+      <div class="verdict-grand ${sansAvis ? "" : p >= .52 ? "up" : p <= .48 ? "down" : ""}">${titre}${sansAvis ? ` ${aide("avis_net")}` : ""}</div>
+      ${sansAvis && AN.marge ? `<p class="muted" style="font-size:14px">Les IA hésitent : leur avis est trop proche de 50 % pour compter. Quand elles sont plus tranchées (sous ${Math.round((.5 - AN.marge) * 100)} % ou au-dessus de ${Math.round((.5 + AN.marge) * 100)} %), elles ont vu juste ${Math.round(AN.precision * 100)} fois sur 100 ; sinon, pas mieux que le hasard.</p>` : ""}
       <p>Le radar donne <b>${Math.round(p * 100)} chances sur 100</b> que ${esc(t.nom)} soit plus haut dans un mois.${med ? ` Le scénario le plus probable : environ <b class="num">${px(med, t.devise)}</b> (${pct(med / t.prix - 1)}).` : ""}${t.signal_fort ? " <b>Signal fort</b> : la tendance technique va dans le même sens." : ""}</p>
       ${t.proba_marche != null ? `<p><span class="badge-marche">Face à son marché</span>${aide("marche")} ${Math.round(t.proba_marche * 100)} chances sur 100 de faire <b>mieux que ${esc(t.indice_nom || "son marché")}</b> sur la même période.</p>` : ""}
       ${t.fourchette_elargie ? `<p class="muted" style="font-size:13.5px">📅 Résultats de l'entreprise avant l'échéance : la fourchette a été élargie par prudence.</p>` : ""}
       ${accordTxt ? `<p>${accordTxt} ${aide("accord")}</p>` : ""}
+      ${ligneConfiance(t)}${lignePalmares(t)}
       ${t.proba_ia1 != null && t.proba_ia2 != null ? `<div class="debat" role="group" aria-label="Avis des deux IA">
         <div><span class="label">IA n°1 · spécialiste</span><b class="num">${Math.round(t.proba_ia1*100)} %</b></div>
         <div><span class="label">IA n°2 · toutes les techniques</span><b class="num">${Math.round(t.proba_ia2*100)} %</b></div>
         <div class="dec"><span class="label">Décision commune</span><b class="num">${Math.round(p*100)} %</b></div></div>` : ""}
-      ${t.actu_contredit ? `<p class="muted" style="font-size:13.5px">📰 Les actualités récentes vont plutôt dans l'autre sens : prudence.</p>` : ""}</div></div>`;
+      ${t.actu_contredit ? `<p class="muted" style="font-size:13.5px">📰 Les actualités récentes vont plutôt dans l'autre sens : prudence.</p>` : ""}</div></div>
+    ${blocRaisons(t)}${blocAgitation(t)}`;
+}
+
+/* Échelle de confiance unique, avec ce que chaque niveau a vraiment donné */
+function ligneConfiance(t){
+  if(!LIB_CONF[t.confiance]) return "";
+  const N = (((DATA.modele || {}).avis_net) || {}).niveaux || {}, n = N[t.confiance];
+  return `<p class="ligne-conf">${barresConf(t.confiance)} <b>${LIB_CONF[t.confiance]}</b>${n ? ` <span class="muted">· à ce niveau, les IA ont vu juste ${Math.round(n.precision * 100)} fois sur 100 (années jamais vues)</span>` : ""} ${aide("confiance")}</p>`;
+}
+/* Palmarès réel sur ce titre (prévisions publiées puis vérifiées) */
+function lignePalmares(t){
+  const P = ((DATA.suivi || {}).detail || {}).par_titre || {}, x = P[t.ticker];
+  if(!x || x[0] < 5) return "";
+  return `<p class="muted" style="font-size:13.5px">📒 Sur ce titre, depuis le début du suivi, les IA ont vu juste <b>${x[1]} fois sur ${x[0]}</b> (prévisions vérifiées un mois plus tard).</p>`;
+}
+
+/* Les raisons de l'avis : ce qui a le plus pesé dans le calcul des deux IA */
+function blocRaisons(t){
+  const R = t.raisons_ia || [];
+  if(!R.length) return "";
+  const max = Math.max(...R.map(r => Math.abs(r.effet)), 0.01);
+  return `<div class="panel raisons-ia"><h3>Pourquoi cet avis ? ${aide("raisons")}</h3>
+    <ol>${R.map(r => {
+      const haut = r.effet > 0;
+      return `<li><div class="r-tete"><b>${esc(r.famille)}</b><span class="${haut ? "up" : "down"}">${haut ? "pousse vers la hausse" : "pousse vers la baisse"} (${haut ? "+" : "−"}${Math.abs(r.effet * 100).toFixed(1).replace(".", ",")} pt)</span></div>
+        <div class="r-barre ${haut ? "h" : "b"}" aria-hidden="true"><i style="width:${Math.round(Math.abs(r.effet) / max * 100)}%"></i></div>
+        ${r.etat ? `<p>${esc(r.etat.charAt(0).toUpperCase() + r.etat.slice(1))}${/[….]$/.test(r.etat) ? "" : "."}</p>` : r.manuel && r.idee ? `<p>${esc(r.idee)}</p>` : ""}</li>`;
+    }).join("")}</ol>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 0">En points de probabilité : de combien les chances de hausse changeraient si cet élément était à son niveau habituel.</p></div>`;
+}
+
+/* L'agitation prévue pour le mois prochain */
+function niveauAgitation(m){ return m < .04 ? "Calme" : m < .08 ? "Modérée" : m < .15 ? "Forte" : "Très forte"; }
+function blocAgitation(t){
+  const r = t.risque_prevu;
+  if(!r || r.mouvement == null) return "";
+  const h = r.habitude, hab = h == null ? "" : h > 1.25 ? "plus agité que d'habitude" : h < .8 ? "plus calme que d'habitude" : "comme d'habitude";
+  const R = (DATA.modele || {}).risque || {};
+  const fiab = r.source === "ia" && R.concordance_ia ? `Sur deux titres pris au hasard, l'IA a désigné le plus agité du mois suivant ${Math.round(R.concordance_ia * 100)} fois sur 100 (années jamais vues).`
+    : "Estimation tirée de l'agitation des dernières semaines.";
+  return `<div class="panel agit"><h3>Agitation prévue le mois prochain ${aide("agitation")}</h3>
+    <div class="agit-l"><span class="agit-v">±${(r.mouvement * 100).toFixed(0)} %</span><span><b>${niveauAgitation(r.mouvement)}</b>${hab ? ` · ${hab}` : ""}<br><span class="muted">En général, le prix bougera d'environ ${(r.mouvement * 100).toFixed(0)} % sur un mois, dans un sens ou dans l'autre.</span></span></div>
+    <p class="muted" style="font-size:12.5px;margin:8px 0 0">${fiab}</p></div>`;
 }
 
 /* Guide illustré « Comment lire ce graphique ? » */
