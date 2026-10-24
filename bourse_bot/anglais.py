@@ -8,6 +8,7 @@ from __future__ import annotations
 import html
 import math
 import os
+from datetime import datetime
 
 from . import seo
 
@@ -41,7 +42,10 @@ def _pct(v, d=1):
 
 def _page(base, titre, description, chemin, corps, csp, alternates):
     prefixe = "../" * chemin.count("/")
-    tete = seo.balises_tete(base, titre, description, chemin, alternates=alternates, langue="en")
+    jsonld = {"@context": "https://schema.org", "@type": "WebPage", "name": titre, "description": description,
+              "inLanguage": "en", "dateModified": datetime.now().isoformat(timespec="seconds"),
+              "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None}}
+    tete = seo.balises_tete(base, titre, description, chemin, jsonld=jsonld, alternates=alternates, langue="en")
     tete = tete.replace(f'<meta name="keywords" content="{_e(seo.MOTS_CLES)}">',
                         '<meta name="keywords" content="stock forecast, crypto forecast, technical analysis, RSI, MACD, '
                         'S&amp;P 500, CAC 40, Bitcoin, stock prediction, market outlook">')

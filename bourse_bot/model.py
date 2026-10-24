@@ -209,9 +209,101 @@ class Comite:
         return c
 
 
+class Climat:
+    """Couche « climat du marché » (version 33) : l'IA dit presque toujours « hausse », car les marchés montent
+    plus souvent qu'ils ne baissent. Cette couche apprend, à partir de l'avis de l'IA ET de l'état du marché
+    (tendance de l'indice, VIX, taux, crédit, part des titres en hausse…), quand il vaut mieux dire « baisse ».
+    Elle n'est adoptée que si elle fait mieux sur des années qu'elle n'a jamais vues (voir evaluer_climat)."""
+    COLS = ["marche_tendance", "marche_vol", "vix", "vix_chg", "vix_structure", "courbe_taux", "taux_chg",
+            "spread_credit", "spread_credit_chg", "conditions_fin", "chomage_tendance", "marche_largeur", "est_crypto"]
+
+    def __init__(self):
+        self.cols, self.med, self.moy, self.ect, self.lr = [], None, None, None, LogisticRegression(C=0.1, max_iter=500)
+
+    def _X(self, b, df):
+        X = np.column_stack([df[c].to_numpy(dtype=float) if c in df else np.full(len(df), np.nan) for c in self.cols]) \
+            if self.cols else np.zeros((len(df), 0))
+        X = np.where(np.isnan(X), self.med, X)
+        X = (X - self.moy) / self.ect
+        pb = np.clip(np.asarray(b, float), 1e-4, 1 - 1e-4)
+        return np.column_stack([np.log(pb / (1 - pb)), X])
+
+    def fit(self, b, df, y):
+        self.cols = [c for c in self.COLS if c in df and df[c].nunique(dropna=True) > 1]
+        X = np.column_stack([df[c].to_numpy(dtype=float) for c in self.cols]) if self.cols else np.zeros((len(df), 0))
+        self.med = np.nan_to_num(np.nanmedian(X, axis=0)) if self.cols else np.zeros(0)
+        X = np.where(np.isnan(X), self.med, X)
+        self.moy = X.mean(axis=0) if self.cols else np.zeros(0)
+        self.ect = np.where(X.std(axis=0) > 0, X.std(axis=0), 1.0) if self.cols else np.ones(0)
+        self.lr.fit(self._X(b, df), np.asarray(y))
+        return self
+
+    def predict(self, b, df):
+        return self.lr.predict_proba(self._X(b, df))[:, 1]
+
+    def vers_dict(self):
+        return {"type": "climat", "cols": self.cols, "med": [float(v) for v in self.med], "moy": [float(v) for v in self.moy],
+                "ect": [float(v) for v in self.ect], "coef": [float(c) for c in self.lr.coef_[0]], "intercept": float(self.lr.intercept_[0])}
+
+    @classmethod
+    def depuis_dict(cls, d):
+        if not d:
+            return None
+        c = cls()
+        c.cols, c.med, c.moy, c.ect = d["cols"], np.array(d["med"]), np.array(d["moy"]), np.array(d["ect"])
+        c.lr.classes_ = np.array([0.0, 1.0])
+        c.lr.coef_ = np.array([d["coef"]])
+        c.lr.intercept_ = np.array([d["intercept"]])
+        c.lr.n_features_in_ = len(d["coef"])
+        return c
+
+
+def evaluer_climat(oof, jeu, horizon):
+    """Teste la couche « climat » sans tricher : année par année, elle n'apprend que sur les années d'avant
+    (avec un écart d'un mois), puis on compare ses bonnes réponses à celles de l'IA seule sur les mêmes cas.
+    Renvoie (bilan, prévisions hors échantillon ou None si elle n'est pas adoptée)."""
+    if "ticker" not in oof:
+        return {}, None
+    cols = [c for c in Climat.COLS if c in jeu.columns]
+    J = jeu[["ticker"] + cols].copy()
+    J["_d"] = pd.to_datetime(J.index)
+    O = oof[["ticker", "cible", "proba"]].copy()
+    O["_d"] = pd.to_datetime(O.index)
+    O["_i"] = np.arange(len(O))
+    O = O.merge(J.drop_duplicates(["_d", "ticker"]), on=["_d", "ticker"], how="left").sort_values("_i")
+    y, b = O["cible"].to_numpy(), O["proba"].to_numpy()
+    p = np.full(len(O), np.nan)
+    annees = sorted(O["_d"].dt.year.unique())
+    for a in annees[1:]:
+        app = (O["_d"] < pd.Timestamp(year=a, month=1, day=1) - pd.Timedelta(days=int(horizon * 1.5))).to_numpy()
+        cib = (O["_d"].dt.year == a).to_numpy()
+        if app.sum() < 3000 or not cib.any() or len(np.unique(y[app])) < 2:
+            continue
+        p[cib] = Climat().fit(b[app], O[app], y[app]).predict(b[cib], O[cib])
+    ok = np.isfinite(p)
+    if ok.sum() < 2000:
+        return {"adopte": False, "raison": "pas assez d'années"}, None
+    ref = CalibrationPlatt().fit(b, y).predict(b)   # l'IA seule, calibrée (avantage donné à l'IA seule)
+    juste_ia, juste_cl = (ref >= 0.5) == (y == 1), (p >= 0.5) == (y == 1)
+    d = pd.DataFrame({"gain": (juste_cl.astype(float) - juste_ia.astype(float))[ok]}, index=oof.index[ok])
+    boot = bootstrap_mois(d, lambda x: np.array([x["gain"].mean()]), graine=13)
+    ic = _ic(boot[:, 0]) if len(boot) else None
+    bilan = {"nb": int(ok.sum()), "precision_ia": float(juste_ia[ok].mean()), "precision_climat": float(juste_cl[ok].mean()),
+             "auc_ia": _auc(y[ok], ref[ok]), "auc_climat": _auc(y[ok], p[ok]),
+             "baisse_ia": float((ref[ok] < 0.5).mean()), "baisse_climat": float((p[ok] < 0.5).mean()), "ic_gain": ic}
+    bilan["adopte"] = bool(ic and ic[0] > 0 and bilan["precision_climat"] >= bilan["precision_ia"] + 0.005
+                           and bilan["auc_climat"] >= bilan["auc_ia"] - 0.002)
+    if not bilan["adopte"]:
+        return bilan, None
+    sortie = np.where(ok, p, ref)
+    return bilan, (sortie, Climat().fit(b, O, y))
+
+
 def _charger_calibs(d):
-    return {k: (Comite.depuis_dict(v) if (v or {}).get("type") == "comite" else CalibrationPlatt.depuis_dict(v))
-            for k, v in (d or {}).items()}
+    def un(v):
+        t = (v or {}).get("type")
+        return Comite.depuis_dict(v) if t == "comite" else Climat.depuis_dict(v) if t == "climat" else CalibrationPlatt.depuis_dict(v)
+    return {k: un(v) for k, v in (d or {}).items()}
 
 
 def jours_alternes(jeu, pas=2):
@@ -876,11 +968,20 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
                     oof["proba"] = calibs["comite"].predict(c1, c2)
                     ia["comite"]["poids"] = calibs["comite"].poids()
             oof["accord"] = (c1 > 0.5) == (c2 > 0.5)
+        # version 33 : couche « climat du marché », adoptée seulement si elle fait mieux sur des années jamais vues
+        climat_bilan = {}
+        try:
+            climat_bilan, adopte = evaluer_climat(oof, jeu_eval, horizon)
+            if adopte is not None:
+                oof = oof.copy()
+                oof["proba"], calibs["climat"] = adopte
+        except Exception as e:
+            climat_bilan = {"adopte": False, "raison": str(e)[:120]}
         evaluation, calibs["final"] = _evaluation(oof)
         evaluation.configuration = nom
         evaluation.comparaison = [{"nom": n, "auc": a} for a, n, *_ in resultats]
         evaluation.champion = champion
-        evaluation.ia = {**ia, "mode": mode, "variables_ia2": vars_ia2}
+        evaluation.ia = {**ia, "mode": mode, "variables_ia2": vars_ia2, "climat": climat_bilan}
         if "accord" in oof:
             pf = calibs["final"].predict(oof["proba"]) if calibs["final"] else oof["proba"]
             y = oof["cible"].to_numpy()
@@ -1018,6 +1119,8 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
             b = calibs["comite"].predict(calibs["ia1"].predict(q1), calibs["ia2"].predict(q2))
         else:
             b = 0.5 * (q1 + q2) if (mode == "commun" and q2 is not None) else q1
+        if calibs.get("climat") is not None:   # couche « climat du marché » (si elle a fait ses preuves)
+            b = calibs["climat"].predict(b, df)
         return (calibs["final"].predict(b) if calibs.get("final") is not None else b), q1, q2
 
     final, p1, p2 = decision(actuel)

@@ -32,7 +32,7 @@ if not defined PY (
   exit /b 1
 )
 chcp 65001 >nul
-echo Test de l IA sur 5000 cas reels (5 a 15 minutes)…
+echo Test de l IA sur 5000 cas reels (10 a 25 minutes)…
 %PY% -m pip install -q --disable-pip-version-check -r requirements.txt
 %PY% tester_ia.py
 pause

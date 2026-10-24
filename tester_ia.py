@@ -9,12 +9,11 @@ Faire mieux que ça, c'est ça qui compte.
 
 Lancement : double-clique sur tester_ia.bat   (ou : python tester_ia.py)
 Options : --cas 5000 (nombre de cas)   --demo (essai avec des données fictives)
-Durée : 5 à 15 minutes selon le PC. Rien n'est envoyé sur Internet : le rapport reste dans « rapports ».
+Durée : 10 à 25 minutes selon le PC. Rien n'est envoyé sur Internet : le rapport reste dans « rapports ».
 """
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 from datetime import datetime
@@ -35,6 +34,110 @@ NOMS = {"fr": "Actions françaises", "eu": "Actions européennes", "us": "Action
 
 def pct(x):
     return f"{x * 100:.1f} %".replace(".", ",")
+
+
+MACRO = ["marche_tendance", "marche_vol", "vix", "vix_chg", "vix_structure", "courbe_taux", "taux_chg", "dollar_chg",
+         "spread_credit", "spread_credit_chg", "conditions_fin", "chomage_tendance", "marche_largeur", "marche_dispersion",
+         "fng", "est_crypto"]
+TITRE = ["ret_21j", "ret_63j", "ret_126j", "vol_20j", "dist_sma200", "drawdown", "rsi"]
+ANNEES_BAISSE = (2008, 2011, 2015, 2018, 2020, 2022)
+
+
+def _logit(p):
+    p = np.clip(np.asarray(p, dtype=float), 1e-4, 1 - 1e-4)
+    return np.log(p / (1 - p))
+
+
+def explorer(jeu, oof, rel, masque, horizon):
+    """Essaie d'autres façons de choisir « hausse » ou « baisse », toutes testées sans tricher :
+    chaque méthode n'apprend que sur les années AVANT celle qu'elle prévoit, puis on compte ses bonnes réponses
+    sur exactement les mêmes cas que l'IA actuelle."""
+    from sklearn.ensemble import HistGradientBoostingClassifier
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import make_pipeline
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.impute import SimpleImputer
+
+    O = oof.copy()
+    O["_i"] = np.arange(len(O))
+    O["_d"] = pd.to_datetime(O.index)
+    cols = [c for c in MACRO + TITRE if c in jeu.columns]
+    J = jeu[["ticker"] + cols].copy()
+    J["_d"] = pd.to_datetime(J.index)
+    J = J.drop_duplicates(["_d", "ticker"])
+    O = O.merge(J, on=["_d", "ticker"], how="left")
+    if rel is not None and "ticker" in rel:
+        R = rel[["ticker", "proba"]].rename(columns={"proba": "proba_rel"}).copy()
+        R["_d"] = pd.to_datetime(R.index)
+        O = O.merge(R.drop_duplicates(["_d", "ticker"]), on=["_d", "ticker"], how="left")
+    else:
+        O["proba_rel"] = np.nan
+    O = O.sort_values("_i").reset_index(drop=True)
+    O["l_ia"] = _logit(O["proba"])
+    O["l_rel"] = _logit(O["proba_rel"].fillna(0.5))
+    y = O["cible"].to_numpy()
+    test = masque.copy()
+
+    def walk_forward(features, fabrique):
+        """Prévisions année par année : le modèle de l'année A n'a vu que les données d'avant (avec un mois d'écart)."""
+        p = np.full(len(O), np.nan)
+        annees = sorted(O["_d"].dt.year.unique())
+        for a in annees[1:]:
+            debut = pd.Timestamp(year=a, month=1, day=1)
+            app = O["_d"] < debut - pd.Timedelta(days=horizon * 1.5)
+            cib = O["_d"].dt.year == a
+            if app.sum() < 3000 or cib.sum() == 0 or len(np.unique(y[app])) < 2:
+                continue
+            m = fabrique().fit(O.loc[app, features], y[app])
+            p[cib.to_numpy()] = m.predict_proba(O.loc[cib, features])[:, 1]
+        return p
+
+    lin = lambda: make_pipeline(SimpleImputer(strategy="median"), StandardScaler(), LogisticRegression(C=0.1, max_iter=500))
+    gbm = lambda: HistGradientBoostingClassifier(max_depth=3, learning_rate=0.05, max_iter=200, min_samples_leaf=500, random_state=0)
+    macro = [c for c in MACRO if c in O.columns and O[c].nunique(dropna=True) > 1]
+    titre = [c for c in TITRE if c in O.columns and O[c].nunique(dropna=True) > 1]
+    reste = O.loc[~test]
+    calib = model.CalibrationPlatt().fit(reste["proba"], reste["cible"])
+    methodes = {"IA actuelle": calib.predict(O["proba"].to_numpy())}
+    tend = O["marche_tendance"].to_numpy() if "marche_tendance" in O else np.full(len(O), np.nan)
+    methodes["IA + règle de tendance (marché sous sa moyenne 200 jours = « baisse »)"] = np.where(
+        np.nan_to_num(tend, nan=0) < 0, 0.0, methodes["IA actuelle"])
+    methodes["Modèle du climat du marché seul (économie, VIX, tendance)"] = walk_forward(macro, gbm)
+    methodes["Combinaison apprise : IA + « mieux que son marché » + climat"] = walk_forward(["l_ia", "l_rel"] + macro, lin)
+    methodes["Combinaison apprise par arbres : IA + marché + climat + titre"] = walk_forward(["l_ia", "l_rel"] + macro + titre, gbm)
+
+    ok = test & np.isfinite(methodes["Combinaison apprise : IA + « mieux que son marché » + climat"])
+    n = int(ok.sum())
+    if n < 500:
+        return ["", "4. Recherche de meilleures méthodes : pas assez d'années pour tester sans tricher."]
+    yy = y[ok]
+    hausse = float(yy.mean())
+    ref = max(hausse, 1 - hausse)
+    annee = O.loc[ok, "_d"].dt.year.to_numpy()
+    baisse_ok = np.isin(annee, ANNEES_BAISSE)
+    out = ["", f"4. OBJECTIF 3000 SUR 5000 : AUTRES FAÇONS DE DÉCIDER (sur les mêmes {n} cas, ramenés sur 5000)",
+           f"   Référence « toujours {'hausse' if hausse >= .5 else 'baisse'} » : {round(ref * 5000)} sur 5000"]
+    res = []
+    for nom, p in methodes.items():
+        pp = p[ok]
+        juste = (pp >= 0.5) == (yy == 1)
+        k = int(juste.sum())
+        lo, hi = model.wilson(k, n)
+        part_baisse = float((pp < 0.5).mean())
+        jb = float(juste[baisse_ok].mean()) if baisse_ok.any() else None
+        res.append((k / n, nom))
+        out.append(f"   {round(k / n * 5000):>4} sur 5000 · {nom}")
+        out.append(f"        dit « baisse » {pct(part_baisse)} du temps · marge {round(lo * 5000)} à {round(hi * 5000)}"
+                   + (f" · années de baisse (2008, 2011, 2015, 2018, 2020, 2022) : {pct(jb)} justes" if jb is not None else ""))
+    meilleur = max(res)
+    act = res[0][0]
+    out.append("")
+    if meilleur[1] != "IA actuelle" and meilleur[0] > act + 0.01:
+        out.append(f"   ➜ Piste à creuser : « {meilleur[1]} » fait {round((meilleur[0] - act) * 5000)} bonnes réponses de plus que l'IA actuelle. "
+                   "Envoie ce résultat : si l'écart tient, on l'intègre au site.")
+    else:
+        out.append("   ➜ Aucune méthode ne fait nettement mieux que l'IA actuelle sur ces cas : le sens du prix à un mois reste très dur à prévoir.")
+    return out
 
 
 def lancer(nb_cas: int, demo: bool) -> int:
@@ -84,6 +187,7 @@ def lancer(nb_cas: int, demo: bool) -> int:
               f"Fait le {datetime.now():%d/%m/%Y à %H:%M} · recette : {nom}",
               f"Période des cas : {test.index.min():%m/%Y} à {test.index.max():%m/%Y} (des mois que l'IA n'avait jamais vus)",
               "",
+              "1. LE SENS DU PRIX (plus haut ou plus bas dans un mois ?)",
               f"➜ L'IA a eu raison {justes} fois sur {n} : {pct(justes / n)}",
               f"  Référence naïve (répondre toujours « {'hausse' if hausse >= .5 else 'baisse'} ») : {pct(ref)}",
               f"  Écart : {'+' if justes / n >= ref else ''}{(justes / n - ref) * 100:.1f}".replace(".", ",") + " point(s)",
@@ -111,6 +215,63 @@ def lancer(nb_cas: int, demo: bool) -> int:
         if len(g) >= 30:
             ha = float(g["cible"].mean())
             lignes.append(f"  {an}  {len(g):>5} cas · justes {pct(float(g['juste'].mean()))} · référence {pct(max(ha, 1 - ha))}")
+    # ---------------- 2. « Mieux que son marché » : la même question, mais contre son indice ----------------
+    print("   + test « mieux que son marché »…", flush=True)
+    try:
+        rel = model.predictions_hors_echantillon(model._jeu_relatif(jeu), horizon, variables, par_marche, garder_ticker=True)
+    except Exception:
+        rel = None
+    if rel is not None and len(rel) > 1000:
+        k = min(nb_cas, len(rel))
+        m2 = np.zeros(len(rel), dtype=bool)
+        m2[rng.choice(len(rel), size=k, replace=False)] = True
+        tr, rr = rel[m2].copy(), rel[~m2]
+        tr["p"] = model.CalibrationPlatt().fit(rr["proba"], rr["cible"]).predict(tr["proba"].to_numpy())
+        tr["juste"] = (tr["p"] >= 0.5) == (tr["cible"] == 1)
+        hr = float(tr["cible"].mean())
+        jr = int(tr["juste"].sum())
+        lo2, hi2 = model.wilson(jr, k)
+        lignes += ["", "2. FAIRE MIEUX QUE SON MARCHÉ (CAC 40, S&P 500, Bitcoin…)",
+                   f"➜ L'IA a eu raison {jr} fois sur {k} : {pct(jr / k)}  (référence naïve : {pct(max(hr, 1 - hr))}, "
+                   f"marge {pct(lo2)} à {pct(hi2)})",
+                   "  " + ("Verdict : mieux que la référence, même en comptant la marge d'erreur." if lo2 > max(hr, 1 - hr) else
+                           "Verdict : pas de différence sûre avec la référence.")]
+    # ---------------- 3. L'agitation : de combien le prix va bouger ----------------
+    print("   + test de l'agitation prévue…", flush=True)
+    try:
+        from bourse_bot import comprendre as C
+        et = jeu.dropna(subset=["vol_futur", "vol_20j"])
+        et = et[np.isfinite(et["vol_futur"])]
+        vs = C._variables_risque(et, variables)
+        morceaux = []
+        for train, tst in model._plis(et.assign(cible=0.0), horizon, 5):
+            if len(train) < 3000 or tst.empty:
+                continue
+            mod = C._modele().fit(train[vs], train["vol_futur"])
+            morceaux.append(pd.DataFrame({"y": tst["vol_futur"].to_numpy(), "p": mod.predict(tst[vs]),
+                                          "naif": C._naif(tst).to_numpy()}, index=tst.index))
+        ag = pd.concat(morceaux) if morceaux else None
+    except Exception:
+        ag = None
+    if ag is not None:
+        ag = ag[np.isfinite(ag[["y", "p", "naif"]]).all(axis=1)]
+        k = min(nb_cas, len(ag))
+        ag = ag.iloc[rng.choice(len(ag), size=k, replace=False)]
+        e_ia = (np.exp(ag["p"] - ag["y"]) - 1).abs()
+        e_nf = (np.exp(ag["naif"] - ag["y"]) - 1).abs()
+        mieux = int((e_ia < e_nf).sum())
+        lo3, hi3 = model.wilson(mieux, k)
+        lignes += ["", "3. L'AGITATION (de combien le prix va bouger le mois suivant, dans un sens ou dans l'autre)",
+                   f"➜ Erreur moyenne de l'IA : {pct(float(e_ia.mean()))} · méthode simple (« comme le mois dernier ») : {pct(float(e_nf.mean()))}",
+                   f"  L'IA a été plus proche de la réalité que la méthode simple {mieux} fois sur {k} ({pct(mieux / k)}, marge {pct(lo3)} à {pct(hi3)})",
+                   "  " + ("Verdict : l'IA fait mieux que la méthode simple, de façon sûre." if lo3 > .5 and e_ia.mean() < e_nf.mean() else
+                           "Verdict : pas de différence sûre avec la méthode simple.")]
+    # ---------------- 4. Objectif 3000 sur 5000 : d'autres façons de décider « hausse » ou « baisse » ----------------
+    print("   + recherche de meilleures méthodes pour le sens du prix…", flush=True)
+    try:
+        lignes += explorer(jeu, oof, rel, masque, horizon)
+    except Exception as e:
+        lignes += ["", f"4. Recherche de meilleures méthodes : impossible cette fois ({e})"]
     ex = test.sample(min(8, len(test)), random_state=1)
     lignes += ["", "Quelques cas au hasard :"]
     for d, r in ex.iterrows():

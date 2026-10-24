@@ -18,9 +18,9 @@ from . import config
 
 NOM = "Radar Bourse"
 SLOGAN = "Analyse et prévisions boursières à un mois, expliquées simplement"
-DESCRIPTION = ("Radar Bourse analyse chaque jour les actions françaises, américaines et les cryptos : "
-               "prévision à un mois, signaux forts mesurés, graphiques expliqués, simulateur et actualités. "
-               "Gratuit, sans inscription, projet éducatif.")
+TITRE_ACCUEIL = "Prévisions bourse et crypto par IA, gratuites et vérifiées | Radar Bourse"
+DESCRIPTION = ("Prévisions gratuites par IA pour plus de 160 actions et cryptos : agitation prévue, chances à un mois, "
+               "comparaisons. Tout est vérifié publiquement, ratés compris.")
 MOTS_CLES = ("prévision bourse, analyse technique, prévision action, prévision crypto, CAC 40, S&P 500, "
              "Bitcoin, RSI, MACD, moyenne mobile, simulateur bourse, signaux bourse, apprendre la bourse")
 LIB_SIGNAL = {"ACHAT FORT": "haussier fort", "ACHAT": "haussier", "NEUTRE": "neutre",
@@ -123,7 +123,11 @@ def balises_tete(base: str, titre: str, description: str, chemin: str = "", imag
     lignes = [
         f'<meta name="description" content="{_e(description)}">',
         f'<meta name="keywords" content="{_e(MOTS_CLES)}">',
-        '<meta name="robots" content="index, follow, max-image-preview:large">',
+        '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">',
+        f'<meta name="author" content="{NOM}">',
+        f'<meta name="application-name" content="{NOM}">',
+        f'<meta name="apple-mobile-web-app-title" content="{NOM}">',
+        '<meta name="format-detection" content="telephone=no">',   # les prix ne deviennent pas des numéros de téléphone sur iPhone
         '<meta name="theme-color" content="#0f1b2d">',
         f'<meta property="og:site_name" content="{NOM}">',
         f'<meta property="og:locale" content="{"en_US" if langue == "en" else "fr_FR"}">',
@@ -132,11 +136,14 @@ def balises_tete(base: str, titre: str, description: str, chemin: str = "", imag
         f'<meta property="og:description" content="{_e(description)}">',
         f'<meta property="og:image" content="{_e(img)}">',
         '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">',
+        f'<meta property="og:image:alt" content="{_e(titre)}">',
+        f'<meta name="twitter:image:alt" content="{_e(titre)}">',
         '<meta name="twitter:card" content="summary_large_image">',
         f'<meta name="twitter:title" content="{_e(titre)}">',
         f'<meta name="twitter:description" content="{_e(description)}">',
         f'<meta name="twitter:image" content="{_e(img)}">',
         f'<link rel="manifest" href="{"../" * chemin.count("/")}manifest.webmanifest">',
+        f'<link rel="alternate" type="application/rss+xml" title="{NOM}" href="{"../" * chemin.count("/")}flux.xml">',
         f'<link rel="apple-touch-icon" href="{"../" * chemin.count("/")}icone-192.png">',
     ]
     if url:
@@ -188,7 +195,7 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 <style>{CSS_PAGE}</style>
 </head>
 <body><div class="w">
-<nav class="fil"><a href="{prefixe}index.html">{NOM}</a> · <a href="{prefixe}point.html">Le point du jour</a> · <a href="{prefixe}resultats.html">Résultats réels</a> · <a href="{prefixe}connaissances.html">Ce que sait l'IA</a> · <a href="{prefixe}apprendre.html">Apprendre</a> · <a href="{prefixe}titres.html">Tous les titres</a> · <a href="{prefixe}comparer.html">Comparer</a> · <a href="{prefixe}previsions.html">Prévisions {datetime.now().year}</a> · <a href="{prefixe}robots.html">Les mini-robots</a> · <a href="{prefixe}glossaire.html">Glossaire</a> · <a href="{prefixe}en/index.html" hreflang="en">English</a></nav>
+<nav class="fil"><a href="{prefixe}index.html">{NOM}</a> · <a href="{prefixe}point.html">Le point du jour</a> · <a href="{prefixe}resultats.html">Résultats réels</a> · <a href="{prefixe}connaissances.html">Ce que sait l'IA</a> · <a href="{prefixe}apprendre.html">Apprendre</a> · <a href="{prefixe}titres.html">Tous les titres</a> · <a href="{prefixe}comparer.html">Comparer</a> · <a href="{prefixe}classements.html">Classements</a> · <a href="{prefixe}previsions.html">Prévisions {datetime.now().year}</a> · <a href="{prefixe}robots.html">Les mini-robots</a> · <a href="{prefixe}glossaire.html">Glossaire</a> · <a href="{prefixe}en/index.html" hreflang="en">English</a></nav>
 <main>
 {corps}
 </main>
@@ -231,17 +238,24 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     pt = (((suivi or {}).get("detail") or {}).get("par_titre") or {}).get(tk)
     palmares = (f"<p>Depuis le début du suivi, sur <b>{pt[0]}</b> prévisions vérifiées un mois plus tard pour {_e(nom)}, "
                 f"les IA ont vu juste <b>{pt[1]} fois</b> ({round(pt[1] / pt[0] * 100)} %).</p>") if pt and pt[0] >= 5 else ""
-    titre = f"{nom} ({aff_tk(tk)}) : cours, analyse et prévision à un mois | {NOM}"
+    est_crypto = tk.endswith("-USD")
+    if est_crypto:
+        titre = f"{nom} ({aff_tk(tk).replace('-USD', '')}) : cours, prévision et analyse IA | {NOM}"
+    elif t.get("marche") in ("fr", "eu", "us") or (t.get("fondamentaux") or {}).get("valeurs"):
+        titre = f"Action {nom} ({aff_tk(tk)}) : cours, prévision et analyse IA | {NOM}"
+    else:
+        titre = f"{nom} : cours, prévision et analyse IA | {NOM}"
     faq = _faq_titre(t, nom, date, verdict)
     duels_html = ("<h2>Comparer</h2><ul class='liste'>" + "".join(
         f"<li><a href='../{_chemin_duel(*((t, o) if (t['ticker'], o['ticker']) in DUELS else (o, t)))}'>{_e(nom)} ou {_e(o['nom'])}</a></li>"
         for o in t.get("_duels") or []) + "</ul>") if t.get("_duels") else ""
     similaires = "".join(f"<li><a href='{slug(v['ticker'])}.html'>{_e(v['nom'])}</a></li>" for v in voisins)
-    desc = (f"{nom} ({aff_tk(tk)}) au {date} : tendance {LIB_SIGNAL.get(t['signal'], 'neutre')}, "
-            + ("pas d'avis net des IA sur le mois qui vient, " if sur10 is not None and t.get("avis_net") is False else
-               f"{sur10} chances sur 10 d'être plus haut dans un mois selon le modèle, " if sur10 is not None else "")
-            + (f"scénario central {_px(med, dev)}. " if med else "")
-            + "Graphique, niveaux clés et actualités. Projet éducatif, pas un conseil.")
+    mv = (t.get("risque_prevu") or {}).get("mouvement")
+    desc = (f"{nom} ({aff_tk(tk)}) au {date} : "
+            + (f"agitation prévue ±{round(mv * 100)} %, " if mv else "")
+            + ("pas d'avis net des IA sur la hausse. " if sur10 is not None and t.get("avis_net") is False else
+               f"{sur10} chances sur 10 de hausse à un mois. " if sur10 is not None else "")
+            + "Analyse IA gratuite et vérifiée, pas un conseil.")
     chemin = f"titres/{slug(tk)}.html"
     lien_app = f"../index.html#{re.sub(r'[^A-Za-z0-9._-]', '', tk)}"
     perf = t.get("perf", {})
@@ -261,7 +275,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     fil = (f"<p class='muted' style='font-size:14px'><a href='../titres.html'>Tous les titres</a>"
            + (f" › <a href='../marches/{hub[0]}.html'>{_e(hub[1])}</a>" if hub else "") + f" › {_e(nom)}</p>")
     corps = f"""{fil}
-<h1>{_e(nom)} ({_e(aff_tk(tk))}) : cours, analyse et prévision</h1>
+<h1>{"Action " if titre.startswith("Action ") else ""}{_e(nom)} ({_e(aff_tk(tk))}) : cours, prévision et analyse</h1>
 <p class="muted">Mise à jour automatique · cours au {_e(date)}</p>
 <div class="carte grille">
   <div class="k"><b>{_px(prix, dev)}</b><span>dernier cours</span></div>
@@ -288,11 +302,15 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
 {f"<h2>Questions fréquentes sur {_e(nom)}</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{r}</p>" for q, r in faq) if faq else ""}
 {f"<h2>Autres titres du même marché</h2><ul class='liste'>{similaires}</ul>" if similaires else ""}
 {duels_html}
+<h2>Afficher {_e(nom)} sur ton site</h2>
+<p>Un petit encadré gratuit, mis à jour automatiquement (cours, agitation prévue, avis des IA). Copie ce code dans ta page :</p>
+<pre class='code' style='white-space:pre-wrap;word-break:break-all;font-size:12.5px'>{_e(f'<iframe src="{base or "../"}widget/{slug(tk)}.html" width="320" height="150" style="border:0" title="{nom} · {NOM}" loading="lazy"></iframe>')}</pre>
 """
     jsonld = {"@context": "https://schema.org", "@type": "WebPage", "name": titre, "description": desc,
               "inLanguage": "fr-FR", "dateModified": datetime.now().isoformat(timespec="seconds"),
               "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None},
-              "about": {"@type": "Thing", "name": f"{nom} ({aff_tk(tk)})"}}
+              "about": ({"@type": "Corporation", "name": nom, "tickerSymbol": aff_tk(tk)} if titre.startswith("Action ")
+                        else {"@type": "Thing", "name": f"{nom} ({aff_tk(tk)})"})}
     graphe = [jsonld, _jsonld_fil(base, [("Tous les titres", "titres.html")] + ([(hub[1], f"marches/{hub[0]}.html")] if hub else [])
                                   + [(nom, chemin)])]
     if faq:
@@ -392,11 +410,113 @@ def _page_duel(base, a, b, date, csp):
              f"<a class='btn' href='../titres/{slug(b['ticker'])}.html'>Fiche {_e(nb)}</a></p>"
              "<p class='muted'>Projet éducatif. Tu peux perdre tout l'argent investi.</p>")
     titre = f"{na} ou {nb} : comparaison du cours, du risque et des prévisions | {NOM}"
-    desc = f"{na} ou {nb} ? Cours, performance, volatilité, agitation prévue et avis des IA côte à côte, mis à jour chaque jour. Gratuit, pas un conseil."
+    desc = f"{na} ou {nb} ? Cours, volatilité, agitation prévue et avis des IA côte à côte, mis à jour chaque jour."
     jsonld = {"@context": "https://schema.org", "@graph": [
         {"@type": "WebPage", "name": f"{na} ou {nb}", "inLanguage": "fr-FR"},
         {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": re.sub(r"<[^>]+>", "", r)}} for q, r in faq]}]}
     return chemin, _page(base, titre, desc, chemin, corps, jsonld, csp)
+
+
+CLASSEMENTS = [
+    ("actions-dividende", "Actions à fort dividende : le classement du jour",
+     "Les actions suivies qui versent le plus de dividende par rapport à leur prix, avec leur agitation prévue.",
+     lambda t: t.get("marche") in ("fr", "eu", "us") and (t.get("div") or 0) > 0, lambda t: -(t.get("div") or 0),
+     lambda t: f"{t['div']:.2f} % de dividende".replace(".", ",")),
+    ("actions-calmes", "Actions les moins agitées prévues ce mois-ci",
+     "Les actions dont les IA prévoient qu'elles bougeront le moins le mois prochain : moins de surprises, dans un sens comme dans l'autre.",
+     lambda t: t.get("marche") in ("fr", "eu", "us") and (t.get("risque_prevu") or {}).get("mouvement"),
+     lambda t: t["risque_prevu"]["mouvement"], lambda t: f"±{round(t['risque_prevu']['mouvement'] * 100)} % prévus en un mois"),
+    ("cryptos-agitees", "Cryptos les plus volatiles prévues ce mois-ci",
+     "Les cryptomonnaies dont les IA prévoient les plus grands mouvements le mois prochain, à la hausse comme à la baisse.",
+     lambda t: str(t.get("ticker", "")).endswith("-USD") and (t.get("risque_prevu") or {}).get("mouvement"),
+     lambda t: -t["risque_prevu"]["mouvement"], lambda t: f"±{round(t['risque_prevu']['mouvement'] * 100)} % prévus en un mois"),
+    ("mieux-que-leur-marche", "Actions qui pourraient faire mieux que leur indice",
+     "Les actions auxquelles les IA donnent le plus de chances de faire mieux que le CAC 40, le S&P 500 ou l'Euro Stoxx 50 le mois prochain.",
+     lambda t: t.get("marche") in ("fr", "eu", "us") and t.get("proba_marche") is not None and t.get("marche_net") is not False,
+     lambda t: -t["proba_marche"], lambda t: f"{round(t['proba_marche'] * 100)} chances sur 100 de faire mieux que {t.get('indice_nom') or 'son marché'}"),
+    ("per-bas", "Actions au PER le plus bas parmi les grandes valeurs",
+     "Les grandes actions suivies dont le prix est le plus bas par rapport à leurs bénéfices (PER). Un PER bas n'est pas forcément une bonne affaire.",
+     lambda t: t.get("marche") in ("fr", "eu", "us") and (t.get("per") or 0) > 0, lambda t: t["per"],
+     lambda t: f"PER {t['per']:.1f}".replace(".", ",")),
+]
+
+
+def _pages_classements(base, payload, dossier, csp, date):
+    """Pages « classement » mises à jour chaque jour : elles répondent à des recherches très tapées."""
+    titres = [t for t in payload.get("titres", []) if t.get("prix")]
+    for t in titres:   # dividende / PER : dans la page légère (div, per) ou dans le détail (fondamentaux)
+        fv = (t.get("fondamentaux") or {}).get("valeurs") or {}
+        t.setdefault("div", fv.get("dividendYield"))
+        t.setdefault("per", fv.get("trailingPE"))
+        if t.get("div") is None and fv.get("dividendYield") is not None:
+            t["div"] = fv["dividendYield"]
+        if t.get("per") is None and fv.get("trailingPE") is not None:
+            t["per"] = fv["trailingPE"]
+    os.makedirs(os.path.join(dossier, "classements"), exist_ok=True)
+    faits, liens = [], []
+    for cle, titre_h1, intro, filtre, tri, valeur in CLASSEMENTS:
+        sel = sorted([t for t in titres if filtre(t)], key=tri)[:20]
+        if len(sel) < 5:
+            continue
+        lignes = "".join(f"<tr><td class='m'>{i}</td><td><a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a> "
+                         f"<span class='muted'>{_e(aff_tk(t['ticker']))}</span></td><td class='m'>{_e(valeur(t))}</td>"
+                         f"<td class='m'>{_px(t['prix'], t['devise'])}</td></tr>" for i, t in enumerate(sel, 1))
+        corps = (f"<p class='muted'><a href='../classements.html'>Tous les classements</a></p><h1>{_e(titre_h1)}</h1>"
+                 f"<p class='muted'>Mis à jour automatiquement · cours au {_e(date)}</p><p>{_e(intro)}</p>"
+                 "<div class='carte' style='overflow-x:auto'><table><tr><td><b>#</b></td><td><b>Titre</b></td><td><b>Valeur</b></td><td><b>Cours</b></td></tr>"
+                 + lignes + "</table></div>"
+                 "<p class='muted'>Un classement trie des chiffres : il ne dit pas quoi acheter. Les prévisions des IA se trompent souvent, "
+                 "leur vrai taux de réussite est sur la page <a href='../resultats.html'>Résultats réels</a>. Projet éducatif, pas un conseil.</p>")
+        chemin = f"classements/{cle}.html"
+        an = datetime.now().year
+        with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
+            f.write(_page(base, f"{titre_h1} ({an}) | {NOM}", intro[:155], chemin, corps, csp=csp))
+        faits.append(chemin)
+        liens.append((titre_h1, chemin))
+    if liens:
+        corps = ("<h1>Les classements du jour</h1><p class='muted'>Actions et cryptos triées selon un critère, mis à jour automatiquement.</p><ul class='liste'>"
+                 + "".join(f"<li><a href='{c}'>{_e(t)}</a></li>" for t, c in liens) + "</ul>")
+        with open(os.path.join(dossier, "classements.html"), "w", encoding="utf-8") as f:
+            f.write(_page(base, f"Classements bourse et crypto du jour : dividende, risque, PER | {NOM}",
+                          "Actions à fort dividende, actions les plus calmes, cryptos les plus volatiles, PER les plus bas : les classements du jour.",
+                          "classements.html", corps, csp=csp))
+        faits.append("classements.html")
+    return faits
+
+
+def _widgets(base, payload, dossier, date):
+    """Un petit encadré par titre, que n'importe quel site peut intégrer (code fourni sur chaque fiche).
+    Il affiche le cours, l'agitation prévue et l'avis des IA, avec un lien vers la fiche : chaque intégration
+    est un lien vers le site, ce qui compte beaucoup pour Google. Les encadrés eux-mêmes ne sont pas indexés."""
+    os.makedirs(os.path.join(dossier, "widget"), exist_ok=True)
+    for t in payload.get("titres", []):
+        if not t.get("prix"):
+            continue
+        rq, p = t.get("risque_prevu") or {}, t.get("proba_hausse")
+        m1 = (t.get("perf") or {}).get("1 mois")
+        avis = "–" if p is None else ("pas d'avis net" if t.get("avis_net") is False else f"{round(p * 100)} chances sur 100 de hausse")
+        fiche = f"{base}titres/{slug(t['ticker'])}.html" if base else f"../titres/{slug(t['ticker'])}.html"
+        page = f"""<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, follow"><link rel="canonical" href="{_e(fiche)}">
+<title>{_e(t['nom'])} · {NOM}</title>
+<style>
+:root{{--bg:#ffffff;--ink:#0f1b2d;--muted:#5a6a80;--line:#d9e0e8;--up:#137a3f;--down:#b42318}}
+@media (prefers-color-scheme:dark){{:root{{--bg:#111a29;--ink:#e4ebf5;--muted:#8c9bb0;--line:#22314a;--up:#35c27d;--down:#ff6b6b}}}}
+body{{margin:0;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}}
+a{{color:inherit;text-decoration:none}} .w{{display:block;border:1px solid var(--line);border-radius:12px;padding:12px 14px}}
+.n{{font-weight:700;font-size:16px}} .p{{font-size:20px;font-weight:700;margin:2px 0}} .u{{color:var(--up)}} .d{{color:var(--down)}}
+.l{{color:var(--muted);font-size:12.5px}} .s{{margin-top:6px;font-size:12px;color:var(--muted)}}
+</style></head><body>
+<main><a class="w" href="{_e(fiche)}" target="_blank" rel="noopener">
+<h1 class="n" style="margin:0">{_e(t['nom'])} <span class="l">{_e(aff_tk(t['ticker']))}</span></h1>
+<div class="p">{_px(t['prix'], t['devise'])}{f' <span class="{"u" if m1 >= 0 else "d"}" style="font-size:14px">{_pct(m1)} sur 1 mois</span>' if m1 is not None else ''}</div>
+<div class="l">{f"Agitation prévue : ±{round(rq['mouvement'] * 100)} % en un mois · " if rq.get('mouvement') else ''}IA : {_e(avis)}</div>
+<div class="s">{NOM} · cours au {_e(date)} · pas un conseil</div>
+</a></main></body></html>
+"""
+        with open(os.path.join(dossier, "widget", f"{slug(t['ticker'])}.html"), "w", encoding="utf-8") as f:
+            f.write(page)
 
 
 def _page_previsions(base, payload, dossier, csp, date):
@@ -441,9 +561,9 @@ def _page_previsions(base, payload, dossier, csp, date):
     jsonld = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": r}} for q, r in faq]}
     corps += "<h2>Questions fréquentes</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{_e(r)}</p>" for q, r in faq)
-    titre = f"Prévisions Bourse et crypto {annees} : actions, Bitcoin, ce qu'on peut vraiment prévoir | {NOM}"
-    desc = (f"Prévisions {annees} pour les actions et cryptos : agitation prévue et chances de hausse à un mois par deux IA, vérifiées publiquement, "
-            "et écart habituel sur un an. Honnête et gratuit.")
+    titre = f"Prévisions bourse et crypto {annees}, vérifiées | {NOM}"
+    desc = (f"Prévisions {annees} pour 160 actions et cryptos : agitation et chances de hausse à un mois par IA, "
+            "vérifiées publiquement, et écart habituel sur un an.")
     with open(os.path.join(dossier, "previsions.html"), "w", encoding="utf-8") as f:
         f.write(_page(base, titre, desc, "previsions.html", corps, jsonld, csp))
 
@@ -893,6 +1013,18 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
                           "comparer.html", corps, csp=csp))
         urls.append(("comparer.html", "daily", "0.7"))
 
+    # Classements du jour (« action dividende élevé », « action peu risquée »…) — version 33
+    try:
+        for chemin in _pages_classements(base, payload, dossier, csp, date):
+            urls.append((chemin, "daily", "0.7"))
+    except Exception as e:
+        print(f"Classements non générés : {e}")
+    # Encadrés à intégrer sur d'autres sites (chaque intégration = un lien vers le site)
+    try:
+        _widgets(base, payload, dossier, date)
+    except Exception as e:
+        print(f"Encadrés non générés : {e}")
+
     # « Prévisions bourse et crypto 2026 » : la page qui répond honnêtement à cette recherche
     try:
         _page_previsions(base, payload, dossier, csp, date)
@@ -1046,6 +1178,11 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
         xml.append("</urlset>")
         with open(os.path.join(dossier, "sitemap.xml"), "w", encoding="utf-8") as f:
             f.write("\n".join(xml))
+    # Flux RSS : le point du jour et les bilans du mois, repris par les lecteurs de flux et les agrégateurs
+    try:
+        _flux_rss(base, dossier, points, [c for c, *_ in urls if c.startswith("bilan/")])
+    except Exception as e:
+        print(f"Flux RSS non généré : {e}")
     with open(os.path.join(dossier, "robots.txt"), "w", encoding="utf-8") as f:
         f.write("User-agent: *\nAllow: /\n" + (f"Sitemap: {base}sitemap.xml\n" if base else ""))
 
@@ -1058,6 +1195,36 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
         json.dump(manifeste, f, ensure_ascii=False)
     _icones(dossier)
     _image_partage(payload, os.path.join(dossier, "partage.png"))
+
+
+def _flux_rss(base, dossier, points, bilans):
+    from email.utils import format_datetime
+    items = []
+    for d in sorted(points)[-30:][::-1]:
+        dt = datetime.strptime(d, "%Y-%m-%d").replace(hour=23)
+        lien = f"{base}point/{d}.html"
+        resume = f"Indices, plus fortes hausses et baisses, signaux et actualités du {date_longue(d)}."
+        items.append((dt, f"Bourse du {date_longue(d)} : ce qu'il faut retenir", lien, resume))
+    for c in bilans[-12:]:
+        m = c.split("/")[-1].replace(".html", "")
+        try:
+            dt = datetime.strptime(m + "-28", "%Y-%m-%d")
+        except ValueError:
+            continue
+        items.append((dt, f"Bilan {_mois(m)} : les prévisions du radar vérifiées", base + c,
+                      "Le score honnête du mois, les plus beaux coups et les pires ratés."))
+    items.sort(key=lambda x: x[0], reverse=True)
+    xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel>',
+           f"<title>{html.escape(NOM)} : le point de la Bourse et les bilans</title>", f"<link>{html.escape(base)}</link>",
+           f'<atom:link href="{html.escape(base)}flux.xml" rel="self" type="application/rss+xml"/>',
+           "<description>Chaque soir, ce qu'il faut retenir des marchés ; chaque mois, les prévisions vérifiées.</description>",
+           "<language>fr-fr</language>"]
+    for dt, titre, lien, resume in items:
+        xml.append(f"<item><title>{html.escape(titre)}</title><link>{html.escape(lien)}</link><guid>{html.escape(lien)}</guid>"
+                   f"<pubDate>{format_datetime(dt.astimezone())}</pubDate><description>{html.escape(resume)}</description></item>")
+    xml.append("</channel></rss>")
+    with open(os.path.join(dossier, "flux.xml"), "w", encoding="utf-8") as f:
+        f.write("\n".join(xml))
 
 
 def cle_indexnow() -> str:

@@ -236,10 +236,19 @@ def telecharger_plusieurs(tickers: list[str], max_age_h: float | None = None, pr
         frais = _yahoo(a_telecharger, progres)
         for t in frais:
             SOURCES_UTILISEES[t] = "Yahoo"
+        maintenant = pd.Timestamp.now().normalize()
+
+        def douteux(df, t):
+            """Série absente, trop courte ou figée : on essaie la source de secours (ex. Toncoin chez Yahoo)."""
+            if df is None or len(df) < 260:
+                return True
+            dernier = pd.Timestamp(df.index[-1])
+            dernier = dernier.tz_localize(None) if dernier.tzinfo else dernier
+            return (maintenant - dernier.normalize()).days > (4 if t.endswith("-USD") else 8)
         for t in a_telecharger:   # secours : Binance pour les cryptos, Stooq pour le reste
-            if t not in frais:
+            if douteux(frais.get(t), t):
                 df = _binance(t) if t.endswith("-USD") else _stooq(t)
-                if len(df) >= 260:
+                if len(df) >= 260 and (frais.get(t) is None or not douteux(df, t)):
                     frais[t] = df
                     SOURCES_UTILISEES[t] = "Binance" if t.endswith("-USD") else "Stooq"
         for t, df in frais.items():

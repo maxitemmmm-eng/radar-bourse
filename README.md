@@ -148,7 +148,33 @@ Le **défi pronostic** permet de parier (sans argent) contre le radar et de comp
   - « Quelle est la prévision pour X en 2026 ? ». La réponse est honnête : personne ne sait à un an. On donne la prévision à un mois et l'écart habituel du prix sur un an, tiré de sa volatilité.
 - **Nouvelle page « Prévisions 2026 »** : tous les titres avec leur agitation prévue, leurs chances à un mois et leur écart habituel sur un an.
 - **16 comparaisons de plus** : Coca-Cola ou Pepsi, Visa ou Mastercard, Renault ou Stellantis, Boeing ou Airbus… Le dividende et le PER s'ajoutent dans les tableaux.
-- **Test sur 5000 cas** (`tester_ia.bat`, ou choix 5 du menu) : l'IA s'entraîne sur le passé, prévoit des mois qu'elle n'a jamais vus, puis on tire 5000 cas au hasard et on compte ses bonnes réponses. Le résultat est comparé à la référence naïve, avec la marge d'erreur, et détaillé par marché et par année. Il est calculé avec les vrais cours, sur ton PC, et le rapport reste dans « rapports ».
+- **Savoir dire « baisse » (couche « climat du marché »)** : le calcul du soir teste une couche qui apprend quand dire « baisse » à partir de l'avis de l'IA et de l'état du marché (tendance de l'indice, VIX, taux, crédit, part des titres en hausse).
+  - Elle est testée année par année, en n'apprenant que sur les années d'avant.
+  - Elle n'est utilisée que si elle donne plus de bonnes directions de façon prouvée.
+  - Le résultat s'affiche sur le site dans « Savoir dire « baisse » », adoptée ou non.
+- **Campagne Google** (`campagne_google.bat`, ou le menu), à lancer une fois par semaine :
+  - il vérifie les pages en ligne comme Google (titre, description, titre principal, page bloquée) ;
+  - il rappelle les tâches de la semaine du plan ;
+  - il ouvre dans Search Console les 10 pages à faire indexer ce jour-là et se souvient de celles déjà envoyées.
+  Son premier passage a trouvé des descriptions trop longues et un titre de 106 caractères : c'est corrigé.
+- **Objectif 3000 sur 5000** : le test essaie aussi 4 autres façons de décider « hausse » ou « baisse » sur les mêmes cas, chacune apprise seulement sur les années d'avant. Il dit combien de fois chacune répond « baisse », et comment elle s'en sort les années de baisse (2008, 2011, 2015, 2018, 2020, 2022). Les 4 façons :
+  - une règle de tendance du marché ;
+  - un modèle du climat économique ;
+  - deux combinaisons apprises.
+  Une méthode n'ira sur le site que si elle fait nettement mieux sur les vrais cours.
+- **Plus de visibilité** :
+  - **Classements du jour** (`classements/…`), pour les recherches très tapées : actions à fort dividende, actions les moins agitées prévues, cryptos les plus volatiles, actions qui pourraient battre leur indice, PER les plus bas. Une page « Classements » est ajoutée au menu.
+  - **Flux RSS** (`flux.xml`) : le point du jour et les bilans du mois, repris par les lecteurs de flux et les agrégateurs.
+  - **Encadré à intégrer** : chaque fiche donne un code à copier pour afficher le titre (cours, agitation, avis des IA) sur un autre site, avec un lien vers la fiche. Chaque site qui l'utilise crée un lien vers Radar Bourse, ce qui compte beaucoup pour Google. Les encadrés ne sont pas indexés, pour ne pas faire de doublons. Les conditions d'utilisation autorisent cet encadré.
+- **Toncoin et cryptos à trous** : si Yahoo renvoie une série trop courte ou figée pour une crypto, le site prend maintenant l'historique de Binance, au lieu d'ignorer le titre. C'était pour ça que Toncoin manquait dans ton test.
+- **Balises essentielles ajoutées** sur toutes les pages :
+  - `author`, `application-name`, `apple-mobile-web-app-title` ;
+  - `format-detection` : sur iPhone, les prix ne se transforment plus en numéros de téléphone ;
+  - `og:image:alt` et `twitter:image:alt`, la description de l'image de partage ;
+  - `robots` complété (`max-snippet:-1`, `max-video-preview:-1`).
+  Les pages anglaises ont maintenant des données structurées (WebPage). Sur les fiches d'actions, l'entreprise est décrite comme une `Corporation` avec son symbole boursier. Vérifié : aucune balise en double, et les données structurées sont valides.
+- **Titres Google retravaillés** pour coller à ce que les gens tapent : « Action LVMH (MC.PA) : cours, prévision et analyse IA », « Bitcoin (BTC) : cours, prévision et analyse IA ». L'accueil devient « Prévisions bourse et crypto par IA, gratuites et vérifiées ».
+- **Test sur 5000 cas** (`tester_ia.bat`, ou choix 5 du menu) : l'IA s'entraîne sur le passé, prévoit des mois qu'elle n'a jamais vus, puis on tire 5000 cas au hasard et on compte ses bonnes réponses. Il mesure trois choses : le sens du prix, « mieux que son marché » et l'agitation, chaque fois comparées à une référence simple, avec la marge d'erreur, et détaillé par marché et par année. Il est calculé avec les vrais cours, sur ton PC, et le rapport reste dans « rapports ».
 - **Correction du suivi** : un titre retiré de la cote (cours figé) avait été enregistré à la date de son dernier cours (février 2025). La page « Résultats réels » annonçait donc « premiers résultats vers mars 2025 ». Ces lignes fantômes sont maintenant ignorées, et une prévision n'est plus jamais enregistrée sur un cours de plus de 10 jours.
 - **Corrections** :
   - les numéros internes de Yahoo n'apparaissent plus dans le tableau des titres, ni dans les dernières prévisions vérifiées ;

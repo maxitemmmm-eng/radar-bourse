@@ -314,13 +314,13 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
         lib = '<script src="lightweight-charts.js"></script>'
         # balises de référencement complètes à la place des balises minimales de l'aperçu
         debut, fin = tete.index("<!--META-->"), tete.index("<!--/META-->") + len("<!--/META-->")
-        tete = (tete[:debut] + seo.balises_tete(seo.url_site(), f"{seo.NOM} : prévisions boursières à un mois, actions et cryptos",
+        tete = (tete[:debut] + seo.balises_tete(seo.url_site(), seo.TITRE_ACCUEIL,
                                                  seo.DESCRIPTION, "", jsonld=seo.jsonld_accueil(),
                                                  alternates={"fr": "", "en": "en/index.html", "x-default": ""}) + tete[fin:])
         faq = json.dumps(seo.jsonld_faq(), ensure_ascii=False).replace("</", "<\\/")
         tete = tete.replace("<!--__LIB__-->", f'<script type="application/ld+json">{faq}</script>\n<!--__LIB__-->', 1)
         tete = tete.replace("<title>Radar Bourse</title>",
-                            f"<title>{seo.NOM} : prévisions boursières à un mois, actions et cryptos</title>", 1)
+                            f"<title>{seo.TITRE_ACCUEIL}</title>", 1)
         corps = corps.replace("<!--__LIENS_SEO__-->", seo.liens_accueil(payload), 1)
         securite = (f'<meta http-equiv="Content-Security-Policy" content="{seo.csp_avec_stats(CSP)}">\n'
                     '<meta name="referrer" content="strict-origin-when-cross-origin">\n'

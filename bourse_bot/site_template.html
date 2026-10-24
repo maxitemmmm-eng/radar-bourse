@@ -1095,7 +1095,7 @@ html.calme *{animation:none!important;transition:none!important}
         <p>La structure du Site, ses textes et son code sont protégés. Toute reproduction ou réutilisation substantielle sans autorisation est interdite, sauf usage strictement personnel et non commercial. Les marques, noms de sociétés et dénominations de titres cités appartiennent à leurs propriétaires et ne sont utilisés qu'à des fins d'identification. Les graphiques utilisent la bibliothèque TradingView Lightweight Charts™, sous licence Apache 2.0.</p>
 
         <h4>Article 13 – Utilisations interdites</h4>
-        <p>Il est interdit : d'extraire massivement ou automatiquement les Contenus ; de les revendre, de les intégrer dans un service payant ou de les présenter comme des conseils professionnels ; de porter atteinte à la sécurité ou au fonctionnement du Site ; d'afficher le Site dans un autre site en le faisant passer pour le sien ; d'utiliser le Site dans un but illicite, notamment de manipulation de cours ou de diffusion d'informations trompeuses.</p>
+        <p>Il est interdit : d'extraire massivement ou automatiquement les Contenus ; de les revendre, de les intégrer dans un service payant ou de les présenter comme des conseils professionnels ; de porter atteinte à la sécurité ou au fonctionnement du Site ; d'afficher le Site dans un autre site en le faisant passer pour le sien (l'encadré officiel proposé sur chaque fiche, qui affiche le nom du Site et renvoie vers lui, peut en revanche être intégré librement) ; d'utiliser le Site dans un but illicite, notamment de manipulation de cours ou de diffusion d'informations trompeuses.</p>
 
         <h4>Article 14 – Données personnelles</h4>
         <p>Le Site ne collecte aucune donnée personnelle. Les détails figurent dans la rubrique « Confidentialité ».</p>
@@ -2066,6 +2066,14 @@ const M = DATA.modele;
       <p style="margin:0;font-size:14px">À chaque calcul complet, plusieurs recettes s'affrontent sur des années que l'IA n'a jamais vues. Note : de combien chacune fait mieux que le hasard (0 = pile ou face).</p>
       <ol class="controles">${top.map(c => `<li><span aria-hidden="true">${c.nom === M.configuration ? "★" : "·"}</span><span><b>${esc(c.nom)}</b> <span class="muted">· ${((c.auc - .5) * 100).toFixed(1).replace(".", ",")} point${Math.abs(c.auc - .5) >= .02 ? "s" : ""}${c.nom === M.configuration ? " · utilisée" : ""}</span></span></li>`).join("")}</ol>
       <p class="muted" style="margin:0;font-size:13px">La recette en place ne change que si une autre fait mieux de façon prouvée, jamais sur un petit écart qui pourrait venir du hasard.</p></div>`);
+  }
+  const CL = (M.ia || {}).climat;
+  if(CL && CL.precision_ia != null){   // version 33 : la couche « climat du marché » (dire « baisse » quand le marché se dégrade)
+    const p = v => `${(v * 100).toFixed(1).replace(".", ",")} %`;
+    blocs.push(`<div class="panel"><h3>Savoir dire « baisse »</h3>
+      <p style="margin:0;font-size:14px">Les marchés montent plus souvent qu'ils ne baissent, alors une IA dit facilement « hausse ». Une couche « climat du marché » (tendance de l'indice, peur des investisseurs, taux, crédit) essaie de repérer les moments où il vaut mieux dire « baisse ».</p>
+      <p style="margin:6px 0 0;font-size:14px">Sur ${CL.nb.toLocaleString("fr-FR")} cas d'années jamais vues : <b>${p(CL.precision_climat)}</b> de bonnes directions avec elle (dit « baisse » ${p(CL.baisse_climat)} du temps), contre <b>${p(CL.precision_ia)}</b> sans (« baisse » ${p(CL.baisse_ia)} du temps).</p>
+      <p class="muted" style="margin:6px 0 0;font-size:13px">${CL.adopte ? "Elle fait mieux de façon prouvée : elle est utilisée." : "Elle ne fait pas mieux de façon prouvée : elle n'est pas utilisée. Elle est retestée à chaque calcul complet."}</p></div>`);
   }
   const E = DATA.entrainement;
   if(E && E.date){
