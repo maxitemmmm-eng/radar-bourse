@@ -162,6 +162,11 @@ Le **défi pronostic** permet de parier (sans argent) contre le radar et de comp
   - un modèle du climat économique ;
   - deux combinaisons apprises.
   Une méthode n'ira sur le site que si elle fait nettement mieux sur les vrais cours.
+- **Prudence par marché, sur le site** : ton test sur les vrais cours a donné 2793 sur 5000 avec cette méthode, contre 2733 pour l'IA seule et 2763 pour « toujours hausse ».
+  - Sur un marché où l'avis des IA n'a pas fait mieux que la tendance habituelle de ce marché (sur des années jamais vues), le site publie cette tendance (« il a fini plus haut N mois sur 100 »). Il l'affiche clairement comme telle, avec l'avis brut des IA pour info.
+  - Le choix des marchés est refait chaque soir.
+  - Le test d'agitation est corrigé : les cours figés faussaient la moyenne (« 261612 % »). Il affiche maintenant l'erreur habituelle (médiane) et la part des cas où l'IA est plus proche que la méthode simple (62,5 % sur tes vrais cours).
+  - Les avertissements techniques qui encombraient la fenêtre sont masqués.
 - **Objectif 2800 sur 5000, et une IA qui ose dire « baisse »** (d'après ton test sur les vrais cours : 2766 sur 5000, mais seulement 49 % de justes sur les cryptos et environ 10 points perdus en 2018, 2022 et 2026) :
   - **Bug corrigé** : sur les versions récentes de scikit-learn, un indicateur vide sur une période (par exemple le « fear & greed », qui n'existe que depuis 2018) faisait planter les tests d'agitation et de méthodes. Il pouvait aussi faire retomber l'agitation du site sur la méthode simple sans prévenir. Ces colonnes vides sont maintenant écartées avant l'apprentissage.
   - **Le test compare maintenant 9 façons de décider**, dont :

@@ -52,6 +52,8 @@ class Analyse:
     marche_net: bool | None = None             # l'avis « mieux que son marché » est-il assez tranché pour avoir été fiable ?
     confiance: str = ""                         # faible / moyenne / forte (échelle unique, mesurée)
     avis_net: bool | None = None               # l'avis est-il assez tranché pour avoir été fiable ? (None = inconnu)
+    source_proba: str = "ia"                   # « ia » ou « marche » (prudence : tendance habituelle du marché, l'IA n'y a pas fait ses preuves)
+    proba_ia: float = float("nan")             # avis de l'IA quand la probabilité publiée est la tendance du marché
 
     def to_dict(self) -> dict:
         return propre(self.__dict__.copy())

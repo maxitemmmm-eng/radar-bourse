@@ -627,7 +627,10 @@ def _faq_titre(t, nom, date, verdict):
             + (f", soit {_pct(pf['1 mois'])} sur un mois" if pf.get("1 mois") is not None else "") + ". Cours mis à jour automatiquement plusieurs fois par jour.")]
     if p is not None:
         faq.append((f"{nom} va-t-il monter le mois prochain ?",
-                    (f"Personne ne peut le savoir avec certitude. Aujourd'hui, les deux IA de {NOM} n'ont <b>pas d'avis net</b> sur {_e(nom)} : "
+                    (f"Personne ne peut le savoir avec certitude. Sur ce marché, les IA de {NOM} n'ont pas fait mieux que sa tendance habituelle : "
+                     f"historiquement, il a fini plus haut environ {round(p * 100)} mois sur 100. Ce n'est pas une prévision."
+                     if t.get("source_proba") == "marche" else
+                     f"Personne ne peut le savoir avec certitude. Aujourd'hui, les deux IA de {NOM} n'ont <b>pas d'avis net</b> sur {_e(nom)} : "
                      f"leur chiffre brut ({round(p * 100)} sur 100) est dans une zone où, par le passé, elles n'ont pas fait mieux que le hasard."
                      if t.get("avis_net") is False else
                      f"Personne ne peut le savoir avec certitude. Pour les 20 prochaines séances, les deux IA de {NOM} voient {_e(nom)} "

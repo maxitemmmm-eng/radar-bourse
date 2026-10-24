@@ -205,6 +205,11 @@ def cmd_site(args):
             if a.avis_net is False:   # pas de « signal fort » sur un avis qui n'a pas été fiable
                 a.signal_fort = False
             a.confiance = comprendre.niveau(a.proba_hausse, a.accord_ia, marge) if a.avis_net else "faible"
+            # prudence par marché : là où l'IA n'a pas fait mieux que la tendance habituelle, on publie cette tendance
+            pr = (evaluation.avis_net.get("prudence") or {}).get("crypto" if a.ticker.endswith("-USD") else a.marche)
+            if pr and pr.get("taux_hausse") is not None and a.proba_hausse == a.proba_hausse:
+                a.proba_ia, a.proba_hausse, a.source_proba = a.proba_hausse, float(pr["taux_hausse"]), "marche"
+                a.avis_net, a.signal_fort, a.confiance = False, False, "faible"
     if correction and correction.get("active"):
         console.print(f"Correction d'après les vraies erreurs ({correction['n']} prévisions vérifiées) : {correction['raison']}")
     args._correction = correction

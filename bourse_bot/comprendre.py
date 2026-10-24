@@ -341,6 +341,25 @@ def echantillon_jeu(oof, proba, donnees, horizon, n=300, avant=120):
 # 6. « Je ne sais pas » par marché : si, sur un marché, même les avis nets n'ont pas fait mieux que
 #    « toujours la même réponse », on ne donne pas d'avis de direction sur ce marché.
 # ----------------------------------------------------------------------------
+def prudence_par_marche(oof, gain_min=0.005, nb_min=300):
+    """Version 33 (ton test sur 5000 cas : +60 bonnes réponses) : sur un marché où l'IA n'a PAS fait mieux que la
+    tendance habituelle de ce marché (sur des années jamais vues), on publie cette tendance habituelle
+    (la part des mois où ce marché a fini plus haut) au lieu de l'avis de l'IA. C'est affiché comme tel sur le site."""
+    if "marche" not in oof:
+        return {}
+    y, p, m = oof["cible"].to_numpy(), oof["proba"].to_numpy(), oof["marche"].astype(str).to_numpy()
+    out = {}
+    for nom in sorted(set(m)):
+        sel = m == nom
+        if sel.sum() < nb_min:
+            continue
+        juste = float(((p[sel] >= 0.5) == (y[sel] == 1)).mean())
+        taux = float(y[sel].mean())
+        if juste <= max(taux, 1 - taux) + gain_min:
+            out[nom] = {"precision_ia": juste, "taux_hausse": taux, "base": max(taux, 1 - taux), "nb": int(sel.sum())}
+    return out
+
+
 def marches_sans_avis(oof, marge, gain_min=0.005):
     if marge is None or "marche" not in oof:
         return {}

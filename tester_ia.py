@@ -22,8 +22,12 @@ ICI = os.path.dirname(os.path.abspath(__file__))
 os.chdir(ICI)
 sys.path.insert(0, ICI)
 
+import warnings
+
 import numpy as np
 import pandas as pd
+
+warnings.filterwarnings("ignore")   # avertissements techniques des librairies : sans importance pour le résultat
 
 from bourse_bot import config, data, main as radar, model
 
@@ -145,7 +149,7 @@ def explorer(jeu, oof, rel, masque, horizon):
 
     def repere():
         """Repère honnête : sur chaque marché, répondre ce qui arrivait le plus souvent les années d'avant."""
-        p = np.full(len(O), np.nan)
+        p = np.where(np.asarray(methodes["IA actuelle"]) >= 0.5, 0.75, 0.25)   # marché trop récent : avis normal
         marche = O["marche"].astype(str).to_numpy()
         for a in sorted(O["_d"].dt.year.unique())[1:]:
             app = (O["_d"] < pd.Timestamp(year=a, month=1, day=1) - pd.Timedelta(days=horizon * 1.5)).to_numpy()
@@ -174,7 +178,7 @@ def explorer(jeu, oof, rel, masque, horizon):
                 if acc_m <= max(hausse_m, 1 - hausse_m) + 0.005:
                     p[cib & (marche == m)] = 0.9 if hausse_m >= 0.5 else 0.1
         return p
-    methodes["IA prudente par marché (tendance habituelle là où l'IA n'a pas fait ses preuves)"] = prudence(methodes["IA actuelle"])
+    methodes["IA prudente par marché (tendance habituelle là où l'IA n'a pas fait ses preuves) ← utilisée sur le site"] = prudence(methodes["IA actuelle"])
     methodes["Combinaison apprise + prudence par marché"] = prudence(methodes["Combinaison apprise : IA + « mieux que son marché » + climat"])
     ok = test & np.isfinite(methodes["Combinaison apprise : IA + « mieux que son marché » + climat"])
     n = int(ok.sum())
@@ -333,6 +337,7 @@ def lancer(nb_cas: int, demo: bool) -> int:
         lignes += ["", f"3. L'AGITATION : test impossible cette fois ({ex})"]
     if ag is not None:
         ag = ag[np.isfinite(ag[["y", "p", "naif"]]).all(axis=1)]
+        ag = ag[ag["y"] > np.log(0.02)]   # cours figés (titre retiré de la cote) : agitation nulle, comparaison absurde
         k = min(nb_cas, len(ag))
         ag = ag.iloc[rng.choice(len(ag), size=k, replace=False)]
         e_ia = (np.exp(ag["p"] - ag["y"]) - 1).abs()
@@ -340,9 +345,10 @@ def lancer(nb_cas: int, demo: bool) -> int:
         mieux = int((e_ia < e_nf).sum())
         lo3, hi3 = model.wilson(mieux, k)
         lignes += ["", "3. L'AGITATION (de combien le prix va bouger le mois suivant, dans un sens ou dans l'autre)",
-                   f"➜ Erreur moyenne de l'IA : {pct(float(e_ia.mean()))} · méthode simple (« comme le mois dernier ») : {pct(float(e_nf.mean()))}",
-                   f"  L'IA a été plus proche de la réalité que la méthode simple {mieux} fois sur {k} ({pct(mieux / k)}, marge {pct(lo3)} à {pct(hi3)})",
-                   "  " + ("Verdict : l'IA fait mieux que la méthode simple, de façon sûre." if lo3 > .5 and e_ia.mean() < e_nf.mean() else
+                   f"➜ L'IA a été plus proche de la réalité que la méthode simple (« comme le mois dernier ») {mieux} fois sur {k} "
+                   f"({pct(mieux / k)}, marge {pct(lo3)} à {pct(hi3)})",
+                   f"  Erreur habituelle (médiane) : IA {pct(float(e_ia.median()))} · méthode simple {pct(float(e_nf.median()))}",
+                   "  " + ("Verdict : l'IA fait mieux que la méthode simple, de façon sûre." if lo3 > .5 and e_ia.median() < e_nf.median() else
                            "Verdict : pas de différence sûre avec la méthode simple.")]
     # ---------------- 4. Objectif 3000 sur 5000 : d'autres façons de décider « hausse » ou « baisse » ----------------
     print("   + recherche de meilleures méthodes pour le sens du prix…", flush=True)
