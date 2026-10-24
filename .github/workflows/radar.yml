@@ -106,7 +106,7 @@ jobs:
       url: ${{ steps.deploiement.outputs.page_url }}
     steps:
       - id: deploiement
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
       # Le soir, signale les pages mises à jour aux moteurs de recherche (Bing, Yandex…) via IndexNow
       - name: Prévenir les moteurs de recherche
