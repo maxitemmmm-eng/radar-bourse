@@ -40,10 +40,30 @@ def _naif(df):
     return np.log(df["vol_20j"].clip(lower=1e-4))
 
 
+class SansColonnesVides:
+    """Enveloppe un modèle : écarte à l'apprentissage les colonnes vides ou constantes sur la période apprise
+    (ex. un indicateur économique qui n'existait pas encore en 2014). Les versions récentes de scikit-learn
+    plantent sinon (« window shape cannot be larger than input array shape »)."""
+
+    def __init__(self, modele):
+        self.modele, self.cols = modele, None
+
+    def fit(self, X, y, **kw):
+        self.cols = [c for c in X.columns if X[c].nunique(dropna=True) > 1]
+        self.modele.fit(X[self.cols] if self.cols else X.iloc[:, :0].assign(_z=0.0), y, **kw)
+        return self
+
+    def predict(self, X):
+        return self.modele.predict(X[self.cols] if self.cols else X.iloc[:, :0].assign(_z=0.0))
+
+    def predict_proba(self, X):
+        return self.modele.predict_proba(X[self.cols] if self.cols else X.iloc[:, :0].assign(_z=0.0))
+
+
 def _modele():
     from sklearn.ensemble import HistGradientBoostingRegressor
-    return HistGradientBoostingRegressor(max_depth=3, learning_rate=0.05, max_iter=300, min_samples_leaf=300,
-                                         l2_regularization=1.0, random_state=0)
+    return SansColonnesVides(HistGradientBoostingRegressor(max_depth=3, learning_rate=0.05, max_iter=300, min_samples_leaf=300,
+                                                           l2_regularization=1.0, random_state=0))
 
 
 def _concordance(df, col_p, col_y, pas=5):

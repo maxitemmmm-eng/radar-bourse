@@ -226,7 +226,11 @@ class Climat:
         X = np.where(np.isnan(X), self.med, X)
         X = (X - self.moy) / self.ect
         pb = np.clip(np.asarray(b, float), 1e-4, 1 - 1e-4)
-        return np.column_stack([np.log(pb / (1 - pb)), X])
+        l = np.log(pb / (1 - pb))
+        # l'avis de l'IA croisé avec « est-ce une crypto ? » : la couche peut apprendre que l'IA vaut
+        # moins sur les cryptos (ton test sur 5000 cas : 49 % de justes contre 56 % pour « toujours hausse »)
+        crypto = df["est_crypto"].to_numpy(dtype=float) if "est_crypto" in df else np.zeros(len(df))
+        return np.column_stack([l, X, l * np.nan_to_num(crypto)])
 
     def fit(self, b, df, y):
         self.cols = [c for c in self.COLS if c in df and df[c].nunique(dropna=True) > 1]

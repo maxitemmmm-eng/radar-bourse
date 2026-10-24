@@ -93,7 +93,8 @@ def explorer(jeu, oof, rel, masque, horizon):
         return p
 
     lin = lambda: make_pipeline(SimpleImputer(strategy="median"), StandardScaler(), LogisticRegression(C=0.1, max_iter=500))
-    gbm = lambda: HistGradientBoostingClassifier(max_depth=3, learning_rate=0.05, max_iter=200, min_samples_leaf=500, random_state=0)
+    from bourse_bot.comprendre import SansColonnesVides
+    gbm = lambda: SansColonnesVides(HistGradientBoostingClassifier(max_depth=3, learning_rate=0.05, max_iter=200, min_samples_leaf=500, random_state=0))
     macro = [c for c in MACRO if c in O.columns and O[c].nunique(dropna=True) > 1]
     titre = [c for c in TITRE if c in O.columns and O[c].nunique(dropna=True) > 1]
     reste = O.loc[~test]
@@ -102,10 +103,79 @@ def explorer(jeu, oof, rel, masque, horizon):
     tend = O["marche_tendance"].to_numpy() if "marche_tendance" in O else np.full(len(O), np.nan)
     methodes["IA + règle de tendance (marché sous sa moyenne 200 jours = « baisse »)"] = np.where(
         np.nan_to_num(tend, nan=0) < 0, 0.0, methodes["IA actuelle"])
-    methodes["Modèle du climat du marché seul (économie, VIX, tendance)"] = walk_forward(macro, gbm)
-    methodes["Combinaison apprise : IA + « mieux que son marché » + climat"] = walk_forward(["l_ia", "l_rel"] + macro, lin)
-    methodes["Combinaison apprise par arbres : IA + marché + climat + titre"] = walk_forward(["l_ia", "l_rel"] + macro + titre, gbm)
+    erreurs = []
 
+    def essai(nom, f):
+        try:
+            methodes[nom] = f()
+        except Exception as ex:
+            erreurs.append(f"{nom} : {ex}")
+            methodes[nom] = np.full(len(O), np.nan)
+    essai("Modèle du climat du marché seul (économie, VIX, tendance)", lambda: walk_forward(macro, gbm))
+    essai("Combinaison apprise : IA + « mieux que son marché » + climat", lambda: walk_forward(["l_ia", "l_rel"] + macro, lin))
+    essai("Combinaison apprise par arbres : IA + marché + climat + titre", lambda: walk_forward(["l_ia", "l_rel"] + macro + titre, gbm))
+    # le marché en colonnes 0/1, et l'avis de l'IA croisé avec le marché : la décision peut apprendre
+    # que l'IA vaut quelque chose sur un marché et rien sur un autre (ex. les cryptos)
+    marches_presents = sorted(O["marche"].dropna().astype(str).unique())
+    croises = []
+    for m in marches_presents:
+        O[f"m_{m}"] = (O["marche"].astype(str) == m).astype(float)
+        O[f"ia_x_{m}"] = O["l_ia"] * O[f"m_{m}"]
+        croises += [f"m_{m}", f"ia_x_{m}"]
+    essai("Décision apprise par marché : IA × marché + climat", lambda: walk_forward(["l_ia", "l_rel"] + croises + macro, lin))
+
+    def seuils_par_marche():
+        """Sur les années d'avant, à partir de quelle probabilité de l'IA valait-il mieux dire « hausse » sur ce marché ?"""
+        p_cal = methodes["IA actuelle"]
+        p = np.array(p_cal, dtype=float)   # par défaut (marché trop récent) : l'avis normal de l'IA
+        marche = O["marche"].astype(str).to_numpy()
+        for a in sorted(O["_d"].dt.year.unique())[1:]:
+            app = (O["_d"] < pd.Timestamp(year=a, month=1, day=1) - pd.Timedelta(days=horizon * 1.5)).to_numpy()
+            cib = (O["_d"].dt.year == a).to_numpy()
+            for m in marches_presents:
+                am, cm = app & (marche == m), cib & (marche == m)
+                if am.sum() < 300 or not cm.any():
+                    continue
+                grille = np.unique(np.quantile(p_cal[am], np.linspace(0.02, 0.98, 49)))
+                scores = [((p_cal[am] >= g) == (y[am] == 1)).mean() for g in grille]
+                g = float(grille[int(np.argmax(scores))])
+                p[cm] = np.where(p_cal[cm] >= g, 0.75, 0.25)
+        return p
+    essai("IA avec un seuil appris pour chaque marché", seuils_par_marche)
+
+    def repere():
+        """Repère honnête : sur chaque marché, répondre ce qui arrivait le plus souvent les années d'avant."""
+        p = np.full(len(O), np.nan)
+        marche = O["marche"].astype(str).to_numpy()
+        for a in sorted(O["_d"].dt.year.unique())[1:]:
+            app = (O["_d"] < pd.Timestamp(year=a, month=1, day=1) - pd.Timedelta(days=horizon * 1.5)).to_numpy()
+            cib = (O["_d"].dt.year == a).to_numpy()
+            for m in marches_presents:
+                am, cm = app & (marche == m), cib & (marche == m)
+                if am.sum() >= 100 and cm.any():
+                    p[cm] = 0.75 if y[am].mean() >= 0.5 else 0.25
+        return p
+    essai("(Repère) répondre ce qui arrivait le plus souvent sur chaque marché", repere)
+
+    def prudence(p_base):
+        """Par marché : là où l'IA n'a pas fait mieux que « toujours la même réponse » les années d'AVANT,
+        on donne la tendance habituelle de ce marché (apprise sur ces mêmes années) au lieu de son avis."""
+        p = np.array(p_base, dtype=float)
+        marche = O["marche"].astype(str).to_numpy()
+        for a in sorted(O["_d"].dt.year.unique())[1:]:
+            app = (O["_d"] < pd.Timestamp(year=a, month=1, day=1) - pd.Timedelta(days=horizon * 1.5)).to_numpy()
+            cib = (O["_d"].dt.year == a).to_numpy()
+            for m in np.unique(marche[cib]):
+                sel = app & (marche == m) & np.isfinite(p_base)
+                if sel.sum() < 300:
+                    continue
+                hausse_m = float(y[sel].mean())
+                acc_m = float(((np.asarray(p_base)[sel] >= 0.5) == (y[sel] == 1)).mean())
+                if acc_m <= max(hausse_m, 1 - hausse_m) + 0.005:
+                    p[cib & (marche == m)] = 0.9 if hausse_m >= 0.5 else 0.1
+        return p
+    methodes["IA prudente par marché (tendance habituelle là où l'IA n'a pas fait ses preuves)"] = prudence(methodes["IA actuelle"])
+    methodes["Combinaison apprise + prudence par marché"] = prudence(methodes["Combinaison apprise : IA + « mieux que son marché » + climat"])
     ok = test & np.isfinite(methodes["Combinaison apprise : IA + « mieux que son marché » + climat"])
     n = int(ok.sum())
     if n < 500:
@@ -120,15 +190,22 @@ def explorer(jeu, oof, rel, masque, horizon):
     res = []
     for nom, p in methodes.items():
         pp = p[ok]
+        if not np.isfinite(pp).all():
+            out.append(f"   ---- sur 5000 · {nom} (n'a pas pu être testée)")
+            continue
         juste = (pp >= 0.5) == (yy == 1)
         k = int(juste.sum())
         lo, hi = model.wilson(k, n)
         part_baisse = float((pp < 0.5).mean())
         jb = float(juste[baisse_ok].mean()) if baisse_ok.any() else None
-        res.append((k / n, nom))
-        out.append(f"   {round(k / n * 5000):>4} sur 5000 · {nom}")
+        if not nom.startswith("("):
+            res.append((k / n, nom))
+        out.append(f"   {round(k / n * 5000):>4} sur 5000 · {nom}"
+                   + ("   ✅ objectif 2800 atteint" if k / n * 5000 >= 2799.5 and not nom.startswith("(") else ""))
         out.append(f"        dit « baisse » {pct(part_baisse)} du temps · marge {round(lo * 5000)} à {round(hi * 5000)}"
                    + (f" · années de baisse (2008, 2011, 2015, 2018, 2020, 2022) : {pct(jb)} justes" if jb is not None else ""))
+    if erreurs:
+        out.append("   Méthodes en erreur : " + " / ".join(erreurs))
     meilleur = max(res)
     act = res[0][0]
     out.append("")
@@ -251,8 +328,9 @@ def lancer(nb_cas: int, demo: bool) -> int:
             morceaux.append(pd.DataFrame({"y": tst["vol_futur"].to_numpy(), "p": mod.predict(tst[vs]),
                                           "naif": C._naif(tst).to_numpy()}, index=tst.index))
         ag = pd.concat(morceaux) if morceaux else None
-    except Exception:
+    except Exception as ex:
         ag = None
+        lignes += ["", f"3. L'AGITATION : test impossible cette fois ({ex})"]
     if ag is not None:
         ag = ag[np.isfinite(ag[["y", "p", "naif"]]).all(axis=1)]
         k = min(nb_cas, len(ag))

@@ -3,8 +3,8 @@
 À lancer une fois par semaine (double-clic sur campagne_google.bat, ou choix du menu). Il :
 1. vérifie les pages du site en ligne comme le ferait Google (titre, description, titre principal, page bloquée…) ;
 2. te dit où tu en es dans le plan de 8 semaines et ce qu'il reste à faire cette semaine ;
-3. ouvre directement dans Search Console les pages à faire indexer aujourd'hui (Google en accepte une dizaine
-   par jour) : tu n'as plus qu'à cliquer sur « Demander l'indexation » dans chaque onglet ;
+3. ouvre Search Console et copie pour toi, une par une, les adresses des pages à faire indexer aujourd'hui
+   (Google en accepte une dizaine par jour) : tu colles, puis tu cliques sur « Demander l'indexation » ;
 4. se souvient de ce qui a déjà été envoyé (fichier rapports/campagne.json, sur ce PC uniquement).
 
 Rien n'est payant, rien n'est publié à ton nom.
@@ -20,7 +20,7 @@ import sys
 import urllib.parse
 import urllib.request
 import webbrowser
-from datetime import date, datetime
+from datetime import date
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 os.chdir(ICI)
@@ -94,6 +94,17 @@ def sauver(e: dict):
     os.makedirs("rapports", exist_ok=True)
     with open(ETAT, "w", encoding="utf-8") as f:
         json.dump(e, f, ensure_ascii=False, indent=1)
+
+
+def copier(texte: str) -> bool:
+    """Copie le texte dans le presse-papiers (Windows, Mac ou Linux). Renvoie False si impossible."""
+    for cmd, enc in ((["clip"], "utf-16"), (["pbcopy"], "utf-8"), (["xclip", "-selection", "clipboard"], "utf-8")):
+        try:
+            subprocess.run(cmd, input=texte.encode(enc), check=True, timeout=5)
+            return True
+        except (OSError, subprocess.SubprocessError):
+            continue
+    return False
 
 
 def verifier_page(url: str) -> list[str]:
@@ -184,15 +195,24 @@ def main() -> int:
         print(f"   Pages du jour ({len(aujourd_hui)}) :")
         for u in aujourd_hui:
             print(f"   • {u}")
-        r = input("\n   Ouvrir ces pages dans Search Console ? Dans chaque onglet, clique sur « Demander l'indexation ». (o/n) ").strip().lower()
+        r = input("\n   On les envoie à Google maintenant ? (o/n) ").strip().lower()
         if r in ("o", "oui", "y", ""):
-            for u in aujourd_hui:
-                webbrowser.open_new_tab(f"https://search.google.com/search-console/inspect?resource_id={prop}&id={urllib.parse.quote(u, safe='')}")
-            fait = input("   Une fois les demandes faites, tape o pour les noter comme envoyées (sinon n) : ").strip().lower()
-            if fait in ("o", "oui", "y"):
-                for u in aujourd_hui:
+            webbrowser.open_new_tab(f"https://search.google.com/search-console?resource_id={prop}")
+            print("\n   Search Console s'ouvre dans ton navigateur (connecte-toi si besoin, avec le compte où tu as ajouté le site).")
+            print("   Pour chaque page, le programme COPIE son adresse pour toi. Ensuite, dans Search Console :")
+            print("     1. clique dans la barre tout en haut « Inspecter n'importe quelle URL »")
+            print("     2. colle avec Ctrl+V, puis Entrée")
+            print("     3. clique sur « Demander l'indexation » et attends le message « Indexation demandée »")
+            print("   (« L'URL n'est pas sur Google » est normal pour une page neuve. « Quota dépassé » : arrête et reprends demain.)\n")
+            for k, u in enumerate(aujourd_hui, 1):
+                copie = copier(u)
+                rep = input(f"   [{k}/{len(aujourd_hui)}] {'Copié' if copie else 'À copier'} : {u}\n"
+                            "         Entrée quand c'est fait · s pour sauter · q pour arrêter : ").strip().lower()
+                if rep == "q":
+                    break
+                if rep != "s":
                     deja[u] = date.today().isoformat()
-                print("   ✅ Noté. Reviens demain pour les 10 suivantes.")
+            print(f"\n   ✅ Noté. {len(a_faire) - sum(1 for u in a_faire if u in deja)} pages restent pour les prochains jours.")
     sauver(e)
     print("\n4. Rappel : Google met en général 2 à 6 mois à faire monter un site neuf. Regarde d'abord les impressions "
           "(Search Console › Performances), les clics viennent après.")

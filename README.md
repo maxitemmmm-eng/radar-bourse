@@ -155,13 +155,22 @@ Le **défi pronostic** permet de parier (sans argent) contre le radar et de comp
 - **Campagne Google** (`campagne_google.bat`, ou le menu), à lancer une fois par semaine :
   - il vérifie les pages en ligne comme Google (titre, description, titre principal, page bloquée) ;
   - il rappelle les tâches de la semaine du plan ;
-  - il ouvre dans Search Console les 10 pages à faire indexer ce jour-là et se souvient de celles déjà envoyées.
+  - il ouvre Search Console, copie une par une les adresses des 10 pages du jour (il suffit de les coller dans la barre d'inspection) et se souvient de celles déjà envoyées.
   Son premier passage a trouvé des descriptions trop longues et un titre de 106 caractères : c'est corrigé.
 - **Objectif 3000 sur 5000** : le test essaie aussi 4 autres façons de décider « hausse » ou « baisse » sur les mêmes cas, chacune apprise seulement sur les années d'avant. Il dit combien de fois chacune répond « baisse », et comment elle s'en sort les années de baisse (2008, 2011, 2015, 2018, 2020, 2022). Les 4 façons :
   - une règle de tendance du marché ;
   - un modèle du climat économique ;
   - deux combinaisons apprises.
   Une méthode n'ira sur le site que si elle fait nettement mieux sur les vrais cours.
+- **Objectif 2800 sur 5000, et une IA qui ose dire « baisse »** (d'après ton test sur les vrais cours : 2766 sur 5000, mais seulement 49 % de justes sur les cryptos et environ 10 points perdus en 2018, 2022 et 2026) :
+  - **Bug corrigé** : sur les versions récentes de scikit-learn, un indicateur vide sur une période (par exemple le « fear & greed », qui n'existe que depuis 2018) faisait planter les tests d'agitation et de méthodes. Il pouvait aussi faire retomber l'agitation du site sur la méthode simple sans prévenir. Ces colonnes vides sont maintenant écartées avant l'apprentissage.
+  - **Le test compare maintenant 9 façons de décider**, dont :
+    - une décision apprise par marché (l'avis de l'IA croisé avec le type de marché) ;
+    - un seuil appris pour chaque marché, qui laisse l'IA dire « baisse » bien plus souvent ;
+    - une « prudence » sur les marchés où l'IA n'a pas fait ses preuves ;
+    - un repère honnête, qui répond ce qui arrivait le plus souvent.
+    Chacune n'apprend que sur les années d'avant. Le test indique celles qui atteignent 2800.
+  - **Sur le site**, la couche « climat du marché » testée chaque soir peut apprendre que l'IA vaut moins sur les cryptos. Elle n'est utilisée que si elle donne plus de bonnes directions de façon prouvée.
 - **Plus de visibilité** :
   - **Classements du jour** (`classements/…`), pour les recherches très tapées : actions à fort dividende, actions les moins agitées prévues, cryptos les plus volatiles, actions qui pourraient battre leur indice, PER les plus bas. Une page « Classements » est ajoutée au menu.
   - **Flux RSS** (`flux.xml`) : le point du jour et les bilans du mois, repris par les lecteurs de flux et les agrégateurs.
