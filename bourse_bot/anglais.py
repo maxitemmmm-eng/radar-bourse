@@ -6,6 +6,7 @@ Google and read the key figures. Every page links to its French twin (hreflang t
 from __future__ import annotations
 
 import html
+import math
 import os
 
 from . import seo
@@ -24,7 +25,10 @@ def _e(s) -> str:
 def _px(v, dev):
     if v is None:
         return "–"
-    txt = f"{v:,.2f}" if abs(v) >= 1 else f"{v:.4g}"
+    if abs(v) >= 1 or v == 0:
+        txt = f"{v:,.2f}"
+    else:   # petites cryptos (SHIB, PEPE…) : 4 chiffres significatifs, jamais d'écriture « 1.2e-05 »
+        txt = f"{v:.{max(2, 3 - math.floor(math.log10(abs(v))))}f}"
     return f"{'€' if dev == '€' else '$'}{txt}"
 
 
@@ -56,10 +60,12 @@ def _page(base, titre, description, chemin, corps, csp, alternates):
 </head>
 <body><div class="w">
 <nav class="fil"><a href="{prefixe}en/index.html">{NOM} (English)</a> · <a href="{prefixe}en/index.html#all">All stocks</a> · <a href="{prefixe}index.html" hreflang="fr">Version française (interactive app)</a></nav>
+<main>
 {corps}
-<p class="avert"><b>Nothing is certain in the markets.</b> {NOM} is a free educational project. These figures are generated
+</main>
+<footer><p class="avert"><b>Nothing is certain in the markets.</b> {NOM} is a free educational project. These figures are generated
 automatically, may contain errors and are not investment advice or a recommendation to buy or sell. You can lose all the
-money you invest. Full terms of use (in French): <a href="{prefixe}index.html#conditions">conditions d'utilisation</a>.</p>
+money you invest. Full terms of use (in French): <a href="{prefixe}index.html#conditions">conditions d'utilisation</a>.</p></footer>
 </div></body></html>
 """
 
@@ -76,9 +82,10 @@ def _page_titre(base, t, horizon, date, csp, modele):
     nom, tk = t["nom"], t["ticker"]
     s = seo.slug(tk)
     chemin = f"en/stocks/{s}.html"
-    titre = f"{nom} ({tk}) forecast: one-month outlook and analysis | {NOM}"
-    desc = (f"{nom} ({tk}) on {date}: {SIGNAL_EN.get(t['signal'], 'neutral')} technical trend"
-            + (f", {sur10} in 10 chance of trading higher in a month according to the model" if sur10 is not None else "")
+    titre = f"{nom} ({seo.aff_tk(tk)}) forecast: one-month outlook and analysis | {NOM}"
+    desc = (f"{nom} ({seo.aff_tk(tk)}) on {date}: {SIGNAL_EN.get(t['signal'], 'neutral')} technical trend"
+            + (", no clear call from the AIs for the coming month" if sur10 is not None and t.get("avis_net") is False else
+               f", {sur10} in 10 chance of trading higher in a month according to the model" if sur10 is not None else "")
             + (f", central scenario {_px(med, dev)}" if med else "") + ". Free educational project, not advice.")
     perf, niv = t.get("perf", {}), t.get("niveaux") or {}
     pm = t.get("proba_marche")
@@ -93,13 +100,13 @@ def _page_titre(base, t, horizon, date, csp, modele):
         fiab = (f"<p>Measured accuracy of the model on periods it never saw: <b>{round(modele['precision'] * 100)}%</b> "
                 f"correct directions (naive baseline {round(modele['precision_base'] * 100)}%). A forecast is a probability, never a promise.</p>")
     corps = f"""
-<h1>{_e(nom)} ({_e(tk)}): forecast and analysis</h1>
+<h1>{_e(nom)} ({_e(seo.aff_tk(tk))}): forecast and analysis</h1>
 <p class="muted">Updated automatically · prices as of {_e(date)}</p>
 <div class="carte grille">
   <div class="k"><b>{_px(t['prix'], dev)}</b><span>last price</span></div>
   <div class="k"><b>{_pct(perf.get('1 mois'))}</b><span>over 1 month</span></div>
   <div class="k"><b>{round(t['score'])} / 100</b><span>technical score ({SIGNAL_EN.get(t['signal'], '')})</span></div>
-  <div class="k"><b>{f'{sur10} in 10' if sur10 is not None else '–'}</b><span>chance of being higher in {horizon} sessions</span></div>
+  <div class="k"><b>{'no clear call' if sur10 is not None and t.get("avis_net") is False else f'{sur10} in 10' if sur10 is not None else '–'}</b><span>chance of being higher in {horizon} sessions</span></div>
 </div>
 <h2>Summary</h2>
 <p>For the coming month, the radar sees {_e(nom)} <b>{verdict}</b>.

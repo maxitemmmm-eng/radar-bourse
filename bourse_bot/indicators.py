@@ -263,6 +263,15 @@ def calculer(df: pd.DataFrame, benchmark: pd.DataFrame | None = None,
     from . import connaissances
     crypto = len(d) > 0 and float((pd.DatetimeIndex(d.index).dayofweek >= 5).mean()) > 0.1
     connaissances.ajouter(d, benchmark, crypto=crypto)
+    # Momentum corrigé du risque (version 31) : la hausse rapportée à l'agitation habituelle du titre.
+    # Gagner 20 % sur un titre très calme est un signal bien plus fort que sur une crypto qui bouge de 80 % par an.
+    vol_long = c.pct_change().rolling(126, min_periods=60).std() * np.sqrt(252)
+    d["mom_ajuste_63"] = d["ret_63j"] / (vol_long * np.sqrt(63 / 252)).replace(0, np.nan)
+    d["mom_ajuste_126"] = d["ret_126j"] / (vol_long * np.sqrt(126 / 252)).replace(0, np.nan)
+
+    # Les mini-robots (stratégies classiques) : leur avis moyen devient un indicateur pour l'IA
+    from . import robots
+    robots.ajouter(d, crypto)
 
     return d.replace([np.inf, -np.inf], np.nan)
 
@@ -284,3 +293,5 @@ FEATURES = [
 # version 17 : le « manuel de Bourse » de l'IA (voir connaissances.py)
 from .connaissances import COLONNES as _COLONNES_CONNAISSANCES  # noqa: E402
 FEATURES += _COLONNES_CONNAISSANCES
+FEATURES += ["robots_consensus"]   # version 26 : l'avis moyen des mini-robots
+FEATURES += ["mom_ajuste_63", "mom_ajuste_126"]   # version 31 : momentum corrigé du risque

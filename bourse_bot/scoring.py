@@ -49,6 +49,7 @@ class Analyse:
     proba_brute: float = float("nan")          # probabilité avant la correction apprise des vraies erreurs
     risque_prevu: dict | None = None           # agitation prévue le mois prochain (vol, mouvement typique, vs habitude)
     raisons_ia: list = field(default_factory=list)  # ce qui a le plus pesé dans l'avis des IA
+    marche_net: bool | None = None             # l'avis « mieux que son marché » est-il assez tranché pour avoir été fiable ?
     confiance: str = ""                         # faible / moyenne / forte (échelle unique, mesurée)
     avis_net: bool | None = None               # l'avis est-il assez tranché pour avoir été fiable ? (None = inconnu)
 

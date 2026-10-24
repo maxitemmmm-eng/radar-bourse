@@ -26,7 +26,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import ExtraTreesClassifier, HistGradientBoostingClassifier, HistGradientBoostingRegressor
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.metrics import roc_auc_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -43,7 +43,14 @@ COLS_RANG_MANUEL = ["cx_momentum_12m", "cx_momentum_6m", "cx_retournement_1m", "
 COLS_RANG = COLS_RANG + [c for c in COLS_RANG_MANUEL if c in FEATURES]
 # Santé du marché tout entier, calculée chaque jour sur tous les titres suivis :
 # part des titres en tendance haussière (« largeur », Zweig) et écart entre gagnants et perdants (« dispersion »)
-TRANSVERSAL = ["marche_largeur", "marche_dispersion"]
+TRANSVERSAL = ["marche_largeur", "marche_dispersion", "rangm_ret_126j", "rangm_mom_ajuste_126"]
+# version 31 : nouveaux indicateurs testés dans les recettes candidates (adoptés seulement si prouvés)
+# indicateurs identiques pour tous les titres d'un même jour (économie, calendrier) : jamais « comparés entre titres »
+CONSTANTES_JOUR = {"vix", "vix_chg", "taux_chg", "dollar_chg", "fng", "courbe_taux", "petrole_chg", "cuivre_chg",
+                   "spread_credit", "spread_credit_chg", "conditions_fin", "chomage_tendance", "vix_structure",
+                   "marche_largeur", "marche_dispersion", "marche_tendance", "marche_vol", "est_crypto",
+                   "cx_saison_hiver", "cx_effet_janvier_dec_jan", "cx_cycle_halving_cycle"}
+NOUVEAUX = ["mom_ajuste_63", "mom_ajuste_126", "rangm_ret_126j", "rangm_mom_ajuste_126"]
 VARIABLES = FEATURES + ["est_crypto"] + [f"rang_{c}" for c in COLS_RANG] + TRANSVERSAL
 TRANCHES = [0.0, 0.40, 0.45, 0.50, 0.55, 0.60, 1.0]
 NOMS_TRANCHES = ["< 40 %", "40–45 %", "45–50 %", "50–55 %", "55–60 %", "> 60 %"]
@@ -138,7 +145,29 @@ class Foret:
         return self.m.predict_proba(X)[:, 1]
 
 
-ALGOS = {"ia1": Ensemble, "ia2": Foret}
+class EnsembleRang:
+    """Variante « classement » de l'IA n°1 (version 31) : au lieu d'apprendre seulement « monte / baisse »,
+    elle apprend le RANG du titre parmi tous les autres le même jour (0 = le pire, 1 = le meilleur).
+    C'est beaucoup plus d'information par exemple, et c'est ce que font les fonds quantitatifs.
+    La note obtenue est ensuite recalée en probabilité, comme les autres."""
+
+    def __init__(self, params=None):
+        P = {**PARAMS_DEFAUT, **(params or {})}
+        self.gbm = HistGradientBoostingRegressor(max_depth=int(P["profondeur"]), learning_rate=float(P["apprentissage"]),
+                                                 max_iter=int(P["iterations"]), min_samples_leaf=int(P["feuille"]),
+                                                 l2_regularization=float(P["l2"]), random_state=0)
+        self.lin = make_pipeline(SimpleImputer(strategy="median"), StandardScaler(), Ridge(alpha=1.0 / max(float(P["c_lin"]), 1e-4)))
+
+    def fit(self, X, y, poids=None):
+        self.gbm.fit(X, y, sample_weight=poids)
+        self.lin.fit(X, y, ridge__sample_weight=poids)
+        return self
+
+    def predict_proba(self, X):
+        return np.clip(0.5 * self.gbm.predict(X) + 0.5 * self.lin.predict(X), 0.001, 0.999)
+
+
+ALGOS = {"ia1": Ensemble, "ia2": Foret, "rang": EnsembleRang}
 
 
 class Comite:
@@ -337,6 +366,11 @@ def ajouter_transversal(df: pd.DataFrame, par_date: bool = True) -> pd.DataFrame
     grp = df.groupby(level=0) if par_date else None
     for c in COLS_RANG:
         df[f"rang_{c}"] = grp[c].rank(pct=True) if par_date else df[c].rank(pct=True)
+    # rang à l'intérieur de sa famille (actions entre elles, cryptos entre elles)
+    for c in ("ret_126j", "mom_ajuste_126"):
+        if c in df:
+            df[f"rangm_{c}"] = (df.groupby([df.index, df["est_crypto"]])[c].rank(pct=True) if par_date
+                                else df.groupby("est_crypto")[c].rank(pct=True))
     haut = (df["dist_sma200"] > 0).astype(float).where(df["dist_sma200"].notna())
     if par_date:
         df["marche_largeur"] = haut.groupby(level=0).transform("mean")
@@ -365,20 +399,37 @@ def construire_jeu(donnees: dict[str, pd.DataFrame], marches: dict[str, str], ho
         if ref != ticker and ref in futurs:
             ecart = futur - futurs[ref].reindex(futur.index)
             m["cible_rel"] = np.where(ecart.isna(), np.nan, (ecart > 0).astype(float))
+            m["ecart_futur"] = ecart
         else:
             m["cible_rel"] = np.nan
+            m["ecart_futur"] = np.nan
         m["ticker"] = ticker
         m["marche"] = marches.get(ticker, "?")
         morceaux.append(m.iloc[252:])
     jeu = pd.concat(morceaux).sort_index()
+    # rang du rendement futur parmi tous les titres du même jour (cible des IA « classement »)
+    jeu["rang_futur"] = jeu.groupby(level=0)["rendement_futur"].rank(pct=True)
     return _ajouter_rangs(jeu)
 
 
 VARIABLES_BASE = FEATURES[:21] + ["est_crypto"] + [f"rang_{c}" for c in COLS_RANG]
+# jeu plus sobre proposé à l'IA n°2 (sur les vrais cours, « tous les indicateurs » faisait moins bien que la base)
+VARIABLES_IA2_SOBRE = VARIABLES_BASE + [v for v in NOUVEAUX + ["vix", "vix_structure", "marche_largeur", "robots_consensus"]
+                                        if v in VARIABLES]
+_ECONOMIE = ["vix", "vix_chg", "taux_chg", "dollar_chg", "courbe_taux", "spread_credit", "conditions_fin", "vix_structure",
+             "marche_largeur", "marche_dispersion"]
 CONFIGS = [   # (nom, variables, un modèle par marché ?, réglages)
     ("Un seul modèle, tous les indicateurs", VARIABLES, False, {}),
     ("Un seul modèle, indicateurs de base", VARIABLES_BASE, False, {}),
     ("Un modèle par marché (actions / cryptos)", VARIABLES, True, {}),
+    # version 27 : variantes autour de la meilleure recette réelle (indicateurs de base), adoptées seulement si prouvées
+    ("Indicateurs de base + avis des mini-robots", VARIABLES_BASE + ["robots_consensus"], False, {}),
+    ("Indicateurs de base + économie", VARIABLES_BASE + [v for v in _ECONOMIE if v in VARIABLES], False, {}),
+    # version 31 : apprendre à classer les titres, et une IA par ambiance de marché (calme / nerveux)
+    ("Classement des titres, indicateurs de base", VARIABLES_BASE, False, {"cible": "rang"}),
+    ("Classement des titres, indicateurs de base + nouveaux", VARIABLES_BASE + [v for v in NOUVEAUX if v in VARIABLES], False, {"cible": "rang"}),
+    ("Une IA par ambiance (calme / nerveux), indicateurs de base", VARIABLES_BASE + ["vix"], False, {"groupes": "ambiance"}),
+    ("Indicateurs de base comparés entre titres du même jour", VARIABLES_BASE, False, {"rangs_jour": True}),
 ]
 NOM_RECETTE = "Recette de l'entraînement approfondi"
 
@@ -427,6 +478,33 @@ class Predicteur:
         age = (dates.max() - dates).days.to_numpy() / 365.25
         return np.power(0.5, age / float(dv))
 
+    def _comparer_jour(self, df):
+        """Option « comparer les titres entre eux » (version 32) : chaque indicateur propre au titre est remplacé
+        par sa place parmi les titres du même jour (0 = le plus bas, 1 = le plus haut). L'IA ne voit plus
+        « RSI = 71 » mais « RSI parmi les plus hauts du jour » : ça marche pareil en marché calme ou agité."""
+        if not self.params.get("rangs_jour"):
+            return df
+        cols = [v for v in self.variables if v in df.columns and v not in CONSTANTES_JOUR
+                and not v.startswith(("rang_", "rangm_"))]
+        if not cols:
+            return df
+        out = df.copy()
+        cle = [pd.Index(df.index).rename("_d"), df["est_crypto"].to_numpy() if "est_crypto" in df else np.zeros(len(df))]
+        out[cols] = df[cols].groupby(cle).rank(pct=True).to_numpy()
+        return out
+
+    def _zone_morte(self, df):
+        """Option « ignorer les petits mouvements » (version 32) : à l'entraînement seulement, on retire les cas où
+        le titre a fini presque pareil que les autres. Ces cas-là sont du bruit : « monte » ou « baisse » s'y joue
+        à pile ou face, et ils brouillent l'apprentissage. La part retirée est réglable (ex. 0,3 = les 30 % les plus plats)."""
+        z = float(self.params.get("zone_morte") or 0)
+        if not z or "rendement_futur" not in df or len(df) < 5000:
+            return df
+        ecart = (df["rendement_futur"] - df.groupby(level=0)["rendement_futur"].transform("median")).abs()
+        place = ecart.groupby(level=0).rank(pct=True)
+        garde = df[(place >= z).to_numpy() | ecart.isna().to_numpy()]
+        return garde if garde["cible"].nunique() == 2 else df
+
     def fit(self, df):
         membres = self.params.get("membres")
         if membres:   # comité de plusieurs recettes : on fait la moyenne de leurs avis
@@ -434,21 +512,37 @@ class Predicteur:
                                     dict(m.get("params") or {})).fit(df) for m in membres]
             self.vars_commun = sorted({v for p in self.sous for v in p.vars_commun})
             return self
+        df = self._zone_morte(self._comparer_jour(df))
         self.vars_commun = self._utiles(df, self.variables)
-        self.commun = ALGOS[self.algo](self.params).fit(df[self.vars_commun], df["cible"], self._poids(df))
-        if self.par_marche:
-            for g, sous in df.groupby("est_crypto"):
+        algo, col = self._algo_cible(df)
+        self.commun = ALGOS[algo](self.params).fit(df[self.vars_commun], df[col], self._poids(df))
+        if self.par_marche or self.params.get("groupes") == "ambiance":
+            for g, sous in df.groupby(self._groupe(df)):
                 if len(sous) >= 3000 and sous["cible"].nunique() == 2:
                     vs = self._utiles(sous, self.variables)
-                    self.groupes[g] = (vs, ALGOS[self.algo](self.params).fit(sous[vs], sous["cible"], self._poids(sous)))
+                    self.groupes[g] = (vs, ALGOS[algo](self.params).fit(sous[vs], sous[col], self._poids(sous)))
         return self
+
+    def _algo_cible(self, df):
+        """IA « classement » : on apprend le rang du rendement futur (seulement pour l'IA n°1)."""
+        if self.params.get("cible") == "rang" and self.algo == "ia1" and "rang_futur" in df:
+            return "rang", "rang_futur"
+        return self.algo, "cible"
+
+    def _groupe(self, df):
+        """Une IA par marché (actions / cryptos), ou par ambiance (marché calme / nerveux, version 31)."""
+        if self.params.get("groupes") == "ambiance":
+            vix = df["vix"] if "vix" in df else pd.Series(np.nan, index=df.index)
+            return np.where(vix.to_numpy() >= 22, 1.0, 0.0)
+        return df["est_crypto"].to_numpy()
 
     def predict_proba(self, df):
         if getattr(self, "sous", None):
             return np.mean([p.predict_proba(df) for p in self.sous], axis=0)
+        df = self._comparer_jour(df)
         p = self.commun.predict_proba(df[self.vars_commun])
         if self.groupes:
-            g = df["est_crypto"].to_numpy()
+            g = self._groupe(df)
             for cle, (vs, mod) in self.groupes.items():
                 masque = g == cle
                 if masque.any():
@@ -606,21 +700,42 @@ def fiabilite_fourchettes(jeu, horizon, variables, n_plis=6):
 # ----------------------------------------------------------------------------
 # Modèle « fera mieux que son marché ? »
 # ----------------------------------------------------------------------------
-def evaluer_relatif(jeu, horizon, variables, par_marche):
+def _jeu_relatif(jeu, classement=False):
     rel = jeu.dropna(subset=["cible_rel"]).copy()
+    rel["cible"] = rel["cible_rel"]
+    if classement and "ecart_futur" in rel:   # rang de l'écart avec son marché, parmi les titres du jour
+        rel["rang_futur"] = rel.groupby(level=0)["ecart_futur"].rank(pct=True)
+    return rel
+
+
+def evaluer_relatif(jeu, horizon, variables, par_marche):
+    rel = _jeu_relatif(jeu)
     if len(rel) < 5000:
         return {}, None
-    rel["cible"] = rel["cible_rel"]
     oof = predictions_hors_echantillon(rel, horizon, variables, par_marche)
     if oof is None or oof["cible"].nunique() < 2 or len(oof) < 2000:
         return {}, None
+    # version 31 : candidate « classement » (apprend le rang de l'écart au marché), gardée seulement si elle fait mieux
+    methode = "classique"
+    try:
+        oof_c = predictions_hors_echantillon(_jeu_relatif(jeu, True), horizon, variables, par_marche, params={"cible": "rang"})
+        if (oof_c is not None and len(oof_c) == len(oof)
+                and _auc(oof_c["cible"].to_numpy(), oof_c["proba"].to_numpy()) > _auc(oof["cible"].to_numpy(), oof["proba"].to_numpy()) + 0.002):
+            oof, methode = oof_c, "classement"
+    except Exception:
+        pass
     calib = CalibrationPlatt().fit(oof["proba"], oof["cible"])
     oof["proba"] = calib.predict(oof["proba"])
     p, y = oof["proba"].to_numpy(), oof["cible"].to_numpy()
     boot = bootstrap_mois(oof, lambda d: np.array([_auc(d["cible"].to_numpy(), d["proba"].to_numpy()),
                                                    _precision(d["cible"].to_numpy(), d["proba"].to_numpy())]), graine=3)
     confiants = p >= 0.55
-    return {"auc": _auc(y, p), "precision": _precision(y, p),
+    try:
+        from . import comprendre as _c
+        net = _c.seuil_avis_net(pd.DataFrame({"cible": y, "proba": p}, index=oof.index))
+    except Exception:
+        net = {}
+    return {"methode": methode, "avis_net": net, "auc": _auc(y, p), "precision": _precision(y, p),
             "precision_base": float(max(y.mean(), 1 - y.mean())), "nb": int(len(y)),
             "ic_auc": _ic(boot[:, 0]) if len(boot) else None, "ic_precision": _ic(boot[:, 1]) if len(boot) else None,
             "precision_confiants": float(y[confiants].mean()) if confiants.sum() >= 30 else None,
@@ -721,6 +836,15 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
         # L'IA n°2 connaît TOUTES les techniques (tous les indicateurs, l'économie et tout le manuel de Bourse),
         # quelle que soit la sélection de l'IA n°1 : deux points de vue différents qui se complètent.
         oof2 = predictions_hors_echantillon(jeu_eval, horizon, VARIABLES, par_marche, algos=("ia2",))
+        # version 31 : l'IA n°2 essaie aussi un jeu d'indicateurs plus sobre ; on garde le meilleur des deux
+        vars_ia2 = "toutes"
+        try:
+            oof2b = predictions_hors_echantillon(jeu_eval, horizon, VARIABLES_IA2_SOBRE, par_marche, algos=("ia2",))
+            if (oof2 is not None and oof2b is not None and len(oof2b) == len(oof2)
+                    and _auc(oof2b["cible"].to_numpy(), oof2b["proba"].to_numpy()) > _auc(oof2["cible"].to_numpy(), oof2["proba"].to_numpy()) + 0.002):
+                oof2, vars_ia2 = oof2b, "sobre"
+        except Exception:
+            pass
         calibs = {"ia1": None, "ia2": None, "final": None, "relatif": None, "comite": None}
         mode = "ia1"
         ia = {}
@@ -756,7 +880,7 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
         evaluation.configuration = nom
         evaluation.comparaison = [{"nom": n, "auc": a} for a, n, *_ in resultats]
         evaluation.champion = champion
-        evaluation.ia = {**ia, "mode": mode}
+        evaluation.ia = {**ia, "mode": mode, "variables_ia2": vars_ia2}
         if "accord" in oof:
             pf = calibs["final"].predict(oof["proba"]) if calibs["final"] else oof["proba"]
             y = oof["cible"].to_numpy()
@@ -786,6 +910,8 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
             if "accord" in oof:
                 d_niv["accord"] = oof["accord"].to_numpy()
             evaluation.avis_net["niveaux"] = comprendre.niveaux_confiance(d_niv, evaluation.avis_net.get("marge"))
+            d_niv["marche"] = oof["marche"].to_numpy()
+            evaluation.avis_net["marches_sans_avis"] = comprendre.marches_sans_avis(d_niv, evaluation.avis_net.get("marge"))
             # jeu « Remonte le temps » : moments du passé jamais vus par l'IA, tirés au hasard
             # (renouvelé une fois par semaine seulement, pour ne pas alourdir l'historique GitHub)
             f_jeu = os.path.join(config.DOSSIER_HISTORIQUE, "jeu_temps.json")
@@ -816,22 +942,61 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
     return probas, evaluation
 
 
+DOSSIER_MODELES = ".cache_modeles"
+
+
+def _cle_modeles(variables, par_marche, params, mode, calibs, evaluation):
+    """Les IA ne sont réentraînées qu'une fois par jour (ou quand la méthode change) : dans la journée,
+    les mises à jour horaires réutilisent les IA du matin avec les cours de l'heure. Gain : plusieurs minutes."""
+    import hashlib
+    sig = json.dumps([sorted(variables), bool(par_marche), params or {}, mode, sorted(k for k, v in calibs.items() if v is not None),
+                      getattr(evaluation, "date_evaluation", ""), datetime.now().strftime("%Y-%m-%d"),
+                      bool((evaluation.risque or {}).get("prouve")), sorted(VARIABLES)], sort_keys=True, default=str)
+    return hashlib.sha256(sig.encode()).hexdigest()[:20]
+
+
+def _lire_modeles(cle):
+    import pickle
+    try:
+        with open(os.path.join(DOSSIER_MODELES, "modeles.pkl"), "rb") as f:
+            m = pickle.load(f)
+        return m if m.get("cle") == cle else None
+    except Exception:
+        return None
+
+
+def _sauver_modeles(m):
+    import pickle
+    try:
+        os.makedirs(DOSSIER_MODELES, exist_ok=True)
+        with open(os.path.join(DOSSIER_MODELES, "modeles.pkl"), "wb") as f:
+            pickle.dump(m, f, protocol=pickle.HIGHEST_PROTOCOL)
+    except Exception:
+        pass
+
+
 def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, evaluation, params=None):
     etiquete = jeu.dropna(subset=["cible"])
-    ia1 = Predicteur(variables, par_marche, "ia1", params).fit(etiquete)
-    ia2 = Predicteur(VARIABLES, par_marche, "ia2").fit(etiquete) if calibs.get("ia2") is not None else None
-    try:
-        vs_q, mods_q = _modeles_quantiles(etiquete, variables)
-    except Exception:
-        vs_q, mods_q = None, None
-    modele_rel = None
-    if calibs.get("relatif") is not None:
+    cle = _cle_modeles(variables, par_marche, params, mode, calibs, evaluation)
+    cache = _lire_modeles(cle)
+    if cache:
+        ia1, ia2, vs_q, mods_q, modele_rel = cache["ia1"], cache["ia2"], cache["vs_q"], cache["mods_q"], cache["rel"]
+    else:
+        ia1 = Predicteur(variables, par_marche, "ia1", params).fit(etiquete)
+        v2 = VARIABLES_IA2_SOBRE if (evaluation.ia or {}).get("variables_ia2") == "sobre" else VARIABLES
+        ia2 = Predicteur(v2, par_marche, "ia2").fit(etiquete) if calibs.get("ia2") is not None else None
         try:
-            rel = jeu.dropna(subset=["cible_rel"]).copy()
-            rel["cible"] = rel["cible_rel"]
-            modele_rel = Predicteur(variables, par_marche).fit(rel)
+            vs_q, mods_q = _modeles_quantiles(etiquete, variables)
         except Exception:
-            modele_rel = None
+            vs_q, mods_q = None, None
+        modele_rel = None
+        if calibs.get("relatif") is not None:
+            try:
+                classement = (evaluation.relatif or {}).get("methode") == "classement"
+                modele_rel = Predicteur(variables, par_marche, params={"cible": "rang"} if classement else None).fit(
+                    _jeu_relatif(jeu, classement))
+            except Exception:
+                modele_rel = None
 
     # dernière ligne de chaque titre, classements recalculés entre ces dernières lignes
     dernieres = []
@@ -857,16 +1022,19 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
 
     final, p1, p2 = decision(actuel)
     try:   # les raisons de chaque avis
-        evaluation.explications = comprendre.expliquer(
-            lambda df: decision(df)[0], actuel, comprendre.references(etiquete, actuel.columns), garde)
+        refs = cache["refs"] if cache and cache.get("refs") else comprendre.references(etiquete, actuel.columns)
+        evaluation.explications = comprendre.expliquer(lambda df: decision(df)[0], actuel, refs, garde)
     except Exception:
         evaluation.explications = {}
     try:   # l'agitation prévue pour le mois prochain (IA seulement si elle bat la méthode naïve de façon prouvée)
-        evaluation.risque_titres = comprendre.predire_risque(
+        evaluation.risque_titres, mod_risque = comprendre.predire_risque(
             jeu, actuel, donnees, config.HORIZON_PREDICTION, VARIABLES_BASE,
-            utiliser_ia=bool((evaluation.risque or {}).get("prouve")))
+            utiliser_ia=bool((evaluation.risque or {}).get("prouve")), mod=(cache or {}).get("risque"))
     except Exception:
-        evaluation.risque_titres = {}
+        evaluation.risque_titres, mod_risque = {}, None
+    if not cache:
+        _sauver_modeles({"cle": cle, "ia1": ia1, "ia2": ia2, "vs_q": vs_q, "mods_q": mods_q, "rel": modele_rel,
+                         "risque": mod_risque, "refs": locals().get("refs")})
     if p2 is not None:
         c1, c2 = calibs["ia1"].predict(p1), calibs["ia2"].predict(p2)
         evaluation.proba_ia1 = {t: float(v) for t, v, g in zip(tks, c1, garde) if g}

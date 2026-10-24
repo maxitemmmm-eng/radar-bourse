@@ -13,6 +13,7 @@ import os
 import sys
 import webbrowser
 from pathlib import Path
+import pandas as pd
 
 # Console Windows : forcer l'UTF-8 pour éviter les plantages sur les accents et emojis
 for flux in (sys.stdout, sys.stderr):
@@ -24,7 +25,7 @@ for flux in (sys.stdout, sys.stderr):
 from rich.console import Console
 from rich.table import Table
 
-from . import comprendre, alertes, backtest, config, data, fondamentaux, historique, qualite, seo, indicators, model, news, report, scoring, site
+from . import comprendre, robots, alertes, backtest, config, data, fondamentaux, historique, qualite, seo, indicators, model, news, report, scoring, site
 
 console = Console()
 COULEUR = {"ACHAT FORT": "bold green", "ACHAT": "green", "NEUTRE": "white",
@@ -79,6 +80,14 @@ def _preparer(noms: dict[str, str], marche_de: dict[str, str]):
             ignores.append(t)
             continue
         type_marche = "crypto" if t.endswith("-USD") else marche_de[t]
+        # cours figés (titre retiré de la cote, crypto abandonnée) : on ne publie pas de prévision dessus
+        if not data.DEMO:
+            dernier = pd.Timestamp(brut.index[-1])
+            dernier = dernier.tz_localize(None) if dernier.tzinfo else dernier
+            age = (pd.Timestamp.now().normalize() - dernier.normalize()).days
+            if age > (4 if type_marche == "crypto" else 8):
+                ignores.append(f"{t} (cours figés depuis {age} j)")
+                continue
         bench = bruts.get(config.BENCHMARK.get(type_marche, "SPY"))
         # le sentiment « Fear & Greed » ne concerne que les cryptos
         ctx = contexte if type_marche == "crypto" else {k: v for k, v in contexte.items() if k != "fng"}
@@ -187,9 +196,15 @@ def cmd_site(args):
         if a.proba_hausse == a.proba_hausse and evaluation is not None and evaluation.avis_net:
             # « je ne sais pas » : en dessous de la marge prouvée, l'avis n'a pas été plus juste que le hasard
             a.avis_net = bool(marge is not None and abs(a.proba_hausse - 0.5) >= marge)
+            # marché où même les avis nets n'ont pas fait mieux que « toujours la même réponse » (ex. cryptos)
+            if ("crypto" if a.ticker.endswith("-USD") else a.marche) in (evaluation.avis_net.get("marches_sans_avis") or {}):
+                a.avis_net = False
+            rn = ((evaluation.relatif or {}).get("avis_net") or {}).get("marge")
+            if a.proba_marche == a.proba_marche and "avis_net" in (evaluation.relatif or {}):
+                a.marche_net = bool(rn is not None and abs(a.proba_marche - 0.5) >= rn)
             if a.avis_net is False:   # pas de « signal fort » sur un avis qui n'a pas été fiable
                 a.signal_fort = False
-            a.confiance = comprendre.niveau(a.proba_hausse, a.accord_ia, marge)
+            a.confiance = comprendre.niveau(a.proba_hausse, a.accord_ia, marge) if a.avis_net else "faible"
     if correction and correction.get("active"):
         console.print(f"Correction d'après les vraies erreurs ({correction['n']} prévisions vérifiées) : {correction['raison']}")
     args._correction = correction
@@ -213,6 +228,10 @@ def cmd_site(args):
             console.print(f"[yellow]Fondamentaux indisponibles cette fois : {e}[/yellow]")
     if not args.demo:
         historique.enregistrer(analyses)
+        try:
+            historique.noter_actus(analyses)
+        except Exception:
+            pass
     suivi = historique.bilan(bruts if not args.demo else {})
 
     _afficher_eval(evaluation)
@@ -228,6 +247,13 @@ def cmd_site(args):
     payload = site.construire(analyses, donnees, evaluation, suivi, bruts, demo=args.demo,
                               actus_marche=actus_marche, qualite=controle)
     payload["correction_erreurs"] = getattr(args, "_correction", None)
+    try:   # les mini-robots : palmarès sur tout l'historique et signaux du jour
+        bot = robots.bilan(donnees, {a.ticker: a.marche for a in analyses}, config.HORIZON_PREDICTION)
+        payload["robots"] = bot["robots"]
+        for t in payload["titres"]:
+            t["robots"] = bot["votes"].get(t["ticker"], {})
+    except Exception as e:
+        console.print(f"[yellow]Mini-robots indisponibles cette fois : {e}[/yellow]")
     if not args.demo and os.environ.get("RADAR_SELECTION") == "1":
         seo.archiver_point(payload)   # le point du jour est archivé chaque soir
     chemin = site.ecrire(payload)

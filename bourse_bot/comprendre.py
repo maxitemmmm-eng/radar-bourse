@@ -92,17 +92,21 @@ def evaluer_risque(jeu, horizon, variables_base, n_plis=5):
             "ic_gain": ic, "prouve": bool(ic and ic[0] > 0), "variables": vs}
 
 
-def predire_risque(jeu, actuel, tous, horizon, variables_base, utiliser_ia=True):
+def predire_risque(jeu, actuel, tous, horizon, variables_base, utiliser_ia=True, mod=None):
     """{ticker: {"vol": vol annualisée prévue, "mouvement": mouvement typique sur l'horizon,
     "habitude": rapport à son agitation habituelle, "source": "ia" ou "naif"}}"""
-    et = jeu.dropna(subset=["vol_futur", "vol_20j"])
-    et = et[np.isfinite(et["vol_futur"])]
-    vs = _variables_risque(et, variables_base)
-    if utiliser_ia and len(et) > 3000:
-        mod = _modele().fit(et[vs], et["vol_futur"])
-        lp, source = mod.predict(actuel[vs]), "ia"
+    if mod is not None and utiliser_ia:   # modèle du matin réutilisé (mises à jour horaires)
+        modele, vs = mod
+        lp, source = modele.predict(actuel[vs]), "ia"
+    elif utiliser_ia and len(jeu) > 3000:
+        et = jeu.dropna(subset=["vol_futur", "vol_20j"])
+        et = et[np.isfinite(et["vol_futur"])]
+        vs = _variables_risque(et, variables_base)
+        modele = _modele().fit(et[vs], et["vol_futur"])
+        mod = (modele, vs)
+        lp, source = modele.predict(actuel[vs]), "ia"
     else:
-        lp, source = _naif(actuel).to_numpy(), "naif"
+        lp, source, mod = _naif(actuel).to_numpy(), "naif", None
     out = {}
     for t, l in zip(actuel["ticker"], lp):
         if not np.isfinite(l) or t not in tous:
@@ -113,7 +117,7 @@ def predire_risque(jeu, actuel, tous, horizon, variables_base, utiliser_ia=True)
         out[t] = {"vol": vol, "mouvement": float(vol / np.sqrt(ANNEE) * np.sqrt(horizon)),
                   "habitude": float(vol / hist.median()) if len(hist) > 60 and hist.median() > 0 else None,
                   "source": source}
-    return out
+    return out, mod
 
 
 # ----------------------------------------------------------------------------
@@ -310,4 +314,24 @@ def echantillon_jeu(oof, proba, donnees, horizon, n=300, avant=120):
                     "r": round(float(ligne["r"]), 4), "s": [round(float(v), 2) for v in serie], "a": avant})
         if len(out) >= n:
             break
+    return out
+
+
+# ----------------------------------------------------------------------------
+# 6. « Je ne sais pas » par marché : si, sur un marché, même les avis nets n'ont pas fait mieux que
+#    « toujours la même réponse », on ne donne pas d'avis de direction sur ce marché.
+# ----------------------------------------------------------------------------
+def marches_sans_avis(oof, marge, gain_min=0.005):
+    if marge is None or "marche" not in oof:
+        return {}
+    y, p, m = oof["cible"].to_numpy(), oof["proba"].to_numpy(), oof["marche"].to_numpy()
+    out = {}
+    for nom in sorted(set(m)):
+        sel = (m == nom) & (np.abs(p - 0.5) >= marge)
+        if sel.sum() < 300:
+            continue
+        juste = float(((p[sel] > 0.5) == (y[sel] == 1)).mean())
+        base = float(max(y[sel].mean(), 1 - y[sel].mean()))
+        if juste - base < gain_min:
+            out[str(nom)] = {"precision": juste, "base": base, "nb": int(sel.sum())}
     return out

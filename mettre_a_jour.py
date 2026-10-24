@@ -1,6 +1,6 @@
 """Mise à jour en un clic.
 
-1. Télécharge le nouveau radar_bourse.zip (il arrive en général dans « Téléchargements »).
+1. Télécharge le nouveau radar_bourse_mise_a_jour.zip (il arrive en général dans « Téléchargements »).
 2. Double-clique sur mettre_a_jour.bat, dans ton dossier Radar Bourse habituel.
 
 Le script trouve le zip le plus récent, remplace le code de ton dossier par la nouvelle version
@@ -34,7 +34,7 @@ def trouver_zip():
              os.path.dirname(ICI)]
     zips = []
     for lieu in lieux:
-        zips += glob.glob(os.path.join(lieu, "radar_bourse*.zip"))
+        zips += glob.glob(os.path.join(lieu, "*radar_bourse*.zip"))
     zips = [z for z in set(zips) if os.path.isfile(z) and "_installe_" not in os.path.basename(z)]
     return max(zips, key=os.path.getmtime) if zips else None
 
@@ -78,7 +78,7 @@ def main():
         return 1
     z = trouver_zip()
     if not z:
-        dire("Aucun fichier radar_bourse.zip trouvé dans Téléchargements, sur le Bureau ou dans ce dossier.")
+        dire("Aucun fichier radar_bourse_mise_a_jour.zip trouvé dans Téléchargements, sur le Bureau ou dans ce dossier.")
         dire("Télécharge d'abord la nouvelle version, puis relance ce fichier.")
         return 1
     quand = datetime.fromtimestamp(os.path.getmtime(z)).strftime("%d/%m/%Y à %H:%M")

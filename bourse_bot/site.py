@@ -179,6 +179,11 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
         x = d.iloc[-1]
         item["au_dessus_200"] = bool(x["Close"] > x["sma200"]) if x["sma200"] == x["sma200"] else None
         item["indice_nom"] = config.NOM_BENCHMARK.get(a.indice_ref, a.indice_ref)
+        # quelques chiffres d'entreprise gardés dans la page légère (filtre de recherche) ; le détail reste dans la fiche
+        fv = ((a.fondamentaux or {}).get("valeurs") or {}) if getattr(a, "fondamentaux", None) else {}
+        item["div"] = _arrondi(fv.get("dividendYield")) if fv.get("dividendYield") is not None else None
+        item["per"] = _arrondi(fv.get("trailingPE")) if fv.get("trailingPE") is not None else None
+        item["secteur"] = (a.fondamentaux or {}).get("secteur") or None if getattr(a, "fondamentaux", None) else None
         item["perf_an"] = _arrondi(float(d["Close"].iloc[-1] / d["Close"].iloc[-min(len(d), 253)] - 1)) if len(d) > 200 else None
         titres.append(item)
 

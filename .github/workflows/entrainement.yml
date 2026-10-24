@@ -1,0 +1,76 @@
+# L'IA continue d'apprendre toute seule, chaque nuit, sans que tu aies rien à faire.
+# - Chaque nuit : entraînement « rapide » (recherche guidée par la mémoire de tous les essais passés).
+# - Le dimanche : entraînement « normal », plus long, avec l'examen des crises et des horizons.
+# Une nouvelle recette n'est adoptée que si elle fait mieux de façon prouvée sur des années jamais vues ;
+# sinon l'IA en place est confirmée, et la mémoire des essais grandit quand même pour guider les nuits suivantes.
+name: Entraînement automatique de l'IA
+
+on:
+  schedule:
+    - cron: "40 2 * * *"        # chaque nuit à 2 h 40 UTC (marchés fermés)
+  workflow_dispatch:            # bouton « Run workflow » pour le lancer à la main
+
+permissions: {}
+
+# même file d'attente que la mise à jour du site : jamais deux calculs en même temps
+concurrency:
+  group: radar
+  cancel-in-progress: false
+
+jobs:
+  apprendre:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    permissions:
+      contents: write   # enregistrer les connaissances de l'IA
+      actions: write    # relancer la mise à jour du site si l'IA a progressé
+    env:
+      PYTHONUTF8: "1"
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+
+      - uses: actions/cache@v4
+        with:
+          path: .cache_entrainement
+          key: entrainement-${{ github.run_id }}
+          restore-keys: entrainement-
+
+      - name: Entraîner l'IA
+        id: entrainement
+        run: |
+          set -o pipefail
+          DUREE=rapide
+          if [ "$(date -u +%u)" = "7" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then DUREE=normal; fi
+          echo "Durée choisie : $DUREE"
+          python entrainement_ia.py --console --auto --duree "$DUREE" | tee journal_entrainement.txt
+          echo "change=$(grep -o 'AUTO_CHANGE=[01]' journal_entrainement.txt | tail -1 | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+
+      - name: Enregistrer ce que l'IA a appris
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          python -m bourse_bot.savoir
+          git add historique/modele.json historique/essais_ia.json
+          [ -f historique/apprentissage.json ] && git add historique/apprentissage.json
+          git commit -m "Entraînement automatique du $(date +%F)" || exit 0
+          for essai in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            sleep 10
+          done
+          exit 1
+
+      - name: Mettre le site à jour si l'IA a progressé
+        if: steps.entrainement.outputs.change == '1'
+        run: gh workflow run radar.yml --ref main

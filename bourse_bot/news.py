@@ -159,11 +159,15 @@ def tonalite_moyenne(items: list[dict]) -> float:
 def enrichir(analyses, progres=None) -> list[dict]:
     """Ajoute actus + tonalité à chaque analyse. Renvoie les actus générales du marché."""
     for a in analyses:
-        a.actus = actus(a.ticker)
+        appel = []
+        if data.DEMO:
+            a.actus = actus(a.ticker)
+        else:   # cache de 2 h : avec beaucoup de titres, on reste poli avec les API gratuites
+            a.actus = data.cache_json("actus", a.ticker, 2, lambda: appel.append(1) or actus(a.ticker))
         a.tonalite = tonalite_moyenne(a.actus)
         if progres:
             progres()
-        if not data.DEMO:
+        if appel:
             time.sleep(0.25)  # politesse envers les API gratuites
     marche = []
     for t in ("SPY", "^FCHI", "BTC-USD"):

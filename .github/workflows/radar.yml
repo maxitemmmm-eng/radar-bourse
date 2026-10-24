@@ -57,9 +57,12 @@ jobs:
         run: pip install -r requirements.txt
 
       # Le cache des cours sert de secours si Yahoo ne répond pas pour certains titres
+      # Le cache garde aussi les IA entraînées du jour : les mises à jour horaires vont ainsi 2 à 3 fois plus vite
       - uses: actions/cache@v4
         with:
-          path: .cache_cours
+          path: |
+            .cache_cours
+            .cache_modeles
           key: cours-${{ github.run_id }}
           restore-keys: cours-
 
@@ -76,10 +79,13 @@ jobs:
         run: |
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
+          # ne jamais effacer ce que l'IA a appris ailleurs (entraînement sur le PC ou entraînement automatique)
+          python -m bourse_bot.savoir local
           git add historique/
           git commit -m "Prédictions du $(date +%F)" || exit 0
           for essai in 1 2 3; do
             git pull --rebase -X theirs origin main && git push && exit 0
+            git rebase --abort 2>/dev/null || true
             sleep 10
           done
 

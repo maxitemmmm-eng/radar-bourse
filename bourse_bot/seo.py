@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import html
+import math
 import json
 import os
 import re
@@ -88,6 +89,11 @@ def slug(ticker: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", ticker.lower()).strip("-") or "titre"
 
 
+def aff_tk(tk: str) -> str:
+    """TON11419-USD → TON-USD : on cache le numéro interne de Yahoo."""
+    return re.sub(r"\d+(-USD)$", r"\1", str(tk))
+
+
 def _e(s) -> str:
     return html.escape(str(s or ""), quote=True)
 
@@ -95,7 +101,10 @@ def _e(s) -> str:
 def _px(v, dev):
     if v is None:
         return "–"
-    txt = f"{v:,.2f}" if abs(v) >= 1 else f"{v:.4g}"
+    if abs(v) >= 1 or v == 0:
+        txt = f"{v:,.2f}"
+    else:   # petites cryptos (SHIB, PEPE…) : 4 chiffres significatifs, jamais d'écriture « 1.2e-05 »
+        txt = f"{v:.{max(2, 3 - math.floor(math.log10(abs(v))))}f}"
     return txt.replace(",", "\u202f").replace(".", ",") + f" {dev}"
 
 
@@ -163,7 +172,7 @@ def csp_avec_stats(csp: str) -> str:
                .replace("connect-src 'self'", f"connect-src 'self' {hote}"))
 
 
-def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternates=None):
+def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternates=None, image="partage.png"):
     prefixe = "../" * chemin.count("/")
     csp = csp_avec_stats(csp)
     return f"""<!doctype html>
@@ -173,22 +182,24 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 {f'<meta http-equiv="Content-Security-Policy" content="{csp}">' if csp else ''}
 <title>{_e(titre)}</title>
-{balises_tete(base, titre, description, chemin, jsonld=jsonld, alternates=alternates)}
+{balises_tete(base, titre, description, chemin, image=image, jsonld=jsonld, alternates=alternates)}
 <link rel="icon" href="{prefixe}icone-192.png">
 {script_stats()}
 <style>{CSS_PAGE}</style>
 </head>
 <body><div class="w">
-<nav class="fil"><a href="{prefixe}index.html">{NOM}</a> · <a href="{prefixe}point.html">Le point du jour</a> · <a href="{prefixe}resultats.html">Résultats réels</a> · <a href="{prefixe}connaissances.html">Ce que sait l'IA</a> · <a href="{prefixe}apprendre.html">Apprendre</a> · <a href="{prefixe}titres.html">Tous les titres</a> · <a href="{prefixe}glossaire.html">Glossaire</a> · <a href="{prefixe}en/index.html" hreflang="en">English</a></nav>
+<nav class="fil"><a href="{prefixe}index.html">{NOM}</a> · <a href="{prefixe}point.html">Le point du jour</a> · <a href="{prefixe}resultats.html">Résultats réels</a> · <a href="{prefixe}connaissances.html">Ce que sait l'IA</a> · <a href="{prefixe}apprendre.html">Apprendre</a> · <a href="{prefixe}titres.html">Tous les titres</a> · <a href="{prefixe}comparer.html">Comparer</a> · <a href="{prefixe}previsions.html">Prévisions {datetime.now().year}</a> · <a href="{prefixe}robots.html">Les mini-robots</a> · <a href="{prefixe}glossaire.html">Glossaire</a> · <a href="{prefixe}en/index.html" hreflang="en">English</a></nav>
+<main>
 {corps}
-<p class="avert"><b>Rien n'est sûr en Bourse.</b> {NOM} est un projet éducatif : ces informations sont générées automatiquement,
+</main>
+<footer><p class="avert"><b>Rien n'est sûr en Bourse.</b> {NOM} est un projet éducatif : ces informations sont générées automatiquement,
 peuvent contenir des erreurs et ne constituent pas un conseil en investissement. Tu peux perdre tout l'argent investi.
-Conditions d'utilisation, méthodologie et aide : voir la <a href="{prefixe}index.html#conditions">page d'accueil</a>.</p>
+Conditions d'utilisation, méthodologie et aide : voir la <a href="{prefixe}index.html#conditions">page d'accueil</a>.</p></footer>
 </div></body></html>
 """
 
 
-def _page_titre(base, t, horizon, date, csp, modele):
+def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     dev, prix, p = t["devise"], t["prix"], t.get("proba_hausse")
     cone, f = t.get("cone"), t.get("fourchette") or []
     med = cone["mediane"][-1] if cone else None
@@ -205,9 +216,30 @@ def _page_titre(base, t, horizon, date, csp, modele):
     pourquoi = "".join(f"<li><b>{_e(r['famille'])}</b> : pousse vers la {'hausse' if r['effet'] > 0 else 'baisse'}"
                        + (f" ({_e(r['etat'])})" if r.get("etat") else "") + "</li>" for r in (t.get("raisons_ia") or []))
     nom, tk = t["nom"], t["ticker"]
-    titre = f"{nom} ({tk}) : cours, analyse et prévision à un mois | {NOM}"
-    desc = (f"{nom} ({tk}) au {date} : tendance {LIB_SIGNAL.get(t['signal'], 'neutre')}, "
-            + (f"{sur10} chances sur 10 d'être plus haut dans un mois selon le modèle, " if sur10 is not None else "")
+    marche = t.get("marche", "")
+    hub = MARCHES.get(marche)
+    # Performances (contenu propre à chaque titre)
+    pf = t.get("perf") or {}
+    perfs = "".join(f"<tr><td>{lib}</td><td class='m'>{_pct(pf.get(k))}</td></tr>" for k, lib in (
+        ("1 semaine", "1 semaine"), ("1 mois", "1 mois"), ("3 mois", "3 mois"), ("6 mois", "6 mois"), ("1 an", "1 an")) if pf.get(k) is not None)
+    if pf.get("volatilité annuelle") is not None:
+        perfs += f"<tr><td>Volatilité annuelle</td><td class='m'>{_pct(pf['volatilité annuelle'], 0).replace('+', '')}</td></tr>"
+    # Profil de l'entreprise (actions seulement)
+    fd = t.get("fondamentaux") or {}
+    profil = _profil(fd) if fd.get("valeurs") else ""
+    # Palmarès réel sur ce titre
+    pt = (((suivi or {}).get("detail") or {}).get("par_titre") or {}).get(tk)
+    palmares = (f"<p>Depuis le début du suivi, sur <b>{pt[0]}</b> prévisions vérifiées un mois plus tard pour {_e(nom)}, "
+                f"les IA ont vu juste <b>{pt[1]} fois</b> ({round(pt[1] / pt[0] * 100)} %).</p>") if pt and pt[0] >= 5 else ""
+    titre = f"{nom} ({aff_tk(tk)}) : cours, analyse et prévision à un mois | {NOM}"
+    faq = _faq_titre(t, nom, date, verdict)
+    duels_html = ("<h2>Comparer</h2><ul class='liste'>" + "".join(
+        f"<li><a href='../{_chemin_duel(*((t, o) if (t['ticker'], o['ticker']) in DUELS else (o, t)))}'>{_e(nom)} ou {_e(o['nom'])}</a></li>"
+        for o in t.get("_duels") or []) + "</ul>") if t.get("_duels") else ""
+    similaires = "".join(f"<li><a href='{slug(v['ticker'])}.html'>{_e(v['nom'])}</a></li>" for v in voisins)
+    desc = (f"{nom} ({aff_tk(tk)}) au {date} : tendance {LIB_SIGNAL.get(t['signal'], 'neutre')}, "
+            + ("pas d'avis net des IA sur le mois qui vient, " if sur10 is not None and t.get("avis_net") is False else
+               f"{sur10} chances sur 10 d'être plus haut dans un mois selon le modèle, " if sur10 is not None else "")
             + (f"scénario central {_px(med, dev)}. " if med else "")
             + "Graphique, niveaux clés et actualités. Projet éducatif, pas un conseil.")
     chemin = f"titres/{slug(tk)}.html"
@@ -226,14 +258,16 @@ def _page_titre(base, t, horizon, date, csp, modele):
         fiab = (f"<p>Fiabilité mesurée du modèle sur des périodes jamais vues : "
                 f"<b>{round(modele['precision']*100)} %</b> de bonnes directions (référence naïve "
                 f"{round(modele['precision_base']*100)} %). Une prévision reste une probabilité.</p>")
-    corps = f"""
-<h1>{_e(nom)} ({_e(tk)}) : cours, analyse et prévision</h1>
+    fil = (f"<p class='muted' style='font-size:14px'><a href='../titres.html'>Tous les titres</a>"
+           + (f" › <a href='../marches/{hub[0]}.html'>{_e(hub[1])}</a>" if hub else "") + f" › {_e(nom)}</p>")
+    corps = f"""{fil}
+<h1>{_e(nom)} ({_e(aff_tk(tk))}) : cours, analyse et prévision</h1>
 <p class="muted">Mise à jour automatique · cours au {_e(date)}</p>
 <div class="carte grille">
   <div class="k"><b>{_px(prix, dev)}</b><span>dernier cours</span></div>
   <div class="k"><b>{_pct(perf.get('1 mois'))}</b><span>sur 1 mois</span></div>
   <div class="k"><b>{round(t['score'])} / 100</b><span>score technique ({LIB_SIGNAL.get(t['signal'], '')})</span></div>
-  <div class="k"><b>{f'{sur10} sur 10' if sur10 is not None else '–'}</b><span>chances d'être plus haut dans {horizon} séances</span></div>
+  <div class="k"><b>{'pas d’avis net' if sur10 is not None and t.get("avis_net") is False else f'{sur10} sur 10' if sur10 is not None else '–'}</b><span>chances d'être plus haut dans {horizon} séances</span></div>
 </div>
 <h2>En résumé</h2>
 <p>Pour le mois qui vient, le radar voit {_e(nom)} <b>{verdict}</b>.
@@ -248,14 +282,355 @@ def _page_titre(base, t, horizon, date, csp, modele):
 {f"<h2>Ce que montrent les indicateurs</h2><ul>{raisons}</ul>" if raisons else ""}
 {f"<h2>Niveaux à surveiller</h2><div class='carte'><table>{niveaux}</table></div>" if niveaux else ""}
 {f"<h2>Dernières actualités</h2><ul>{actus}</ul>" if actus else ""}
-<h2>Fiabilité</h2>{fiab or "<p>Prévision statistique : elle se trompe souvent.</p>"}
+{f"<h2>Performances passées</h2><div class='carte'><table>{perfs}</table></div>" if perfs else ""}
+{profil}
+<h2>Fiabilité</h2>{palmares}{fiab or "<p>Prévision statistique : elle se trompe souvent.</p>"}
+{f"<h2>Questions fréquentes sur {_e(nom)}</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{r}</p>" for q, r in faq) if faq else ""}
+{f"<h2>Autres titres du même marché</h2><ul class='liste'>{similaires}</ul>" if similaires else ""}
+{duels_html}
 """
     jsonld = {"@context": "https://schema.org", "@type": "WebPage", "name": titre, "description": desc,
               "inLanguage": "fr-FR", "dateModified": datetime.now().isoformat(timespec="seconds"),
               "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None},
-              "about": {"@type": "Thing", "name": f"{nom} ({tk})"}}
+              "about": {"@type": "Thing", "name": f"{nom} ({aff_tk(tk)})"}}
+    graphe = [jsonld, _jsonld_fil(base, [("Tous les titres", "titres.html")] + ([(hub[1], f"marches/{hub[0]}.html")] if hub else [])
+                                  + [(nom, chemin)])]
+    if faq:
+        graphe.append({"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {
+            "@type": "Answer", "text": re.sub(r"<[^>]+>", "", r)}} for q, r in faq]})
+    jsonld = {"@context": "https://schema.org", "@graph": [{k: v for k, v in g.items() if k != "@context"} for g in graphe]}
+    img = f"partage/{slug(tk)}.png" if t.get("_image_ok") else "partage.png"
     return chemin, _page(base, titre, desc, chemin, corps, jsonld, csp,
-                         alternates={"fr": chemin, "en": f"en/stocks/{slug(tk)}.html", "x-default": chemin})
+                         alternates={"fr": chemin, "en": f"en/stocks/{slug(tk)}.html", "x-default": chemin}, image=img)
+
+
+# Comparaisons que les gens tapent vraiment sur Google (« or ou bitcoin », « LVMH ou Hermès »…)
+DUELS = [("BTC-USD", "ETH-USD"), ("GLD", "BTC-USD"), ("CW8.PA", "SPY"), ("SPY", "QQQ"), ("^FCHI", "SPY"),
+         ("ETH-USD", "SOL-USD"), ("BTC-USD", "SOL-USD"), ("XRP-USD", "ADA-USD"), ("DOGE-USD", "SHIB-USD"),
+         ("SOL-USD", "AVAX-USD"), ("BNB-USD", "SOL-USD"), ("BTC-USD", "LTC-USD"),
+         ("AAPL", "MSFT"), ("NVDA", "AMD"), ("GOOGL", "META"), ("AMZN", "GOOGL"), ("AMD", "INTC"),
+         ("V", "JPM"), ("NFLX", "DIS"), ("TSLA", "NVDA"), ("NVDA", "AVGO"), ("NVDA", "SMH"),
+         ("MC.PA", "RMS.PA"), ("MC.PA", "KER.PA"), ("OR.PA", "EL.PA"), ("BNP.PA", "GLE.PA"),
+         ("AIR.PA", "SAF.PA"), ("TTE.PA", "XLE"), ("ASML.AS", "NVDA"), ("SAP.DE", "MSFT"), ("RACE.MI", "TSLA"),
+         # version 33
+         ("KO", "PEP"), ("V", "MA"), ("JPM", "BAC"), ("COIN", "MSTR"), ("MSTR", "BTC-USD"), ("WMT", "COST"),
+         ("RNO.PA", "STLAP.PA"), ("HO.PA", "AM.PA"), ("BNP.PA", "ACA.PA"), ("ENGI.PA", "TTE.PA"), ("ORA.PA", "EN.PA"),
+         ("STMPA.PA", "SOI.PA"), ("RHM.DE", "HO.PA"), ("BRK-B", "SPY"), ("MCD", "SBUX"), ("BA", "AIR.PA")]
+
+
+def _duels_dispos(titres):
+    par = {t["ticker"]: t for t in titres}
+    return [(par[a], par[b]) for a, b in DUELS if a in par and b in par]
+
+
+def _chemin_duel(a, b):
+    return f"comparer/{slug(a['ticker'])}-ou-{slug(b['ticker'])}.html"
+
+
+def _page_duel(base, a, b, date, csp):
+    """« X ou Y ? » : les deux titres côte à côte, avec les chiffres du jour. On compare, on ne conseille pas."""
+    na, nb = a["nom"], b["nom"]
+    chemin = _chemin_duel(a, b)
+    def avis(t):
+        p = t.get("proba_hausse")
+        if p is None:
+            return "–"
+        return "pas d'avis net" if t.get("avis_net") is False else f"{round(p * 100)} chances sur 100 de hausse"
+    def face(t):
+        pm = t.get("proba_marche")
+        if pm is None:
+            return "–"
+        return ("pas d'avis net" if t.get("marche_net") is False else f"{round(pm * 100)} sur 100") + f" (vs {_e(t.get('indice_nom') or 'son marché')})"
+    agit = lambda t: f"±{round((t.get('risque_prevu') or {})['mouvement'] * 100)} %" if (t.get("risque_prevu") or {}).get("mouvement") else "–"
+    perf = lambda t, k: _pct((t.get("perf") or {}).get(k)) if (t.get("perf") or {}).get(k) is not None else "–"
+    vol = lambda t: _taux((t.get("perf") or {}).get("volatilité annuelle"))
+    lignes = [("Cours", _px(a.get("prix"), a.get("devise", "")), _px(b.get("prix"), b.get("devise", ""))),
+              ("Sur un mois", perf(a, "1 mois"), perf(b, "1 mois")),
+              ("Sur 6 mois", perf(a, "6 mois"), perf(b, "6 mois")),
+              ("Volatilité annuelle", vol(a), vol(b)),
+              ("Agitation prévue le mois prochain", agit(a), agit(b)),
+              ("Avis des IA sur le sens du prix", avis(a), avis(b)),
+              ("Chances de faire mieux que son marché", face(a), face(b)),
+              ("Niveau de risque", _e(a.get("risque") or "–"), _e(b.get("risque") or "–"))]
+    fva, fvb = (a.get("fondamentaux") or {}).get("valeurs") or {}, (b.get("fondamentaux") or {}).get("valeurs") or {}
+    nb2 = lambda v: f"{v:.1f}".replace(".", ",") if isinstance(v, (int, float)) else "–"
+    if fva.get("trailingPE") or fvb.get("trailingPE"):
+        lignes.append(("PER (12 derniers mois)", nb2(fva.get("trailingPE")), nb2(fvb.get("trailingPE"))))
+    if fva.get("dividendYield") is not None or fvb.get("dividendYield") is not None:
+        lignes.append(("Rendement du dividende", nb2(fva.get("dividendYield")) + (" %" if fva.get("dividendYield") is not None else ""),
+                       nb2(fvb.get("dividendYield")) + (" %" if fvb.get("dividendYield") is not None else "")))
+    tableau = ("<div class='carte' style='overflow-x:auto'><table><tr><td></td>"
+               f"<td><b><a href='../titres/{slug(a['ticker'])}.html'>{_e(na)}</a></b></td><td><b><a href='../titres/{slug(b['ticker'])}.html'>{_e(nb)}</a></b></td></tr>"
+               + "".join(f"<tr><td>{l}</td><td class='m'>{x}</td><td class='m'>{y}</td></tr>" for l, x, y in lignes) + "</table></div>")
+    phrases = []
+    va, vb = (a.get("perf") or {}).get("volatilité annuelle"), (b.get("perf") or {}).get("volatilité annuelle")
+    if va and vb:
+        plus = na if va > vb else nb
+        phrases.append(f"<b>{_e(plus)}</b> bouge le plus : sa volatilité annuelle est {max(va, vb) / min(va, vb):.1f} fois celle de l'autre.".replace(".", ",", 1)
+                       if max(va, vb) / min(va, vb) >= 1.15 else "Les deux bougent à peu près autant.")
+    sa, sb = (a.get("perf") or {}).get("6 mois"), (b.get("perf") or {}).get("6 mois")
+    if sa is not None and sb is not None:
+        phrases.append(f"Sur six mois, <b>{_e(na if sa > sb else nb)}</b> a fait mieux ({_pct(max(sa, sb))} contre {_pct(min(sa, sb))}). "
+                       "Le passé ne dit rien de sûr sur la suite.")
+    ma, mb = (a.get("risque_prevu") or {}).get("mouvement"), (b.get("risque_prevu") or {}).get("mouvement")
+    if ma and mb:
+        phrases.append(f"Pour le mois qui vient, les IA prévoient plus d'agitation pour <b>{_e(na if ma > mb else nb)}</b>. "
+                       "C'est ce qu'elles prévoient le mieux.")
+    faq = [(f"{na} ou {nb} : lequel acheter ?",
+            "Le radar ne dit pas quoi acheter : il compare les chiffres du jour et ses prévisions, qui se trompent souvent. "
+            "Le bon choix dépend de ton objectif, de ta durée et du risque que tu acceptes."),
+           (f"Lequel est le plus risqué entre {na} et {nb} ?",
+            (f"Aujourd'hui, {_e(na if va > vb else nb)} est le plus volatil des deux ({_taux(max(va, vb))} par an contre {_taux(min(va, vb))})."
+             if va and vb else "Les données de volatilité ne sont pas disponibles aujourd'hui."))]
+    corps = (f"<p class='muted'><a href='../comparer.html'>Toutes les comparaisons</a></p>"
+             f"<h1>{_e(na)} ou {_e(nb)} : la comparaison du {_e(date)}</h1>"
+             "<p class='muted'>Les deux titres côte à côte : cours, risque et ce que prévoient les IA du radar. "
+             "Mis à jour automatiquement. Une comparaison, pas un conseil.</p>"
+             + tableau + ("<h2>En bref</h2><ul>" + "".join(f"<li>{p}</li>" for p in phrases) + "</ul>" if phrases else "")
+             + "<h2>Questions fréquentes</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{r}</p>" for q, r in faq)
+             + f"<p><a class='btn' href='../titres/{slug(a['ticker'])}.html'>Fiche {_e(na)}</a> "
+             f"<a class='btn' href='../titres/{slug(b['ticker'])}.html'>Fiche {_e(nb)}</a></p>"
+             "<p class='muted'>Projet éducatif. Tu peux perdre tout l'argent investi.</p>")
+    titre = f"{na} ou {nb} : comparaison du cours, du risque et des prévisions | {NOM}"
+    desc = f"{na} ou {nb} ? Cours, performance, volatilité, agitation prévue et avis des IA côte à côte, mis à jour chaque jour. Gratuit, pas un conseil."
+    jsonld = {"@context": "https://schema.org", "@graph": [
+        {"@type": "WebPage", "name": f"{na} ou {nb}", "inLanguage": "fr-FR"},
+        {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": re.sub(r"<[^>]+>", "", r)}} for q, r in faq]}]}
+    return chemin, _page(base, titre, desc, chemin, corps, jsonld, csp)
+
+
+def _page_previsions(base, payload, dossier, csp, date):
+    an = datetime.now().year
+    annees = f"{an}" if datetime.now().month < 9 else f"{an} et {an + 1}"
+    groupes = {"fr": "Actions françaises", "eu": "Actions européennes", "us": "Actions américaines",
+               "crypto": "Cryptomonnaies", "etf": "ETF et indices"}
+    corps = (f"<h1>Prévisions Bourse et crypto {annees} : ce qu'on peut vraiment prévoir</h1>"
+             "<p>Beaucoup de sites affichent un prix précis pour le Bitcoin ou Nvidia en fin d'année, voire en 2030. "
+             "Ces chiffres prolongent une tendance passée : aucun n'a prouvé qu'il faisait mieux que le hasard. "
+             f"{NOM} fait autrement : ses deux IA prévoient seulement <b>le mois qui vient</b>, et chaque prévision est "
+             "<a href='resultats.html'>vérifiée publiquement</a>, ratés compris.</p>"
+             "<p>Ce que les IA prévoient le mieux, c'est <b>l'agitation</b> : de combien un prix risque de bouger. "
+             "Deviner s'il va monter est beaucoup plus dur, et elles le disent quand elles n'ont pas d'avis net. "
+             "La dernière colonne n'est pas une prévision : c'est l'écart que le prix parcourt souvent en un an (environ 2 chances sur 3), "
+             "calculé à partir de sa volatilité. Elle mesure le risque.</p>")
+    for cle, lib in groupes.items():
+        sel = [t for t in payload.get("titres", []) if t.get("marche") == cle and t.get("prix")]
+        if not sel:
+            continue
+        sel.sort(key=lambda t: t["nom"].lower())
+        lignes = []
+        for t in sel:
+            rq, p = t.get("risque_prevu") or {}, t.get("proba_hausse")
+            vol = (t.get("perf") or {}).get("volatilité annuelle")
+            avis = "–" if p is None else ("pas d'avis net" if t.get("avis_net") is False else f"{round(p * 100)} sur 100")
+            an_txt = (f"{_px(t['prix'] * math.exp(-vol), t['devise'])} à {_px(t['prix'] * math.exp(vol), t['devise'])}" if vol else "–")
+            lignes.append(f"<tr><td><a href='titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a></td><td class='m'>{_px(t['prix'], t['devise'])}</td>"
+                          f"<td class='m'>{'±' + str(round(rq['mouvement'] * 100)) + ' %' if rq.get('mouvement') else '–'}</td>"
+                          f"<td class='m'>{avis}</td><td class='m'>{an_txt}</td></tr>")
+        corps += (f"<h2>{lib}</h2><div class='carte' style='overflow-x:auto'><table><tr><td><b>Titre</b></td><td><b>Cours</b></td>"
+                  "<td><b>Agitation prévue (1 mois)</b></td><td><b>Chances de hausse (1 mois)</b></td><td><b>Écart habituel sur un an</b></td></tr>"
+                  + "".join(lignes) + "</table></div>")
+    corps += (f"<p class='muted'>Chiffres du {_e(date)}, mis à jour automatiquement. Projet éducatif, pas un conseil en investissement : "
+              "tu peux perdre tout l'argent investi.</p>")
+    faq = [(f"Peut-on prévoir le cours du Bitcoin en {an + 1} ?",
+            "Pas de façon fiable. Les prix « prévus » pour l'année prochaine ou 2030 qu'on trouve en ligne ne sont pas vérifiés. "
+            f"{NOM} ne prévoit qu'à un mois et publie son taux de réussite réel."),
+           ("Quelle est la meilleure action pour les mois qui viennent ?",
+            "Personne ne le sait à l'avance. Le radar montre les chances calculées par ses IA et leur fiabilité mesurée, "
+            "mais elles se trompent souvent : c'est un outil pour comprendre, pas une liste d'achats.")]
+    jsonld = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": r}} for q, r in faq]}
+    corps += "<h2>Questions fréquentes</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{_e(r)}</p>" for q, r in faq)
+    titre = f"Prévisions Bourse et crypto {annees} : actions, Bitcoin, ce qu'on peut vraiment prévoir | {NOM}"
+    desc = (f"Prévisions {annees} pour les actions et cryptos : agitation prévue et chances de hausse à un mois par deux IA, vérifiées publiquement, "
+            "et écart habituel sur un an. Honnête et gratuit.")
+    with open(os.path.join(dossier, "previsions.html"), "w", encoding="utf-8") as f:
+        f.write(_page(base, titre, desc, "previsions.html", corps, jsonld, csp))
+
+
+MARCHES = {
+    "fr": ("actions-francaises", "Actions françaises", "Prévisions à un mois des grandes actions françaises (CAC 40)",
+           "Les grandes entreprises cotées à Paris : LVMH, TotalEnergies, Airbus, L'Oréal… Leur indice de référence est le CAC 40."),
+    "eu": ("actions-europeennes", "Actions européennes", "Prévisions à un mois des grandes actions européennes",
+           "Les géants européens hors France : SAP, ASML, Siemens, Ferrari… Leur indice de référence est l'Euro Stoxx 50."),
+    "us": ("actions-americaines", "Actions américaines", "Prévisions à un mois des actions américaines (Apple, Nvidia…)",
+           "Les grandes entreprises de Wall Street : Apple, Microsoft, Nvidia, Amazon… Leur indice de référence est le S&P 500."),
+    "crypto": ("cryptomonnaies", "Cryptomonnaies", "Prévisions à un mois des cryptomonnaies (Bitcoin, Ethereum…)",
+               "Bitcoin, Ethereum, Solana et les autres grandes cryptos, cotées 7 jours sur 7. Elles bougent beaucoup plus que les actions."),
+    "etf": ("etf-et-indices", "ETF et indices", "Prévisions à un mois des ETF et grands indices boursiers",
+            "Les fonds indiciels (ETF) et les grands indices : une façon de suivre tout un marché ou un thème d'un coup."),
+}
+
+
+def _jsonld_fil(base, etapes):
+    return {"@type": "BreadcrumbList", "itemListElement": [
+        {"@type": "ListItem", "position": i + 1, "name": n, "item": (base + c) if base else None} for i, (n, c) in enumerate(etapes)]}
+
+
+def _profil(fd):
+    """Carte d'identité de l'entreprise, en phrases et en chiffres."""
+    v, dev = fd.get("valeurs") or {}, fd.get("devise", "")
+
+    def montant(x):
+        for seuil, unite in ((1e12, "000 Md"), (1e9, "Md"), (1e6, "M")):
+            if abs(x) >= seuil:
+                n = x / (1e9 if unite == "000 Md" else seuil)
+                return f"{n:,.0f}".replace(",", " ") + f" Md {dev}" if unite == "000 Md" else f"{n:,.1f}".replace(",", " ").replace(".", ",") + f" {unite} {dev}"
+        return f"{x:,.0f}".replace(",", " ") + f" {dev}"
+    lignes = []
+    for k, lib, f in (("marketCap", "Capitalisation boursière", montant), ("trailingPE", "PER (12 derniers mois)", lambda x: f"{x:.1f}".replace(".", ",")),
+                      ("forwardPE", "PER attendu", lambda x: f"{x:.1f}".replace(".", ",")),
+                      ("revenueGrowth", "Croissance du chiffre d'affaires", lambda x: _pct(x)),
+                      ("profitMargins", "Marge nette", lambda x: f"{x * 100:.1f} %".replace(".", ",")),
+                      ("returnOnEquity", "Rentabilité des capitaux (ROE)", lambda x: f"{x * 100:.1f} %".replace(".", ",")),
+                      ("debtToEquity", "Dette / capitaux propres", lambda x: f"{x:.0f} %"),
+                      ("dividendYield", "Rendement du dividende", lambda x: f"{x:.2f} %".replace(".", ",")),
+                      ("freeCashflow", "Trésorerie disponible (free cash-flow)", montant)):
+        x = v.get(k)
+        if isinstance(x, (int, float)) and x == x:
+            lignes.append(f"<tr><td>{lib}</td><td class='m'>{f(x)}</td></tr>")
+    if not lignes:
+        return ""
+    secteur = fd.get("secteur")
+    intro = f"<p>Secteur : <b>{_e(secteur)}</b>.</p>" if secteur else ""
+    return (f"<h2>L'entreprise en chiffres</h2>{intro}<div class='carte'><table>{''.join(lignes)}</table></div>"
+            "<p class='muted' style='font-size:14px'>Données publiques des derniers comptes. Le PER indique combien le marché paie "
+            "chaque euro de bénéfice ; une dette au-dessus de 200 % des capitaux propres est élevée.</p>")
+
+
+def _faq_titre(t, nom, date, verdict):
+    """Questions que les gens tapent vraiment sur Google, avec des réponses honnêtes tirées des chiffres du jour."""
+    dev, p, pf = t["devise"], t.get("proba_hausse"), t.get("perf") or {}
+    rq = t.get("risque_prevu") or {}
+    faq = [(f"Quel est le cours de {nom} aujourd'hui ?",
+            f"Au {_e(date)}, {_e(nom)} cote <b>{_px(t['prix'], dev)}</b>"
+            + (f", soit {_pct(pf['1 mois'])} sur un mois" if pf.get("1 mois") is not None else "") + ". Cours mis à jour automatiquement plusieurs fois par jour.")]
+    if p is not None:
+        faq.append((f"{nom} va-t-il monter le mois prochain ?",
+                    (f"Personne ne peut le savoir avec certitude. Aujourd'hui, les deux IA de {NOM} n'ont <b>pas d'avis net</b> sur {_e(nom)} : "
+                     f"leur chiffre brut ({round(p * 100)} sur 100) est dans une zone où, par le passé, elles n'ont pas fait mieux que le hasard."
+                     if t.get("avis_net") is False else
+                     f"Personne ne peut le savoir avec certitude. Pour les 20 prochaines séances, les deux IA de {NOM} voient {_e(nom)} "
+                     f"<b>{verdict}</b>, avec {round(p * 100)} chances sur 100 d'être plus haut dans un mois. "
+                     "Ces chances sont mesurées sur des années que les IA n'avaient jamais vues, et elles se trompent souvent.")))
+    if t.get("proba_marche") is not None:
+        pm, ind = t["proba_marche"], t.get("indice_nom") or "son marché"
+        faq.append((f"{nom} va-t-il faire mieux que {ind} ?",
+                    (f"Les IA n'ont pas d'avis net sur ce point aujourd'hui ({round(pm * 100)} chances sur 100). "
+                     if t.get("marche_net") is False else
+                     f"Les IA donnent <b>{round(pm * 100)} chances sur 100</b> que {_e(nom)} fasse mieux que {_e(ind)} d'ici un mois. ")
+                    + "Cette comparaison reste utile même quand tout le marché baisse : certains titres baissent moins que les autres."))
+    # « prévision X 2026 » : une des recherches les plus tapées. Réponse honnête : à un an, personne ne sait ;
+    # on donne la prévision à un mois (testée) et l'écart HABITUEL sur un an, tiré de la volatilité (statistique, pas une prévision).
+    an = datetime.now().year
+    annees = f"{an}" if datetime.now().month < 9 else f"{an} et {an + 1}"
+    vol = pf.get("volatilité annuelle")
+    if vol:
+        px0 = t.get("prix")
+        bas, haut = (px0 * math.exp(-vol), px0 * math.exp(vol)) if px0 else (None, None)
+        faq.append((f"Quelle est la prévision pour {nom} en {annees} ?",
+                    "Personne ne peut prévoir sérieusement le cours d'une action ou d'une crypto à un an : les sites qui donnent un prix précis pour "
+                    f"{an + 1} ou 2030 prolongent une tendance, sans preuve que ça marche. {NOM} ne prévoit qu'à un mois, et affiche son taux de réussite réel. "
+                    + (f"Pour se faire une idée de l'incertitude : avec sa volatilité actuelle ({_taux(vol)} par an), le prix de {_e(nom)} "
+                       f"finit souvent une année entre <b>{_px(bas, dev)}</b> et <b>{_px(haut, dev)}</b> (environ 2 chances sur 3), "
+                       "et il peut sortir de cet écart. C'est une mesure du risque, pas une prévision." if bas else "")))
+    fv = (t.get("fondamentaux") or {}).get("valeurs") or {}
+    dy, per = fv.get("dividendYield"), fv.get("trailingPE")
+    if dy is not None:
+        faq.append((f"Quel est le dividende de {nom} ?",
+                    (f"Le rendement du dividende de {_e(nom)} est d'environ <b>{dy:.2f} %</b> par an au cours actuel".replace(".", ",", 1)
+                     + " (source : Yahoo Finance). Un dividende peut baisser ou être supprimé ; il n'est jamais garanti."
+                     if dy > 0.05 else f"{_e(nom)} ne verse pas de dividende significatif actuellement (source : Yahoo Finance).")))
+    if per is not None and per > 0:
+        faq.append((f"Quel est le PER de {nom} ?",
+                    f"Le PER de {_e(nom)} sur les 12 derniers mois est d'environ <b>{per:.1f}</b>".replace(".", ",", 1)
+                    + " : le marché paie environ " + f"{per:.0f}" + " fois le bénéfice annuel par action. "
+                    "Un PER élevé veut dire que le marché attend beaucoup de croissance ; il ne dit pas à lui seul si l'action est chère."))
+    faq.append((f"Faut-il acheter {nom} ?",
+                f"{NOM} ne donne aucun conseil d'achat ou de vente : c'est un projet éducatif. La page montre les chiffres "
+                "(chances de hausse, agitation prévue, fourchette de prix) pour aider à comprendre, pas pour décider à ta place. "
+                "N'investis que de l'argent que tu peux te permettre de perdre."))
+    if rq.get("mouvement"):
+        faq.append((f"{nom} est-il risqué ?",
+                    f"Pour le mois prochain, l'agitation prévue est d'environ <b>±{round(rq['mouvement'] * 100)} %</b> : "
+                    "en général, le prix finira le mois dans cet écart, à la hausse comme à la baisse"
+                    + (", ce qui est plus que d'habitude pour ce titre" if (rq.get("habitude") or 1) > 1.25 else
+                       ", ce qui est moins que d'habitude pour ce titre" if (rq.get("habitude") or 1) < 0.8 else "") + "."))
+    rl = t.get("resultats_le") or (t.get("fondamentaux") or {}).get("resultats_le")
+    if rl:
+        try:
+            rl_txt = datetime.strptime(rl, "%Y-%m-%d").strftime("%d/%m/%Y")
+        except ValueError:
+            rl_txt = rl
+        faq.append((f"Quand {nom} publie-t-il ses résultats ?",
+                    f"La prochaine publication de résultats est prévue le <b>{_e(rl_txt)}</b>. Le cours peut beaucoup bouger ce jour-là."))
+    return faq
+
+
+def _page_marche(base, cle, titres, date, csp):
+    chemin_page, lib, titre_h1, intro = MARCHES[cle]
+    chemin = f"marches/{chemin_page}.html"
+    avec = [t for t in titres if t.get("proba_hausse") is not None]
+    nets = [t for t in avec if t.get("avis_net") is not False]
+    moy = sum(t["proba_hausse"] for t in avec) / len(avec) if avec else None
+    lignes = "".join(
+        f"<tr><td><a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a></td><td class='m'>{_px(t['prix'], t['devise'])}</td>"
+        f"<td class='m'>{_pct((t.get('perf') or {}).get('1 mois'))}</td>"
+        f"<td class='m'>{'pas d’avis net' if t.get('avis_net') is False else (str(round(t['proba_hausse'] * 100)) + ' %') if t.get('proba_hausse') is not None else '–'}</td>"
+        f"<td class='m'>{('±' + str(round(t['risque_prevu']['mouvement'] * 100)) + ' %') if (t.get('risque_prevu') or {}).get('mouvement') else '–'}</td></tr>"
+        for t in sorted(titres, key=lambda t: -(t.get("proba_hausse") or 0)))
+    tete = (f"<h1>{_e(titre_h1)}</h1><p class='muted'>Mise à jour automatique · cours au {_e(date)}</p><p>{_e(intro)}</p>"
+            + (f"<p>Aujourd'hui, les deux IA donnent en moyenne <b>{round(moy * 100)} chances sur 100</b> de hausse à un mois "
+               f"pour ces {len(avec)} titres, avec un avis net sur {len(nets)} d'entre eux.</p>" if moy is not None else ""))
+    corps = (f"<p class='muted' style='font-size:14px'><a href='../titres.html'>Tous les titres</a> › {_e(lib)}</p>" + tete
+             + "<div class='carte' style='overflow-x:auto'><table><tr><td><b>Titre</b></td><td><b>Cours</b></td><td><b>1 mois</b></td>"
+             "<td><b>Chances de hausse</b></td><td><b>Agitation prévue</b></td></tr>" + lignes + "</table></div>"
+             "<p class='muted' style='font-size:14px'>« Chances de hausse » : probabilité d'être plus haut dans 20 séances. "
+             "« Pas d'avis net » : les IA hésitent, et dans ces cas-là elles n'ont pas fait mieux que le hasard. "
+             "« Agitation prévue » : de combien le prix bouge en général sur un mois, dans un sens ou dans l'autre.</p>"
+             f"<h2>Les autres marchés</h2><ul class='liste'>" + "".join(
+                 f"<li><a href='{m[0]}.html'>{_e(m[1])}</a></li>" for k, m in MARCHES.items() if k != cle) + "</ul>")
+    desc = f"{titre_h1} : chances de hausse, agitation prévue et analyse de chaque titre, mises à jour chaque jour. Projet éducatif."
+    jsonld = {"@context": "https://schema.org", "@graph": [
+        {"@type": "CollectionPage", "name": titre_h1, "description": desc, "inLanguage": "fr-FR",
+         "dateModified": datetime.now().isoformat(timespec="seconds")},
+        _jsonld_fil(base, [("Tous les titres", "titres.html"), (lib, chemin)])]}
+    return chemin, _page(base, f"{titre_h1} | {NOM}", desc, chemin, corps, jsonld, csp)
+
+
+def _page_robots(base, payload, csp, date):
+    """Page publique des mini-robots : leurs règles, leur vrai palmarès et leurs signaux du jour."""
+    robots = payload.get("robots") or []
+    noms = {t["ticker"]: t["nom"] for t in payload.get("titres", [])}
+    lien = lambda tk: f"<a href='titres/{slug(tk)}.html'>{_e(noms.get(tk, aff_tk(tk)))}</a>"
+    blocs = []
+    for r in robots:
+        A, V, b = r.get("achat") or {}, r.get("vente") or {}, r.get("base_hausse")
+        bilan = ""
+        if A.get("nb", 0) >= 30 and b is not None:
+            ecart = A["taux"] - b
+            nb = f"{A['nb']:,}".replace(",", "\u202f")
+            bilan = (f"<p>Sur tout l'historique, quand il a dit « acheter » ({nb} fois), le prix était plus haut "
+                     f"{payload.get('horizon', 20)} séances plus tard <b>{round(A['taux'] * 100)} fois sur 100</b>, contre "
+                     f"{round(b * 100)} en achetant au hasard : "
+                     + ("un peu mieux que le hasard." if ecart > .01 else "moins bien que le hasard." if ecart < -.01 else "pas mieux que le hasard.")
+                     + "</p>")
+        if V.get("nb", 0) >= 30 and b is not None:
+            bilan += f"<p>Quand il a dit « vendre », le prix a bien baissé {round(V['taux'] * 100)} fois sur 100 (au hasard : {round((1 - b) * 100)}).</p>"
+        ach, ven = r["du_jour"]["achat"], r["du_jour"]["vente"]
+        jour = (f"<p><b>Aujourd'hui, il achèterait :</b> {', '.join(lien(t) for t in ach[:15])}{' …' if len(ach) > 15 else ''}</p>" if ach else "")
+        jour += (f"<p><b>Aujourd'hui, il vendrait :</b> {', '.join(lien(t) for t in ven[:15])}{' …' if len(ven) > 15 else ''}</p>" if ven else "")
+        blocs.append(f"<div class='carte'><h2 style='margin-top:0'>{_e(r['nom'])}</h2><p>{_e(r['idee'])}</p>{bilan}"
+                     f"{jour or '<p>Aujourd’hui, il ne donne aucun signal.</p>'}</div>")
+    corps = (f"<h1>Les mini-robots de Bourse et de crypto</h1><p class='muted'>Mise à jour automatique · cours au {_e(date)}</p>"
+             "<p>Neuf stratégies classiques, chacune avec une règle simple et fixe : suivi de tendance, RSI, momentum, cassures, MACD, "
+             "Bollinger, cycle du halving… Pour chacune, voici ce qu'elle a vraiment donné sur tout l'historique, comparé à "
+             "« acheter au hasard », et ce qu'elle dirait aujourd'hui. Ce sont des outils pour comprendre, pas des conseils.</p>"
+             + "".join(blocs))
+    desc = "Neuf stratégies classiques de Bourse et de crypto (tendance, RSI, MACD, Bollinger, halving…) : leur vrai palmarès et leurs signaux du jour."
+    jsonld = {"@context": "https://schema.org", "@type": "WebPage", "name": "Les mini-robots de Bourse et de crypto",
+              "description": desc, "inLanguage": "fr-FR", "dateModified": datetime.now().isoformat(timespec="seconds")}
+    return _page(base, f"Stratégies de Bourse testées : les mini-robots | {NOM}", desc, "robots.html", corps, jsonld, csp)
 
 
 def _image_partage(payload: dict, chemin: str) -> None:
@@ -298,6 +673,73 @@ def _image_partage(payload: dict, chemin: str) -> None:
     img.save(chemin, optimize=True)
 
 
+def _police(taille, gras=False):
+    from PIL import ImageFont
+    for nom in (("DejaVuSans-Bold.ttf" if gras else "DejaVuSans.ttf"), ("arialbd.ttf" if gras else "arial.ttf")):
+        for d in ("/usr/share/fonts/truetype/dejavu/", "C:/Windows/Fonts/", ""):
+            try:
+                return ImageFont.truetype(d + nom, taille)
+            except Exception:
+                continue
+    return ImageFont.load_default()
+
+
+def _image_titre(t: dict, chemin: str, date: str) -> bool:
+    """Image 1200×630 propre à chaque titre (aperçu quand on partage sa page sur WhatsApp, Discord, X…) :
+    nom, prix, variation sur un mois, mini-courbe, agitation prévue et avis des IA, sans rien promettre."""
+    try:
+        from PIL import Image, ImageDraw
+    except Exception:
+        return False
+    try:
+        W, H = 1200, 630
+        FOND, TEXTE, DOUX, HAUT, BAS = "#0f1b2d", "#ffffff", "#a9b8d0", "#35c27d", "#ff6b6b"
+        img = Image.new("RGB", (W, H), FOND)
+        dr = ImageDraw.Draw(img)
+        nom = str(t.get("nom") or t["ticker"])
+        if len(nom) > 26:
+            nom = nom[:25] + "…"
+        dr.text((70, 60), NOM, font=_police(30, True), fill=DOUX)
+        dr.text((70, 110), nom, font=_police(66, True), fill=TEXTE)
+        dr.text((72, 195), f"{aff_tk(t['ticker'])} · cours au {date}", font=_police(28), fill=DOUX)
+        dr.text((70, 255), _px(t.get("prix"), t.get("devise", "")).replace("\u202f", " ").replace("\xa0", " "), font=_police(72, True), fill=TEXTE)
+        m1 = (t.get("perf") or {}).get("1 mois")
+        if m1 is not None:
+            dr.text((72, 345), f"{'+' if m1 >= 0 else '−'}{abs(m1) * 100:.1f} % sur un mois".replace(".", ","), font=_police(32, True),
+                    fill=HAUT if m1 >= 0 else BAS)
+        # mini-courbe des 3 derniers mois
+        sp = [float(v) for v in (t.get("spark") or []) if v is not None]
+        if len(sp) >= 5:
+            x0, y0, x1, y1 = 660, 120, 1130, 380
+            lo, hi = min(sp), max(sp)
+            et = (hi - lo) or 1
+            pts = [(x0 + (x1 - x0) * i / (len(sp) - 1), y1 - (y1 - y0) * (v - lo) / et) for i, v in enumerate(sp)]
+            coul = HAUT if sp[-1] >= sp[0] else BAS
+            dr.polygon(pts + [(x1, y1), (x0, y1)], fill="#16264a")
+            dr.line(pts, fill=coul, width=6, joint="curve")
+            dr.ellipse((pts[-1][0] - 10, pts[-1][1] - 10, pts[-1][0] + 10, pts[-1][1] + 10), fill=coul)
+            dr.text((x0, y1 + 14), "3 derniers mois", font=_police(24), fill=DOUX)
+        # ce que disent les IA (l'agitation d'abord : c'est ce qu'elles prévoient le mieux)
+        rq, p = t.get("risque_prevu") or {}, t.get("proba_hausse")
+        lignes = []
+        if rq.get("mouvement"):
+            lignes.append(f"Agitation prévue : ±{round(rq['mouvement'] * 100)} % sur un mois")
+        if p is not None:
+            lignes.append("Avis des IA : pas d'avis net" if t.get("avis_net") is False else
+                          f"Avis des IA : {round(p * 100)} chances sur 100 de hausse")
+        y = 440
+        for l in lignes[:2]:
+            dr.ellipse((72, y + 12, 88, y + 28), fill="#7398ff")
+            dr.text((104, y), l, font=_police(32), fill="#e4ebf5")
+            y += 56
+        dr.text((72, H - 52), "Projet éducatif · pas un conseil en investissement", font=_police(22), fill="#8c9bb0")
+        os.makedirs(os.path.dirname(chemin), exist_ok=True)
+        img.save(chemin)
+        return True
+    except Exception:
+        return False
+
+
 def _icones(dossier: str) -> None:
     try:
         from PIL import Image, ImageDraw
@@ -319,7 +761,7 @@ MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août
 
 def date_longue(iso: str) -> str:
     d = datetime.strptime(iso, "%Y-%m-%d")
-    return f"{d.day} {MOIS[d.month - 1]} {d.year}"
+    return f"{'1er' if d.day == 1 else d.day} {MOIS[d.month - 1]} {d.year}"
 
 
 def resume_du_jour(payload: dict) -> dict:
@@ -411,13 +853,58 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     urls = [("", "hourly", "1.0"), ("titres.html", "daily", "0.8"), ("glossaire.html", "monthly", "0.6")]
 
     # Une page par titre
+    duels = _duels_dispos(payload.get("titres", []))
     liens = []
     for t in payload.get("titres", []):
-        chemin, page = _page_titre(base, t, horizon, date, csp, payload.get("modele"))
+        voisins = [x for x in payload.get("titres", []) if x.get("marche") == t.get("marche") and x["ticker"] != t["ticker"]]
+        voisins = sorted(voisins, key=lambda x: -(x.get("score") or 0))[:6]
+        t = dict(t, _duels=[(y if x["ticker"] == t["ticker"] else x) for x, y in duels if t["ticker"] in (x["ticker"], y["ticker"])])
+        t = dict(t, _image_ok=_image_titre(t, os.path.join(dossier, "partage", f"{slug(t['ticker'])}.png"), date))
+        chemin, page = _page_titre(base, t, horizon, date, csp, payload.get("modele"), payload.get("suivi"), voisins)
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(page)
         urls.append((chemin, "hourly", "0.7"))
         liens.append((t["nom"], t["ticker"], chemin, t.get("marche", "")))
+
+    # Une page par marché (actions françaises, cryptos…)
+    os.makedirs(os.path.join(dossier, "marches"), exist_ok=True)
+    for cle in MARCHES:
+        sel = [t for t in payload.get("titres", []) if t.get("marche") == cle]
+        if sel:
+            chemin, page = _page_marche(base, cle, sel, date, csp)
+            with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
+                f.write(page)
+            urls.append((chemin, "daily", "0.8"))
+
+    # « X ou Y ? »
+    if duels:
+        os.makedirs(os.path.join(dossier, "comparer"), exist_ok=True)
+        for a_, b_ in duels:
+            chemin, page = _page_duel(base, a_, b_, date, csp)
+            with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
+                f.write(page)
+            urls.append((chemin, "daily", "0.6"))
+        corps = ("<h1>Comparer deux titres</h1><p class='muted'>Les comparaisons les plus demandées, avec les chiffres du jour : "
+                 "cours, risque, agitation prévue et avis des IA.</p><ul class='liste'>"
+                 + "".join(f"<li><a href='{_chemin_duel(a_, b_)}'>{_e(a_['nom'])} ou {_e(b_['nom'])}</a></li>" for a_, b_ in duels) + "</ul>")
+        with open(os.path.join(dossier, "comparer.html"), "w", encoding="utf-8") as f:
+            f.write(_page(base, f"Comparer deux titres : actions, ETF et cryptos côte à côte | {NOM}",
+                          "Or ou bitcoin, LVMH ou Hermès, Nvidia ou AMD… Les comparaisons les plus demandées, avec les chiffres et prévisions du jour.",
+                          "comparer.html", corps, csp=csp))
+        urls.append(("comparer.html", "daily", "0.7"))
+
+    # « Prévisions bourse et crypto 2026 » : la page qui répond honnêtement à cette recherche
+    try:
+        _page_previsions(base, payload, dossier, csp, date)
+        urls.append(("previsions.html", "daily", "0.8"))
+    except Exception as e:
+        print(f"Page prévisions non générée : {e}")
+
+    # Les mini-robots
+    if payload.get("robots"):
+        with open(os.path.join(dossier, "robots.html"), "w", encoding="utf-8") as f:
+            f.write(_page_robots(base, payload, csp, date))
+        urls.append(("robots.html", "daily", "0.7"))
 
     # Index des titres
     groupes = {"fr": "Actions françaises", "eu": "Actions européennes", "us": "Actions américaines",
@@ -426,8 +913,10 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     for cle, lib in groupes.items():
         items = [l for l in liens if l[3] == cle]
         if items:
-            corps += f"<h2>{lib}</h2><ul class='liste'>" + "".join(
-                f"<li><a href='{_e(c)}'>{_e(n)}</a> <span class='muted'>({_e(tk)})</span></li>" for n, tk, c, _ in items) + "</ul>"
+            hub = MARCHES.get(cle)
+            corps += (f"<h2>{lib}</h2>" + (f"<p><a href='marches/{hub[0]}.html'>Voir le tableau des prévisions : {_e(hub[1].lower())}</a></p>" if hub else "")
+                      + "<ul class='liste'>") + "".join(
+                f"<li><a href='{_e(c)}'>{_e(n)}</a> <span class='muted'>({_e(aff_tk(tk))})</span></li>" for n, tk, c, _ in items) + "</ul>"
     with open(os.path.join(dossier, "titres.html"), "w", encoding="utf-8") as f:
         f.write(_page(base, f"Tous les titres : actions, ETF et cryptos | {NOM}",
                       "Liste des actions françaises et américaines, ETF et cryptomonnaies analysés chaque jour par Radar Bourse.",
@@ -525,6 +1014,11 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     except Exception as e:
         print(f"Page résultats non générée : {e}")
     try:
+        for chemin, fq in _pages_bilan_mois(base, payload, dossier, csp):
+            urls.append((chemin, fq, "0.7"))
+    except Exception as e:
+        print(f"Bilans du mois non générés : {e}")
+    try:
         if _image_du_jour(payload, os.path.join(dossier, "image-du-jour.png"), base):
             if dates:
                 import shutil
@@ -574,7 +1068,7 @@ def cle_indexnow() -> str:
 
 FAQ = [
     ("Radar Bourse est-il gratuit ?", "Oui, entièrement : pas d'inscription, pas d'abonnement, pas de publicité."),
-    ("Les prévisions sont-elles fiables ?", "Ce sont des probabilités, pas des certitudes. La précision mesurée du modèle sur des périodes qu'il n'a jamais vues est affichée sur le site, ainsi que le suivi réel de chaque prévision publiée. Elle reste proche de ce que font les professionnels : bien au-dessous de 100 %."),
+    ("Les prévisions sont-elles fiables ?", "Ce sont des probabilités, pas des certitudes. La précision mesurée du modèle sur des périodes qu'il n'a jamais vues est affichée sur le site, ainsi que le suivi réel de chaque prévision publiée. Elle reste modeste : à peine meilleure que le hasard pour deviner le sens du prix. Les IA sont nettement plus fiables pour prévoir l'agitation (de combien un prix risque de bouger) que pour deviner s'il va monter."),
     ("D'où viennent les données ?", "Cours de Yahoo Finance (avec Binance et Stooq en secours), cours en direct de Binance et Finnhub, actualités de Finnhub et Yahoo, sentiment crypto d'alternative.me. Chaque titre passe un contrôle qualité à chaque mise à jour."),
     ("Comment la probabilité de hausse est-elle calculée ?", "Deux intelligences artificielles de conception différente analysent une quarantaine d'indicateurs techniques et de contexte sur dix ans d'historique. Leurs avis sont combinés, recalés sur ce qui s'est réellement passé, et testés chaque soir sur des années qu'elles n'ont jamais vues."),
     ("Est-ce un conseil en investissement ?", "Non. Ce sont des calculs automatiques, identiques pour tout le monde, publiés dans un but éducatif. Tu restes seul responsable de tes décisions et tu peux perdre tout l'argent investi."),
@@ -600,7 +1094,9 @@ def liens_accueil(payload: dict) -> str:
     """Liens texte vers chaque page de titre, ajoutés en bas de l'accueil (Google suit les liens)."""
     items = "".join(f'<a href="titres/{slug(t["ticker"])}.html">{_e(t["nom"])}</a>' for t in payload.get("titres", []))
     return (f'<nav class="seo-liens" aria-label="Pages des titres"><b>Analyses détaillées :</b> {items} '
-            f'· <a href="titres.html">tous les titres</a> · <a href="apprendre.html">apprendre la Bourse</a> · <a href="glossaire.html">glossaire</a></nav>')
+            f'· <a href="titres.html">tous les titres</a> · <a href="apprendre.html">apprendre la Bourse</a> · <a href="glossaire.html">glossaire</a>'
+            + "".join(f' · <a href="marches/{m[0]}.html">{_e(m[1].lower())}</a>' for k, m in MARCHES.items()
+                      if any(t.get("marche") == k for t in payload.get("titres", []))) + '</nav>')
 
 
 def jsonld_accueil() -> dict:
@@ -616,7 +1112,8 @@ def _info_historique() -> tuple[int, str | None]:
     """Nombre de prédictions enregistrées et date de la première (pour annoncer les premiers résultats)."""
     try:
         import pandas as pd
-        h = pd.read_csv(os.path.join(config.DOSSIER_HISTORIQUE, "predictions.csv"), usecols=["date"])
+        from . import historique
+        h = historique.nettoyer(pd.read_csv(os.path.join(config.DOSSIER_HISTORIQUE, "predictions.csv"), usecols=["date"]))
         return len(h), (str(h["date"].min()) if len(h) else None)
     except Exception:
         return 0, None
@@ -636,6 +1133,81 @@ def _marge(ic):
 
 def _taux(v):
     return "–" if v is None else f"{round(v * 100)} %"
+
+
+def _lien_mois(m, D):
+    return f"<a href='bilan/{m}.html'>{_e(_mois(m))}</a>" if m in (D.get("mois") or {}) else _e(_mois(m))
+
+
+def _pages_bilan_mois(base, payload, dossier, csp):
+    """Une page par mois : ce que les IA avaient prévu, ce qui s'est passé, le score honnête.
+    Du contenu neuf chaque mois, et la preuve qu'on ne cache rien (même les ratés sont affichés)."""
+    M = (((payload.get("suivi") or {}).get("detail") or {}).get("mois")) or {}
+    if not M:
+        return []
+    noms = {t["ticker"]: t["nom"] for t in payload.get("titres", [])}
+    os.makedirs(os.path.join(dossier, "bilan"), exist_ok=True)
+    mois = sorted(M)
+    out = []
+    lien = lambda tk: (f"<a href='../titres/{slug(tk)}.html'>{_e(noms[tk])}</a>" if tk in noms else _e(aff_tk(tk)))
+    for i, m in enumerate(mois):
+        B, nm = M[m], _mois(m)
+        nb_txt = f"{B['nb']:,}".replace(",", "\u202f")
+        prov = B.get("attente", 0) > 0
+        p, ref = B["precision"], B["reference"]
+        ecart = p - ref
+        verdict = ("mieux que la référence naïve" if ecart > 0.02 else "à peu près comme la référence naïve" if ecart > -0.02
+                   else "moins bien que la référence naïve")
+        corps = (f"<p class='muted'>Le bilan du mois</p><h1>{_e(nm)} : les prévisions du radar vérifiées</h1>"
+                 + (f"<div class='carte'><p style='margin:0'><b>Bilan provisoire.</b> {B['attente']} prévisions de ce mois attendent encore "
+                    "leur échéance (un mois après leur publication). Les chiffres vont encore bouger.</p></div>" if prov else "")
+                 + f"<p>En {_e(nm)}, le radar a publié des prévisions sur {B['nb_jours']} jours. <b>{nb_txt}</b> ont été vérifiées un mois plus tard. "
+                 f"Résultat : <b>{_taux(p)}</b> de bonnes directions, soit <b>{verdict}</b> ({_taux(ref)} en répondant toujours "
+                 f"« {'hausse' if B['part_hausse'] >= .5 else 'baisse'} »). Sur un seul mois, la chance pèse beaucoup : "
+                 "c'est la durée qui compte, voir les <a href='../resultats.html'>résultats depuis le début</a>.</p>")
+        cases = [(_taux(p), "bonnes directions"), (_taux(ref), "référence : toujours la même réponse")]
+        if B.get("marche"):
+            cases.append((_taux(B["marche"]["precision"]), f"bons pronostics « mieux que son marché » ({B['marche']['nb']} cas)"))
+        if B.get("agitation"):
+            cases.append((_taux(B["agitation"]["dans"]), f"des prix sont restés dans l'agitation prévue (attendu : environ 2 sur 3)"))
+        if B.get("fourchette"):
+            cases.append((_taux(B["fourchette"]["taux"]), f"prix final dans la fourchette (promis : 80 %)"))
+        corps += "<div class='carte grille'>" + "".join(f"<div class='k'><b>{v}</b><span>{l}</span></div>" for v, l in cases) + "</div>"
+        if B.get("agitation"):
+            r = B["agitation"]["ratio_median"]
+            corps += ("<h2>L'agitation prévue</h2><p>C'est ce que les IA prévoient le mieux. En général, le prix a bougé de "
+                      f"<b>{round(r * 100)} %</b> de l'agitation annoncée"
+                      + (" : les marchés ont été plus calmes que prévu." if r < .7 else " : plus agités que prévu." if r > 1.3 else " : à peu près ce qui était prévu.")
+                      + "</p>")
+        if B.get("confiance"):
+            corps += ("<h2>Selon le niveau de confiance</h2><div class='carte'><table>"
+                      + "".join(f"<tr><td>Confiance {_e(c['nom'])}</td><td class='m'>{c['nb']} cas</td><td class='m'>{_taux(c['precision'])} justes</td></tr>" for c in B["confiance"])
+                      + "</table></div>")
+        if B.get("par_type"):
+            corps += ("<h2>Par type de titre</h2><div class='carte'><table>"
+                      + "".join(f"<tr><td>{_e(x['nom'])}</td><td class='m'>{x['nb']} cas</td><td class='m'>{_taux(x['precision'])} justes</td></tr>" for x in B["par_type"])
+                      + "</table></div>")
+        ligne = lambda r: (f"<li>{lien(r['ticker'])} le {_e(date_longue(str(r['date'])))} : {round(r['proba'] * 100)} chances sur 100 de hausse, "
+                           f"résultat {_pct(r['rendement_reel'])}</li>")
+        if B.get("beaux_coups"):
+            corps += "<h2>Les plus beaux coups</h2><ul>" + "".join(ligne(r) for r in B["beaux_coups"]) + "</ul>"
+        if B.get("rates"):
+            corps += ("<h2>Les pires ratés</h2><p class='muted'>Affichés aussi : un radar qui ne montre que ses réussites ment.</p><ul>"
+                      + "".join(ligne(r) for r in B["rates"]) + "</ul>")
+        prec, suiv = (mois[i - 1] if i else None), (mois[i + 1] if i + 1 < len(mois) else None)
+        corps += ("<p style='display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap'>"
+                  + (f"<a href='{prec}.html'>← {_e(_mois(prec))}</a>" if prec else "<span></span>")
+                  + (f"<a href='{suiv}.html'>{_e(_mois(suiv))} →</a>" if suiv else "<a href='../index.html'>Prévisions du jour →</a>") + "</p>"
+                  "<p class='muted'>Projet éducatif : ces résultats ne garantissent rien pour l'avenir. Pas un conseil en investissement.</p>")
+        chemin = f"bilan/{m}.html"
+        titre = f"Bilan {nm} : les prévisions boursières du radar vérifiées | {NOM}"
+        desc = f"{nm} : {_taux(p)} de bonnes directions sur {B['nb']} prévisions vérifiées, beaux coups et pires ratés, sans rien cacher."
+        jsonld = {"@context": "https://schema.org", "@type": "Article", "headline": f"Bilan {nm} des prévisions du radar",
+                  "datePublished": f"{m}-01", "inLanguage": "fr-FR", "isAccessibleForFree": True, "author": {"@type": "Organization", "name": NOM}}
+        with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
+            f.write(_page(base, titre, desc, chemin, corps, jsonld, csp))
+        out.append((chemin, "weekly" if prov else "yearly"))
+    return out
 
 
 def _page_resultats(base, payload, dossier, csp):
@@ -684,7 +1256,7 @@ def _page_resultats(base, payload, dossier, csp):
             ) + f" Période vérifiée : du {date_longue(D['premiere'])} au {date_longue(D['derniere'])}.</p>")
         if D.get("par_mois"):
             corps += ("<h2>Mois par mois</h2><div class='carte'><table><tr><td><b>Mois</b></td><td><b>Vérifiées</b></td><td><b>Justes</b></td></tr>"
-                      + "".join(f"<tr><td>{_e(_mois(m['nom']))}</td><td class='m'>{m['nb']}</td><td class='m'>{_taux(m['precision'])}</td></tr>" for m in D["par_mois"][-12:])
+                      + "".join(f"<tr><td>{_lien_mois(m['nom'], D)}</td><td class='m'>{m['nb']}</td><td class='m'>{_taux(m['precision'])}</td></tr>" for m in D["par_mois"][-12:])
                       + "</table></div>")
         if D.get("par_type"):
             corps += ("<h2>Par type de titre</h2><div class='carte'><table>"
@@ -701,7 +1273,7 @@ def _page_resultats(base, payload, dossier, csp):
         if lignes:
             corps += ("<h2>Les dernières prédictions vérifiées</h2><div class='carte' style='overflow-x:auto'><table>"
                       "<tr><td><b>Date</b></td><td><b>Titre</b></td><td><b>Proba</b></td><td><b>Réel</b></td><td><b>Résultat</b></td></tr>"
-                      + "".join(f"<tr><td class='m'>{_e(r['date'])}</td><td><a href='titres/{slug(r['ticker'])}.html'>{_e(r['ticker'])}</a>"
+                      + "".join(f"<tr><td class='m'>{_e(r['date'])}</td><td><a href='titres/{slug(r['ticker'])}.html'>{_e(aff_tk(r['ticker']))}</a>"
                                 f"{' ★' if r.get('fort') else ''}</td><td class='m'>{_taux(r.get('proba'))}</td><td>{_pct(r['rendement_reel'])}</td>"
                                 f"<td>{'<span class=up>Juste</span>' if r['juste'] else '<span class=down>Faux</span>'}</td></tr>" for r in lignes[:120])
                       + "</table></div><p class='muted'>★ : signal fort. « Juste » : la direction annoncée (hausse si probabilité &gt; 50 %) s'est réalisée.</p>")

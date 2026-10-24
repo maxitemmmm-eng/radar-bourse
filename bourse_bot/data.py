@@ -146,7 +146,7 @@ def _binance(ticker: str) -> pd.DataFrame:
     """Cryptos : bougies quotidiennes Binance (point d'accès public de données de marché)."""
     if not ticker.endswith("-USD"):
         return pd.DataFrame()
-    symbole = ticker[:-4] + "USDT"
+    symbole = config.symbole_binance(ticker)
     url = f"https://data-api.binance.vision/api/v3/klines?symbol={symbole}&interval=1d&limit=1000"
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "radar-bourse"})
@@ -402,3 +402,33 @@ def macro() -> dict[str, pd.Series]:
         if len(serie):
             out[nom] = serie
     return out
+
+
+# ---------------------------------------------------------------------------
+# Petit cache sur disque pour les données qui changent lentement (fondamentaux, actus).
+# Avec plus de titres suivis, on évite de redemander la même chose à Yahoo chaque heure.
+def cache_json(nom: str, cle: str, duree_h: float, calcul):
+    """Renvoie la valeur en cache si elle a moins de `duree_h` heures, sinon la recalcule et l'enregistre.
+    Le cache n'est qu'un accélérateur : la moindre erreur de lecture ou d'écriture est ignorée."""
+    import json as _json
+    import time as _time
+    chemin = os.path.join(config.DOSSIER_CACHE, f"{nom}.json")
+    try:
+        with open(chemin, encoding="utf-8") as f:
+            tout = _json.load(f)
+    except (OSError, ValueError):
+        tout = {}
+    e = tout.get(cle)
+    if isinstance(e, dict) and _time.time() - float(e.get("t", 0)) < duree_h * 3600:
+        return e.get("v")
+    v = calcul()
+    tout[cle] = {"t": _time.time(), "v": v}
+    try:
+        os.makedirs(config.DOSSIER_CACHE, exist_ok=True)
+        with open(chemin + ".tmp", "w", encoding="utf-8") as f:
+            _json.dump(tout, f, ensure_ascii=False)
+        os.replace(chemin + ".tmp", chemin)
+    except OSError:
+        pass
+    return v
+
