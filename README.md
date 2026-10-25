@@ -162,6 +162,10 @@ Le **défi pronostic** permet de parier (sans argent) contre le radar et de comp
   - un modèle du climat économique ;
   - deux combinaisons apprises.
   Une méthode n'ira sur le site que si elle fait nettement mieux sur les vrais cours.
+- **Test plus précis** : 5000 cas tirés au hasard donnent une marge d'erreur d'environ ±70 (ton test a donné 2793 un jour, puis 2753 le lendemain pour la même méthode).
+  - Toutes les méthodes sont maintenant notées sur **tous** les cas des années jamais vues (des dizaines de milliers, marge d'environ ±15). L'IA actuelle est elle aussi recalée année par année, sans tricher.
+  - Pour chaque méthode, le test dit si l'écart avec l'IA actuelle est sûr ou non, et combien de fois elle a raison quand elle dit « baisse ».
+  - Une nouvelle méthode s'ajoute : le vote des 3 meilleures.
 - **Prudence par marché, sur le site** : ton test sur les vrais cours a donné 2793 sur 5000 avec cette méthode, contre 2733 pour l'IA seule et 2763 pour « toujours hausse ».
   - Sur un marché où l'avis des IA n'a pas fait mieux que la tendance habituelle de ce marché (sur des années jamais vues), le site publie cette tendance (« il a fini plus haut N mois sur 100 »). Il l'affiche clairement comme telle, avec l'avis brut des IA pour info.
   - Le choix des marchés est refait chaque soir.

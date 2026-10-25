@@ -80,7 +80,6 @@ def explorer(jeu, oof, rel, masque, horizon):
     O["l_ia"] = _logit(O["proba"])
     O["l_rel"] = _logit(O["proba_rel"].fillna(0.5))
     y = O["cible"].to_numpy()
-    test = masque.copy()
 
     def walk_forward(features, fabrique):
         """Prévisions année par année : le modèle de l'année A n'a vu que les données d'avant (avec un mois d'écart)."""
@@ -101,9 +100,14 @@ def explorer(jeu, oof, rel, masque, horizon):
     gbm = lambda: SansColonnesVides(HistGradientBoostingClassifier(max_depth=3, learning_rate=0.05, max_iter=200, min_samples_leaf=500, random_state=0))
     macro = [c for c in MACRO if c in O.columns and O[c].nunique(dropna=True) > 1]
     titre = [c for c in TITRE if c in O.columns and O[c].nunique(dropna=True) > 1]
-    reste = O.loc[~test]
-    calib = model.CalibrationPlatt().fit(reste["proba"], reste["cible"])
-    methodes = {"IA actuelle": calib.predict(O["proba"].to_numpy())}
+    # IA actuelle, recalée année par année sur les seules années d'avant (comme toutes les autres méthodes : sans tricher)
+    p_ia = np.full(len(O), np.nan)
+    for a_ in sorted(O["_d"].dt.year.unique())[1:]:
+        app = (O["_d"] < pd.Timestamp(year=a_, month=1, day=1) - pd.Timedelta(days=horizon * 1.5)).to_numpy()
+        cib = (O["_d"].dt.year == a_).to_numpy()
+        if app.sum() >= 3000 and cib.any():
+            p_ia[cib] = model.CalibrationPlatt().fit(O.loc[app, "proba"], y[app]).predict(O.loc[cib, "proba"].to_numpy())
+    methodes = {"IA actuelle": p_ia}
     tend = O["marche_tendance"].to_numpy() if "marche_tendance" in O else np.full(len(O), np.nan)
     methodes["IA + règle de tendance (marché sous sa moyenne 200 jours = « baisse »)"] = np.where(
         np.nan_to_num(tend, nan=0) < 0, 0.0, methodes["IA actuelle"])
@@ -137,7 +141,7 @@ def explorer(jeu, oof, rel, masque, horizon):
             app = (O["_d"] < pd.Timestamp(year=a, month=1, day=1) - pd.Timedelta(days=horizon * 1.5)).to_numpy()
             cib = (O["_d"].dt.year == a).to_numpy()
             for m in marches_presents:
-                am, cm = app & (marche == m), cib & (marche == m)
+                am, cm = app & (marche == m) & np.isfinite(p_cal), cib & (marche == m) & np.isfinite(p_cal)
                 if am.sum() < 300 or not cm.any():
                     continue
                 grille = np.unique(np.quantile(p_cal[am], np.linspace(0.02, 0.98, 49)))
@@ -180,44 +184,70 @@ def explorer(jeu, oof, rel, masque, horizon):
         return p
     methodes["IA prudente par marché (tendance habituelle là où l'IA n'a pas fait ses preuves) ← utilisée sur le site"] = prudence(methodes["IA actuelle"])
     methodes["Combinaison apprise + prudence par marché"] = prudence(methodes["Combinaison apprise : IA + « mieux que son marché » + climat"])
-    ok = test & np.isfinite(methodes["Combinaison apprise : IA + « mieux que son marché » + climat"])
+    # vote des trois meilleures façons de décider (la majorité l'emporte)
+    trio = ["IA prudente par marché (tendance habituelle là où l'IA n'a pas fait ses preuves) ← utilisée sur le site",
+            "Combinaison apprise + prudence par marché", "IA avec un seuil appris pour chaque marché"]
+    if all(t in methodes for t in trio):
+        votes = np.column_stack([np.asarray(methodes[t]) >= 0.5 for t in trio]).sum(axis=1)
+        manque = ~np.all(np.column_stack([np.isfinite(methodes[t]) for t in trio]), axis=1)
+        methodes["Vote des 3 meilleures méthodes"] = np.where(manque, np.nan, np.where(votes >= 2, 0.75, 0.25))
+
+    # MESURE PRÉCISE : sur TOUS les cas des années jamais vues (des dizaines de milliers), pas seulement 5000 tirés au hasard.
+    # Avec 5000 cas, la marge d'erreur est d'environ ±70 : deux tests peuvent donner 2793 puis 2753 pour la même méthode.
+    ok = np.isfinite(methodes["Combinaison apprise : IA + « mieux que son marché » + climat"])
+    for nom, p in methodes.items():
+        if not nom.startswith("(") and np.isfinite(p).sum() > 0.5 * ok.sum():
+            ok &= np.isfinite(p)
     n = int(ok.sum())
     if n < 500:
         return ["", "4. Recherche de meilleures méthodes : pas assez d'années pour tester sans tricher."]
     yy = y[ok]
     hausse = float(yy.mean())
     ref = max(hausse, 1 - hausse)
-    annee = O.loc[ok, "_d"].dt.year.to_numpy()
+    dates_ok = pd.DatetimeIndex(O.loc[ok, "_d"])
+    annee = dates_ok.year.to_numpy()
     baisse_ok = np.isin(annee, ANNEES_BAISSE)
-    out = ["", f"4. OBJECTIF 3000 SUR 5000 : AUTRES FAÇONS DE DÉCIDER (sur les mêmes {n} cas, ramenés sur 5000)",
+    j_ia = (np.asarray(methodes["IA actuelle"])[ok] >= 0.5) == (yy == 1)
+    out = ["", "4. OBJECTIF 3000 SUR 5000 : AUTRES FAÇONS DE DÉCIDER",
+           f"   Mesuré sur TOUS les cas des années jamais vues : {n:,} cas (ramenés sur 5000 pour comparer). Marge d'erreur : environ ±{round(1.96 * (0.25 / n) ** 0.5 * 5000)}.".replace(",", " "),
            f"   Référence « toujours {'hausse' if hausse >= .5 else 'baisse'} » : {round(ref * 5000)} sur 5000"]
     res = []
     for nom, p in methodes.items():
-        pp = p[ok]
+        pp = np.asarray(p)[ok]
         if not np.isfinite(pp).all():
             out.append(f"   ---- sur 5000 · {nom} (n'a pas pu être testée)")
             continue
         juste = (pp >= 0.5) == (yy == 1)
         k = int(juste.sum())
-        lo, hi = model.wilson(k, n)
         part_baisse = float((pp < 0.5).mean())
         jb = float(juste[baisse_ok].mean()) if baisse_ok.any() else None
+        juste_baisse = float(juste[pp < 0.5].mean()) if (pp < 0.5).any() else None
+        # l'écart avec l'IA actuelle est-il sûr ? (rééchantillonnage par mois : les cas d'un même mois se ressemblent)
+        sur = ""
+        if nom != "IA actuelle":
+            d = pd.DataFrame({"g": juste.astype(float) - j_ia.astype(float)}, index=dates_ok)
+            boot = model.bootstrap_mois(d, lambda x: np.array([x["g"].mean()]), graine=21)
+            if len(boot):
+                lo, hi = np.percentile(boot[:, 0], [2.5, 97.5])
+                sur = (" · mieux que l'IA actuelle, de façon sûre" if lo > 0 else
+                       " · moins bien que l'IA actuelle, de façon sûre" if hi < 0 else " · écart avec l'IA actuelle pas sûr")
         if not nom.startswith("("):
-            res.append((k / n, nom))
+            res.append((k / n, nom, sur))
         out.append(f"   {round(k / n * 5000):>4} sur 5000 · {nom}"
                    + ("   ✅ objectif 2800 atteint" if k / n * 5000 >= 2799.5 and not nom.startswith("(") else ""))
-        out.append(f"        dit « baisse » {pct(part_baisse)} du temps · marge {round(lo * 5000)} à {round(hi * 5000)}"
-                   + (f" · années de baisse (2008, 2011, 2015, 2018, 2020, 2022) : {pct(jb)} justes" if jb is not None else ""))
+        out.append(f"        dit « baisse » {pct(part_baisse)} du temps"
+                   + (f" (justes quand elle dit « baisse » : {pct(juste_baisse)})" if juste_baisse is not None else "")
+                   + (f" · années de baisse : {pct(jb)} justes" if jb is not None else "") + sur)
     if erreurs:
         out.append("   Méthodes en erreur : " + " / ".join(erreurs))
     meilleur = max(res)
-    act = res[0][0]
     out.append("")
-    if meilleur[1] != "IA actuelle" and meilleur[0] > act + 0.01:
-        out.append(f"   ➜ Piste à creuser : « {meilleur[1]} » fait {round((meilleur[0] - act) * 5000)} bonnes réponses de plus que l'IA actuelle. "
-                   "Envoie ce résultat : si l'écart tient, on l'intègre au site.")
+    if meilleur[1] != "IA actuelle" and "de façon sûre" in meilleur[2] and "mieux" in meilleur[2]:
+        out.append(f"   ➜ « {meilleur[1]} » fait mieux que l'IA actuelle de façon sûre ({round(meilleur[0] * 5000)} sur 5000). "
+                   "Envoie ce résultat : on l'intègre au site.")
     else:
-        out.append("   ➜ Aucune méthode ne fait nettement mieux que l'IA actuelle sur ces cas : le sens du prix à un mois reste très dur à prévoir.")
+        out.append(f"   ➜ Meilleure méthode : « {meilleur[1]} » ({round(meilleur[0] * 5000)} sur 5000). "
+                   "Aucune ne fait mieux que l'IA actuelle de façon sûre : le sens du prix à un mois reste très dur à prévoir.")
     return out
 
 
