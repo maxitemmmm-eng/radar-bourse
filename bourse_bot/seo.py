@@ -195,7 +195,7 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 <style>{CSS_PAGE}</style>
 </head>
 <body><div class="w">
-<nav class="fil"><a href="{prefixe}index.html">{NOM}</a> · <a href="{prefixe}point.html">Le point du jour</a> · <a href="{prefixe}resultats.html">Résultats réels</a> · <a href="{prefixe}connaissances.html">Ce que sait l'IA</a> · <a href="{prefixe}apprendre.html">Apprendre</a> · <a href="{prefixe}titres.html">Tous les titres</a> · <a href="{prefixe}comparer.html">Comparer</a> · <a href="{prefixe}classements.html">Classements</a> · <a href="{prefixe}portefeuille.html">Sélection IA du mois</a> · <a href="{prefixe}previsions.html">Prévisions {datetime.now().year}</a> · <a href="{prefixe}robots.html">Les mini-robots</a> · <a href="{prefixe}glossaire.html">Glossaire</a> · <a href="{prefixe}en/index.html" hreflang="en">English</a></nav>
+<nav class="fil"><a href="{prefixe}index.html">{NOM}</a> · <a href="{prefixe}point.html">Le point du jour</a> · <a href="{prefixe}resultats.html">Résultats réels</a> · <a href="{prefixe}connaissances.html">Ce que sait l'IA</a> · <a href="{prefixe}apprendre.html">Apprendre</a> · <a href="{prefixe}guides.html">Guides</a> · <a href="{prefixe}titres.html">Tous les titres</a> · <a href="{prefixe}comparer.html">Comparer</a> · <a href="{prefixe}classements.html">Classements</a> · <a href="{prefixe}portefeuille.html">Sélection IA du mois</a> · <a href="{prefixe}previsions.html">Prévisions {datetime.now().year}</a> · <a href="{prefixe}robots.html">Les mini-robots</a> · <a href="{prefixe}glossaire.html">Glossaire</a> · <a href="{prefixe}en/index.html" hreflang="en">English</a></nav>
 <main>
 {corps}
 </main>
@@ -547,6 +547,73 @@ CLASSEMENTS = [
      lambda t: t.get("marche") in ("fr", "eu", "us") and (t.get("per") or 0) > 0, lambda t: t["per"],
      lambda t: f"PER {t['per']:.1f}".replace(".", ",")),
 ]
+
+
+def _md(txt):
+    """Texte des guides : échappé, puis **gras** autorisé."""
+    return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", _e(txt))
+
+
+def _pages_guides(base, payload, dossier, csp, date):
+    """Version 38 : 100 guides qui répondent honnêtement aux recherches les plus tapées sur la Bourse et la crypto
+    (« débuter en bourse », « argent facile », « prévision bitcoin »…), avec les chiffres du jour quand c'est utile."""
+    from .guides import GUIDES, CATEGORIES
+    os.makedirs(os.path.join(dossier, "guides"), exist_ok=True)
+    par_tk = {t.get("ticker"): t for t in payload.get("titres", []) if t.get("prix")}
+    faits = []
+    for g in GUIDES:
+        voisins = [v for v in GUIDES if v["c"] == g["c"] and v["i"] != g["i"]]
+        idx = [v["i"] for v in GUIDES if v["c"] == g["c"]].index(g["i"])
+        voisins = (voisins[idx:] + voisins[:idx])[:5]
+        corps = (f"<p class='muted'><a href='../guides.html'>Guides</a> · {_e(CATEGORIES[g['c']])}</p>"
+                 f"<h1>{_e(g['h'])}</h1><div class='carte'><p><b>En bref :</b> {_md(g['r'])}</p></div>")
+        for h2, txt in g.get("p", []):
+            corps += f"<h2>{_e(h2)}</h2>" + "".join(f"<p>{_md(x)}</p>" for x in txt.split("\n\n"))
+        lignes = []
+        for tk in g.get("k", []):
+            t = par_tk.get(tk)
+            if not t:
+                continue
+            rp = t.get("risque_prevu") or {}
+            mv, ch = rp.get("mouvement"), rp.get("chute")
+            lignes.append(f"<tr><td><a href='../titres/{slug(tk)}.html'>{_e(t.get('nom') or tk)}</a></td><td class='m'>{_px(t['prix'], t.get('devise', ''))}</td>"
+                          f"<td class='m'>{'±' + str(round(mv * 100)) + ' %' if mv else '—'}</td>"
+                          f"<td class='m'>{str(round(ch * 100)) + ' %' if ch is not None else '—'}</td></tr>")
+        if lignes:
+            corps += ("<h2>Les chiffres du jour</h2><div class='carte' style='overflow-x:auto'><table><tr><td><b>Titre</b></td><td><b>Cours</b></td>"
+                      "<td><b>Agitation prévue sur un mois</b></td><td><b>Risque de chute de plus de 10 %</b></td></tr>" + "".join(lignes) + "</table></div>"
+                      f"<p class='muted'>Cours au {_e(date)}, mis à jour automatiquement. L'agitation et le risque de chute sont ce que les IA du radar prévoient le mieux "
+                      "(voir les <a href='../resultats.html'>résultats réels</a>) ; ce ne sont pas des conseils d'achat.</p>")
+        if g.get("q"):
+            corps += "<h2>Questions fréquentes</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{_md(a)}</p>" for q, a in g["q"])
+        liens = list(g.get("l", [])) + [("Ce que valent vraiment les prévisions du radar", "resultats.html")]
+        corps += ("<h2>Pour aller plus loin</h2><ul class='liste'>" + "".join(f"<li><a href='../{_e(c)}'>{_e(n)}</a></li>" for n, c in liens)
+                  + "".join(f"<li><a href='{v['i']}.html'>{_e(v['h'])}</a></li>" for v in voisins) + "</ul>")
+        chemin = f"guides/{g['i']}.html"
+        url = (base + chemin) if base else chemin
+        faq = [(g["h"], g["r"])] + list(g.get("q", []))
+        jsonld = {"@context": "https://schema.org", "@graph": [
+            {"@type": "Article", "headline": g["h"][:110], "description": g["d"], "inLanguage": "fr-FR", "url": url,
+             "dateModified": datetime.now().strftime("%Y-%m-%d"), "author": {"@type": "Organization", "name": NOM},
+             "publisher": {"@type": "Organization", "name": NOM}},
+            {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a.replace("**", "")}} for q, a in faq]},
+            _jsonld_fil(base, [(NOM, ""), ("Guides", "guides.html"), (g["t"], chemin)])]}
+        titre = g["t"] + (f" | {NOM}" if len(g["t"]) <= 50 else "")
+        with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
+            f.write(_page(base, titre, g["d"], chemin, corps, jsonld, csp))
+        faits.append(chemin)
+    corps = ("<h1>Guides de la Bourse et de la crypto</h1><p>Les questions que tout le monde se pose, avec des réponses honnêtes : "
+             "pas de promesse d'argent facile, des chiffres vérifiables et les vrais risques.</p>")
+    for c, lib in CATEGORIES.items():
+        items = [g for g in GUIDES if g["c"] == c]
+        if items:
+            corps += f"<h2>{_e(lib)}</h2><ul class='liste'>" + "".join(f"<li><a href='guides/{g['i']}.html'>{_e(g['h'])}</a></li>" for g in items) + "</ul>"
+    with open(os.path.join(dossier, "guides.html"), "w", encoding="utf-8") as f:
+        f.write(_page(base, f"Guides bourse et crypto pour débutants | {NOM}",
+                      "Débuter en bourse, investir petit budget, crypto, ETF, arnaques, argent facile : 100 guides simples et honnêtes.",
+                      "guides.html", corps, csp=csp))
+    faits.append("guides.html")
+    return faits
 
 
 def _pages_classements(base, payload, dossier, csp, date):
@@ -1293,6 +1360,13 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
         f.write(_page(base, f"Tous les titres : actions, ETF et cryptos | {NOM}",
                       "Liste des actions françaises et américaines, ETF et cryptomonnaies analysés chaque jour par Radar Bourse.",
                       "titres.html", corps, csp=csp))
+
+    # Guides (version 38) : 100 réponses honnêtes aux recherches les plus tapées
+    try:
+        for chemin in _pages_guides(base, payload, dossier, csp, date):
+            urls.append((chemin, "weekly", "0.7"))
+    except Exception as e:
+        print(f"Guides non générés : {e}")
 
     # Glossaire : une page par mot (version 33) + la page qui les rassemble
     try:

@@ -655,3 +655,4 @@ Tout se règle dans `bourse_bot/config.py` : listes de titres, horizon de prédi
 - **Autre erreur** : copie le message rouge complet, il indique le fichier et la ligne en cause.
 
 - **Version 37** : le site n'affiche plus « Plutôt à la baisse » si les avis « baisse » de l'IA n'ont pas été justes plus d'une fois sur deux sur les années testées (ton test : 45,8 %). À la place : « Pas d'avis net ».
+- **Version 38** : 101 guides (débuter en bourse, petit budget, argent facile, arnaques, trading, crypto, ETF, dividendes, PER…) avec une page « Guides », un lien dans le menu, et les chiffres du jour (agitation, risque de chute) quand c'est utile. Ils sont ajoutés automatiquement au sitemap.
