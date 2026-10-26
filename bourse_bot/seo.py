@@ -18,7 +18,7 @@ from . import config
 
 NOM = "Radar Bourse"
 SLOGAN = "Analyse et prévisions boursières à un mois, expliquées simplement"
-TITRE_ACCUEIL = "Prévisions bourse et crypto par IA, gratuites et vérifiées | Radar Bourse"
+TITRE_ACCUEIL = "Radar Bourse : prévisions bourse et crypto par IA, gratuites et vérifiées"   # le nom en premier : recherches « radar bourse »
 DESCRIPTION = ("Prévisions gratuites par IA pour plus de 160 actions et cryptos : agitation prévue, chances à un mois, "
                "comparaisons. Tout est vérifié publiquement, ratés compris.")
 MOTS_CLES = ("prévision bourse, analyse technique, prévision action, prévision crypto, CAC 40, S&P 500, "
@@ -1551,9 +1551,17 @@ def liens_accueil(payload: dict) -> str:
 
 
 def jsonld_accueil() -> dict:
+    """Ce que Google utilise pour reconnaître le NOM du site (recherches « radar bourse », « bourse radar »…)."""
     base = url_site()
-    return {"@context": "https://schema.org", "@type": "WebSite", "name": NOM, "url": base or None,
-            "description": DESCRIPTION, "inLanguage": "fr-FR"}
+    depot = os.environ.get("GITHUB_REPOSITORY", "")
+    org = {"@type": "Organization", "@id": (base or "") + "#org", "name": NOM, "url": base or None,
+           "logo": (base + "icone-512.png") if base else None}
+    if depot:
+        org["sameAs"] = [f"https://github.com/{depot}"]
+    site = {"@type": "WebSite", "@id": (base or "") + "#site", "name": NOM,
+            "alternateName": ["Radar-Bourse", "RadarBourse", "Bourse Radar", "Radar Bourse IA"],
+            "url": base or None, "description": DESCRIPTION, "inLanguage": "fr-FR", "publisher": {"@id": (base or "") + "#org"}}
+    return {"@context": "https://schema.org", "@graph": [site, org]}
 
 
 # ----------------------------------------------------------------------------

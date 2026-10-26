@@ -145,6 +145,9 @@ Ton test a montré que, quand les méthodes disent souvent « baisse », elles o
   - A : un avis « baisse » donné seulement là où il a eu raison au moins 55 fois sur 100 les années d'avant, avec sa fréquence et sa vraie réussite ;
   - B : le risque de forte chute, mesuré sur tous les cas.
   - C : quand les avis très pessimistes sont suivis de hausses, le test vérifie année par année s'il s'agit d'un vrai effet « rebond » régulier, ou de quelques mois exceptionnels comme un krach suivi d'une remontée.
+- **Le nom du site, pour Google** :
+  - l'accueil s'appelle maintenant « Radar Bourse : prévisions bourse et crypto par IA… », avec le nom en premier ;
+  - des données structurées disent à Google le nom du site, ses variantes (« Bourse Radar », « RadarBourse »…), son logo et son dépôt GitHub. C'est ce qui aide à sortir sur les recherches « radar bourse ».
 - **Deux dernières méthodes pour le sens du prix** dans le test (partie 4) :
   - le risque de forte chute utilisé comme indice, puisque c'est la prévision la plus forte de l'IA ;
   - le choix automatique, chaque année, de la méthode qui a le mieux marché les années d'avant, sans regarder l'avenir.
@@ -650,3 +653,5 @@ Tout se règle dans `bourse_bot/config.py` : listes de titres, horizon de prédi
 - **« python n'est pas reconnu »** : réinstalle Python en cochant « Add Python to PATH ».
 - **Beaucoup de titres ignorés** : Yahoo bloque parfois temporairement. Attends quelques minutes et relance.
 - **Autre erreur** : copie le message rouge complet, il indique le fichier et la ligne en cause.
+
+- **Version 37** : le site n'affiche plus « Plutôt à la baisse » si les avis « baisse » de l'IA n'ont pas été justes plus d'une fois sur deux sur les années testées (ton test : 45,8 %). À la place : « Pas d'avis net ».

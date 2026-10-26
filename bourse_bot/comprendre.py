@@ -408,6 +408,21 @@ def prudence_par_marche(oof, gain_min=0.005, nb_min=300):
     return out
 
 
+def fiabilite_baisse(oof, marge, nb_min=300):
+    """Quand l'IA a dit « baisse » avec un avis net (proba ≤ 50 % − marge), sur des années jamais vues, à quelle fréquence
+    le prix a-t-il vraiment baissé ? Si ce n'est pas plus d'une fois sur deux de façon sûre, le site n'affiche pas de « baisse »."""
+    from .model import bootstrap_mois
+    m = 0.0 if marge is None else float(marge)
+    sel = oof["proba"].to_numpy() <= 0.5 - m
+    if sel.sum() < nb_min:
+        return {"fiable": False, "nb": int(sel.sum()), "raison": "trop peu de cas"}
+    d = oof.loc[sel, ["cible"]].copy()
+    d["juste"] = (d["cible"] == 0).astype(float)
+    boot = bootstrap_mois(d, lambda x: np.array([x["juste"].mean()]), graine=29)
+    lo = float(np.percentile(boot[:, 0], 2.5)) if len(boot) else 0.0
+    return {"fiable": bool(lo > 0.5), "nb": int(sel.sum()), "precision": float(d["juste"].mean()), "ic_bas": lo}
+
+
 def marches_sans_avis(oof, marge, gain_min=0.005):
     if marge is None or "marche" not in oof:
         return {}

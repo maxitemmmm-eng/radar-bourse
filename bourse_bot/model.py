@@ -1027,6 +1027,8 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
             d_niv["marche"] = oof["marche"].to_numpy()
             evaluation.avis_net["marches_sans_avis"] = comprendre.marches_sans_avis(d_niv, evaluation.avis_net.get("marge"))
             evaluation.avis_net["prudence"] = comprendre.prudence_par_marche(d_niv)
+            # version 36 : les « baisse » de l'IA ont-ils vraiment été justes ? (ton test : 45,8 % seulement)
+            evaluation.avis_net["baisse"] = comprendre.fiabilite_baisse(d_niv, evaluation.avis_net.get("marge"))
             # jeu « Remonte le temps » : moments du passé jamais vus par l'IA, tirés au hasard
             # (renouvelé une fois par semaine seulement, pour ne pas alourdir l'historique GitHub)
             f_jeu = os.path.join(config.DOSSIER_HISTORIQUE, "jeu_temps.json")
