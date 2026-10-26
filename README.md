@@ -134,6 +134,17 @@ Le **défi pronostic** permet de parier (sans argent) contre le radar et de comp
 
 # Historique des versions
 
+## Version 36 : voir venir les baisses
+
+Ton test a montré que, quand les méthodes disent souvent « baisse », elles ont raison moins d'une fois sur deux. Deux réponses honnêtes :
+
+- **Risque de forte chute** (sur les fiches et dans une nouvelle page classement) : la probabilité de perdre plus de 10 % dans le mois, comparée à l'habitude pour une action ou une crypto.
+  - C'est bien plus prévisible que le sens du prix, parce que c'est lié à l'agitation.
+  - Elle est testée chaque soir sur des années jamais vues, et affichée seulement si elle bat le hasard de façon sûre (note de tri au-dessus de 0,55).
+- **Le test sur 5000 cas a une nouvelle partie « 5. Prévoir les baisses »** :
+  - A : un avis « baisse » donné seulement là où il a eu raison au moins 55 fois sur 100 les années d'avant, avec sa fréquence et sa vraie réussite ;
+  - B : le risque de forte chute, mesuré sur tous les cas.
+
 ## Version 35 : la sélection IA du mois, le calculateur de risque et plus de pages utiles
 
 D'après ton test précis (758 469 cas des années jamais vues), la prudence par marché fait 2801 sur 5000 et l'IA seule 2783. Les vraies forces de l'IA sont l'agitation (plus juste que la méthode simple 62,5 % du temps) et « mieux que son marché ». Cette version s'appuie sur elles.
@@ -145,6 +156,7 @@ D'après ton test précis (758 469 cas des années jamais vues), la prudence par
 - **La semaine en Bourse** (`semaines.html`) : un résumé automatique chaque semaine, avec les indices, les plus fortes hausses et baisses, et les titres les plus agités prévus.
 - **Images pour Google Discover** : une grande image pour chacun des 7 derniers points du jour.
 - **Hors connexion sur téléphone** : le site déjà ouvert une fois s'affiche même sans réseau. En ligne, il demande toujours d'abord les cours du jour, il ne montre jamais une vieille copie quand le réseau marche.
+- **IndexNow** : chaque soir, toutes les pages du plan du site (plus de 500) sont envoyées d'un coup à Bing, DuckDuckGo, Yahoo, Yandex et Seznam, au lieu de 6. Google, lui, lit le sitemap.
 - **Campagne** :
   - `campagne_google.bat` lit maintenant l'export « Performances » de Search Console. Il liste les pages souvent vues mais peu cliquées, et les recherches presque en première page.
   - Nouveau fichier `LISTES_A_PROPOSER.md`, avec les textes prêts à copier pour GitHub, awesome-quant, AlternativeTo et Product Hunt.

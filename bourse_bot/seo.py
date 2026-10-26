@@ -538,6 +538,10 @@ CLASSEMENTS = [
      "Les actions auxquelles les IA donnent le plus de chances de faire mieux que le CAC 40, le S&P 500 ou l'Euro Stoxx 50 le mois prochain.",
      lambda t: t.get("marche") in ("fr", "eu", "us") and t.get("proba_marche") is not None and t.get("marche_net") is not False,
      lambda t: -t["proba_marche"], lambda t: f"{round(t['proba_marche'] * 100)} chances sur 100 de faire mieux que {t.get('indice_nom') or 'son marché'}"),
+    ("risque-de-chute", "Actions et cryptos les plus exposées à une forte chute ce mois-ci",
+     "Les titres auxquels les IA donnent le plus de risque de perdre plus de 10 % le mois prochain (prévision testée sur des années jamais vues).",
+     lambda t: (t.get("risque_prevu") or {}).get("chute") is not None, lambda t: -t["risque_prevu"]["chute"],
+     lambda t: f"{round(t['risque_prevu']['chute'] * 100)} chances sur 100 de perdre plus de 10 %"),
     ("per-bas", "Actions au PER le plus bas parmi les grandes valeurs",
      "Les grandes actions suivies dont le prix est le plus bas par rapport à leurs bénéfices (PER). Un PER bas n'est pas forcément une bonne affaire.",
      lambda t: t.get("marche") in ("fr", "eu", "us") and (t.get("per") or 0) > 0, lambda t: t["per"],
@@ -581,7 +585,7 @@ def _pages_classements(base, payload, dossier, csp, date):
         corps = ("<h1>Les classements du jour</h1><p class='muted'>Actions et cryptos triées selon un critère, mis à jour automatiquement.</p><ul class='liste'>"
                  + "".join(f"<li><a href='{c}'>{_e(t)}</a></li>" for t, c in liens) + "</ul>")
         with open(os.path.join(dossier, "classements.html"), "w", encoding="utf-8") as f:
-            f.write(_page(base, f"Classements bourse et crypto du jour : dividende, risque, PER | {NOM}",
+            f.write(_page(base, f"Classements du jour : dividende, risque, PER | {NOM}",
                           "Actions à fort dividende, actions les plus calmes, cryptos les plus volatiles, PER les plus bas : les classements du jour.",
                           "classements.html", corps, csp=csp))
         faits.append("classements.html")

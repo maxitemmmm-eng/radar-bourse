@@ -251,6 +251,82 @@ def explorer(jeu, oof, rel, masque, horizon):
     return out
 
 
+CHUTE = -0.10   # « forte chute » : perdre plus de 10 % en un mois
+
+
+def tester_baisses(jeu, oof, variables, horizon):
+    """Deux façons honnêtes d'aider à voir venir les baisses, testées année par année sur les seules années d'avant :
+    A. un avis « baisse » donné seulement là où, par le passé, il a eu raison au moins 55 fois sur 100 ;
+    B. un détecteur du risque de forte chute (plus de 10 % en un mois), plus prévisible que le sens du prix."""
+    from sklearn.ensemble import HistGradientBoostingClassifier
+    from bourse_bot import comprendre as C
+    out = ["", "5. PRÉVOIR LES BAISSES"]
+    d = pd.to_datetime(oof.index)
+    y = oof["cible"].to_numpy()
+    annees = sorted(d.year.unique())
+    # A. avis « baisse » prouvé : seuil appris sur les années d'avant (précision ≥ 55 %, au moins 200 cas)
+    pc = np.full(len(oof), np.nan)
+    dit_baisse = np.zeros(len(oof), dtype=bool)
+    for a_ in annees[1:]:
+        app = d < pd.Timestamp(year=a_, month=1, day=1) - pd.Timedelta(days=horizon * 1.5)
+        cib = d.year == a_
+        if app.sum() < 3000:
+            continue
+        cal = model.CalibrationPlatt().fit(oof.loc[app, "proba"], y[app])
+        p_app = cal.predict(oof.loc[app, "proba"].to_numpy())
+        pc[cib] = cal.predict(oof.loc[cib, "proba"].to_numpy())
+        seuil = None
+        for s_ in np.quantile(p_app, np.linspace(0.005, 0.30, 60)):
+            sel = p_app <= s_
+            if sel.sum() >= 200 and (y[app][sel] == 0).mean() >= 0.55:
+                seuil = s_   # le plus haut seuil (donc le plus de cas) qui garde 55 % de réussite
+        if seuil is not None:
+            dit_baisse[cib] = pc[cib] <= seuil
+    ok = np.isfinite(pc)
+    nb = int(dit_baisse[ok].sum())
+    if nb:
+        juste = float((y[ok][dit_baisse[ok]] == 0).mean())
+        lo, hi = model.wilson(int((y[ok][dit_baisse[ok]] == 0).sum()), nb)
+        nb_txt = f"{nb:,}".replace(",", " ")
+        out += [f"A. Avis « baisse » prouvé : l'IA dit « baisse » dans {pct(nb / ok.sum())} des cas ({nb_txt} fois),",
+                f"   et elle a raison {pct(juste)} de ces fois-là (marge {pct(lo)} à {pct(hi)}). Habituellement, ça baisse {pct(1 - y[ok].mean())} du temps.",
+                "   " + ("Verdict : ses « baisse » valent mieux que le hasard, de façon sûre." if lo > 0.5 else
+                         "Verdict : pas assez sûr pour l'utiliser.")]
+    else:
+        out += ["A. Avis « baisse » prouvé : sur les années passées, aucun seuil n'a donné 55 % de « baisse » justes. L'IA ne doit pas dire « baisse »."]
+    # B. risque de forte chute (> 10 % en un mois)
+    et = jeu.dropna(subset=["rendement_futur"]).copy()
+    et["chute"] = (et["rendement_futur"] < CHUTE).astype(float)
+    vs = C._variables_risque(et, variables)
+    de = pd.to_datetime(et.index)
+    p = np.full(len(et), np.nan)
+    for a_ in sorted(de.year.unique())[1:]:
+        app = (de < pd.Timestamp(year=a_, month=1, day=1) - pd.Timedelta(days=horizon * 1.5))
+        cib = de.year == a_
+        if app.sum() < 5000 or et.loc[app, "chute"].nunique() < 2:
+            continue
+        m = C.SansColonnesVides(HistGradientBoostingClassifier(max_depth=3, learning_rate=0.05, max_iter=200,
+                                                               min_samples_leaf=500, random_state=0))
+        m.fit(et.loc[app, vs], et.loc[app, "chute"].to_numpy())
+        p[cib] = m.predict_proba(et.loc[cib, vs])[:, 1]
+    okb = np.isfinite(p)
+    if okb.sum() > 2000:
+        yc, pp = et["chute"].to_numpy()[okb], p[okb]
+        base = float(yc.mean())
+        haut = pp >= np.quantile(pp, 0.9)
+        bas = pp <= np.quantile(pp, 0.5)
+        auc = model._auc(yc, pp)
+        n_txt = f"{int(okb.sum()):,}".replace(",", " ")
+        out += ["", f"B. Risque de forte chute (plus de 10 % en un mois), sur {n_txt} cas :",
+                f"   Habituellement, une forte chute arrive {pct(base)} du temps.",
+                f"   Quand l'IA annonce les risques les plus élevés (10 % des cas) : elle arrive {pct(float(yc[haut].mean()))} du temps.",
+                f"   Quand l'IA annonce un risque faible (la moitié des cas) : {pct(float(yc[bas].mean()))} du temps.",
+                f"   Note de tri (0,5 = hasard, 1 = parfait) : {auc:.3f}".replace(".", ","),
+                "   " + ("Verdict : l'IA repère bien les titres les plus exposés à une forte chute." if auc > 0.6 else
+                         "Verdict : utile mais limité." if auc > 0.55 else "Verdict : pas mieux que le hasard.")]
+    return out
+
+
 def lancer(nb_cas: int, demo: bool) -> int:
     data.DEMO = demo
     horizon = config.HORIZON_PREDICTION
@@ -410,6 +486,12 @@ def lancer(nb_cas: int, demo: bool) -> int:
         lignes += explorer(jeu, oof, rel, masque, horizon)
     except Exception as e:
         lignes += ["", f"4. Recherche de meilleures méthodes : impossible cette fois ({e})"]
+    # ---------------- 5. Prévoir les baisses ----------------
+    print("   + test des baisses (avis « baisse » prouvé, risque de forte chute)…", flush=True)
+    try:
+        lignes += tester_baisses(jeu, oof, variables, horizon)
+    except Exception as e:
+        lignes += ["", f"5. Prévoir les baisses : impossible cette fois ({e})"]
     ex = test.sample(min(8, len(test)), random_state=1)
     lignes += ["", "Quelques cas au hasard :"]
     for d, r in ex.iterrows():

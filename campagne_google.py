@@ -174,12 +174,15 @@ def trouver_export() -> dict:
     zips = []
     for l in lieux:
         zips += glob.glob(os.path.join(l, "*.zip"))
+    zips = [z for z in zips if "radar_bourse" not in os.path.basename(z).lower()]   # jamais nos propres mises à jour
     for z in sorted(zips, key=os.path.getmtime, reverse=True)[:15]:
         try:
             with zipfile.ZipFile(z) as f:
                 noms = f.namelist()
-                req = next((n for n in noms if n.lower().startswith(("requ", "quer"))), None)
-                pag = next((n for n in noms if n.lower().startswith("pages")), None)
+                # uniquement les vrais fichiers de Search Console (« Requêtes.csv » / « Queries.csv » et « Pages.csv »)
+                base_n = lambda n: os.path.basename(n).lower()
+                req = next((n for n in noms if base_n(n) in ("requêtes.csv", "requetes.csv", "queries.csv")), None)
+                pag = next((n for n in noms if base_n(n) == "pages.csv"), None)
                 if req or pag:
                     lire_f = lambda n: f.read(n).decode("utf-8", "replace") if n else ""
                     return {"source": z, "requetes": _lire_csv(lire_f(req)), "pages": _lire_csv(lire_f(pag))}

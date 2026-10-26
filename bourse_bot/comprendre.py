@@ -112,6 +112,54 @@ def evaluer_risque(jeu, horizon, variables_base, n_plis=5):
             "ic_gain": ic, "prouve": bool(ic and ic[0] > 0), "variables": vs}
 
 
+SEUIL_CHUTE = -0.10   # « forte chute » : perdre plus de 10 % en un mois
+
+
+def _modele_chute():
+    from sklearn.ensemble import HistGradientBoostingClassifier
+    return SansColonnesVides(HistGradientBoostingClassifier(max_depth=3, learning_rate=0.05, max_iter=200, min_samples_leaf=500,
+                                                            random_state=0))
+
+
+def evaluer_chute(jeu, horizon, variables_base, n_plis=5):
+    """Version 33 : le risque de forte chute (plus de 10 % en un mois), testé sur des périodes jamais vues.
+    Plus prévisible que le sens du prix, car lié à l'agitation (le point fort des IA). Utilisé seulement si prouvé."""
+    from .model import _auc, _ic, _plis, bootstrap_mois
+    et = jeu.dropna(subset=["rendement_futur"]).copy()
+    et["cible"] = (et["rendement_futur"] < SEUIL_CHUTE).astype(float)
+    vs = _variables_risque(et, variables_base)
+    morceaux = []
+    for train, test in _plis(et, horizon, n_plis):
+        if len(train) < 5000 or test.empty or train["cible"].nunique() < 2:
+            continue
+        m = _modele_chute().fit(train[vs], train["cible"].to_numpy())
+        morceaux.append(pd.DataFrame({"y": test["cible"].to_numpy(), "p": m.predict_proba(test[vs])[:, 1],
+                                      "crypto": test["est_crypto"].to_numpy() if "est_crypto" in test else 0.0}, index=test.index))
+    if not morceaux:
+        return {}
+    o = pd.concat(morceaux)
+    boot = bootstrap_mois(o, lambda d: np.array([_auc(d["y"].to_numpy(), d["p"].to_numpy())]), graine=17)
+    ic = _ic(boot[:, 0]) if len(boot) else None
+    haut = o["p"] >= o["p"].quantile(0.9)
+    return {"nb": int(len(o)), "auc": _auc(o["y"].to_numpy(), o["p"].to_numpy()), "ic_auc": ic,
+            "base": float(o["y"].mean()), "base_actions": float(o.loc[o["crypto"] < 0.5, "y"].mean()) if (o["crypto"] < 0.5).any() else None,
+            "base_cryptos": float(o.loc[o["crypto"] >= 0.5, "y"].mean()) if (o["crypto"] >= 0.5).any() else None,
+            "taux_risque_haut": float(o.loc[haut, "y"].mean()), "seuil": SEUIL_CHUTE,
+            "prouve": bool(ic and ic[0] > 0.55)}
+
+
+def predire_chute(jeu, actuel, variables_base, mod=None):
+    """{ticker: probabilité de perdre plus de 10 % dans le mois}, et le modèle (gardé pour les mises à jour horaires)."""
+    if mod is None:
+        et = jeu.dropna(subset=["rendement_futur"]).copy()
+        et["cible"] = (et["rendement_futur"] < SEUIL_CHUTE).astype(float)
+        vs = _variables_risque(et, variables_base)
+        mod = (_modele_chute().fit(et[vs], et["cible"].to_numpy()), vs)
+    m, vs = mod
+    p = m.predict_proba(actuel[vs])[:, 1]
+    return {t: float(v) for t, v in zip(actuel["ticker"], p) if np.isfinite(v)}, mod
+
+
 def predire_risque(jeu, actuel, tous, horizon, variables_base, utiliser_ia=True, mod=None):
     """{ticker: {"vol": vol annualisée prévue, "mouvement": mouvement typique sur l'horizon,
     "habitude": rapport à son agitation habituelle, "source": "ia" ou "naif"}}"""

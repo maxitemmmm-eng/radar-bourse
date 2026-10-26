@@ -1049,6 +1049,10 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
             evaluation.risque = comprendre.evaluer_risque(jeu_eval, horizon, VARIABLES_BASE)
         except Exception:
             evaluation.risque = {}
+        try:   # version 33 : le risque de forte chute (plus de 10 % en un mois)
+            evaluation.risque["chute"] = comprendre.evaluer_chute(jeu_eval, horizon, VARIABLES_BASE)
+        except Exception as e:
+            evaluation.risque["chute"] = {"prouve": False, "raison": str(e)[:120]}
         evaluation.date_evaluation = datetime.now().isoformat(timespec="minutes")
         _sauver_selection(evaluation, calibs, mode, ancien.get("recette"), ancien.get("entrainements"))
 
@@ -1149,9 +1153,18 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
             utiliser_ia=bool((evaluation.risque or {}).get("prouve")), mod=(cache or {}).get("risque"))
     except Exception:
         evaluation.risque_titres, mod_risque = {}, None
+    mod_chute = (cache or {}).get("chute")
+    try:   # risque de forte chute, seulement s'il a fait ses preuves sur des années jamais vues
+        if ((evaluation.risque or {}).get("chute") or {}).get("prouve"):
+            chutes, mod_chute = comprendre.predire_chute(jeu, actuel, VARIABLES_BASE, mod=mod_chute)
+            for t, pv in chutes.items():
+                if t in evaluation.risque_titres:
+                    evaluation.risque_titres[t]["chute"] = pv
+    except Exception:
+        mod_chute = None
     if not cache:
         _sauver_modeles({"cle": cle, "ia1": ia1, "ia2": ia2, "vs_q": vs_q, "mods_q": mods_q, "rel": modele_rel,
-                         "risque": mod_risque, "refs": locals().get("refs")})
+                         "risque": mod_risque, "refs": locals().get("refs"), "chute": mod_chute})
     if p2 is not None:
         c1, c2 = calibs["ia1"].predict(p1), calibs["ia2"].predict(p2)
         evaluation.proba_ia1 = {t: float(v) for t, v, g in zip(tks, c1, garde) if g}

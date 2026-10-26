@@ -2355,8 +2355,18 @@ function blocRisquer(t){
     <label style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px">Si je mettais
       <input class="risquer-montant" type="number" inputmode="decimal" min="1" step="50" value="1000" aria-label="Montant en euros" style="width:110px;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"> € sur ${esc(t.nom)}…</label>
     <div class="risquer-res" aria-live="polite" style="margin-top:8px;font-size:14px"></div>
+    ${ligneChute(t)}
     <p class="muted" style="margin:6px 0 0;font-size:12.5px">Calculé avec l'agitation prévue par l'IA (sa prévision la plus fiable) et la fourchette du mois. Ce n'est pas une promesse : le prix peut sortir de ces écarts. Règle de prudence : ne mets jamais une somme dont la perte te gênerait.</p>
   </div>`;
+}
+/* Risque de forte chute (version 33) : affiché seulement s'il a fait ses preuves sur des années jamais vues */
+function ligneChute(t){
+  const C = ((DATA.modele || {}).risque || {}).chute || {}, p = t.risque_prevu && t.risque_prevu.chute;
+  if(!C.prouve || p == null) return "";
+  const base = t.ticker.endsWith("-USD") ? C.base_cryptos : C.base_actions, r = v => Math.round(v * 100);
+  const niveau = base ? (p >= base * 1.5 ? "nettement plus que d'habitude" : p <= base * 0.67 ? "moins que d'habitude" : "comme d'habitude") : "";
+  return `<p style="margin:8px 0 0;font-size:14px">⚠ Risque de <b>perdre plus de 10 %</b> ce mois-ci : <b>${r(p)} sur 100</b>${base ? ` (d'habitude ${r(base)} sur 100 ${t.ticker.endsWith("-USD") ? "pour une crypto" : "pour une action"} : ${niveau})` : ""}.</p>
+    <p class="muted" style="margin:2px 0 0;font-size:12.5px">Testé sur des années jamais vues : quand l'IA annonçait ses risques les plus élevés, une chute de plus de 10 % arrivait ${r(C.taux_risque_haut)} fois sur 100.</p>`;
 }
 function majRisquer(bloc){
   const m = +bloc.querySelector(".risquer-montant").value || 0, mv = +bloc.dataset.mv;
