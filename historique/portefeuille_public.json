@@ -1,0 +1,89 @@
+{
+ "mois": {
+  "2026-10": {
+   "date": "2026-10-26",
+   "titres": [
+    {
+     "ticker": "STLAP.PA",
+     "nom": "Stellantis",
+     "prix": 3.6700000762939453,
+     "indice": "^FCHI",
+     "prix_indice": 7849.009765625,
+     "proba_marche": 0.5365
+    },
+    {
+     "ticker": "INGA.AS",
+     "nom": "ING",
+     "prix": 28.860000610351562,
+     "indice": "^STOXX50E",
+     "prix_indice": 6097.06005859375,
+     "proba_marche": 0.5251
+    },
+    {
+     "ticker": "IBE.MC",
+     "nom": "Iberdrola",
+     "prix": 21.809999465942383,
+     "indice": "^STOXX50E",
+     "prix_indice": 6097.06005859375,
+     "proba_marche": 0.524
+    },
+    {
+     "ticker": "EL.PA",
+     "nom": "EssilorLuxottica",
+     "prix": 180.39999389648438,
+     "indice": "^FCHI",
+     "prix_indice": 7849.009765625,
+     "proba_marche": 0.5232
+    },
+    {
+     "ticker": "BBVA.MC",
+     "nom": "BBVA",
+     "prix": 22.459999084472656,
+     "indice": "^STOXX50E",
+     "prix_indice": 6097.06005859375,
+     "proba_marche": 0.5217
+    },
+    {
+     "ticker": "ORA.PA",
+     "nom": "Orange",
+     "prix": 14.199999809265137,
+     "indice": "^FCHI",
+     "prix_indice": 7849.009765625,
+     "proba_marche": 0.5216
+    },
+    {
+     "ticker": "ENEL.MI",
+     "nom": "Enel",
+     "prix": 9.25,
+     "indice": "^STOXX50E",
+     "prix_indice": 6097.06005859375,
+     "proba_marche": 0.5172
+    },
+    {
+     "ticker": "ORCL",
+     "nom": "Oracle",
+     "prix": 126.16000366210938,
+     "indice": "SPY",
+     "prix_indice": 759.969970703125,
+     "proba_marche": 0.5169
+    },
+    {
+     "ticker": "ALV.DE",
+     "nom": "Allianz",
+     "prix": 431.6000061035156,
+     "indice": "^STOXX50E",
+     "prix_indice": 6097.06005859375,
+     "proba_marche": 0.5168
+    },
+    {
+     "ticker": "BNP.PA",
+     "nom": "BNP Paribas",
+     "prix": 85.23999786376953,
+     "indice": "^FCHI",
+     "prix_indice": 7849.009765625,
+     "proba_marche": 0.5158
+    }
+   ]
+  }
+ }
+}
