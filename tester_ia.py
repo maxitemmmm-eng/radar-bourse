@@ -65,7 +65,9 @@ def explorer(jeu, oof, rel, masque, horizon):
     O = oof.copy()
     O["_i"] = np.arange(len(O))
     O["_d"] = pd.to_datetime(O.index)
-    cols = [c for c in MACRO + TITRE if c in jeu.columns]
+    from bourse_bot import comprendre as C
+    cols_chute = [c for c in C._variables_risque(jeu, model.VARIABLES_BASE) if c in jeu.columns]
+    cols = list(dict.fromkeys([c for c in MACRO + TITRE if c in jeu.columns] + cols_chute))
     J = jeu[["ticker"] + cols].copy()
     J["_d"] = pd.to_datetime(J.index)
     J = J.drop_duplicates(["_d", "ticker"])
@@ -192,6 +194,49 @@ def explorer(jeu, oof, rel, masque, horizon):
         manque = ~np.all(np.column_stack([np.isfinite(methodes[t]) for t in trio]), axis=1)
         methodes["Vote des 3 meilleures méthodes"] = np.where(manque, np.nan, np.where(votes >= 2, 0.75, 0.25))
 
+    # le risque de forte chute (la prévision la plus forte de l'IA) comme indice pour le sens du prix
+    def chute_wf():
+        from sklearn.ensemble import HistGradientBoostingClassifier as HGB
+        yc = (O["rendement_futur"] < -0.10).astype(float).to_numpy()
+        vs = [c for c in cols_chute if c in O.columns and O[c].nunique(dropna=True) > 1]
+        p = np.full(len(O), np.nan)
+        for a_ in sorted(O["_d"].dt.year.unique())[1:]:
+            app = (O["_d"] < pd.Timestamp(year=a_, month=1, day=1) - pd.Timedelta(days=horizon * 1.5)).to_numpy()
+            cib = (O["_d"].dt.year == a_).to_numpy()
+            if app.sum() < 5000 or not cib.any() or len(np.unique(yc[app])) < 2:
+                continue
+            m = SansColonnesVides(HGB(max_depth=3, learning_rate=0.05, max_iter=200, min_samples_leaf=500, random_state=0))
+            p[cib] = m.fit(O.loc[app, vs], yc[app]).predict_proba(O.loc[cib, vs])[:, 1]
+        return p
+    try:
+        O["l_chute"] = _logit(np.nan_to_num(chute_wf(), nan=0.084))
+        O["l_chute_x_crypto"] = O["l_chute"] * O.get("est_crypto", 0).fillna(0) if "est_crypto" in O else 0.0
+        essai("IA + risque de forte chute (combinaison apprise)",
+              lambda: walk_forward(["l_ia", "l_chute", "l_chute_x_crypto"] + [c for c in croises if c.startswith("m_")], lin))
+        essai("IA prudente + risque de forte chute",
+              lambda: walk_forward(["l_ia", "l_chute"] + croises + macro, lin))
+    except Exception as ex:
+        erreurs.append(f"risque de chute : {ex}")
+
+    # choix automatique, année par année, de la méthode qui a le mieux marché les années d'AVANT (sans regarder l'avenir)
+    candidats = {k: np.asarray(v, float) for k, v in methodes.items() if not k.startswith("(")}
+    auto = np.full(len(O), np.nan)
+    choix_annees = []
+    for a_ in sorted(O["_d"].dt.year.unique())[2:]:
+        avant = (O["_d"].dt.year < a_).to_numpy()
+        cib = (O["_d"].dt.year == a_).to_numpy()
+        scores = {}
+        for k, v in candidats.items():
+            okk = avant & np.isfinite(v)
+            if okk.sum() > 5000:
+                scores[k] = ((v[okk] >= 0.5) == (y[okk] == 1)).mean()
+        if scores:
+            best = max(scores, key=scores.get)
+            auto[cib] = candidats[best][cib]
+            choix_annees.append(f"{a_} : {best.split(' (')[0].split(' ←')[0]}")
+    # premières années (rien à comparer avant) : l'avis normal de l'IA
+    methodes["Choix automatique de la meilleure méthode, année par année"] = np.where(np.isfinite(auto), auto, candidats["IA actuelle"])
+
     # MESURE PRÉCISE : sur TOUS les cas des années jamais vues (des dizaines de milliers), pas seulement 5000 tirés au hasard.
     # Avec 5000 cas, la marge d'erreur est d'environ ±70 : deux tests peuvent donner 2793 puis 2753 pour la même méthode.
     ok = np.isfinite(methodes["Combinaison apprise : IA + « mieux que son marché » + climat"])
@@ -240,6 +285,8 @@ def explorer(jeu, oof, rel, masque, horizon):
                    + (f" · années de baisse : {pct(jb)} justes" if jb is not None else "") + sur)
     if erreurs:
         out.append("   Méthodes en erreur : " + " / ".join(erreurs))
+    if choix_annees:
+        out.append("   Méthodes choisies automatiquement : " + " · ".join(choix_annees))
     meilleur = max(res)
     out.append("")
     if meilleur[1] != "IA actuelle" and "de façon sûre" in meilleur[2] and "mieux" in meilleur[2]:
@@ -292,6 +339,27 @@ def tester_baisses(jeu, oof, variables, horizon):
                 f"   et elle a raison {pct(juste)} de ces fois-là (marge {pct(lo)} à {pct(hi)}). Habituellement, ça baisse {pct(1 - y[ok].mean())} du temps.",
                 "   " + ("Verdict : ses « baisse » valent mieux que le hasard, de façon sûre." if lo > 0.5 else
                          "Verdict : pas assez sûr pour l'utiliser.")]
+        # C. et si les avis très pessimistes annonçaient plutôt des REBONDS ? On vérifie année par année avant d'y croire.
+        sel = ok & dit_baisse
+        if sel.sum() >= 300:
+            dd = pd.DataFrame({"monte": (y[sel] == 1).astype(float)}, index=d[sel])
+            boot = model.bootstrap_mois(dd, lambda x: np.array([x["monte"].mean()]), graine=23)
+            lo_r, hi_r = (np.percentile(boot[:, 0], [2.5, 97.5]) if len(boot) else (np.nan, np.nan))
+            base_h = float(y[ok].mean())
+            par_an = dd.groupby(dd.index.year)["monte"].agg(["count", "mean"])
+            an_txt = " · ".join(f"{a_} : {int(r_['count'])} cas, {round(r_['mean'] * 100)} % de hausse" for a_, r_ in par_an.iterrows())
+            nb_ans_bons = int(((par_an["mean"] > base_h) & (par_an["count"] >= 30)).sum())
+            nb_ans = int((par_an["count"] >= 30).sum())
+            out += ["", "C. Et si ces avis très pessimistes annonçaient plutôt un REBOND ?",
+                    f"   Après ces avis, le prix a monté {pct(float(dd['monte'].mean()))} du temps (d'habitude {pct(base_h)}),",
+                    f"   marge en tenant compte des mois qui se ressemblent : {pct(lo_r)} à {pct(hi_r)}.",
+                    f"   Année par année : {an_txt}",
+                    "   " + ("Verdict : pas d'effet rebond, le prix a même plutôt moins monté que d'habitude."
+                             if float(dd["monte"].mean()) <= base_h else
+                             "Verdict : effet rebond régulier sur plusieurs années, piste sérieuse à tester sur le site."
+                             if lo_r > base_h and nb_ans >= 4 and nb_ans_bons >= 0.75 * nb_ans else
+                             "Verdict : l'effet vient surtout de quelques mois exceptionnels (comme un krach suivi d'un rebond) : "
+                             "pas assez régulier pour s'en servir.")]
     else:
         out += ["A. Avis « baisse » prouvé : sur les années passées, aucun seuil n'a donné 55 % de « baisse » justes. L'IA ne doit pas dire « baisse »."]
     # B. risque de forte chute (> 10 % en un mois)

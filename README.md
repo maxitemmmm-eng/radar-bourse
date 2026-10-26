@@ -144,6 +144,11 @@ Ton test a montré que, quand les méthodes disent souvent « baisse », elles o
 - **Le test sur 5000 cas a une nouvelle partie « 5. Prévoir les baisses »** :
   - A : un avis « baisse » donné seulement là où il a eu raison au moins 55 fois sur 100 les années d'avant, avec sa fréquence et sa vraie réussite ;
   - B : le risque de forte chute, mesuré sur tous les cas.
+  - C : quand les avis très pessimistes sont suivis de hausses, le test vérifie année par année s'il s'agit d'un vrai effet « rebond » régulier, ou de quelques mois exceptionnels comme un krach suivi d'une remontée.
+- **Deux dernières méthodes pour le sens du prix** dans le test (partie 4) :
+  - le risque de forte chute utilisé comme indice, puisque c'est la prévision la plus forte de l'IA ;
+  - le choix automatique, chaque année, de la méthode qui a le mieux marché les années d'avant, sans regarder l'avenir.
+- Résultat sur tes vrais cours (1 372 603 cas) : le risque de forte chute a une note de tri de 0,683. Une chute de plus de 10 % arrive 20,3 % du temps quand l'IA annonce un risque élevé, contre 8,4 % d'habitude et 4,5 % quand elle annonce un risque faible.
 
 ## Version 35 : la sélection IA du mois, le calculateur de risque et plus de pages utiles
 
