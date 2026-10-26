@@ -195,7 +195,7 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 <style>{CSS_PAGE}</style>
 </head>
 <body><div class="w">
-<nav class="fil"><a href="{prefixe}index.html">{NOM}</a> · <a href="{prefixe}point.html">Le point du jour</a> · <a href="{prefixe}resultats.html">Résultats réels</a> · <a href="{prefixe}connaissances.html">Ce que sait l'IA</a> · <a href="{prefixe}apprendre.html">Apprendre</a> · <a href="{prefixe}titres.html">Tous les titres</a> · <a href="{prefixe}comparer.html">Comparer</a> · <a href="{prefixe}classements.html">Classements</a> · <a href="{prefixe}previsions.html">Prévisions {datetime.now().year}</a> · <a href="{prefixe}robots.html">Les mini-robots</a> · <a href="{prefixe}glossaire.html">Glossaire</a> · <a href="{prefixe}en/index.html" hreflang="en">English</a></nav>
+<nav class="fil"><a href="{prefixe}index.html">{NOM}</a> · <a href="{prefixe}point.html">Le point du jour</a> · <a href="{prefixe}resultats.html">Résultats réels</a> · <a href="{prefixe}connaissances.html">Ce que sait l'IA</a> · <a href="{prefixe}apprendre.html">Apprendre</a> · <a href="{prefixe}titres.html">Tous les titres</a> · <a href="{prefixe}comparer.html">Comparer</a> · <a href="{prefixe}classements.html">Classements</a> · <a href="{prefixe}portefeuille.html">Sélection IA du mois</a> · <a href="{prefixe}previsions.html">Prévisions {datetime.now().year}</a> · <a href="{prefixe}robots.html">Les mini-robots</a> · <a href="{prefixe}glossaire.html">Glossaire</a> · <a href="{prefixe}en/index.html" hreflang="en">English</a></nav>
 <main>
 {corps}
 </main>
@@ -415,6 +415,110 @@ def _page_duel(base, a, b, date, csp):
         {"@type": "WebPage", "name": f"{na} ou {nb}", "inLanguage": "fr-FR"},
         {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": re.sub(r"<[^>]+>", "", r)}} for q, r in faq]}]}
     return chemin, _page(base, titre, desc, chemin, corps, jsonld, csp)
+
+
+def _exemple_du_jour(mot, payload):
+    """Un exemple tiré des chiffres du jour, quand c'est possible (rend chaque page vivante et unique)."""
+    titres = [t for t in payload.get("titres", []) if t.get("prix")]
+    ctx = {c.get("nom", ""): c for c in payload.get("contexte") or []}
+    if mot == "PER":
+        avec = sorted([t for t in titres if (t.get("per") or 0) > 0], key=lambda t: t["per"])
+        if len(avec) >= 6:
+            f = lambda t: f"<a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a> ({t['per']:.1f})".replace(".", ",")
+            return ("Parmi les actions suivies, les PER les plus bas aujourd'hui : " + ", ".join(f(t) for t in avec[:3])
+                    + ". Les plus élevés : " + ", ".join(f(t) for t in avec[-3:][::-1]) + ".")
+    if mot == "VIX":
+        c = next((v for n, v in ctx.items() if "VIX" in n), None)
+        if c and c.get("valeur") is not None:
+            return f"Le VIX vaut aujourd'hui <b>{c['valeur']:.1f}</b>.".replace(".", ",", 1)
+    if mot == "Fear & Greed crypto":
+        c = next((v for n, v in ctx.items() if "Greed" in n or "crypto" in n.lower()), None)
+        if c and c.get("valeur") is not None:
+            return f"L'indice vaut aujourd'hui <b>{c['valeur']:.0f}</b> sur 100."
+    if mot == "Stop-loss":
+        t = next((t for t in titres if t["ticker"] == "MC.PA" and t.get("stop_loss")), None)
+        if t:
+            return (f"Exemple du jour : pour <a href='../titres/mc-pa.html'>LVMH</a> à {_px(t['prix'], t['devise'])}, le radar calcule un stop-loss "
+                    f"indicatif vers {_px(t['stop_loss'], t['devise'])}, soit {_pct(t['stop_loss'] / t['prix'] - 1)}.")
+    if mot == "Moyenne mobile (SMA)":
+        av = [t for t in titres if t.get("au_dessus_200") is not None]
+        if len(av) >= 20:
+            return (f"Aujourd'hui, <b>{round(sum(t['au_dessus_200'] for t in av) / len(av) * 100)} %</b> des {len(av)} titres suivis "
+                    "sont au-dessus de leur moyenne 200 jours.")
+    return ""
+
+
+def _pages_glossaire(base, payload, dossier, csp, date):
+    from .glossaire_plus import PLUS
+    os.makedirs(os.path.join(dossier, "glossaire"), exist_ok=True)
+    faits = []
+    for i, (mot, definition) in enumerate(GLOSSAIRE):
+        usage, piege = PLUS.get(mot, ("", ""))
+        exemple = _exemple_du_jour(mot, payload)
+        voisins = [GLOSSAIRE[(i + d) % len(GLOSSAIRE)][0] for d in (-2, -1, 1, 2, 3)]
+        corps = (f"<p class='muted'><a href='../glossaire.html'>Glossaire</a></p><h1>{_e(mot)} : définition simple</h1>"
+                 f"<p><b>{_e(definition)}</b></p>"
+                 + (f"<h2>À quoi ça sert ?</h2><p>{_e(usage)}</p>" if usage else "")
+                 + (f"<h2>Le piège à éviter</h2><p>{_e(piege)}</p>" if piege else "")
+                 + (f"<h2>Exemple avec les chiffres du jour</h2><p>{exemple}</p><p class='muted'>Chiffres du {_e(date)}, mis à jour automatiquement.</p>" if exemple else "")
+                 + "<h2>Pour aller plus loin</h2><ul class='liste'><li><a href='../lecons/indicateurs.html'>Les indicateurs techniques, expliqués</a></li>"
+                 "<li><a href='../lecons/risque.html'>Gérer son risque</a></li><li><a href='../resultats.html'>Ce que valent vraiment les prévisions du radar</a></li></ul>"
+                 "<h2>Autres mots</h2><ul class='liste'>" + "".join(f"<li><a href='{slug(v)}.html'>{_e(v)}</a></li>" for v in voisins) + "</ul>")
+        q = f"Qu'est-ce que {mot.split(' (')[0]} en Bourse ?"
+        jsonld = {"@context": "https://schema.org", "@graph": [
+            {"@type": "DefinedTerm", "name": mot, "description": definition, "inDefinedTermSet": f"{base}glossaire.html" if base else "glossaire.html"},
+            {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": definition + (" " + usage if usage else "")}}]}]}
+        chemin = f"glossaire/{slug(mot)}.html"
+        court = mot.split(" (")[0]
+        with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
+            f.write(_page(base, f"{court} : définition simple et exemple | {NOM}", (definition[:150] + "…") if len(definition) > 155 else definition,
+                          chemin, corps, jsonld, csp))
+        faits.append(chemin)
+    return faits
+
+
+def _page_portefeuille(base, payload, dossier, csp):
+    P = payload.get("portefeuille_public") or {}
+    mois = P.get("mois") or []
+    if not mois:
+        return False
+    noms_ind = config.NOM_BENCHMARK
+    R = P.get("resume")
+    corps = ("<h1>Le portefeuille public « mieux que le marché »</h1>"
+             "<p>Chaque mois, le radar choisit les 10 actions auxquelles ses IA donnent le plus de chances de faire "
+             "<b>mieux que leur indice</b> (CAC 40, Euro Stoxx 50 ou S&amp;P 500). C'est, après l'agitation, ce que les IA prévoient "
+             "le mieux sur les années testées. Le choix est enregistré le jour même avec les prix du jour et n'est plus jamais modifié : "
+             "ce suivi montre ce que l'IA vaut vraiment, mois après mois, réussites et ratés compris.</p>")
+    if R:
+        corps += ("<div class='carte grille'>"
+                  f"<div class='k'><b>{_pct(R['ecart_moyen'])}</b><span>d'écart moyen avec les indices par mois ({R['nb_mois']} mois terminés)</span></div>"
+                  f"<div class='k'><b>{R['mois_gagnants']} / {R['nb_mois']}</b><span>mois où la sélection a fait mieux que ses indices</span></div>"
+                  f"<div class='k'><b>{R['titres_mieux']} / {R['titres']}</b><span>titres qui ont fait mieux que leur indice</span></div></div>")
+    else:
+        corps += "<p class='muted'>Le premier mois de suivi n'est pas encore terminé : le bilan complet arrivera à la fin du mois.</p>"
+    for m in mois:
+        lignes = "".join(
+            f"<tr><td><a href='titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a></td><td class='m'>{_pct(t['perf'])}</td>"
+            f"<td class='m'>{_pct(t['perf_indice'])} <span class='muted'>({_e(noms_ind.get(t['indice'], t['indice']))})</span></td>"
+            f"<td>{'<span class=up>Mieux</span>' if t['mieux'] else '<span class=down>Moins bien</span>'}</td></tr>" for t in m["titres"])
+        nm = _mois(m["mois"])
+        de = "d'" if nm[:1].lower() in "aeiouyéè" else "de "
+        debut = m["date"] == datetime.now().strftime("%Y-%m-%d")
+        corps += (f"<h2>Sélection {de}{_e(nm)}{'' if m['termine'] else ' (en cours)'}</h2>"
+                  + (f"<p>Choisie aujourd'hui, le {_e(date_longue(m['date']))}, avec les prix du jour : le suivi commence demain.</p>" if debut else
+                     f"<p>Choisie le {_e(date_longue(m['date']))}. Résultat {'final' if m['termine'] else 'à ce jour'} : "
+                     f"<b>{_pct(m['perf'])}</b> en moyenne, contre {_pct(m['perf_indices'])} pour leurs indices, soit un écart de "
+                     f"<b>{_pct(m['ecart'])}</b>. {m['nb_mieux']} titre{'s' if m['nb_mieux'] > 1 else ''} sur {m['nb']} "
+                     f"{'font' if m['nb_mieux'] > 1 else 'fait'} mieux que {'leur' if m['nb_mieux'] > 1 else 'son'} indice.</p>")
+                  + "<div class='carte' style='overflow-x:auto'><table><tr><td><b>Titre</b></td><td><b>Depuis le choix</b></td>"
+                  "<td><b>Son indice</b></td><td><b>Résultat</b></td></tr>" + lignes + "</table></div>")
+    corps += ("<p class='muted'>Suivi éducatif, sans frais ni impôts, à poids égal. Ce n'est pas un conseil : un mois peut être "
+              "très mauvais, et les résultats passés ne garantissent rien.</p>")
+    with open(os.path.join(dossier, "portefeuille.html"), "w", encoding="utf-8") as f:
+        f.write(_page(base, f"Portefeuille IA « mieux que le marché » : le suivi public | {NOM}",
+                      "Chaque mois, 10 actions choisies par IA pour battre leur indice, suivies publiquement contre le CAC 40 et le S&P 500, ratés compris.",
+                      "portefeuille.html", corps, csp=csp))
+    return True
 
 
 CLASSEMENTS = [
@@ -920,7 +1024,127 @@ def archiver_point(payload: dict) -> None:
         json.dump(r, f, ensure_ascii=False, separators=(",", ":"), default=lambda v: None)
 
 
-def _page_point(base, r, csp, precedent, suivant):
+def _semaine_id(d: datetime) -> str:
+    a, s, _ = d.isocalendar()
+    return f"{a}-S{s:02d}"
+
+
+def archiver_semaine(payload: dict) -> None:
+    """Le soir, met à jour le résumé de la semaine en cours (le dernier soir de la semaine fait foi)."""
+    titres = [t for t in payload.get("titres", []) if t.get("marche") != "tendances" and (t.get("perf") or {}).get("1 semaine") is not None]
+    if len(titres) < 10:
+        return
+    now = datetime.now()
+    indices = []
+    for i in payload.get("indices") or []:
+        sp = [v for v in (i.get("spark") or []) if v]
+        if len(sp) >= 6:
+            indices.append({"nom": i.get("nom"), "var": sp[-1] / sp[-6] - 1, "prix": i.get("prix"), "devise": i.get("devise", "")})
+    garde = lambda t: {"ticker": t["ticker"], "nom": t["nom"], "var": t["perf"]["1 semaine"], "prix": t["prix"], "devise": t["devise"]}
+    tri = sorted(titres, key=lambda t: t["perf"]["1 semaine"], reverse=True)
+    agites = sorted([t for t in titres if (t.get("risque_prevu") or {}).get("mouvement")], key=lambda t: -t["risque_prevu"]["mouvement"])
+    r = {"semaine": _semaine_id(now), "date": now.strftime("%Y-%m-%d"),
+         "indices": indices, "hausses": [garde(t) for t in tri[:5]], "baisses": [garde(t) for t in tri[-5:][::-1]],
+         "agites": [{"ticker": t["ticker"], "nom": t["nom"], "mouvement": t["risque_prevu"]["mouvement"]} for t in agites[:5]],
+         "part_hausse": sum(t["perf"]["1 semaine"] > 0 for t in titres) / len(titres), "nb": len(titres)}
+    dossier = os.path.join(config.DOSSIER_HISTORIQUE, "semaines")
+    os.makedirs(dossier, exist_ok=True)
+    with open(os.path.join(dossier, f"{r['semaine']}.json"), "w", encoding="utf-8") as f:
+        json.dump(r, f, ensure_ascii=False, separators=(",", ":"), default=lambda v: None)
+
+
+def _pages_semaines(base, dossier, csp):
+    src = os.path.join(config.DOSSIER_HISTORIQUE, "semaines")
+    if not os.path.isdir(src):
+        return []
+    semaines = {}
+    for nom in sorted(os.listdir(src))[-104:]:
+        try:
+            with open(os.path.join(src, nom), encoding="utf-8") as f:
+                r = json.load(f)
+            semaines[r["semaine"]] = r
+        except Exception:
+            continue
+    if not semaines:
+        return []
+    os.makedirs(os.path.join(dossier, "semaine"), exist_ok=True)
+    ids = sorted(semaines)
+    faits = []
+    li = lambda t: (f"<li><a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a> {_pct(t['var'])} "
+                    f"<span class='muted'>({_px(t['prix'], t['devise'])})</span></li>")
+    for n, sid in enumerate(ids):
+        r = semaines[sid]
+        a, s = sid.split("-S")
+        titre_h1 = f"La semaine en Bourse : semaine {int(s)} de {a}"
+        ph = r.get("part_hausse") or 0
+        corps = (f"<p class='muted'>La semaine en Bourse</p><h1>{_e(titre_h1)}</h1>"
+                 f"<p>Sur les {r.get('nb', 0)} titres suivis, <b>{round(ph * 100)} %</b> ont fini la semaine en hausse : "
+                 f"une semaine {'plutôt favorable' if ph >= .6 else 'plutôt difficile' if ph < .4 else 'mitigée'}. "
+                 f"Résumé établi le {_e(date_longue(r['date']))}.</p>")
+        if r.get("indices"):
+            corps += ("<h2>Les grands indices sur la semaine</h2><div class='carte grille'>"
+                      + "".join(f"<div class='k'><b>{_pct(i['var'])}</b><span>{_e(i['nom'])}</span></div>" for i in r["indices"]) + "</div>")
+        corps += ("<h2>Plus fortes hausses de la semaine</h2><ul>" + "".join(li(t) for t in r.get("hausses", [])) + "</ul>"
+                  "<h2>Plus fortes baisses de la semaine</h2><ul>" + "".join(li(t) for t in r.get("baisses", [])) + "</ul>")
+        if r.get("agites"):
+            corps += ("<h2>Les plus agités prévus pour le mois qui vient</h2><p>C'est ce que les IA du radar prévoient le mieux : "
+                      "de combien un prix risque de bouger, dans un sens ou dans l'autre.</p><ul>"
+                      + "".join(f"<li><a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a> : ±{round(t['mouvement'] * 100)} % prévus</li>"
+                                for t in r["agites"]) + "</ul>")
+        prec, suiv = (ids[n - 1] if n else None), (ids[n + 1] if n + 1 < len(ids) else None)
+        corps += ("<p style='display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap'>"
+                  + (f"<a href='{prec}.html'>← Semaine précédente</a>" if prec else "<span></span>")
+                  + (f"<a href='{suiv}.html'>Semaine suivante →</a>" if suiv else "<a href='../point.html'>Le point du jour →</a>") + "</p>"
+                  "<p class='muted'>Résumé automatique, projet éducatif : pas un conseil en investissement.</p>")
+        chemin = f"semaine/{sid}.html"
+        desc = f"{titre_h1} : indices, plus fortes hausses et baisses, et les titres les plus agités prévus par l'IA."
+        jsonld = {"@context": "https://schema.org", "@type": "NewsArticle", "headline": titre_h1, "datePublished": r["date"],
+                  "inLanguage": "fr-FR", "isAccessibleForFree": True, "author": {"@type": "Organization", "name": NOM}}
+        with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
+            f.write(_page(base, f"{titre_h1} | {NOM}", desc, chemin, corps, jsonld, csp))
+        faits.append(chemin)
+    corps = ("<h1>La semaine en Bourse</h1><p class='muted'>Chaque semaine, le résumé des marchés suivis par le radar.</p><ul class='liste'>"
+             + "".join(f"<li><a href='semaine/{sid}.html'>Semaine {int(sid.split('-S')[1])} de {sid.split('-S')[0]}</a></li>" for sid in reversed(ids)) + "</ul>")
+    with open(os.path.join(dossier, "semaines.html"), "w", encoding="utf-8") as f:
+        f.write(_page(base, f"La semaine en Bourse : résumés hebdomadaires | {NOM}",
+                      "Chaque semaine : indices, plus fortes hausses et baisses, et les titres les plus agités prévus par l'IA.",
+                      "semaines.html", corps, csp=csp))
+    return faits + ["semaines.html"]
+
+
+def _image_point(r: dict, chemin: str) -> bool:
+    """Grande image paysage (1200×630) du point du jour : Google Discover met en avant les pages qui en ont une."""
+    try:
+        from PIL import Image, ImageDraw
+    except Exception:
+        return False
+    try:
+        W, H = 1200, 630
+        img = Image.new("RGB", (W, H), "#0f1b2d")
+        dr = ImageDraw.Draw(img)
+        dr.text((60, 50), NOM, font=_police(30, True), fill="#a9b8d0")
+        dr.text((60, 100), f"Bourse du {date_longue(r['date'])}", font=_police(60, True), fill="#ffffff")
+        y = 210
+        for i in (r.get("indices") or [])[:4]:
+            v = i.get("var")
+            if v is None:
+                continue
+            dr.text((60, y), str(i.get("nom", "")), font=_police(36), fill="#e4ebf5")
+            dr.text((700, y), f"{'+' if v >= 0 else '−'}{abs(v) * 100:.2f} %".replace(".", ","), font=_police(36, True),
+                    fill="#35c27d" if v >= 0 else "#ff6b6b")
+            y += 64
+        h = (r.get("hausses") or [None])[0]
+        if h:
+            dr.text((60, y + 20), f"Plus forte hausse : {h['nom'][:24]} {'+' if h['var'] >= 0 else '−'}{abs(h['var']) * 100:.1f} %".replace(".", ","),
+                    font=_police(30), fill="#e4ebf5")
+        dr.text((60, H - 56), "Projet éducatif · pas un conseil en investissement", font=_police(22), fill="#8c9bb0")
+        img.save(chemin)
+        return True
+    except Exception:
+        return False
+
+
+def _page_point(base, r, csp, precedent, suivant, image="partage.png"):
     dl = date_longue(r["date"])
     largeur = r.get("largeur")
     humeur = ("plutôt optimiste" if largeur is not None and largeur >= .6 else
@@ -960,7 +1184,9 @@ def _page_point(base, r, csp, precedent, suivant):
     jsonld = {"@context": "https://schema.org", "@type": "NewsArticle", "headline": f"Bourse du {dl} : ce qu'il faut retenir",
               "datePublished": r["date"], "inLanguage": "fr-FR", "isAccessibleForFree": True,
               "author": {"@type": "Organization", "name": NOM}}
-    return chemin, _page(base, titre, desc, chemin, corps, jsonld, csp)
+    if image != "partage.png":
+        jsonld["image"] = (base + image) if base else image
+    return chemin, _page(base, titre, desc, chemin, corps, jsonld, csp, image=image)
 
 
 def generer(payload: dict, dossier: str, csp: str) -> None:
@@ -1016,6 +1242,13 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
                           "comparer.html", corps, csp=csp))
         urls.append(("comparer.html", "daily", "0.7"))
 
+    # Portefeuille public « mieux que le marché »
+    try:
+        if _page_portefeuille(base, payload, dossier, csp):
+            urls.append(("portefeuille.html", "daily", "0.8"))
+    except Exception as e:
+        print(f"Page portefeuille non générée : {e}")
+
     # Classements du jour (« action dividende élevé », « action peu risquée »…) — version 33
     try:
         for chemin in _pages_classements(base, payload, dossier, csp, date):
@@ -1057,10 +1290,15 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
                       "Liste des actions françaises et américaines, ETF et cryptomonnaies analysés chaque jour par Radar Bourse.",
                       "titres.html", corps, csp=csp))
 
-    # Glossaire
+    # Glossaire : une page par mot (version 33) + la page qui les rassemble
+    try:
+        for chemin in _pages_glossaire(base, payload, dossier, csp, date):
+            urls.append((chemin, "weekly", "0.6"))
+    except Exception as e:
+        print(f"Pages du glossaire non générées : {e}")
     corps = ("<h1>Glossaire de la Bourse et de l'analyse technique</h1>"
-             "<p class='muted'>Les mots utilisés sur Radar Bourse, expliqués simplement.</p><dl>"
-             + "".join(f"<dt id='{slug(m)}'>{_e(m)}</dt><dd>{_e(d)}</dd>" for m, d in GLOSSAIRE) + "</dl>")
+             "<p class='muted'>Les mots utilisés sur Radar Bourse, expliqués simplement. Clique sur un mot pour sa page complète.</p><dl>"
+             + "".join(f"<dt id='{slug(m)}'><a href='glossaire/{slug(m)}.html'>{_e(m)}</a></dt><dd>{_e(d)}</dd>" for m, d in GLOSSAIRE) + "</dl>")
     jsonld = {"@context": "https://schema.org", "@type": "DefinedTermSet", "name": f"Glossaire {NOM}",
               "inLanguage": "fr-FR", "hasDefinedTerm": [{"@type": "DefinedTerm", "name": m, "description": d} for m, d in GLOSSAIRE]}
     with open(os.path.join(dossier, "glossaire.html"), "w", encoding="utf-8") as f:
@@ -1120,8 +1358,11 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     os.makedirs(os.path.join(dossier, "point"), exist_ok=True)
     dates = sorted(points)
     for i, dte in enumerate(dates):
+        img = "partage.png"
+        if i >= len(dates) - 7 and _image_point(points[dte], os.path.join(dossier, "point", f"{dte}.png")):
+            img = f"point/{dte}.png"   # les 7 derniers jours : une grande image propre (Google Discover)
         chemin, page = _page_point(base, points[dte], csp, dates[i - 1] if i else None,
-                                   dates[i + 1] if i + 1 < len(dates) else None)
+                                   dates[i + 1] if i + 1 < len(dates) else None, image=img)
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(page)
         urls.append((chemin, "daily" if i == len(dates) - 1 else "yearly", "0.6"))
@@ -1129,6 +1370,7 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
              "rédigé automatiquement par le radar.</p>"
              "<div class='carte'><b>À partager</b><p style='margin:6px 0 10px'>Une image du jour, prête pour Instagram, "
              "TikTok, X ou WhatsApp (format portrait).</p><a class='btn' href='image-du-jour.png' download>Télécharger l'image du jour</a></div>")
+    corps += "<p><a class='btn' href='semaines.html'>La semaine en Bourse</a></p>"
     corps += ("<ul>" + "".join(f"<li><a href='point/{dte}.html'>Bourse du {date_longue(dte)}</a></li>" for dte in reversed(dates)) + "</ul>"
               if dates else "<p>Le premier point du jour sera publié ce soir.</p>")
     with open(os.path.join(dossier, "point.html"), "w", encoding="utf-8") as f:
@@ -1136,6 +1378,13 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
                       "Résumé quotidien des marchés : indices, plus fortes hausses et baisses, signaux forts, actualités.",
                       "point.html", corps, csp=csp))
     urls.append(("point.html", "daily", "0.8"))
+
+    # La semaine en Bourse
+    try:
+        for chemin in _pages_semaines(base, dossier, csp):
+            urls.append((chemin, "weekly", "0.6"))
+    except Exception as e:
+        print(f"Semaines non générées : {e}")
 
     # Résultats réels, image du jour à partager, version anglaise
     try:
@@ -1189,6 +1438,10 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     with open(os.path.join(dossier, "robots.txt"), "w", encoding="utf-8") as f:
         f.write("User-agent: *\nAllow: /\n" + (f"Sitemap: {base}sitemap.xml\n" if base else ""))
 
+    # Hors connexion (version 33) : le réseau d'abord (cours toujours frais), la copie gardée seulement sans réseau
+    with open(os.path.join(dossier, "sw.js"), "w", encoding="utf-8") as f:
+        f.write(SERVICE_WORKER.replace("__VERSION__", datetime.now().strftime("%Y%m%d%H")))
+
     # Manifeste (« Ajouter à l'écran d'accueil »), icônes, image de partage
     manifeste = {"name": NOM, "short_name": NOM, "description": SLOGAN, "lang": "fr", "start_url": "./",
                  "display": "standalone", "background_color": "#0f1b2d", "theme_color": "#0f1b2d",
@@ -1228,6 +1481,30 @@ def _flux_rss(base, dossier, points, bilans):
     xml.append("</channel></rss>")
     with open(os.path.join(dossier, "flux.xml"), "w", encoding="utf-8") as f:
         f.write("\n".join(xml))
+
+
+SERVICE_WORKER = """// Radar Bourse : fonctionnement hors connexion.
+// Règle : on demande toujours d'abord au réseau (prix du jour) ; la copie gardée ne sert que s'il n'y a pas de réseau.
+const CACHE = "radar-__VERSION__";
+const DE_BASE = ["./", "index.html", "lightweight-charts.js", "manifest.webmanifest", "icone-192.png"];
+self.addEventListener("install", e => {
+  e.waitUntil(caches.open(CACHE).then(c => Promise.all(DE_BASE.map(u => c.add(u).catch(() => null)))).then(() => self.skipWaiting()));
+});
+self.addEventListener("activate", e => {
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith("radar-") && k !== CACHE).map(k => caches.delete(k))))
+    .then(() => self.clients.claim()));
+});
+self.addEventListener("fetch", e => {
+  const r = e.request;
+  if (r.method !== "GET" || new URL(r.url).origin !== self.location.origin) return;   // jamais les sites extérieurs
+  e.respondWith(fetch(r).then(rep => {
+    if (rep && rep.ok && rep.type === "basic") { const copie = rep.clone(); caches.open(CACHE).then(c => c.put(r, copie)); }
+    return rep;
+  }).catch(() => caches.match(r).then(m => m || (r.mode === "navigate" ? caches.match("index.html") : undefined))
+    .then(m => m || new Response("Hors connexion : cette page n'a pas encore été gardée sur cet appareil.",
+                                 {status: 503, headers: {"Content-Type": "text/plain; charset=utf-8"}}))));
+});
+"""
 
 
 def cle_indexnow() -> str:

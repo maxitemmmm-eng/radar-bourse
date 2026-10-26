@@ -708,7 +708,7 @@ html.calme *{animation:none!important;transition:none!important}
   <a href="#previsions">Prévisions</a><a href="#simulation">Simulation</a><a href="#remonte">L'Arène</a><a href="#portefeuille">Portefeuille</a>
   <a href="#signaux">Signaux forts</a><a href="#robots">Robots</a><a href="#carte-sec">Carte du marché</a><a href="#confiance">Fiabilité</a>
   <a href="#tous">Tous les titres</a><a href="resultats.html" class="ext lien-site">Résultats réels</a><a href="connaissances.html" class="ext lien-site">Ce que sait l'IA</a>
-  <a href="point.html" class="ext lien-site">Point du jour</a><a href="comparer.html" class="ext lien-site">Comparer</a><a href="apprendre.html" class="ext lien-site">Apprendre</a>
+  <a href="point.html" class="ext lien-site">Point du jour</a><a href="comparer.html" class="ext lien-site">Comparer</a><a href="portefeuille.html" class="ext lien-site">Sélection IA du mois</a><a href="apprendre.html" class="ext lien-site">Apprendre</a>
 </nav></header>
 <div class="demo gutter" id="demo" hidden role="region" aria-label="Avertissement : données de démonstration"><div class="wrap">Données fictives de démonstration. Lance <span class="num">python -m bourse_bot site</span> sur ton PC pour afficher les vrais cours.</div></div>
 
@@ -2304,7 +2304,7 @@ function resumeSimple(t){
       ${accordTxt ? `<p>${accordTxt} ${aide("accord")}</p>` : ""}
       ${ligneConfiance(t)}${lignePalmares(t)}
       ${t.actu_contredit ? `<p class="muted" style="font-size:13.5px">📰 Les actualités récentes vont plutôt dans l'autre sens : prudence.</p>` : ""}</div></div>
-    ${blocRaisons(t)}${votesRobots(t)}`;
+    ${blocRisquer(t)}${blocRaisons(t)}${votesRobots(t)}`;
 }
 
 /* Le résumé en 3 points : ce que les IA savent faire, du plus fiable au moins fiable */
@@ -2343,6 +2343,31 @@ function lignePalmares(t){
 }
 
 /* Les raisons de l'avis : ce qui a le plus pesé dans le calcul des deux IA */
+/* Hors connexion : seulement sur le site en ligne (https), jamais en aperçu ni en fichier local */
+try{ if("serviceWorker" in navigator && location.protocol === "https:" && document.querySelector('meta[name="radar-sw"]'))
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {})); }catch(e){}
+/* Calculateur « combien risquer » (version 33) : s'appuie sur ce que l'IA prévoit le mieux, l'agitation */
+function blocRisquer(t){
+  const mv = t.risque_prevu && t.risque_prevu.mouvement, f = t.fourchette || [];
+  if(!mv || !t.prix) return "";
+  return `<div class="panel risquer" data-mv="${mv}" data-bas="${f.length === 2 ? f[0] / t.prix - 1 : ""}" data-haut="${f.length === 2 ? f[1] / t.prix - 1 : ""}">
+    <h3 style="margin:0 0 6px">Combien ça peut bouger ? ${aide("agitation")}</h3>
+    <label style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px">Si je mettais
+      <input class="risquer-montant" type="number" inputmode="decimal" min="1" step="50" value="1000" aria-label="Montant en euros" style="width:110px;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"> € sur ${esc(t.nom)}…</label>
+    <div class="risquer-res" aria-live="polite" style="margin-top:8px;font-size:14px"></div>
+    <p class="muted" style="margin:6px 0 0;font-size:12.5px">Calculé avec l'agitation prévue par l'IA (sa prévision la plus fiable) et la fourchette du mois. Ce n'est pas une promesse : le prix peut sortir de ces écarts. Règle de prudence : ne mets jamais une somme dont la perte te gênerait.</p>
+  </div>`;
+}
+function majRisquer(bloc){
+  const m = +bloc.querySelector(".risquer-montant").value || 0, mv = +bloc.dataset.mv;
+  const eur = v => Math.round(v).toLocaleString("fr-FR") + " €";
+  const bas = bloc.dataset.bas === "" ? null : +bloc.dataset.bas, haut = bloc.dataset.haut === "" ? null : +bloc.dataset.haut;
+  bloc.querySelector(".risquer-res").innerHTML = m > 0 ? `En général, ta somme varierait d'environ <b>± ${eur(m * mv)}</b> sur un mois (dans un sens ou dans l'autre).`
+    + (bas != null && haut != null ? `<br>8 fois sur 10 environ, elle finirait entre <b>${eur(m * (1 + bas))}</b> et <b>${eur(m * (1 + haut))}</b>.` : "") : "Indique un montant.";
+}
+document.addEventListener("input", e => { const b = e.target.closest && e.target.closest(".risquer"); if(b) majRisquer(b); });
+new MutationObserver(() => document.querySelectorAll(".risquer:not([data-ok])").forEach(b => { b.dataset.ok = "1"; majRisquer(b); }))
+  .observe(document.body, {childList: true, subtree: true});
 function blocRaisons(t){
   const R = t.raisons_ia || [];
   if(!R.length) return "";

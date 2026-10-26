@@ -25,7 +25,7 @@ for flux in (sys.stdout, sys.stderr):
 from rich.console import Console
 from rich.table import Table
 
-from . import comprendre, robots, alertes, backtest, config, data, fondamentaux, historique, qualite, seo, indicators, model, news, report, scoring, site
+from . import comprendre, robots, alertes, backtest, config, data, fondamentaux, historique, qualite, seo, indicators, model, news, report, scoring, site, portefeuille_public
 
 console = Console()
 COULEUR = {"ACHAT FORT": "bold green", "ACHAT": "green", "NEUTRE": "white",
@@ -252,6 +252,12 @@ def cmd_site(args):
     payload = site.construire(analyses, donnees, evaluation, suivi, bruts, demo=args.demo,
                               actus_marche=actus_marche, qualite=controle)
     payload["correction_erreurs"] = getattr(args, "_correction", None)
+    try:   # le portefeuille public « mieux que le marché » : choisi au calcul complet du soir, suivi ensuite chaque heure
+        if args.demo or os.environ.get("RADAR_SELECTION") == "1":
+            portefeuille_public.choisir(analyses, bruts)
+        payload["portefeuille_public"] = portefeuille_public.bilan(bruts)
+    except Exception as e:
+        console.print(f"[yellow]Portefeuille public indisponible cette fois : {e}[/yellow]")
     try:   # les mini-robots : palmarès sur tout l'historique et signaux du jour
         bot = robots.bilan(donnees, {a.ticker: a.marche for a in analyses}, config.HORIZON_PREDICTION)
         payload["robots"] = bot["robots"]
@@ -261,6 +267,10 @@ def cmd_site(args):
         console.print(f"[yellow]Mini-robots indisponibles cette fois : {e}[/yellow]")
     if not args.demo and os.environ.get("RADAR_SELECTION") == "1":
         seo.archiver_point(payload)   # le point du jour est archivé chaque soir
+        try:
+            seo.archiver_semaine(payload)   # et le résumé de la semaine en cours
+        except Exception:
+            pass
     chemin = site.ecrire(payload)
     etat_alertes = alertes.publier_si_active(payload)
     if os.environ.get("RADAR_ALERTES") == "1":

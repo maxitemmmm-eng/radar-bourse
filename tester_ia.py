@@ -347,6 +347,30 @@ def lancer(nb_cas: int, demo: bool) -> int:
                    f"marge {pct(lo2)} à {pct(hi2)})",
                    "  " + ("Verdict : mieux que la référence, même en comptant la marge d'erreur." if lo2 > max(hr, 1 - hr) else
                            "Verdict : pas de différence sûre avec la référence.")]
+        # version 33 : la même question avec les indicateurs « comparés entre titres du jour », sur TOUS les cas
+        try:
+            print("   + test « mieux que son marché », version comparée…", flush=True)
+            relc = model.predictions_hors_echantillon(model._jeu_relatif(jeu), horizon, variables, par_marche,
+                                                      params={"rangs_jour": True}, garder_ticker=True)
+            if relc is not None and len(relc) == len(rel):
+                def taux_wf(o):
+                    """bonnes réponses sur tous les cas, recalage appris année par année sur les seules années d'avant"""
+                    d = pd.to_datetime(o.index)
+                    yv, p = o["cible"].to_numpy(), np.full(len(o), np.nan)
+                    for a_ in sorted(d.year.unique())[1:]:
+                        app = d < pd.Timestamp(year=a_, month=1, day=1) - pd.Timedelta(days=horizon * 1.5)
+                        cib = d.year == a_
+                        if app.sum() >= 3000:
+                            p[cib] = model.CalibrationPlatt().fit(o.loc[app, "proba"], yv[app]).predict(o.loc[cib, "proba"].to_numpy())
+                    okk = np.isfinite(p)
+                    return float(((p[okk] >= 0.5) == (yv[okk] == 1)).mean()), int(okk.sum())
+                t1, n1 = taux_wf(rel)
+                t2, _ = taux_wf(relc)
+                lignes += [f"  Sur TOUS les cas ({n1:,}) : version actuelle {round(t1 * 5000)} sur 5000 · version « comparée entre titres » "
+                           f"{round(t2 * 5000)} sur 5000".replace(",", " ")
+                           + (" ← la version comparée fait mieux" if t2 > t1 + 0.002 else "")]
+        except Exception as e:
+            lignes += [f"  (version comparée non testée : {e})"]
     # ---------------- 3. L'agitation : de combien le prix va bouger ----------------
     print("   + test de l'agitation prévue…", flush=True)
     try:

@@ -44,7 +44,8 @@ PLAN = {
         "Continuer l'indexation : 10 pages par jour"],
     3: ["GitHub : mettre l'adresse du site et des sujets (bourse, crypto, machine-learning) dans « About » du dépôt",
         "Si tu connais quelqu'un qui a un blog ou un site : lui proposer l'encadré gratuit (code en bas de chaque fiche)",
-        "Créer une fiche gratuite sur AlternativeTo (alternative gratuite à Danelfin / Zonebourse), avec un pseudo"],
+        "Créer une fiche gratuite sur AlternativeTo (alternative gratuite à Danelfin / Zonebourse), avec un pseudo",
+        "Textes prêts à copier (GitHub, awesome-quant, AlternativeTo, Product Hunt) : fichier LISTES_A_PROPOSER.md"],
     4: ["Search Console › Performances › Requêtes : capture à envoyer à Claude pour ajuster les titres",
         "Search Console › Améliorations : vérifier qu'il n'y a pas d'erreur"],
     5: ["Demander l'indexation du bilan du mois dès qu'il apparaît (bilan/…)", "Continuer l'indexation des fiches"],
@@ -136,6 +137,86 @@ def verifier_page(url: str) -> list[str]:
     return pb
 
 
+def _nombre(v: str) -> float | None:
+    v = str(v).strip().replace("\u202f", "").replace("\xa0", "").replace(" ", "").replace("%", "").replace(",", ".")
+    try:
+        return float(v)
+    except ValueError:
+        return None
+
+
+def _lire_csv(texte: str) -> list[dict]:
+    import csv
+    import io
+    lignes = list(csv.reader(io.StringIO(texte.lstrip("\ufeff"))))
+    if len(lignes) < 2:
+        return []
+    tete = [h.strip().lower() for h in lignes[0]]
+    out = []
+    for l in lignes[1:]:
+        if len(l) < len(tete):
+            continue
+        d = dict(zip(tete, l))
+        cle = l[0].strip()
+        val = {"cle": cle}
+        for nom, mots in (("clics", ("clic", "click")), ("impressions", ("impression",)), ("ctr", ("ctr",)), ("position", ("position",))):
+            col = next((h for h in tete if any(m in h for m in mots)), None)
+            val[nom] = _nombre(d[col]) if col else None
+        out.append(val)
+    return out
+
+
+def trouver_export() -> dict:
+    """Cherche le dernier export « Performances » de Search Console (zip ou CSV) dans Téléchargements ou ce dossier."""
+    import glob
+    import zipfile
+    lieux = [ICI, os.path.join(os.path.expanduser("~"), "Downloads"), os.path.join(os.path.expanduser("~"), "Téléchargements")]
+    zips = []
+    for l in lieux:
+        zips += glob.glob(os.path.join(l, "*.zip"))
+    for z in sorted(zips, key=os.path.getmtime, reverse=True)[:15]:
+        try:
+            with zipfile.ZipFile(z) as f:
+                noms = f.namelist()
+                req = next((n for n in noms if n.lower().startswith(("requ", "quer"))), None)
+                pag = next((n for n in noms if n.lower().startswith("pages")), None)
+                if req or pag:
+                    lire_f = lambda n: f.read(n).decode("utf-8", "replace") if n else ""
+                    return {"source": z, "requetes": _lire_csv(lire_f(req)), "pages": _lire_csv(lire_f(pag))}
+        except (zipfile.BadZipFile, OSError):
+            continue
+    return {}
+
+
+def analyser_export(base: str) -> list[str]:
+    """Ce que les résultats Google disent de faire : pages vues mais peu cliquées, recherches presque en 1re page."""
+    ex = trouver_export()
+    if not ex:
+        return ["   Aucun export trouvé. Dans Search Console › Performances, clique sur « Exporter » › « Télécharger au format CSV »,",
+                "   puis relance ce programme : il trouvera le fichier tout seul dans Téléchargements."]
+    req, pages = ex["requetes"], ex["pages"]
+    clics = sum(r["clics"] or 0 for r in pages or req)
+    impr = sum(r["impressions"] or 0 for r in pages or req)
+    out = [f"   Export lu : {os.path.basename(ex['source'])}",
+           f"   Total : {int(clics)} clics pour {int(impr)} apparitions dans Google ({(clics / impr * 100 if impr else 0):.1f} % de clics).".replace(".", ",", 1)]
+    a_retravailler = [p for p in pages if (p["impressions"] or 0) >= 30 and (p["ctr"] or 0) < 2 and (p["position"] or 99) <= 20]
+    a_retravailler.sort(key=lambda p: -(p["impressions"] or 0))
+    if a_retravailler:
+        out.append("   Pages souvent vues mais peu cliquées (leur titre ou leur description donne peu envie) :")
+        out += [f"     • {p['cle'].replace(base, '/')} : {int(p['impressions'])} apparitions, "
+                f"{str(round(p['ctr'], 1)).replace('.', ',')} % de clics, position {p['position']:.0f}" for p in a_retravailler[:10]]
+    presque = [r for r in req if (r["impressions"] or 0) >= 20 and 8 <= (r["position"] or 0) <= 20]
+    presque.sort(key=lambda r: -(r["impressions"] or 0))
+    if presque:
+        out.append("   Recherches presque en première page (position 8 à 20) : un petit coup de pouce peut les faire monter :")
+        out += [f"     • « {r['cle']} » : position {r['position']:.0f}, {int(r['impressions'])} apparitions" for r in presque[:10]]
+    top = sorted(req, key=lambda r: -(r["clics"] or 0))[:5]
+    if top:
+        out.append("   Recherches qui t'amènent le plus de visiteurs : " + ", ".join(f"« {r['cle']} »" for r in top) + ".")
+    out.append("   ➜ Envoie ce rapport à Claude : il retravaille les titres et crée les pages qui manquent.")
+    return out
+
+
 def main() -> int:
     print("━" * 64)
     print("  📣 Campagne Google gratuite · Radar Bourse")
@@ -214,7 +295,16 @@ def main() -> int:
                     deja[u] = date.today().isoformat()
             print(f"\n   ✅ Noté. {len(a_faire) - sum(1 for u in a_faire if u in deja)} pages restent pour les prochains jours.")
     sauver(e)
-    print("\n4. Rappel : Google met en général 2 à 6 mois à faire monter un site neuf. Regarde d'abord les impressions "
+    print("\n4. Tes résultats dans Google (export de Search Console)")
+    rapport = analyser_export(base)
+    print("\n".join(rapport))
+    try:
+        os.makedirs("rapports", exist_ok=True)
+        with open(os.path.join("rapports", f"analyse_google_{date.today().isoformat()}.txt"), "w", encoding="utf-8") as f:
+            f.write("\n".join(rapport) + "\n")
+    except OSError:
+        pass
+    print("\n5. Rappel : Google met en général 2 à 6 mois à faire monter un site neuf. Regarde d'abord les impressions "
           "(Search Console › Performances), les clics viennent après.")
     print(f"\nSuivi enregistré dans {ETAT} (sur ce PC uniquement).")
     return 0

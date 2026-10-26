@@ -804,6 +804,10 @@ def _jeu_relatif(jeu, classement=False):
     return rel
 
 
+PARAMS_RELATIF = {"classique": None, "classement": {"cible": "rang"}, "compare": {"rangs_jour": True},
+                  "classement_compare": {"cible": "rang", "rangs_jour": True}}
+
+
 def evaluer_relatif(jeu, horizon, variables, par_marche):
     rel = _jeu_relatif(jeu)
     if len(rel) < 5000:
@@ -813,13 +817,18 @@ def evaluer_relatif(jeu, horizon, variables, par_marche):
         return {}, None
     # version 31 : candidate « classement » (apprend le rang de l'écart au marché), gardée seulement si elle fait mieux
     methode = "classique"
-    try:
-        oof_c = predictions_hors_echantillon(_jeu_relatif(jeu, True), horizon, variables, par_marche, params={"cible": "rang"})
-        if (oof_c is not None and len(oof_c) == len(oof)
-                and _auc(oof_c["cible"].to_numpy(), oof_c["proba"].to_numpy()) > _auc(oof["cible"].to_numpy(), oof["proba"].to_numpy()) + 0.002):
-            oof, methode = oof_c, "classement"
-    except Exception:
-        pass
+    # version 33 : « comparé » = chaque indicateur vu comme une place parmi les titres du jour, idéal pour une question
+    # relative (« mieux que les autres ? ») ; gardée seulement si elle fait mieux, comme les autres
+    for nom_m in ("classement", "compare", "classement_compare"):
+        try:
+            classement = nom_m.startswith("classement")
+            oof_c = predictions_hors_echantillon(_jeu_relatif(jeu, classement), horizon, variables, par_marche,
+                                                 params=PARAMS_RELATIF[nom_m])
+            if (oof_c is not None and len(oof_c) == len(oof)
+                    and _auc(oof_c["cible"].to_numpy(), oof_c["proba"].to_numpy()) > _auc(oof["cible"].to_numpy(), oof["proba"].to_numpy()) + 0.002):
+                oof, methode = oof_c, nom_m
+        except Exception:
+            pass
     calib = CalibrationPlatt().fit(oof["proba"], oof["cible"])
     oof["proba"] = calib.predict(oof["proba"])
     p, y = oof["proba"].to_numpy(), oof["cible"].to_numpy()
@@ -1098,9 +1107,9 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
         modele_rel = None
         if calibs.get("relatif") is not None:
             try:
-                classement = (evaluation.relatif or {}).get("methode") == "classement"
-                modele_rel = Predicteur(variables, par_marche, params={"cible": "rang"} if classement else None).fit(
-                    _jeu_relatif(jeu, classement))
+                meth = (evaluation.relatif or {}).get("methode") or "classique"
+                modele_rel = Predicteur(variables, par_marche, params=PARAMS_RELATIF.get(meth)).fit(
+                    _jeu_relatif(jeu, meth.startswith("classement")))
             except Exception:
                 modele_rel = None
 

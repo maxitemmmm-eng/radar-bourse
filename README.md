@@ -134,6 +134,21 @@ Le **défi pronostic** permet de parier (sans argent) contre le radar et de comp
 
 # Historique des versions
 
+## Version 35 : la sélection IA du mois, le calculateur de risque et plus de pages utiles
+
+D'après ton test précis (758 469 cas des années jamais vues), la prudence par marché fait 2801 sur 5000 et l'IA seule 2783. Les vraies forces de l'IA sont l'agitation (plus juste que la méthode simple 62,5 % du temps) et « mieux que son marché ». Cette version s'appuie sur elles.
+
+- **Sélection IA du mois** (`portefeuille.html`) : au premier calcul du soir de chaque mois, les 10 actions auxquelles l'IA donne le plus de chances de battre leur indice sont enregistrées avec le prix du jour, et ce choix n'est plus jamais modifié. Le site suit ensuite, sur un mois, chaque titre face à son indice (CAC 40, Euro Stoxx 50, S&P 500), avec un bilan de tous les mois, ratés compris.
+- **« Mieux que son marché » amélioré** : deux nouvelles versions sont testées chaque soir. L'une compare les indicateurs entre titres du jour, l'autre fait la même chose en apprenant à classer. Elles ne sont gardées que si elles font mieux. Ton test les mesure aussi, sur tous les cas.
+- **Calculateur « Combien ça peut bouger ? »** sur chaque fiche : tu tapes un montant, et il affiche la variation habituelle sur un mois et la fourchette 8 fois sur 10, d'après l'agitation prévue par l'IA.
+- **Une page par mot du glossaire** (25 pages) : définition, à quoi ça sert, le piège à éviter et, quand c'est possible, un exemple avec les chiffres du jour (VIX actuel, PER les plus bas, stop-loss de LVMH…).
+- **La semaine en Bourse** (`semaines.html`) : un résumé automatique chaque semaine, avec les indices, les plus fortes hausses et baisses, et les titres les plus agités prévus.
+- **Images pour Google Discover** : une grande image pour chacun des 7 derniers points du jour.
+- **Hors connexion sur téléphone** : le site déjà ouvert une fois s'affiche même sans réseau. En ligne, il demande toujours d'abord les cours du jour, il ne montre jamais une vieille copie quand le réseau marche.
+- **Campagne** :
+  - `campagne_google.bat` lit maintenant l'export « Performances » de Search Console. Il liste les pages souvent vues mais peu cliquées, et les recherches presque en première page.
+  - Nouveau fichier `LISTES_A_PROPOSER.md`, avec les textes prêts à copier pour GitHub, awesome-quant, AlternativeTo et Product Hunt.
+
 ## Version 33 : 169 titres, filtre de recherche, prévisions honnêtes à un an
 
 - **169 titres au lieu de 99** :

@@ -324,6 +324,7 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
         corps = corps.replace("<!--__LIENS_SEO__-->", seo.liens_accueil(payload), 1)
         securite = (f'<meta http-equiv="Content-Security-Policy" content="{seo.csp_avec_stats(CSP)}">\n'
                     '<meta name="referrer" content="strict-origin-when-cross-origin">\n'
+                    '<meta name="radar-sw" content="1">\n'   # le site en ligne peut s'ouvrir hors connexion
                     + seo.script_stats() + "\n")
         html = ("<!doctype html>\n<html lang=\"fr\">\n<head>\n<meta charset=\"utf-8\">\n"
                 "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
