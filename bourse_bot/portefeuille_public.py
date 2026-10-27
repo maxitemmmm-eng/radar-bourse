@@ -62,6 +62,13 @@ def choisir(analyses, bruts, enregistrer: bool = True) -> dict | None:
                  if a.marche in ("fr", "eu", "us") and a.proba_marche == a.proba_marche and a.proba_marche is not None
                  and getattr(a, "qualite_ok", True) is not False and a.indice_ref]
     candidats.sort(key=lambda a: -a.proba_marche)
+    # version 40 : on écarte le quart des candidats au plus fort risque de chute (prévision la plus fiable du radar,
+    # note de tri 0,687 sur des années jamais vues). Sans risque connu, on garde le titre.
+    ch = [(a.risque_prevu or {}).get("chute") for a in candidats]
+    connus = sorted(c for c in ch if c is not None)
+    if len(connus) >= 12:
+        seuil = connus[int(len(connus) * 0.75)]
+        candidats = [a for a, c in zip(candidats, ch) if c is None or c < seuil]
     sel = []
     for a in candidats[:TAILLE]:
         pi = _dernier_prix(bruts.get(a.indice_ref))

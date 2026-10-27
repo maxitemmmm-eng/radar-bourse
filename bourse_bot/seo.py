@@ -179,9 +179,28 @@ def csp_avec_stats(csp: str) -> str:
                .replace("connect-src 'self'", f"connect-src 'self' {hote}"))
 
 
+def desc_courte(d: str, maxi: int = 160) -> str:
+    if not d or len(d) <= maxi:
+        return d
+    return d[: d.rfind(" ", 0, maxi - 1)].rstrip(" ,;:") + "…"
+
+
+def titre_court(titre: str, maxi: int = 65) -> str:
+    """Google coupe les titres vers 60 caractères : on retire « | Radar Bourse » (ou « avec Radar Bourse »)
+    quand le titre est trop long, pour garder les mots utiles visibles."""
+    if len(titre) <= maxi:
+        return titre
+    for fin in (f" | {NOM}", f" avec {NOM}"):
+        if titre.endswith(fin):
+            return titre[: -len(fin)]
+    return titre
+
+
 def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternates=None, image="partage.png"):
     prefixe = "../" * chemin.count("/")
     csp = csp_avec_stats(csp)
+    titre = titre_court(titre)
+    description = desc_courte(description)
     return f"""<!doctype html>
 <html lang="fr">
 <head>
@@ -213,7 +232,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     sur10 = round(p * 10) if p is not None else None
     verdict = ("plutôt à la hausse" if p >= .58 else "légèrement à la hausse" if p >= .52 else
                "sans direction claire" if p > .48 else "légèrement à la baisse" if p > .42 else
-               "plutôt à la baisse") if p is not None else "non disponible"
+               "plutôt à la baisse") if p is not None else "sans prévision de direction aujourd'hui"
     if p is not None and t.get("avis_net") is False:
         verdict = "sans avis net (les IA hésitent : dans ces cas-là, elles n'ont pas fait mieux que le hasard)"
     rq = t.get("risque_prevu") or {}
@@ -247,8 +266,8 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
         titre = f"{nom} : cours, prévision et analyse IA | {NOM}"
     faq = _faq_titre(t, nom, date, verdict)
     duels_html = ("<h2>Comparer</h2><ul class='liste'>" + "".join(
-        f"<li><a href='../{_chemin_duel(*((t, o) if (t['ticker'], o['ticker']) in DUELS else (o, t)))}'>{_e(nom)} ou {_e(o['nom'])}</a></li>"
-        for o in t.get("_duels") or []) + "</ul>") if t.get("_duels") else ""
+        f"<li><a href='../{ch}'>{_e(nom)} ou {_e(o['nom'])}</a></li>"
+        for o, ch in (t.get("_duels") or [])[:10]) + "</ul>") if t.get("_duels") else ""
     similaires = "".join(f"<li><a href='{slug(v['ticker'])}.html'>{_e(v['nom'])}</a></li>" for v in voisins)
     mv = (t.get("risque_prevu") or {}).get("mouvement")
     desc = (f"{nom} ({aff_tk(tk)}) au {date} : "
@@ -336,9 +355,32 @@ DUELS = [("BTC-USD", "ETH-USD"), ("GLD", "BTC-USD"), ("CW8.PA", "SPY"), ("SPY", 
          ("STMPA.PA", "SOI.PA"), ("RHM.DE", "HO.PA"), ("BRK-B", "SPY"), ("MCD", "SBUX"), ("BA", "AIR.PA")]
 
 
+MAX_DUELS = 450
+CRYPTOS_DUELS = 14   # les plus grosses cryptos : toutes comparées entre elles
+
+
 def _duels_dispos(titres):
+    """Les duels choisis à la main, puis (version 39) des duels automatiques entre titres comparables :
+    même marché et même secteur pour les actions, les plus grosses cryptos entre elles."""
     par = {t["ticker"]: t for t in titres}
-    return [(par[a], par[b]) for a, b in DUELS if a in par and b in par]
+    paires = [(a, b) for a, b in DUELS if a in par and b in par]
+    vus = {frozenset(p) for p in paires}
+    groupes = {}
+    for t in titres:
+        if t.get("marche") in ("fr", "eu", "us") and t.get("secteur"):
+            groupes.setdefault((t["marche"], t["secteur"]), []).append(t["ticker"])
+    from .config import CRYPTOS
+    cryptos = [tk for tk in list(CRYPTOS)[:CRYPTOS_DUELS] if tk in par]
+    candidats = [(x, y) for i, x in enumerate(cryptos) for y in cryptos[i + 1:]]
+    for g in sorted(groupes.values(), key=len):
+        candidats += [(x, y) for i, x in enumerate(g) for y in g[i + 1:]]
+    for x, y in candidats:
+        if len(paires) >= MAX_DUELS:
+            break
+        if frozenset((x, y)) not in vus:
+            vus.add(frozenset((x, y)))
+            paires.append((x, y))
+    return [(par[a], par[b]) for a, b in paires]
 
 
 def _chemin_duel(a, b):
@@ -409,7 +451,7 @@ def _page_duel(base, a, b, date, csp):
              + f"<p><a class='btn' href='../titres/{slug(a['ticker'])}.html'>Fiche {_e(na)}</a> "
              f"<a class='btn' href='../titres/{slug(b['ticker'])}.html'>Fiche {_e(nb)}</a></p>"
              "<p class='muted'>Projet éducatif. Tu peux perdre tout l'argent investi.</p>")
-    titre = f"{na} ou {nb} : comparaison du cours, du risque et des prévisions | {NOM}"
+    titre = f"{na} ou {nb} : comparaison et prévisions | {NOM}"
     desc = f"{na} ou {nb} ? Cours, volatilité, agitation prévue et avis des IA côte à côte, mis à jour chaque jour."
     jsonld = {"@context": "https://schema.org", "@graph": [
         {"@type": "WebPage", "name": f"{na} ou {nb}", "inLanguage": "fr-FR"},
@@ -424,7 +466,7 @@ def _exemple_du_jour(mot, payload):
     if mot == "PER":
         avec = sorted([t for t in titres if (t.get("per") or 0) > 0], key=lambda t: t["per"])
         if len(avec) >= 6:
-            f = lambda t: f"<a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a> ({t['per']:.1f})".replace(".", ",")
+            f = lambda t: f"<a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a> ({t['per']:.1f})".replace(".", ",").replace(",html", ".html").replace(",,/", "../")
             return ("Parmi les actions suivies, les PER les plus bas aujourd'hui : " + ", ".join(f(t) for t in avec[:3])
                     + ". Les plus élevés : " + ", ".join(f(t) for t in avec[-3:][::-1]) + ".")
     if mot == "VIX":
@@ -480,14 +522,21 @@ def _pages_glossaire(base, payload, dossier, csp, date):
 def _page_portefeuille(base, payload, dossier, csp):
     P = payload.get("portefeuille_public") or {}
     mois = P.get("mois") or []
-    if not mois:
-        return False
+    if not mois:   # jamais de lien cassé : la page existe même avant la première sélection
+        corps = ("<h1>La sélection IA du mois</h1><p>Chaque mois, le radar choisit publiquement 10 actions auxquelles ses IA donnent "
+                 "le plus de chances de faire mieux que leur indice, puis publie le résultat, réussite ou échec.</p>"
+                 "<p class='muted'>La première sélection sera enregistrée au prochain calcul complet du soir.</p>")
+        with open(os.path.join(dossier, "portefeuille.html"), "w", encoding="utf-8") as f:
+            f.write(_page(base, f"Sélection IA du mois : 10 actions suivies en public | {NOM}",
+                          "Chaque mois, 10 actions choisies par les IA du radar, suivies publiquement face à leur indice, ratés compris.",
+                          "portefeuille.html", corps, csp=csp))
+        return True
     noms_ind = config.NOM_BENCHMARK
     R = P.get("resume")
     corps = ("<h1>Le portefeuille public « mieux que le marché »</h1>"
              "<p>Chaque mois, le radar choisit les 10 actions auxquelles ses IA donnent le plus de chances de faire "
              "<b>mieux que leur indice</b> (CAC 40, Euro Stoxx 50 ou S&amp;P 500). C'est, après l'agitation, ce que les IA prévoient "
-             "le mieux sur les années testées. Le choix est enregistré le jour même avec les prix du jour et n'est plus jamais modifié : "
+             "le mieux sur les années testées. Depuis la version 40, les titres au plus fort risque de chute prévu sont écartés. Le choix est enregistré le jour même avec les prix du jour et n'est plus jamais modifié : "
              "ce suivi montre ce que l'IA vaut vraiment, mois après mois, réussites et ratés compris.</p>")
     if R:
         corps += ("<div class='carte grille'>"
@@ -586,7 +635,8 @@ def _pages_guides(base, payload, dossier, csp, date):
                       "(voir les <a href='../resultats.html'>résultats réels</a>) ; ce ne sont pas des conseils d'achat.</p>")
         if g.get("q"):
             corps += "<h2>Questions fréquentes</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{_md(a)}</p>" for q, a in g["q"])
-        liens = list(g.get("l", [])) + [("Ce que valent vraiment les prévisions du radar", "resultats.html")]
+        liens = [(n, c) for n, c in g.get("l", []) if not c.startswith("classements/") or os.path.exists(os.path.join(dossier, c))]
+        liens += [("Ce que valent vraiment les prévisions du radar", "resultats.html")]
         corps += ("<h2>Pour aller plus loin</h2><ul class='liste'>" + "".join(f"<li><a href='../{_e(c)}'>{_e(n)}</a></li>" for n, c in liens)
                   + "".join(f"<li><a href='{v['i']}.html'>{_e(v['h'])}</a></li>" for v in voisins) + "</ul>")
         chemin = f"guides/{g['i']}.html"
@@ -613,6 +663,97 @@ def _pages_guides(base, payload, dossier, csp, date):
                       "Débuter en bourse, investir petit budget, crypto, ETF, arnaques, argent facile : 100 guides simples et honnêtes.",
                       "guides.html", corps, csp=csp))
     faits.append("guides.html")
+    return faits
+
+
+# Version 39 : les mêmes classements, marché par marché (« actions françaises à fort dividende »…)
+_LIB_M = {"fr": ("francaises", "françaises", "CAC 40"), "eu": ("europeennes", "européennes", "Euro Stoxx 50"),
+          "us": ("americaines", "américaines", "S&P 500")}
+
+
+def _variantes():
+    out = []
+    for m, (sm, lm, ind) in _LIB_M.items():
+        f = lambda t, m=m: t.get("marche") == m
+        out += [
+            (f"actions-{sm}-dividende", f"Actions {lm} à fort dividende : le classement du jour",
+             f"Les actions {lm} suivies qui versent le plus de dividende par rapport à leur prix.",
+             lambda t, f=f: f(t) and (t.get("div") or 0) > 0, lambda t: -(t.get("div") or 0),
+             lambda t: f"{t['div']:.2f} % de dividende".replace(".", ",")),
+            (f"actions-{sm}-calmes", f"Actions {lm} les moins agitées prévues ce mois-ci",
+             f"Les actions {lm} dont les IA prévoient qu'elles bougeront le moins le mois prochain.",
+             lambda t, f=f: f(t) and (t.get("risque_prevu") or {}).get("mouvement"), lambda t: t["risque_prevu"]["mouvement"],
+             lambda t: f"±{round(t['risque_prevu']['mouvement'] * 100)} % prévus en un mois"),
+            (f"actions-{sm}-agitees", f"Actions {lm} les plus agitées prévues ce mois-ci",
+             f"Les actions {lm} dont les IA prévoient les plus grands mouvements le mois prochain, à la hausse comme à la baisse.",
+             lambda t, f=f: f(t) and (t.get("risque_prevu") or {}).get("mouvement"), lambda t: -t["risque_prevu"]["mouvement"],
+             lambda t: f"±{round(t['risque_prevu']['mouvement'] * 100)} % prévus en un mois"),
+            (f"actions-{sm}-risque-de-chute", f"Actions {lm} les plus exposées à une forte chute ce mois-ci",
+             f"Les actions {lm} auxquelles les IA donnent le plus de risque de perdre plus de 10 % le mois prochain.",
+             lambda t, f=f: f(t) and (t.get("risque_prevu") or {}).get("chute") is not None, lambda t: -t["risque_prevu"]["chute"],
+             lambda t: f"{round(t['risque_prevu']['chute'] * 100)} chances sur 100 de perdre plus de 10 %"),
+            (f"actions-{sm}-mieux-que-le-marche", f"Actions {lm} qui pourraient faire mieux que le {ind}",
+             f"Les actions {lm} auxquelles les IA donnent le plus de chances de faire mieux que le {ind} le mois prochain.",
+             lambda t, f=f: f(t) and t.get("proba_marche") is not None and t.get("marche_net") is not False, lambda t: -t["proba_marche"],
+             lambda t: f"{round(t['proba_marche'] * 100)} chances sur 100 de faire mieux que {t.get('indice_nom') or 'son marché'}"),
+            (f"actions-{sm}-per-bas", f"Actions {lm} au PER le plus bas",
+             f"Les actions {lm} suivies dont le prix est le plus bas par rapport à leurs bénéfices. Un PER bas n'est pas forcément une bonne affaire.",
+             lambda t, f=f: f(t) and (t.get("per") or 0) > 0, lambda t: t["per"], lambda t: f"PER {t['per']:.1f}".replace(".", ",")),
+        ]
+    est_c = lambda t: str(t.get("ticker", "")).endswith("-USD")
+    out += [
+        ("cryptos-calmes", "Cryptos les moins agitées prévues ce mois-ci",
+         "Les cryptomonnaies dont les IA prévoient les plus petits mouvements le mois prochain (elles restent bien plus agitées que les actions).",
+         lambda t: est_c(t) and (t.get("risque_prevu") or {}).get("mouvement"), lambda t: t["risque_prevu"]["mouvement"],
+         lambda t: f"±{round(t['risque_prevu']['mouvement'] * 100)} % prévus en un mois"),
+        ("cryptos-risque-de-chute", "Cryptos les plus exposées à une forte chute ce mois-ci",
+         "Les cryptomonnaies auxquelles les IA donnent le plus de risque de perdre plus de 10 % le mois prochain.",
+         lambda t: est_c(t) and (t.get("risque_prevu") or {}).get("chute") is not None, lambda t: -t["risque_prevu"]["chute"],
+         lambda t: f"{round(t['risque_prevu']['chute'] * 100)} chances sur 100 de perdre plus de 10 %"),
+    ]
+    return out
+
+
+CLASSEMENTS += _variantes()
+
+SECTEURS_FR = {"Technology": "technologie", "Financial Services": "finance et banques", "Healthcare": "santé",
+               "Consumer Cyclical": "consommation (luxe, auto, loisirs)", "Consumer Defensive": "consommation de base",
+               "Industrials": "industrie", "Energy": "énergie", "Utilities": "services publics (électricité, eau)",
+               "Communication Services": "communication et médias", "Basic Materials": "matériaux et chimie",
+               "Real Estate": "immobilier"}
+
+
+def _pages_secteurs(base, titres, dossier, csp, date):
+    """Une page par secteur : « actions du secteur santé », avec l'agitation et le risque de chute du jour."""
+    groupes = {}
+    for t in titres:
+        if t.get("marche") in ("fr", "eu", "us") and t.get("secteur"):
+            groupes.setdefault(t["secteur"], []).append(t)
+    faits = []
+    for sec, items in sorted(groupes.items()):
+        if len(items) < 4:
+            continue
+        lib = SECTEURS_FR.get(sec, sec)
+        items.sort(key=lambda t: ((t.get("risque_prevu") or {}).get("chute") or 1))
+        lignes = "".join(
+            f"<tr><td><a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a> <span class='muted'>{_e(aff_tk(t['ticker']))}</span></td>"
+            f"<td class='m'>{_px(t['prix'], t['devise'])}</td>"
+            f"<td class='m'>{('±' + str(round(t['risque_prevu']['mouvement'] * 100)) + ' %') if (t.get('risque_prevu') or {}).get('mouvement') else '—'}</td>"
+            f"<td class='m'>{(str(round(t['risque_prevu']['chute'] * 100)) + ' %') if (t.get('risque_prevu') or {}).get('chute') is not None else '—'}</td></tr>"
+            for t in items)
+        h1 = f"Actions du secteur {lib} : prévisions et risque du jour"
+        intro = (f"Les {len(items)} actions du secteur {lib} suivies par le radar (France, Europe, États-Unis), "
+                 "triées du plus faible au plus fort risque de chute prévu pour le mois prochain.")
+        corps = (f"<p class='muted'><a href='../classements.html'>Tous les classements</a></p><h1>{_e(h1)}</h1>"
+                 f"<p class='muted'>Mis à jour automatiquement · cours au {_e(date)}</p><p>{_e(intro)}</p>"
+                 "<div class='carte' style='overflow-x:auto'><table><tr><td><b>Action</b></td><td><b>Cours</b></td>"
+                 "<td><b>Agitation prévue</b></td><td><b>Risque de chute de plus de 10 %</b></td></tr>" + lignes + "</table></div>"
+                 "<p class='muted'>L'agitation et le risque de chute sont ce que les IA prévoient le mieux sur les années testées "
+                 "(<a href='../resultats.html'>résultats réels</a>). Ce n'est pas un conseil d'achat.</p>")
+        chemin = f"classements/secteur-{slug(sec)}.html"
+        with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
+            f.write(_page(base, f"Actions secteur {lib} : prévisions {datetime.now().year}"[:60] + f" | {NOM}", intro[:155], chemin, corps, csp=csp))
+        faits.append((h1, chemin))
     return faits
 
 
@@ -648,6 +789,12 @@ def _pages_classements(base, payload, dossier, csp, date):
             f.write(_page(base, f"{titre_h1} ({an}) | {NOM}", intro[:155], chemin, corps, csp=csp))
         faits.append(chemin)
         liens.append((titre_h1, chemin))
+    try:
+        for h1, chemin in _pages_secteurs(base, titres, dossier, csp, date):
+            faits.append(chemin)
+            liens.append((h1, chemin))
+    except Exception as e:
+        print(f"Pages secteurs non générées : {e}")
     if liens:
         corps = ("<h1>Les classements du jour</h1><p class='muted'>Actions et cryptos triées selon un critère, mis à jour automatiquement.</p><ul class='liste'>"
                  + "".join(f"<li><a href='{c}'>{_e(t)}</a></li>" for t, c in liens) + "</ul>")
@@ -1278,7 +1425,7 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     for t in payload.get("titres", []):
         voisins = [x for x in payload.get("titres", []) if x.get("marche") == t.get("marche") and x["ticker"] != t["ticker"]]
         voisins = sorted(voisins, key=lambda x: -(x.get("score") or 0))[:6]
-        t = dict(t, _duels=[(y if x["ticker"] == t["ticker"] else x) for x, y in duels if t["ticker"] in (x["ticker"], y["ticker"])])
+        t = dict(t, _duels=[((y if x["ticker"] == t["ticker"] else x), _chemin_duel(x, y)) for x, y in duels if t["ticker"] in (x["ticker"], y["ticker"])])
         t = dict(t, _image_ok=_image_titre(t, os.path.join(dossier, "partage", f"{slug(t['ticker'])}.png"), date))
         chemin, page = _page_titre(base, t, horizon, date, csp, payload.get("modele"), payload.get("suivi"), voisins)
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
@@ -1448,7 +1595,9 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
              "rédigé automatiquement par le radar.</p>"
              "<div class='carte'><b>À partager</b><p style='margin:6px 0 10px'>Une image du jour, prête pour Instagram, "
              "TikTok, X ou WhatsApp (format portrait).</p><a class='btn' href='image-du-jour.png' download>Télécharger l'image du jour</a></div>")
-    corps += "<p><a class='btn' href='semaines.html'>La semaine en Bourse</a></p>"
+    _sem = os.path.join(config.DOSSIER_HISTORIQUE, "semaines")
+    if os.path.isdir(_sem) and os.listdir(_sem):
+        corps += "<p><a class='btn' href='semaines.html'>La semaine en Bourse</a></p>"
     corps += ("<ul>" + "".join(f"<li><a href='point/{dte}.html'>Bourse du {date_longue(dte)}</a></li>" for dte in reversed(dates)) + "</ul>"
               if dates else "<p>Le premier point du jour sera publié ce soir.</p>")
     with open(os.path.join(dossier, "point.html"), "w", encoding="utf-8") as f:
