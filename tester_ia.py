@@ -89,7 +89,9 @@ def examen_final(methodes, ok, yy, dates_ok, hausse, noms):
         sr, rr = float(juste[recent].mean()), float(j_ref[recent].mean())
         e3 = sr > rr
         tirages = [int(juste[rng.choice(len(juste), 5000, replace=False)].sum()) for _ in range(30)] if len(juste) > 5000 else []
-        court = nom.split(" (")[0].split(" ←")[0]
+        court = nom.split(" ←")[0]
+        if len(court) > 70:
+            court = court.split(" (")[0]
         out.append(f"   • {court} : {'RÉUSSI ✅' if e1 and e2 and e3 else 'pas réussi'}")
         out.append(f"       épreuve 1 {'✅' if e1 else '❌'} (écart sûr minimum : {lo * 5000:+.0f} sur 5000)"
                    f" · épreuve 2 {'✅' if e2 else '❌'} ({gagne} année{'s' if gagne > 1 else ''} gagnée{'s' if gagne > 1 else ''} sur {len(ans)})"
@@ -98,6 +100,49 @@ def examen_final(methodes, ok, yy, dates_ok, hausse, noms):
             out.append(f"       sur 30 tirages de 5000 cas, son score va de {min(tirages)} à {max(tirages)} (moyenne {round(np.mean(tirages))}) : "
                        "un écart de quelques dizaines entre deux tests est normal")
     return out
+
+
+def tester_semaine(tous):
+    """Version 48 : l'agitation sur une semaine (5 séances), modèle simple contre « comme la semaine dernière »,
+    chaque année n'apprenant que des années d'avant."""
+    from sklearn.linear_model import LinearRegression
+    from bourse_bot import comprendre as C
+    L = []
+    for t, df in tous.items():
+        if df is None or len(df) < 400:
+            continue
+        c = df["Close"].dropna()
+        r, v5, v20, v63 = C._vols_semaine(c)
+        d = pd.DataFrame({"v5": v5, "v20": v20, "v63": v63, "cr": float(str(t).endswith("-USD")),
+                          "fut": r[::-1].rolling(5).std()[::-1].shift(-1), "mvt": (c.shift(-5) / c - 1).abs()}).dropna()
+        d = d[(d[["v5", "v20", "v63", "fut"]] > 1e-5).all(axis=1)].iloc[::5]
+        d.index = pd.DatetimeIndex(d.index).tz_localize(None) if pd.DatetimeIndex(d.index).tz is not None else d.index
+        L.append(d)
+    if not L:
+        return []
+    O = pd.concat(L)
+    an = pd.DatetimeIndex(O.index).year.to_numpy()
+    X = np.c_[np.log(O[["v5", "v20", "v63"]].to_numpy()), O["cr"].to_numpy()]
+    y = np.log(O["fut"].to_numpy())
+    pred = np.full(len(O), np.nan)
+    for a in sorted(set(an)):
+        app, tst = an < a, an == a
+        if app.sum() >= 5000:
+            pred[tst] = LinearRegression().fit(X[app], y[app]).predict(X[tst])
+    ok = np.isfinite(pred)
+    if ok.sum() < 1000:
+        return []
+    e_ia = np.abs(np.exp(pred[ok]) * np.sqrt(5) - O["mvt"].to_numpy()[ok])
+    e_nf = np.abs(O["v5"].to_numpy()[ok] * np.sqrt(5) - O["mvt"].to_numpy()[ok])
+    ans = an[ok]
+    gagne = sum(np.mean(e_ia[ans == a] < e_nf[ans == a]) > .5 for a in np.unique(ans))
+    k = int(ok.sum()); mieux = float(np.mean(e_ia < e_nf))
+    return ["", "3 bis. L'AGITATION SUR UNE SEMAINE (5 séances)",
+            f"➜ Plus proche de la réalité que « comme la semaine dernière » dans {pct(mieux)} des cas ({f'{k:,}'.replace(',', ' ')} cas)"
+            + f" · meilleure {gagne} années sur {len(np.unique(ans))}",
+            f"  Erreur habituelle (médiane) : modèle {pct(float(np.median(e_ia)))} · méthode simple {pct(float(np.median(e_nf)))}",
+            "  " + ("Verdict : fait mieux que la méthode simple, de façon régulière." if mieux > .5 and gagne > len(np.unique(ans)) * .75 else
+                    "Verdict : pas assez régulier.")]
 
 
 def explorer(jeu, oof, rel, masque, horizon):
@@ -444,6 +489,51 @@ def tester_baisses(jeu, oof, variables, horizon):
     return out
 
 
+SCORES = {}
+SEUILS_ALERTE = {"direction": 80, "mieux_que_marche": 80, "agitation_mois": 80, "agitation_semaine_pct": 1.0,
+                 "chute_note": 0.02, "brier_gain_pct": 0.5}
+
+
+def suivi_scores(texte: str) -> list:
+    """Version 49 : garde les notes de chaque test dans rapports/historique_tests.csv et prévient si une note baisse
+    nettement par rapport au test précédent (au-delà du bruit habituel d'un tirage à l'autre)."""
+    import re as _re
+    def nb(m, i=1):
+        return float(m.group(i).replace(",", ".").replace(" ", "")) if m else None
+    s = dict(SCORES)
+    s["direction"] = nb(_re.search(r"1\. LE SENS DU PRIX.*?raison (\d+) fois sur", texte, _re.S))
+    s["mieux_que_marche"] = nb(_re.search(r"2\. FAIRE MIEUX.*?raison (\d+) fois sur", texte, _re.S))
+    s["agitation_mois"] = nb(_re.search(r"3\. L'AGITATION.*?simple[^\d]*(\d+) fois sur", texte, _re.S))
+    s["agitation_semaine_pct"] = nb(_re.search(r"3 bis\..*?dans ([\d,]+) % des cas", texte, _re.S))
+    s["chute_note"] = nb(_re.search(r"Note de tri[^:]*: ([\d,]+)", texte))
+    s["date"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+    chemin = os.path.join("rapports", "historique_tests.csv")
+    avant = None
+    try:
+        h = pd.read_csv(chemin)
+        avant = h.iloc[-1].to_dict() if len(h) else None
+    except Exception:
+        h = pd.DataFrame()
+    pd.concat([h, pd.DataFrame([s])], ignore_index=True).to_csv(chemin, index=False)
+    if not avant:
+        return ["", "Suivi dans le temps : premier test enregistré (rapports/historique_tests.csv). Le prochain sera comparé à celui-ci."]
+    noms = {"direction": "sens du prix (sur 5000)", "mieux_que_marche": "mieux que son marché (sur 5000)",
+            "agitation_mois": "agitation à un mois (sur 5000)", "agitation_semaine_pct": "agitation sur une semaine (%)",
+            "chute_note": "risque de chute (note de tri)", "brier_gain_pct": "gain du score de Brier (%)"}
+    out = ["", f"Suivi dans le temps (comparé au test du {avant.get('date', '?')}) :"]
+    alerte = False
+    for k, lib in noms.items():
+        a, b = avant.get(k), s.get(k)
+        if a is None or b is None or a != a or b != b:
+            continue
+        baisse = (a - b) > SEUILS_ALERTE[k]
+        alerte |= baisse
+        out.append(f"  {lib:<34} {a:g} → {b:g}" + ("   ⚠ BAISSE NETTE" if baisse else ""))
+    out.append("  ⚠ Au moins une note a nettement baissé : envoie ce rapport pour qu'on regarde." if alerte
+               else "  Aucune baisse au-delà du bruit habituel.")
+    return out
+
+
 def lancer(nb_cas: int, demo: bool) -> int:
     data.DEMO = demo
     horizon = config.HORIZON_PREDICTION
@@ -509,6 +599,23 @@ def lancer(nb_cas: int, demo: bool) -> int:
             lignes += ["", f"Quand l'IA avait un avis net (au moins {round((0.5 + marge) * 100)} % ou au plus {round((0.5 - marge) * 100)} %) : "
                        f"{len(nets)} cas, {pct(float(nets['juste'].mean()))} de bonnes réponses "
                        f"(référence sur ces cas : {pct(max(h2, 1 - h2))})."]
+    # ---- Notes de pro (version 49) : la qualité des probabilités, pas seulement le % de bonnes réponses
+    try:
+        p_, y_ = test["p"].to_numpy(), test["cible"].to_numpy()
+        base = float(reste["cible"].mean())
+        brier, brier_ref = float(np.mean((p_ - y_) ** 2)), float(np.mean((base - y_) ** 2))
+        bins = pd.qcut(p_, 10, labels=False, duplicates="drop")
+        dd = pd.DataFrame({"p": p_, "y": y_, "k": bins}).groupby("k").agg(p=("p", "mean"), y=("y", "mean"), n=("y", "size"))
+        ece = float(np.average(np.abs(dd["p"] - dd["y"]), weights=dd["n"]))
+        lignes += ["", "Notes de pro (qualité des probabilités annoncées) :",
+                   f"  Score de Brier : IA {brier:.4f} · référence « taux habituel » {brier_ref:.4f} · "
+                   f"gain {(1 - brier / brier_ref) * 100:+.2f} % (au-dessus de 0 = mieux que la référence)".replace(".", ","),
+                   f"  Écart moyen entre probabilité annoncée et fréquence réelle : {ece * 100:.1f} point(s)".replace(".", ",")
+                   + (" (bien calibrée)" if ece < .02 else " (à surveiller)")]
+        SCORES["brier_gain_pct"] = round((1 - brier / brier_ref) * 100, 3)
+        SCORES["ecart_calibration_pt"] = round(ece * 100, 2)
+    except Exception:
+        pass
     lignes += ["", "Par marché :"]
     for m, g in test.groupby("marche"):
         if len(g) >= 30:
@@ -597,6 +704,11 @@ def lancer(nb_cas: int, demo: bool) -> int:
                    f"  Erreur habituelle (médiane) : IA {pct(float(e_ia.median()))} · méthode simple {pct(float(e_nf.median()))}",
                    "  " + ("Verdict : l'IA fait mieux que la méthode simple, de façon sûre." if lo3 > .5 and e_ia.median() < e_nf.median() else
                            "Verdict : pas de différence sûre avec la méthode simple.")]
+    print("   + test de l'agitation sur une semaine…", flush=True)
+    try:
+        lignes += tester_semaine(tous)
+    except Exception as e:
+        lignes += ["", f"3 bis. Agitation sur une semaine : impossible cette fois ({e})"]
     # ---------------- 4. Objectif 3000 sur 5000 : d'autres façons de décider « hausse » ou « baisse » ----------------
     print("   + recherche de meilleures méthodes pour le sens du prix…", flush=True)
     try:
@@ -617,6 +729,11 @@ def lancer(nb_cas: int, demo: bool) -> int:
         tk = str(r.get("ticker", ""))
         lignes.append(f"  {d:%d/%m/%Y} {tk:<12} IA : {p_txt} % de hausse, donc « {'hausse' if r['p'] >= .5 else 'baisse'} » · "
                       f"réel : {reel} % · {'juste' if r['juste'] else 'faux'}")
+    try:
+        if not demo:
+            lignes += suivi_scores("\n".join(lignes))
+    except Exception as e:
+        lignes += ["", f"Suivi dans le temps : impossible cette fois ({e})"]
     lignes += ["", "Rappel : une prévision à 60 % se trompe 4 fois sur 10 par définition. Ce test ne garantit rien pour l'avenir."]
     texte = "\n".join(lignes)
     print(texte)

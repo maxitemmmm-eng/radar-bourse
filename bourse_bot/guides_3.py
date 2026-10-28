@@ -74,7 +74,7 @@ GUIDES_3 = [
      "d": "La meilleure crypto à acheter n'existe pas : critères pour comparer (taille, ancienneté, utilité, agitation, risque de chute) et chiffres du jour.",
      "r": "Il n'y a pas de « meilleure » crypto pour tout le monde. On peut comparer des critères : **ancienneté, taille, utilité réelle, liquidité, agitation et risque de chute**. Le bitcoin et l'ethereum restent les plus établis, ce qui ne veut pas dire sans risque.",
      "p": [("Les critères utiles", "Depuis combien d'années elle existe, combien elle pèse, si elle est échangée sur de nombreuses plateformes, à quoi elle sert concrètement, qui la contrôle."),
-           ("L'agitation", "Une petite crypto peut bouger de ±50 % en un mois. Le radar prévoit cette agitation pour 30 cryptos et la met à jour chaque jour."),
+           ("L'agitation", "Une petite crypto peut bouger de ±50 % en un mois. Le radar prévoit cette agitation pour plus de 40 cryptos et la met à jour chaque jour."),
            ("Le risque de forte chute", "C'est la prévision la plus solide du radar. Comparer ce risque entre plusieurs cryptos aide à mesurer ce que tu acceptes de risquer.")],
      "k": ["BTC-USD", "ETH-USD", "SOL-USD", "BNB-USD", "XRP-USD", "ADA-USD"],
      "l": [L_AGIT, L_CHUTE, ("Comparer deux cryptos", "comparer.html")]},

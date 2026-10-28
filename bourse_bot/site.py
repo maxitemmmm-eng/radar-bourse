@@ -24,7 +24,7 @@ CSP = ("default-src 'self'; "
        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
        "font-src https://fonts.gstatic.com; "
        "img-src 'self' data:; "
-       "connect-src 'self' https://api.binance.com wss://stream.binance.com:9443 wss://ws.finnhub.io; "
+       "connect-src 'self' https://api.binance.com wss://stream.binance.com:9443 wss://ws.finnhub.io https://min-api.cryptocompare.com; "
        "object-src 'none'; base-uri 'none'; form-action 'none'")
 
 
@@ -243,12 +243,24 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
             "resume": qualite["resume"],
             "a_verifier": [{"ticker": t, "problemes": v["problemes"]} for t, v in qualite["details"].items() if not v["ok"]],
             "demo": demo},
+        "sante": _sante(analyses, qualite, demo),
         "telegram": config.TELEGRAM_CHAINE.lstrip("@") if config.TELEGRAM_CHAINE else "",
         "fondamentaux_libelles": fondamentaux.libelles(),
         "resultats": resultats,   # liste complète des prédictions vérifiées (page « résultats » seulement)
         "elargissement_resultats": fondamentaux.ELARGISSEMENT_RESULTATS,
         "entrainement": _dernier_entrainement(),
     })
+
+
+def _sante(analyses, qualite, demo) -> dict:
+    """Version 49 : état de santé des données, affiché aux visiteurs si quelque chose ne va pas."""
+    from . import data
+    tks = [a.ticker for a in analyses if a.marche != "tendances"]
+    sources = data.SOURCES_UTILISEES
+    anciens = [t for t in tks if sources.get(t) == "ancien cache"]
+    a_verifier = [t for t, v in ((qualite or {}).get("details") or {}).items() if not v.get("ok") and t in set(tks)]
+    return {"total": len(tks), "anciens": len(anciens), "a_verifier": len(a_verifier),
+            "exemples": (anciens + a_verifier)[:6], "demo": bool(demo)}
 
 
 def _json_sur(payload: dict) -> str:
@@ -316,7 +328,7 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
         debut, fin = tete.index("<!--META-->"), tete.index("<!--/META-->") + len("<!--/META-->")
         tete = (tete[:debut] + seo.balises_tete(seo.url_site(), seo.TITRE_ACCUEIL,
                                                  seo.DESCRIPTION, "", jsonld=seo.jsonld_accueil(),
-                                                 alternates={"fr": "", "en": "en/index.html", "x-default": ""}) + tete[fin:])
+                                                 alternates=__import__("bourse_bot.langues", fromlist=["x"]).alternates_accueil()) + tete[fin:])
         faq = json.dumps(seo.jsonld_faq(), ensure_ascii=False).replace("</", "<\\/")
         tete = tete.replace("<!--__LIB__-->", f'<script type="application/ld+json">{faq}</script>\n<!--__LIB__-->', 1)
         tete = tete.replace("<title>Radar Bourse</title>",

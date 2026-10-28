@@ -262,6 +262,13 @@ def cmd_site(args):
         payload["portefeuille_public"] = portefeuille_public.bilan(bruts)
     except Exception as e:
         console.print(f"[yellow]Portefeuille public indisponible cette fois : {e}[/yellow]")
+    try:   # version 47 : suivi public du risque de forte chute (choisi au calcul complet du soir, suivi ensuite)
+        from . import suivi_chute
+        if args.demo or os.environ.get("RADAR_SELECTION") == "1":
+            suivi_chute.choisir(analyses, enregistrer=not args.demo)   # la démo n'écrit jamais dans le vrai historique
+        payload["suivi_chute"] = suivi_chute.bilan(bruts)
+    except Exception as e:
+        console.print(f"[yellow]Suivi du risque de chute indisponible cette fois : {e}[/yellow]")
     try:   # les mini-robots : palmarès sur tout l'historique et signaux du jour
         bot = robots.bilan(donnees, {a.ticker: a.marche for a in analyses}, config.HORIZON_PREDICTION)
         payload["robots"] = bot["robots"]

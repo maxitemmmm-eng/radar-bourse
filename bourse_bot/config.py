@@ -48,7 +48,21 @@ CRYPTOS = {
     "ETC-USD": "Ethereum Classic", "HBAR-USD": "Hedera", "APT21794-USD": "Aptos", "SUI20947-USD": "Sui",
     "ARB11841-USD": "Arbitrum", "FIL-USD": "Filecoin", "AAVE-USD": "Aave", "ALGO-USD": "Algorand",
     "PEPE24478-USD": "Pepe", "INJ-USD": "Injective", "VET-USD": "VeChain",
+    # ajoutées en version 47 (au moins un an d'historique chez Yahoo ; secours Binance puis CryptoCompare)
+    "XMR-USD": "Monero", "KAS-USD": "Kaspa", "RENDER-USD": "Render", "TAO-USD": "Bittensor", "QNT-USD": "Quant",
+    "XTZ-USD": "Tezos", "EOS-USD": "EOS", "ZEC-USD": "Zcash", "DASH-USD": "Dash", "ONDO-USD": "Ondo",
+    "ENA-USD": "Ethena", "SAND-USD": "The Sandbox", "MANA-USD": "Decentraland", "THETA-USD": "Theta Network",
+    "PENGU-USD": "Pudgy Penguins",
+    # ajoutées en version 48 : cours pris directement chez Binance (puis CryptoCompare), pas chez Yahoo,
+    # pour éviter les jetons homonymes (même symbole, autre crypto)
+    "OP-USD": "Optimism", "POL-USD": "Polygon", "STX-USD": "Stacks", "IMX-USD": "Immutable", "LDO-USD": "Lido DAO",
+    "FET-USD": "Fetch.ai (ASI)", "GRT-USD": "The Graph", "SEI-USD": "Sei", "TIA-USD": "Celestia", "JUP-USD": "Jupiter",
+    "WIF-USD": "dogwifhat", "BONK-USD": "Bonk", "FLOKI-USD": "Floki", "WLD-USD": "Worldcoin", "PYTH-USD": "Pyth Network",
+    "STRK-USD": "Starknet", "GALA-USD": "Gala", "AXS-USD": "Axie Infinity", "CRV-USD": "Curve DAO", "RUNE-USD": "THORChain",
 }
+CRYPTOS_SANS_YAHOO = {"OP-USD", "POL-USD", "STX-USD", "IMX-USD", "LDO-USD", "FET-USD", "GRT-USD", "SEI-USD", "TIA-USD",
+                      "JUP-USD", "WIF-USD", "BONK-USD", "FLOKI-USD", "WLD-USD", "PYTH-USD", "STRK-USD", "GALA-USD",
+                      "AXS-USD", "CRV-USD", "RUNE-USD"}
 
 
 def symbole_binance(ticker: str) -> str:
@@ -87,7 +101,7 @@ ENTRAINEMENT_SUPPLEMENTAIRE = {
            "COP", "SBUX", "UPS", "LMT", "HON", "AMAT", "MU", "PYPL", "UBER"],
     "fr": ["ENGI.PA", "VIE.PA", "SGO.PA", "LR.PA", "ML.PA", "PUB.PA", "ACA.PA", "BN.PA"],
     "eu": ["BAS.DE", "BAYN.DE", "MUV2.DE", "PHIA.AS", "AD.AS", "BBVA.MC", "UCG.MI", "ISP.MI"],
-    "crypto": ["XTZ-USD", "EOS-USD", "ZEC-USD", "DASH-USD"],
+    "crypto": [],   # XTZ, EOS, ZEC et DASH sont maintenant affichés sur le site (version 47)
 }
 
 MAX_APPRENTISSAGE_EN_LIGNE = 80   # titres d'apprentissage en plus, au maximum, lors des mises à jour en ligne

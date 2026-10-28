@@ -41,7 +41,7 @@ Tous les jours (2 min) : `campagne_google.bat`, pour les 10 demandes d'indexatio
 **Titre :** J'ai testé honnêtement une IA de prévision boursière sur 5000 cas : elle ne devine pas le sens du prix, mais elle repère bien les risques de chute
 
 **Texte :**
-> Je fais un projet perso gratuit (pas de pub, pas de compte, pas d'affiliation) : un site qui analyse ~170 actions, ETF et cryptos chaque jour avec des IA.
+> Je fais un projet perso gratuit (pas de pub, pas de compte, pas d'affiliation) : un site qui analyse ~185 actions, ETF et cryptos chaque jour avec des IA.
 >
 > Je voulais savoir si ça marche vraiment, donc je l'ai testé sur 5000 cas tirés au hasard dans des années que l'IA n'avait jamais vues :
 > - **Sens du prix à 1 mois** : ~56 %, autant que la règle bête « ça monte toujours ». Donc non, l'IA ne prédit pas la bourse.
@@ -54,10 +54,10 @@ Tous les jours (2 min) : `campagne_google.bat`, pour les 10 demandes d'indexatio
 
 ## Texte B : Reddit r/CryptoFr
 
-**Titre :** Agitation prévue et risque de chute de 30 cryptos, mis à jour chaque jour (projet gratuit, résultats publiés)
+**Titre :** Agitation prévue et risque de chute de plus de 60 cryptos, mis à jour chaque jour (projet gratuit, résultats publiés)
 
 **Texte :**
-> Petit projet perso gratuit et sans pub : chaque jour, des IA estiment pour ~30 cryptos **de combien elles vont bouger** le mois prochain et **le risque de perdre plus de 10 %**.
+> Petit projet perso gratuit et sans pub : chaque jour, des IA estiment pour plus de 60 cryptos **de combien elles vont bouger** le mois prochain et **le risque de perdre plus de 10 %**.
 >
 > Je ne prétends pas deviner si ça monte : je l'ai testé et sur les cryptos, l'IA fait même moins bien que « ça monte toujours ». Le site l'affiche honnêtement.
 > Par contre, le risque de chute est bien repéré sur les années testées.
@@ -67,13 +67,13 @@ Tous les jours (2 min) : `campagne_google.bat`, pour les 10 demandes d'indexatio
 
 ## Texte C : Discord (court)
 
-> Salut ! J'ai fait un site gratuit (sans pub ni compte) qui montre chaque jour l'agitation prévue et le risque de forte chute d'environ 170 actions et cryptos, avec ses vrais résultats publiés, ratés compris. Il y a aussi des duels genre « Airbus ou Safran », « BTC ou ETH ». Si ça vous intéresse : https://maxitemmmm-eng.github.io/radar-bourse/ ; dites-moi ce qui manque.
+> Salut ! J'ai fait un site gratuit (sans pub ni compte) qui montre chaque jour l'agitation prévue et le risque de forte chute d'environ 185 actions et cryptos, avec ses vrais résultats publiés, ratés compris. Il y a aussi des duels genre « Airbus ou Safran », « BTC ou ETH ». Si ça vous intéresse : https://maxitemmmm-eng.github.io/radar-bourse/ ; dites-moi ce qui manque.
 
 ## Texte D : anglais (r/algotrading ou Show HN)
 
 **Titre :** Show HN: I tested my stock-forecasting models on 5,000 unseen cases. Direction is a coin flip, drop risk isn't
 
-> Free, no-ads side project analysing ~170 stocks, ETFs and cryptos daily. Walk-forward test on years the models never saw:
+> Free, no-ads side project analysing ~185 stocks, ETFs and cryptos daily. Walk-forward test on years the models never saw:
 > - 1-month direction: ~56%, same as "always up". No edge.
 > - Risk of a >10% drop next month: AUC 0.69; top decile drops 21.8% of the time vs 8.6% base.
 > - Volatility forecast beats last-month baseline 61% of the time.

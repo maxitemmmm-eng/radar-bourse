@@ -121,7 +121,8 @@ def _yahoo(ticker: str) -> list[dict]:
 def actus(ticker: str) -> list[dict]:
     if data.DEMO:
         return _demo(ticker)
-    items = _finnhub(ticker) or _yahoo(ticker)
+    # pas d'actualités Yahoo pour les cryptos à symbole ambigu (on risquerait celles d'un jeton homonyme)
+    items = _finnhub(ticker) or ([] if ticker in getattr(config, "CRYPTOS_SANS_YAHOO", ()) else _yahoo(ticker))
     limite = datetime.now(timezone.utc) - timedelta(days=JOURS)
     propres, vus = [], set()
     for it in items:

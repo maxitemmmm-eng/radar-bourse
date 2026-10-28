@@ -1155,6 +1155,12 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
             utiliser_ia=bool((evaluation.risque or {}).get("prouve")), mod=(cache or {}).get("risque"))
     except Exception:
         evaluation.risque_titres, mod_risque = {}, None
+    try:   # version 48 : l'agitation sur une semaine (modèle simple, testé sur les vrais cours)
+        for t, mv in comprendre.agitation_semaine(donnees).items():
+            if t in evaluation.risque_titres:
+                evaluation.risque_titres[t]["semaine"] = mv
+    except Exception:
+        pass
     mod_chute = (cache or {}).get("chute")
     try:   # risque de forte chute, seulement s'il a fait ses preuves sur des années jamais vues
         if ((evaluation.risque or {}).get("chute") or {}).get("prouve"):

@@ -10,7 +10,7 @@ import math
 import os
 from datetime import datetime
 
-from . import seo
+from . import langues, seo
 
 NOM = seo.NOM
 SIGNAL_EN = {"ACHAT FORT": "strongly bullish", "ACHAT": "bullish", "NEUTRE": "neutral",
@@ -64,13 +64,14 @@ def _page(base, titre, description, chemin, corps, csp, alternates):
 <style>{seo.CSS_PAGE}</style>
 </head>
 <body><div class="w">
-<nav class="fil"><a href="{prefixe}en/index.html">{NOM} (English)</a> · <a href="{prefixe}en/index.html#all">All stocks</a> · <a href="{prefixe}index.html" hreflang="fr">Version française (interactive app)</a></nav>
+<nav class="fil"><a href="{prefixe}en/index.html">{NOM} (English)</a> · <a href="{prefixe}en/index.html#all">All stocks</a> · <a href="{prefixe}en/guides.html">Guides</a> · <a href="{prefixe}index.html" hreflang="fr">Version française (interactive app)</a></nav>
 <main>
 {corps}
 </main>
 <footer><p class="avert"><b>Nothing is certain in the markets.</b> {NOM} is a free educational project. These figures are generated
 automatically, may contain errors and are not investment advice or a recommendation to buy or sell. You can lose all the
-money you invest. Full terms of use (in French): <a href="{prefixe}index.html#conditions">conditions d'utilisation</a>.</p></footer>
+money you invest. Full terms of use (in French): <a href="{prefixe}index.html#conditions">conditions d'utilisation</a>.</p>
+{f'<p class="muted">Languages: {langues.selecteur(prefixe, "en", alternates)}</p>' if alternates and "es" in alternates else ""}</footer>
 </div></body></html>
 """
 
@@ -124,6 +125,7 @@ def _page_titre(base, t, horizon, date, csp, modele):
 <div class="carte"><table>
 <tr><td>RSI (14)</td><td class="m">{'–' if niv.get('rsi') is None else round(niv['rsi'])}</td></tr>
 <tr><td>ADX (trend strength)</td><td class="m">{'–' if niv.get('adx') is None else round(niv['adx'])}</td></tr>
+{f"<tr><td>Expected move over the next 5 sessions</td><td class='m'>±{(t.get('risque_prevu') or {})['semaine'] * 100:.1f}%</td></tr>" if (t.get('risque_prevu') or {}).get('semaine') else ""}
 <tr><td>3-month performance</td><td>{_pct(perf.get('3 mois'))}</td></tr>
 <tr><td>Annualised volatility</td><td>{_pct(perf.get('volatilité annuelle'), 0)}</td></tr>
 <tr><td>Risk level</td><td>{_e({'Faible': 'Low', 'Moyen': 'Medium', 'Élevé': 'High', 'Très élevé': 'Very high'}.get(t.get('risque'), t.get('risque')))}</td></tr>
@@ -132,7 +134,7 @@ def _page_titre(base, t, horizon, date, csp, modele):
 <h2>Reliability</h2>{fiab or "<p>Statistical forecast: it is often wrong.</p>"}
 """
     return chemin, _page(base, titre, desc, chemin, corps, csp,
-                         {"en": chemin, "fr": f"titres/{s}.html", "x-default": f"titres/{s}.html"})
+                         langues.alternates_titre(s))
 
 
 def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
@@ -167,7 +169,7 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
     corps = f"""
 <h1>{NOM}: one-month stock and crypto forecasts, explained simply</h1>
 <p class="muted">French, European and US stocks, ETFs and major cryptocurrencies, analysed automatically every hour. Free, no sign-up, educational.</p>
-<p><a class="btn" href="../index.html">Open the interactive app (French)</a></p>
+<p><a class="btn" href="../index.html">Open the interactive app (French)</a> <a class="btn ghost" href="guides.html">Beginner guides</a></p>
 <h2>Highest probability of rising over the next month</h2>
 <div class="carte"><table>{top or "<tr><td>Model unavailable today.</td></tr>"}</table></div>
 <h2>Strong signals today</h2>
@@ -180,5 +182,5 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
     desc = ("Free one-month forecasts for French, European and US stocks and major cryptocurrencies: probability of rising, "
             "price range, technical analysis and measured reliability. Educational project, not advice.")
     with open(os.path.join(dossier, "en", "index.html"), "w", encoding="utf-8") as f:
-        f.write(_page(base, titre, desc, "en/index.html", corps, csp, {"en": "en/index.html", "fr": "", "x-default": ""}))
+        f.write(_page(base, titre, desc, "en/index.html", corps, csp, langues.alternates_accueil()))
     return urls

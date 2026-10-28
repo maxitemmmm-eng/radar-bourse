@@ -497,6 +497,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .toast button{background:var(--surface);color:var(--ink);border:0;border-radius:6px;padding:5px 10px;font-weight:600;cursor:pointer}
 
 /* Statut du direct */
+.alerte-donnees{margin:10px auto 0;max-width:1180px;padding:10px 14px;border-radius:10px;border:1px solid var(--warn);background:color-mix(in srgb, var(--warn) 12%, var(--surface));color:var(--ink);font-size:14px;line-height:1.45}
+@media (max-width:700px){.alerte-donnees{margin:8px 12px 0}}
 .live{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:3px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
 .live i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
 .live.on{color:var(--up);border-color:var(--up-soft);background:var(--up-soft)}
@@ -710,6 +712,7 @@ html.calme *{animation:none!important;transition:none!important}
   <a href="#tous">Tous les titres</a><a href="resultats.html" class="ext lien-site">Résultats réels</a><a href="connaissances.html" class="ext lien-site">Ce que sait l'IA</a>
   <a href="point.html" class="ext lien-site">Point du jour</a><a href="comparer.html" class="ext lien-site">Comparer</a><a href="portefeuille.html" class="ext lien-site">Sélection IA du mois</a><a href="apprendre.html" class="ext lien-site">Apprendre</a>
 </nav></header>
+<div class="alerte-donnees" id="alerte-donnees" role="status" hidden></div>
 <div class="demo gutter" id="demo" hidden role="region" aria-label="Avertissement : données de démonstration"><div class="wrap">Données fictives de démonstration. Lance <span class="num">python -m bourse_bot site</span> sur ton PC pour afficher les vrais cours.</div></div>
 
 <main class="gutter" id="contenu" tabindex="-1"><div class="wrap">
@@ -741,7 +744,7 @@ html.calme *{animation:none!important;transition:none!important}
       <p id="pred-sub"></p></div>
     <div class="duo" id="duo-pred">
       <div class="panel"><div class="vue-picks" role="group" aria-label="Classer les titres par">
-        <button class="chip" data-vp="hausse" aria-pressed="true">Chances de hausse</button><button class="chip" data-vp="marche" aria-pressed="false">Mieux que leur marché</button><button class="chip" data-vp="calme" aria-pressed="false">Les plus calmes</button></div>
+        <button class="chip" data-vp="hausse" aria-pressed="true">Chances de hausse</button><button class="chip" data-vp="marche" aria-pressed="false">Mieux que leur marché</button><button class="chip" data-vp="calme" aria-pressed="false">Les plus calmes</button><button class="chip" data-vp="chute" aria-pressed="false" hidden>Risque de forte chute</button><button class="chip" data-vp="semaine" aria-pressed="false" hidden>Agités cette semaine</button></div>
         <p class="muted" id="vp-note" style="font-size:13px;margin:0 0 10px"></p><div class="picks" id="picks"></div></div>
       <div class="panel expert"><div class="label" style="margin-bottom:10px">Configurations de décollage</div><div class="rocket-list" id="rockets"></div></div>
     </div>
@@ -966,7 +969,20 @@ html.calme *{animation:none!important;transition:none!important}
       </div>
       <div><h3>Pour aller plus loin</h3><nav aria-label="Pages du site">
         <a class="lien-site" href="resultats.html">Résultats réels</a>
+        <a class="lien-site" href="fiche-technique-ia.html">Fiche technique de l'IA</a>
         <a class="lien-site" href="en/index.html" hreflang="en" lang="en">English version</a>
+        <a class="lien-site" href="es/index.html" hreflang="es" lang="es">Español</a>
+        <a class="lien-site" href="de/index.html" hreflang="de" lang="de">Deutsch</a>
+        <a class="lien-site" href="it/index.html" hreflang="it" lang="it">Italiano</a>
+        <a class="lien-site" href="pt/index.html" hreflang="pt" lang="pt">Português</a>
+        <a class="lien-site" href="nl/index.html" hreflang="nl" lang="nl">Nederlands</a>
+        <a class="lien-site" href="ru/index.html" hreflang="ru" lang="ru">Русский</a>
+        <a class="lien-site" href="tr/index.html" hreflang="tr" lang="tr">Türkçe</a>
+        <a class="lien-site" href="ar/index.html" hreflang="ar" lang="ar">العربية</a>
+        <a class="lien-site" href="hi/index.html" hreflang="hi" lang="hi">हिन्दी</a>
+        <a class="lien-site" href="zh/index.html" hreflang="zh" lang="zh">中文</a>
+        <a class="lien-site" href="ja/index.html" hreflang="ja" lang="ja">日本語</a>
+        <a class="lien-site" href="ko/index.html" hreflang="ko" lang="ko">한국어</a>
         <a href="#engagements">Nos engagements</a>
         <a href="#prevention">Besoin d'aide ?</a>
       </nav></div>
@@ -1041,7 +1057,7 @@ html.calme *{animation:none!important;transition:none!important}
           <li><b>Utilisateur</b> : toute personne qui consulte le Site, de quelque manière que ce soit.</li>
           <li><b>Contenus</b> : l'ensemble des informations affichées (cours, graphiques, indicateurs, scores, signaux, probabilités, scénarios, simulations, textes générés automatiquement, actualités, données fondamentales et de contexte).</li>
           <li><b>Signal</b> : toute qualification automatique d'un titre (par exemple « haussier », « baissier », « signal fort », « configuration de décollage »).</li>
-          <li><b>Données tierces</b> : les informations fournies par des services extérieurs (Yahoo Finance, Binance, Finnhub, CoinGecko, alternative.me, éditeurs de presse).</li>
+          <li><b>Données tierces</b> : les informations fournies par des services extérieurs (Yahoo Finance, Binance, CryptoCompare, Finnhub, CoinGecko, alternative.me, éditeurs de presse).</li>
         </ul>
 
         <h4>Article 2 – Objet</h4>
@@ -1121,7 +1137,7 @@ html.calme *{animation:none!important;transition:none!important}
         <h4>Sources de données</h4>
         <ul>
           <li>Cours historiques quotidiens des actions, ETF, indices, cryptos, du VIX, des taux, du dollar et de l'or : Yahoo Finance, avec Binance et Stooq en secours. Chaque titre passe un contrôle qualité automatique (fraîcheur, trous, sauts invraisemblables, comparaison entre deux sources pour les cryptos).</li>
-          <li>Cours en direct des cryptos : Binance. Cours en direct des actions américaines et actualités des entreprises américaines : Finnhub.</li>
+          <li>Cours en direct des cryptos : Binance, et CryptoCompare pour celles absentes de Binance. Cours en direct des actions américaines et actualités des entreprises américaines : Finnhub.</li>
           <li>Cryptos en tendance : CoinGecko. Indice Fear &amp; Greed crypto : alternative.me. Autres actualités et données fondamentales : Yahoo Finance.</li>
         </ul>
         <h4>Méthode</h4>
@@ -1152,7 +1168,7 @@ html.calme *{animation:none!important;transition:none!important}
         <b>Contact :</b> <span id="m-contact" class="num"></span></p>
         <p><b>Conflits d'intérêts :</b> <span class="leg-conflits"></span></p>
         <p><b>Hébergeur :</b> GitHub, Inc. (service GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.</p>
-        <p><b>Sources des données :</b> Yahoo Finance (cours historiques), CoinGecko (cryptos en tendance), Binance (cours des cryptos en direct) et, le cas échéant, Finnhub (cours des actions américaines en direct). Ces données restent la propriété de leurs fournisseurs respectifs.</p>
+        <p><b>Sources des données :</b> Yahoo Finance (cours historiques), CoinGecko (cryptos en tendance), Binance et CryptoCompare (cours des cryptos en direct) et, le cas échéant, Finnhub (cours des actions américaines en direct). Ces données restent la propriété de leurs fournisseurs respectifs.</p>
       </article>
 
       <article class="legal" data-pane="confidentialite" hidden>
@@ -1160,7 +1176,7 @@ html.calme *{animation:none!important;transition:none!important}
         <p>Le site ne demande aucun compte, ne collecte aucune donnée personnelle et n'utilise aucun cookie publicitaire ni outil de mesure d'audience.</p>
         <p>Ton navigateur garde seulement en mémoire locale le fait que tu as lu l'avertissement, tes favoris, ton thème, ton mode d'affichage, tes paris du défi et ton portefeuille virtuel. Le bouton « Sauvegarder dans un fichier » crée un fichier sur ton appareil : rien n'est envoyé. Ces informations ne quittent jamais ton appareil ; tu peux les effacer en vidant les données du site.</p>
         <p id="conf-stats" hidden><b>Mesure d'audience :</b> le site compte les visites avec GoatCounter, un outil respectueux de la vie privée : aucun cookie, aucun suivi d'un site à l'autre, pas de profil. Seuls des chiffres agrégés sont conservés (nombre de visites, pages vues, pays, type d'appareil) ; l'adresse IP n'est pas enregistrée. Cette mesure sert uniquement à savoir si le site est utile.</p>
-        <p>Pour afficher la page, ton navigateur se connecte à des services tiers (Google Fonts pour les polices, Binance et éventuellement Finnhub pour les cours en direct). Ces services reçoivent ton adresse IP, comme pour toute page web, selon leurs propres politiques de confidentialité.</p>
+        <p>Pour afficher la page, ton navigateur se connecte à des services tiers (Google Fonts pour les polices, Binance, CryptoCompare et éventuellement Finnhub pour les cours en direct). Ces services reçoivent ton adresse IP, comme pour toute page web, selon leurs propres politiques de confidentialité.</p>
       </article>
     </div>
   </div>
@@ -1343,8 +1359,19 @@ const VUES_PICKS = {
     droite: t => `<span class="num ${t.proba_marche >= .55 ? "up" : ""}">${Math.round(t.proba_marche*100)} %</span><span class="muted" style="font-size:12px"> vs ${esc(t.indice_nom || "son indice")}</span>`},
   calme: {note: "Les titres dont l'IA prévoit qu'ils bougeront le moins le mois prochain : moins de surprises, à la hausse comme à la baisse.",
     liste: () => T.filter(t => t.risque_prevu && t.risque_prevu.mouvement != null).sort((a,b) => a.risque_prevu.mouvement - b.risque_prevu.mouvement),
-    droite: t => `<span class="num">±${(t.risque_prevu.mouvement*100).toFixed(1).replace(".", ",")} %</span><span class="muted" style="font-size:12px"> en un mois</span>`},
+    droite: t => `<span class="num" style="white-space:nowrap" title="mouvement prévu sur un mois">±${(t.risque_prevu.mouvement*100).toFixed(1).replace(".", ",")}&nbsp;%</span>`},
+  semaine: {note: "Les titres dont on prévoit qu'ils bougeront le plus sur les 5 prochaines séances, dans un sens ou dans l'autre. Testé sur 138 000 cas réels : plus fiable que « comme la semaine dernière » chaque année depuis 2009.",
+    liste: () => T.filter(t => t.risque_prevu && t.risque_prevu.semaine != null).sort((a,b) => b.risque_prevu.semaine - a.risque_prevu.semaine),
+    droite: t => `<span class="num" style="white-space:nowrap" title="mouvement prévu sur 5 séances">±${(t.risque_prevu.semaine*100).toFixed(1).replace(".", ",")}&nbsp;%</span>`},
+  // version 46 : la prévision la plus fiable du radar, mise en avant sur l'accueil (seulement si elle a fait ses preuves)
+  chute: {note: "Les titres auxquels les IA donnent le plus de risque de perdre plus de 10 % le mois prochain. C'est ce qu'elles prévoient le mieux : sur des années jamais vues, ces titres ont chuté bien plus souvent que les autres. Ce n'est pas un conseil de vente.",
+    liste: () => T.filter(t => t.risque_prevu && t.risque_prevu.chute != null).sort((a,b) => b.risque_prevu.chute - a.risque_prevu.chute),
+    droite: t => `<span class="num down" style="white-space:nowrap" title="risque de perdre plus de 10 % le mois prochain">${Math.round(t.risque_prevu.chute*100)}&nbsp;%</span>`},
 };
+{ const Ch = ((DATA.modele || {}).risque || {}).chute || {}, bt = document.querySelector('[data-vp="chute"]');
+  if(bt && Ch.prouve && T.some(t => t.risque_prevu && t.risque_prevu.chute != null)) bt.hidden = false; else delete VUES_PICKS.chute; }
+{ const bs = document.querySelector('[data-vp="semaine"]');
+  if(bs && T.some(t => t.risque_prevu && t.risque_prevu.semaine != null)) bs.hidden = false; else delete VUES_PICKS.semaine; }
 function rendrePicks(vue){
   const V = VUES_PICKS[vue] || VUES_PICKS.hausse;
   document.querySelectorAll("[data-vp]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.vp === vue)));
@@ -2087,7 +2114,7 @@ const M = DATA.modele;
 if(M && M.precision!=null){
   const adv = M.precision - M.precision_base;
   $("#trust").innerHTML = `
-   <div class="kpi"><div class="label">Bonnes directions</div><div class="v num">${pctPlain(M.precision)}</div><div class="d">sur ${M.nb_tests.toLocaleString('fr-FR')} prédictions testées (${esc(M.periode)})</div></div>
+   <div class="kpi"><div class="label">Bonnes directions</div><div class="v num">${pctPlain(M.precision)}</div><div class="d">sur ${(M.nb_tests || 0).toLocaleString('fr-FR')} prédictions testées (${esc(M.periode)})</div></div>
    <div class="kpi"><div class="label">Référence naïve</div><div class="v num">${pctPlain(M.precision_base)}</div><div class="d">en répondant toujours la même chose</div></div>
    <div class="kpi"><div class="label">Avantage</div><div class="v num ${adv>0?'up':'down'}">${adv>0?'+':''}${(adv*100).toFixed(1).replace('.',',')} pts</div><div class="d">au-dessus de la référence</div></div>
    <div class="kpi"><div class="label">AUC</div><div class="v num">${M.auc.toFixed(3).replace('.',',')}</div><div class="d">0,500 = hasard · 1 = parfait</div></div>`;
@@ -2316,6 +2343,10 @@ function troisPoints(t){
     const h = rq.habitude, hab = h == null ? "" : h > 1.25 ? ", plus que d'habitude" : h < .8 ? ", moins que d'habitude" : ", comme d'habitude";
     cases.push(`<div class="tp"><span class="tp-l">Agitation prévue</span><b>±${Math.round(rq.mouvement * 100)} %</b><span>en un mois${hab}</span>
       <span class="tp-f">${RQ.prouve && RQ.concordance_ia ? `La prévision la plus fiable des IA : entre deux titres, elle désigne le plus agité ${Math.round(RQ.concordance_ia * 100)} fois sur 100` : RQ.prouve ? "La prévision la plus fiable des IA" : "Estimation tirée des dernières semaines"}</span></div>`);
+  }
+  if(rq && rq.semaine != null){   // version 48 : agitation sur 5 séances
+    cases.push(`<div class="tp"><span class="tp-l">Agitation sur une semaine</span><b>±${(rq.semaine * 100).toFixed(1).replace(".", ",")} %</b><span>sur les 5 prochaines séances</span>
+      <span class="tp-f">Testée sur 138 000 cas réels : plus proche de la réalité que « comme la semaine dernière » 57 fois sur 100, et chaque année depuis 2009</span></div>`);
   }
   if(t.proba_marche != null){
     const net = t.marche_net !== false, p = t.proba_marche;
@@ -2617,7 +2648,7 @@ function lecture(t, court = false){
         <div class="sc neg"><span class="label">Scénario défavorable</span><b class="num">${px(f[0], dev)}</b><span>${pct(f[0]/t.prix - 1)} · 1 chance sur 10 de finir plus bas</span></div>
         <div class="sc mid"><span class="label">Scénario central</span><b class="num">${px(med, dev)}</b><span>${pct(med/t.prix - 1)} · trajectoire médiane</span></div>
         <div class="sc pos"><span class="label">Scénario favorable</span><b class="num">${px(f[1], dev)}</b><span>${pct(f[1]/t.prix - 1)} · 1 chance sur 10 de finir plus haut</span></div>
-      </div>`);
+      </div>${tenueFourchette()}`);
   }
   if(court) return parts.join("");
 
@@ -2987,6 +3018,26 @@ $("#theme").onclick = () => {
   try{ localStorage.setItem("radar-theme", nouveau); }catch(e){}
 };
 
+/* Version 50 : la promesse des fourchettes, vérifiée (sur les années testées, et en direct depuis la mise en ligne) */
+function tenueFourchette(){
+  const F = (DATA.modele || {}).fourchette || {}, S = ((DATA.suivi || {}).detail || {}).fourchette || {};
+  if(F.couverture == null && !S.nb) return "";
+  const p = v => Math.round(v * 100);
+  return `<p class="muted" style="font-size:13px;margin:8px 0 0">Promesse « 8 fois sur 10 » vérifiée : tenue ${F.couverture != null ? `<b>${p(F.couverture)} fois sur 100</b> sur les années testées` : ""}${F.couverture != null && S.nb ? " et " : ""}${S.nb ? `<b>${p(S.taux)} fois sur 100</b> en conditions réelles (${S.nb} prévisions vérifiées)` : ""}. <a href="fiche-technique-ia.html" class="lien-site">Fiche technique</a></p>`;
+}
+/* ---------- Surveillance des données (version 49) : prévenir le visiteur si quelque chose ne va pas ---------- */
+function verifierSante(){
+  const el = $("#alerte-donnees"); if(!el || DATA.demo) return;
+  const S = DATA.sante || {}, msgs = [];
+  const h = (Date.now() - new Date(DATA.genere_le)) / 3600000;
+  if(h > 6) msgs.push(`Les prévisions datent de ${h >= 48 ? Math.round(h / 24) + " jours" : Math.round(h) + " heures"} : la mise à jour automatique est en retard. Les cours en direct restent à jour quand ils sont disponibles.`);
+  if(S.total && S.anciens / S.total > .1) msgs.push(`Une source de données n'a pas répondu : ${S.anciens} titre${S.anciens > 1 ? "s affichent" : " affiche"} des cours de la veille ou plus anciens.`);
+  if(S.total && S.a_verifier / S.total > .1) msgs.push(`${S.a_verifier} titres ont des données à vérifier : ils sont exclus des signaux forts.`);
+  el.hidden = !msgs.length;
+  el.innerHTML = msgs.length ? `<b>⚠ Données à prendre avec prudence.</b> ${msgs.map(esc).join(" ")}` : "";
+}
+verifierSante(); setInterval(verifierSante, 300000);
+
 /* ---------- Heure de mise à jour et nouvelles prévisions ---------- */
 function majHorodatage(){
   const min = Math.round((Date.now() - new Date(DATA.genere_le)) / 60000);
@@ -3027,7 +3078,8 @@ function etat(src, on){
   el.classList.toggle("on", actifs.length > 0);
   el.querySelector("span").textContent = actifs.length ? "En direct · " + actifs.map(k => NOM_SOURCE[k]).join(", ") : "Cours différés";
 }
-function recevoir(tk, prix, ts){ if(OBJETS[tk] && isFinite(prix) && prix > 0) enAttente.set(tk, {prix, ts: ts || Date.now()}); }
+const RECUS = new Set();   // cryptos qui ont reçu au moins un cours en direct
+function recevoir(tk, prix, ts){ if(OBJETS[tk] && isFinite(prix) && prix > 0){ enAttente.set(tk, {prix, ts: ts || Date.now()}); RECUS.add(tk); } }
 function reference(o, ts){
   const jour = new Date(ts).toISOString().slice(0,10);
   return jour > o.date_cours ? o.prix_base : (o.prev_close ?? o.prix_base);
@@ -3087,6 +3139,22 @@ function demarrerBinance(){
     ws.onclose = () => { etat("crypto", false); if(++essais <= 3) setTimeout(connecter, 2000 * essais); else secours(); };
   };
   connecter();
+  // version 47 : les cryptos absentes de Binance (Monero, Kaspa…) passent par CryptoCompare, toutes les 30 s
+  setTimeout(() => {
+    const manquants = {};
+    for(const tk of Object.keys(OBJETS)) if(tk.endsWith("-USD") && !RECUS.has(tk)) (manquants[tk.replace(/\d*-USD$/,"")] ||= []).push(tk);
+    const noms = Object.keys(manquants);
+    if(!noms.length) return;
+    const tour = () => { if(document.hidden) return setTimeout(tour, 30000);
+      fetch("https://min-api.cryptocompare.com/data/pricemulti?tsyms=USD&fsyms=" + encodeURIComponent(noms.slice(0, 60).join(",")))
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(d => { const now = Date.now(); let n = 0;
+          for(const [s, v] of Object.entries(d || {})) if(v && isFinite(v.USD)){ (manquants[s]||[]).forEach(tk => recevoir(tk, +v.USD, now)); n++; }
+          if(n) etat("crypto", true); })
+        .catch(() => {})
+        .finally(() => setTimeout(tour, 30000)); };
+    tour();
+  }, 45000);
 }
 
 function demarrerFinnhub(){
