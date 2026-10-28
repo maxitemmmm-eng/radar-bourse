@@ -1,12 +1,11 @@
-# Surveillance : toutes les 6 heures, vérifie que le site et l'IA continuent de travailler, et répare tout seul.
-# - Site pas mis à jour depuis plus de 6 h : la mise à jour est relancée automatiquement.
-# - Plus de 26 h : en plus, cette tâche échoue et GitHub t'envoie un e-mail.
-# - Pas d'entraînement automatique depuis plus de 3 jours : l'entraînement est relancé.
+# Surveillance : chaque matin, vérifie que le site a bien été mis à jour.
+# Si ce n'est pas le cas depuis plus de 26 heures, cette tâche échoue
+# et GitHub t'envoie automatiquement un e-mail.
 name: Surveillance du site
 
 on:
   schedule:
-    - cron: "17 */6 * * *"
+    - cron: "0 6 * * *"
   workflow_dispatch:
 
 permissions: {}
@@ -14,47 +13,20 @@ permissions: {}
 jobs:
   verifier:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      actions: write    # relancer une mise à jour ou un entraînement en panne
-    env:
-      GH_TOKEN: ${{ github.token }}
-      REPO: ${{ github.repository }}
+    timeout-minutes: 5
     steps:
-      - name: Vérifier le site et le relancer si besoin
+      - name: Vérifier la date de la dernière mise à jour
         env:
           PROPRIO: ${{ github.repository_owner }}
           DEPOT: ${{ github.event.repository.name }}
         run: |
           URL="https://${PROPRIO,,}.github.io/${DEPOT}/version.json"
           echo "Lecture de $URL"
-          REPONSE=$(curl -fsSL --retry 3 "$URL?t=$(date +%s)") || { echo "::error::Le site ne répond pas."; gh workflow run radar.yml -R "$REPO" || true; exit 1; }
+          REPONSE=$(curl -fsSL --retry 3 "$URL?t=$(date +%s)") || { echo "::error::Le site ne répond pas."; exit 1; }
           GENERE=$(echo "$REPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['genere_le'])")
           AGE_H=$(python3 -c "from datetime import datetime; print(int((datetime.now()-datetime.fromisoformat('$GENERE')).total_seconds()//3600))")
-          echo "Dernière mise à jour du site : $GENERE (il y a $AGE_H h)"
-          if [ "$AGE_H" -gt 6 ]; then
-            EN_COURS=$(gh run list -R "$REPO" -w radar.yml -L 5 --json status --jq '[.[] | select(.status != "completed")] | length')
-            if [ "$EN_COURS" = "0" ]; then
-              echo "Site en retard : relance automatique de la mise à jour."
-              gh workflow run radar.yml -R "$REPO" || true
-            else
-              echo "Une mise à jour est déjà en cours ou en attente."
-            fi
-          fi
+          echo "Dernière mise à jour : $GENERE (il y a $AGE_H h)"
           if [ "$AGE_H" -gt 26 ]; then
             echo "::error::Le site n'a pas été mis à jour depuis $AGE_H heures. Regarde l'onglet Actions (tâche « Mise à jour du Radar »)."
             exit 1
-          fi
-
-      - name: Vérifier que l'IA continue d'apprendre
-        run: |
-          DERNIER=$(gh run list -R "$REPO" -w entrainement.yml -L 1 --json createdAt,conclusion --jq '.[0] | "\(.createdAt) \(.conclusion)"' 2>/dev/null || echo "")
-          echo "Dernier entraînement automatique : ${DERNIER:-aucun}"
-          QUAND=$(echo "$DERNIER" | cut -d' ' -f1)
-          if [ -z "$QUAND" ]; then exit 0; fi
-          AGE_J=$(python3 -c "from datetime import datetime,timezone; print((datetime.now(timezone.utc)-datetime.fromisoformat('$QUAND'.replace('Z','+00:00'))).days)")
-          if [ "$AGE_J" -ge 3 ]; then
-            echo "Pas d'entraînement depuis $AGE_J jours : relance."
-            gh workflow run entrainement.yml -R "$REPO" || true
           fi

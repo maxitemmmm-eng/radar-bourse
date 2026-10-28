@@ -57,12 +57,9 @@ jobs:
         run: pip install -r requirements.txt
 
       # Le cache des cours sert de secours si Yahoo ne répond pas pour certains titres
-      # Le cache garde aussi les IA entraînées du jour : les mises à jour horaires vont ainsi 2 à 3 fois plus vite
       - uses: actions/cache@v4
         with:
-          path: |
-            .cache_cours
-            .cache_modeles
+          path: .cache_cours
           key: cours-${{ github.run_id }}
           restore-keys: cours-
 
@@ -79,13 +76,10 @@ jobs:
         run: |
           git config user.name "radar-bot"
           git config user.email "radar-bot@users.noreply.github.com"
-          # ne jamais effacer ce que l'IA a appris ailleurs (entraînement sur le PC ou entraînement automatique)
-          python -m bourse_bot.savoir local
           git add historique/
           git commit -m "Prédictions du $(date +%F)" || exit 0
           for essai in 1 2 3; do
             git pull --rebase -X theirs origin main && git push && exit 0
-            git rebase --abort 2>/dev/null || true
             sleep 10
           done
 
@@ -108,8 +102,7 @@ jobs:
       - id: deploiement
         uses: actions/deploy-pages@v4
 
-      # Le soir, envoie TOUTES les pages du plan du site aux moteurs IndexNow (Bing, DuckDuckGo, Yahoo, Yandex, Seznam…)
-      # en un seul envoi (jusqu'à 10 000 adresses). Google n'utilise pas IndexNow : lui lit le sitemap.
+      # Le soir, signale les pages mises à jour aux moteurs de recherche (Bing, Yandex…) via IndexNow
       - name: Prévenir les moteurs de recherche
         if: github.event.schedule == '30 22 * * *' || github.event_name == 'workflow_dispatch'
         continue-on-error: true
@@ -117,21 +110,8 @@ jobs:
           DEPOT: ${{ github.repository }}
           URL_SITE: ${{ steps.deploiement.outputs.page_url }}
         run: |
-          sleep 60   # laisse le temps à la nouvelle version d'être en ligne
-          python3 - <<'PY'
-          import hashlib, json, os, re, urllib.parse, urllib.request
-          u = os.environ["URL_SITE"]
-          u = u if u.endswith("/") else u + "/"
-          cle = hashlib.sha256(("radar-" + os.environ["DEPOT"]).encode()).hexdigest()[:32]
-          with urllib.request.urlopen(u + "sitemap.xml", timeout=30) as r:
-              adresses = re.findall(r"<loc>([^<]+)</loc>", r.read().decode("utf-8"))[:10000]
-          corps = json.dumps({"host": urllib.parse.urlparse(u).netloc, "key": cle, "keyLocation": u + cle + ".txt",
-                              "urlList": adresses}).encode()
-          req = urllib.request.Request("https://api.indexnow.org/indexnow", data=corps, method="POST",
-                                       headers={"Content-Type": "application/json; charset=utf-8"})
-          try:
-              with urllib.request.urlopen(req, timeout=30) as r:
-                  print(f"IndexNow : {len(adresses)} pages envoyées (réponse {r.status})")
-          except urllib.error.HTTPError as e:
-              print(f"IndexNow : réponse {e.code} pour {len(adresses)} pages")
-          PY
+          CLE=$(python3 -c "import hashlib,os; print(hashlib.sha256(('radar-'+os.environ['DEPOT']).encode()).hexdigest()[:32])")
+          HOTE=$(python3 -c "import os,urllib.parse; print(urllib.parse.urlparse(os.environ['URL_SITE']).netloc)")
+          AUJ=$(date -u +%F)
+          BODY=$(python3 -c "import json,os; u=os.environ['URL_SITE']; print(json.dumps({'host':'$HOTE','key':'$CLE','keyLocation':u+'$CLE.txt','urlList':[u, u+'point.html', u+'point/$AUJ.html', u+'titres.html', u+'resultats.html', u+'en/index.html']}))")
+          curl -s -o /dev/null -w "IndexNow : %{http_code}\n" -X POST "https://api.indexnow.org/indexnow" -H "Content-Type: application/json; charset=utf-8" -d "$BODY"

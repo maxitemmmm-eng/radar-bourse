@@ -298,8 +298,11 @@ def _page(lg, base, titre, desc, chemin, corps, csp, alternates):
     L = T[lg]
     prefixe = "../" * chemin.count("/")
     titre, desc = seo.titre_court(titre), seo.desc_courte(desc)
-    jsonld = {"@context": "https://schema.org", "@type": "WebPage", "name": titre, "description": desc, "inLanguage": lg,
-              "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None}}
+    etapes = [(f"{NOM} ({nom_lg})", f"{lg}/index.html")] + ([(titre, chemin)] if chemin != f"{lg}/index.html" else [])
+    jsonld = {"@context": "https://schema.org", "@graph": [
+        {"@type": "WebPage", "name": titre, "description": desc, "inLanguage": lg,
+         "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None}},
+        seo._jsonld_fil(base, etapes)]}
     tete = seo.balises_tete(base, titre, desc, chemin, jsonld=jsonld, alternates=alternates, langue=lg)
     csp = seo.csp_avec_stats(csp)
     return f"""<!doctype html>
@@ -311,17 +314,24 @@ def _page(lg, base, titre, desc, chemin, corps, csp, alternates):
 <title>{_e(titre)}</title>
 {tete}
 <link rel="icon" href="{prefixe}icone-192.png">
+{seo.SCRIPT_THEME}
+{seo.POLICES}
 {seo.script_stats()}
 <style>{seo.CSS_PAGE}</style>
 </head>
-<body><div class="w">
-<nav class="fil"><a href="{prefixe}{lg}/index.html">{NOM} ({_e(nom_lg)})</a> · <a href="{prefixe}{lg}/index.html#all">{_e(L['tous'])}</a></nav>
-<main>
+<body>
+{seo.entete(prefixe, chemin, f"{lg}/index.html", nom_lg,
+            [(L['tous'], f"{lg}/index.html"), ("English", "en/index.html", 'hreflang="en" lang="en"'), ("Français", "index.html", 'hreflang="fr" lang="fr"')],
+            None, aria_nav=NOM, aria_theme="☀ / ☾", aller=NOM)}
+<div class="w">
+<main id="contenu" tabindex="-1">
 {corps}
 </main>
 <footer><p class="avert">{L['avert'].format(nom=NOM)}</p>
 <p class="muted">{_e(L['langues'])}: {selecteur(prefixe, lg, alternates)}</p></footer>
-</div></body></html>
+</div>
+{seo.SCRIPT_BOUTON}
+</body></html>
 """
 
 

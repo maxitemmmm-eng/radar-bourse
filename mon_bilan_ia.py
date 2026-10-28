@@ -350,7 +350,7 @@ def main():
         dire("Aucune prévision enregistrée pour l'instant. Le site les enregistre chaque soir :")
         dire("reviens dans un peu plus d'un mois pour voir les premiers résultats.")
         return 1
-    hist = historique.nettoyer(pd.read_csv(historique.FICHIER))
+    hist = pd.read_csv(historique.FICHIER)
     if hist.empty:
         dire("Le fichier des prévisions est vide pour l'instant.")
         return 1

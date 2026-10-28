@@ -39,23 +39,19 @@ def _signature(e):
                        sorted((e.get("params") or {}).items(), key=lambda kv: kv[0]), e.get("date")], default=str)
 
 
-def fusionner(local: dict, distant: dict, base: str = "distant") -> dict:
-    """Renvoie les contenus fusionnés (sans rien écrire).
-    base = « distant » (PC, entraînement) : on part de l'évaluation en ligne ;
-    base = « local » (robot du site qui vient de tout recalculer) : on garde son évaluation toute fraîche.
-    Dans les deux cas, la recette la plus récente et le journal complet des entraînements sont gardés."""
+def fusionner(local: dict, distant: dict) -> dict:
+    """Renvoie les contenus fusionnés (sans rien écrire)."""
     out = {}
-    # 1. modele.json : base choisie, + la recette et le journal les plus récents
+    # 1. modele.json : base = version la plus complète du site, + la recette et le journal les plus récents
     ml, md = local.get(MODELE), distant.get(MODELE)
     if md is None or ml is None:
         out[MODELE] = md if ml is None else ml
     else:
-        socle, autre = (ml, md) if base == "local" else (md, ml)
-        m = dict(socle)
-        if _date_recette(autre) > _date_recette(socle):
-            m["recette"] = autre["recette"]
-            if base != "local" and autre.get("configuration"):
-                m["configuration"] = autre["configuration"]
+        m = dict(md)
+        if _date_recette(ml) > _date_recette(md):
+            m["recette"] = ml["recette"]
+            if ml.get("configuration"):
+                m["configuration"] = ml["configuration"]
             m["date"] = "2000-01-01T00:00:00"   # le site refera un test complet avec la recette
         vus, journal = set(), []
         for e in (md.get("entrainements") or []) + (ml.get("entrainements") or []):
@@ -90,25 +86,3 @@ def ecrire(contenus: dict, dossier: str = DOSSIER):
             continue
         with open(os.path.join(dossier, nom), "w", encoding="utf-8") as f:
             json.dump(v, f, ensure_ascii=False, indent=1 if nom != ESSAIS else None, default=lambda x: None)
-
-
-def fusion_git(branche: str = "origin/main", base: str = "distant") -> bool:
-    """Utilisé par les robots GitHub juste avant d'enregistrer : récupère la dernière version en ligne
-    et fusionne les connaissances, pour qu'aucun calcul n'efface ce qu'un autre a appris entre-temps."""
-    import subprocess
-    subprocess.run(["git", "fetch", "-q", "origin"], check=False)
-    distant = {}
-    for nom in FICHIERS:
-        r = subprocess.run(["git", "show", f"{branche}:{DOSSIER}/{nom}"], capture_output=True, text=True)
-        try:
-            distant[nom] = json.loads(r.stdout) if r.returncode == 0 else None
-        except ValueError:
-            distant[nom] = None
-    ecrire(fusionner(lire(), distant, base))
-    return True
-
-
-if __name__ == "__main__":
-    import sys
-    fusion_git(base="local" if "local" in sys.argv[1:] else "distant")
-    print("Connaissances de l'IA fusionnées avec la version en ligne.")

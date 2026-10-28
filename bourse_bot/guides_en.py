@@ -74,7 +74,8 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
             {"@type": "Article", "headline": g["h"][:110], "description": g["d"], "inLanguage": "en", "url": url,
              "dateModified": datetime.now().strftime("%Y-%m-%d"), "author": {"@type": "Organization", "name": seo.NOM},
              "publisher": {"@type": "Organization", "name": seo.NOM}},
-            {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a.replace("**", "")}} for q, a in faq]}]}
+            {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a.replace("**", "")}} for q, a in faq]},
+            seo._jsonld_fil(base, [(seo.NOM, "en/index.html"), ("Guides", "en/guides.html"), (g["t"], chemin)])]}
         alternates = {"en": chemin, "fr": f"guides/{g['i']}.html", "x-default": f"guides/{g['i']}.html"}
         page = _page(base, g["t"] + f" | {seo.NOM}", g["d"], chemin, corps, csp, alternates)
         # données structurées propres au guide (en plus de celles de la page)

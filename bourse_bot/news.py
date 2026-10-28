@@ -121,8 +121,7 @@ def _yahoo(ticker: str) -> list[dict]:
 def actus(ticker: str) -> list[dict]:
     if data.DEMO:
         return _demo(ticker)
-    # pas d'actualités Yahoo pour les cryptos à symbole ambigu (on risquerait celles d'un jeton homonyme)
-    items = _finnhub(ticker) or ([] if ticker in getattr(config, "CRYPTOS_SANS_YAHOO", ()) else _yahoo(ticker))
+    items = _finnhub(ticker) or _yahoo(ticker)
     limite = datetime.now(timezone.utc) - timedelta(days=JOURS)
     propres, vus = [], set()
     for it in items:
@@ -160,15 +159,11 @@ def tonalite_moyenne(items: list[dict]) -> float:
 def enrichir(analyses, progres=None) -> list[dict]:
     """Ajoute actus + tonalité à chaque analyse. Renvoie les actus générales du marché."""
     for a in analyses:
-        appel = []
-        if data.DEMO:
-            a.actus = actus(a.ticker)
-        else:   # cache de 2 h : avec beaucoup de titres, on reste poli avec les API gratuites
-            a.actus = data.cache_json("actus", a.ticker, 2, lambda: appel.append(1) or actus(a.ticker))
+        a.actus = actus(a.ticker)
         a.tonalite = tonalite_moyenne(a.actus)
         if progres:
             progres()
-        if appel:
+        if not data.DEMO:
             time.sleep(0.25)  # politesse envers les API gratuites
     marche = []
     for t in ("SPY", "^FCHI", "BTC-USD"):

@@ -159,7 +159,7 @@ def explorer(jeu, oof, rel, masque, horizon):
     O["_i"] = np.arange(len(O))
     O["_d"] = pd.to_datetime(O.index)
     from bourse_bot import comprendre as C
-    cols_chute = [c for c in C._variables_risque(jeu, model.VARIABLES_BASE) if c in jeu.columns]
+    cols_chute = [c for c in C._variables_chute(jeu, model.VARIABLES_BASE) if c in jeu.columns]
     cols = list(dict.fromkeys([c for c in MACRO + TITRE if c in jeu.columns] + cols_chute))
     J = jeu[["ticker"] + cols].copy()
     J["_d"] = pd.to_datetime(J.index)
@@ -459,7 +459,7 @@ def tester_baisses(jeu, oof, variables, horizon):
     # B. risque de forte chute (> 10 % en un mois)
     et = jeu.dropna(subset=["rendement_futur"]).copy()
     et["chute"] = (et["rendement_futur"] < CHUTE).astype(float)
-    vs = C._variables_risque(et, variables)
+    vs = C._variables_chute(et, variables)
     de = pd.to_datetime(et.index)
     p = np.full(len(et), np.nan)
     for a_ in sorted(de.year.unique())[1:]:

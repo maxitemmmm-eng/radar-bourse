@@ -50,18 +50,11 @@ UNIVERS_ETENDU = {
            "PSX", "MPC", "F", "GM", "CMCSA", "TMUS", "EA", "ADI", "LRCX", "KLAC", "SNPS", "CDNS", "MRVL",
            "PANW", "ZTS", "SYK", "BDX", "REGN", "VRTX", "FDX", "CSX", "UNP", "NSC", "WM", "ECL", "APD", "SHW",
            "KMB", "CL", "GIS", "MDLZ", "HSY", "STZ",
-           "EEM", "EFA", "TLT", "IWM", "XLF", "XLK", "XLV", "XLY", "XLP", "XLI", "XLU", "VNQ", "GDX",
-           # version 31 : davantage de grandes entreprises américaines (plus d'exemples pour apprendre)
-           "ORCL", "IBM", "QCOM", "TXN", "AMAT", "MU", "ADBE", "CSCO", "PEP", "KO", "PG", "WMT", "HD", "MCD", "NKE",
-           "SBUX", "BA", "CAT", "GE", "HON", "LMT", "UPS", "GS", "MS", "WFC", "BAC", "CVX", "COP", "PFE", "MRK",
-           "JNJ", "ABBV", "LLY", "UNP", "T", "VZ", "PYPL", "UBER", "ABNB", "SHOP", "SQ", "SNOW", "CRWD", "DDOG", "NET",
-           "MELI", "BKR", "HAL", "DOW", "NEM", "FCX", "ADM", "KHC", "EL", "TJX", "ROST", "ORLY", "AZO", "CMG", "MAR"],
+           "EEM", "EFA", "TLT", "IWM", "XLF", "XLK", "XLV", "XLY", "XLP", "XLI", "XLU", "VNQ", "GDX"],
     "eu": ["DBK.DE", "IFX.DE", "VOW3.DE", "DHL.DE", "RWE.DE", "EOAN.DE", "HEN3.DE", "BEI.DE", "DB1.DE",
            "HNR1.DE", "MRK.DE", "HEIA.AS", "KPN.AS", "WKL.AS", "NN.AS", "ABI.BR", "KBC.BR", "UCB.BR",
            "NOKIA.HE", "NESTE.HE", "TEF.MC", "REP.MC", "AMS.MC", "CABK.MC", "ENI.MI", "G.MI", "PRY.MI",
-           "NOVO-B.CO", "NESN.SW", "ROG.SW", "NOVN.SW", "UBSG.SW",
-           "AIR.DE", "BAS.DE", "BAYN.DE", "CON.DE", "FRE.DE", "MUV2.DE", "SHL.DE", "ZAL.DE", "PHIA.AS", "AD.AS",
-           "ASM.AS", "INGA.AS", "BBVA.MC", "ITX.MC", "FER.MC", "ISP.MI", "UCG.MI", "STLAM.MI", "ABBN.SW", "ZURN.SW"],
+           "NOVO-B.CO", "NESN.SW", "ROG.SW", "NOVN.SW", "UBSG.SW"],
     "fr": ["RNO.PA", "ALO.PA", "BVI.PA", "ERF.PA", "URW.PA", "AC.PA", "TEP.PA", "SW.PA", "FGR.PA", "HO.PA",
            "AMUN.PA", "GET.PA"],
     "crypto": ["AAVE-USD", "XMR-USD", "VET-USD", "ICP-USD", "EOS-USD", "XTZ-USD", "MANA-USD", "SAND-USD",
@@ -171,9 +164,7 @@ class CarteRecherche:
             x.append(np.log(max(v, 1e-4)) if log else v)
         v = set(variables)
         x += [float(bool(par_marche)), len(v), sum(c.startswith("cx_") for c in v), len(v & self.macro),
-              sum(c.startswith("rang_") for c in v),
-              float(prm.get("cible") == "rang"), float(prm.get("groupes") == "ambiance"),
-              float(bool(prm.get("rangs_jour"))), float(prm.get("zone_morte") or 0)]
+              sum(c.startswith("rang_") for c in v)]
         return np.array(x, dtype=float)
 
     def apprendre(self, anciens, actuels):
@@ -248,9 +239,6 @@ class CarteRecherche:
             "sans les règles du manuel": lambda e: not any(v.startswith("cx_") for v in e["variables"]),
             "avec les données économiques": lambda e: bool(set(e["variables"]) & self.macro),
             "peu d'indicateurs (moins de 30)": lambda e: len(e["variables"]) < 30,
-            "apprendre à classer les titres": lambda e: (e.get("params") or {}).get("cible") == "rang",
-            "comparer les indicateurs entre titres": lambda e: bool((e.get("params") or {}).get("rangs_jour")),
-            "ignorer les petits mouvements": lambda e: bool((e.get("params") or {}).get("zone_morte")),
         }
         res = []
         for nom, f in familles.items():
@@ -595,10 +583,7 @@ class Moteur:
             for t in univers:
                 noms[t], marche_de[t] = univers[t], m
         base = config.entrainement_supplementaire()
-        # en automatique (robot GitHub), on n'examine pas les titres en plus : plus rapide et plus léger en mémoire
-        # en automatique, les titres en plus ne sont examinés que lors de l'entraînement long du dimanche
-        rapide_auto = getattr(self.args, "auto", False) and self.args.duree == "rapide"
-        etendu = {} if rapide_auto else {m: [t for t in v if t not in noms] for m, v in UNIVERS_ETENDU.items()}
+        etendu = {m: [t for t in v if t not in noms] for m, v in UNIVERS_ETENDU.items()}
         tout_base = {t: m for m, v in base.items() for t in v if t not in noms}
         tout_etendu = {t: m for m, v in etendu.items() for t in v if t not in noms and t not in tout_base}
         a_telecharger = list(dict.fromkeys(list(noms) + list(tout_base) + list(tout_etendu) + list(config.BENCHMARK.values())))
@@ -700,20 +685,9 @@ class Moteur:
         dv = rng.choice([0, 0, 3, 6, 10])   # mémoire qui s'estompe (0 = toutes les années comptent pareil)
         if dv:
             prm["demi_vie"] = int(dv)
-        if rng.random() < 0.35:   # version 31 : apprendre à classer les titres plutôt que « monte / baisse »
-            prm["cible"] = "rang"
         pm = bool(rng.random() < 0.35)
-        if not pm and rng.random() < 0.2:   # une IA par ambiance de marché (calme / nerveux)
-            prm["groupes"] = "ambiance"
-        if rng.random() < 0.3:    # version 32 : comparer chaque indicateur à ceux des autres titres du jour
-            prm["rangs_jour"] = True
-        zm = rng.choice([0, 0, 0.2, 0.35, 0.5])   # version 32 : ignorer les mouvements trop petits à l'entraînement
-        if zm:
-            prm["zone_morte"] = float(zm)
         return (f"Essai {i} : {g}, profondeur {prm['profondeur']}, {prm['iterations']} étapes"
-                + (", un modèle par marché" if pm else "") + (", classement" if prm.get("cible") == "rang" else "")
-                + (", par ambiance" if prm.get("groupes") else "") + (", comparé entre titres" if prm.get("rangs_jour") else "")
-                + (f", sans les {int(prm['zone_morte'] * 100)} % de cas les plus plats" if prm.get("zone_morte") else "")), groupes[g], pm, prm
+                + (", un modèle par marché" if pm else "")), groupes[g], pm, prm
 
     def _analyse_erreurs(self, o):
         """Apprendre de ses erreurs : où l'IA se trompe-t-elle le plus à l'examen final ?"""
@@ -1000,8 +974,7 @@ class Moteur:
 def enregistrer(res, demo):
     from bourse_bot import config, model
     entree, m = res["entree"], dict(res["ancien"])
-    deja = [e for e in (m.get("entrainements") or []) if e.get("date") != entree["date"]]
-    m["entrainements"] = deja[-19:] + [entree]   # enregistrer deux fois ne crée pas de doublon
+    m["entrainements"] = (m.get("entrainements") or [])[-19:] + [entree]
     if res["decision"]["change"]:
         m["recette"] = res["recette"]
         m["configuration"] = model.NOM_RECETTE
@@ -1396,11 +1369,6 @@ def fenetre(args):
         b_rien = tk.Button(rangee, text="Ne rien envoyer", font=police, bg=BG, fg=MUTED, relief="flat", padx=12, pady=6,
                            command=garder_local)
         b_rien.pack(side="right")
-        if not args.demo:
-            # les connaissances sont toujours gardées sur ce PC, quoi que tu choisisses ensuite :
-            # la prochaine mise en ligne (mettre_en_ligne.bat ou mettre_a_jour.bat) les enverra
-            enregistrer(res, args.demo)
-            ecrire("💾 Résultat enregistré sur ton PC : il sera envoyé au site à la prochaine mise en ligne, même si tu fermes cette fenêtre.")
         if not peut:
             ecrire("ℹ️ Envoi impossible : " + ("mode démo." if args.demo else
                                                "ce dossier n'est pas relié à GitHub (lance d'abord mettre_en_ligne.bat depuis ce dossier)."))
@@ -1505,10 +1473,6 @@ def console(args):
     if not res:
         return 2
     print(f"\n{res['decision']['raison']}{appris_cette_fois(res['entree'])}\n📄 Rapport : {res['rapport']}")
-    if getattr(args, "auto", False):   # robot GitHub : on enregistre, le robot s'occupe de l'envoi
-        enregistrer(res, args.demo)
-        print(f"AUTO_CHANGE={int(bool(res['change']))}")
-        return 0
     if moteur.depot_git and not args.demo and input("Mettre à jour le site maintenant ? (o/n) ").strip().lower().startswith("o"):
         enregistrer(res, args.demo)
         depuis = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -1564,8 +1528,6 @@ def main():
     p.add_argument("--minutes", type=int, default=None, help="durée maximale de la recherche")
     p.add_argument("--console", action="store_true", help="sans fenêtre")
     p.add_argument("--demo", action="store_true", help="données fictives (pour tester)")
-    p.add_argument("--auto", action="store_true",
-                   help="entraînement automatique (robot GitHub) : aucune question, résultat enregistré dans historique/")
     args = p.parse_args()
     if args.complet and not args.duree:
         args.duree = "expert"

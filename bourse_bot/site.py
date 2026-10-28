@@ -24,7 +24,7 @@ CSP = ("default-src 'self'; "
        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
        "font-src https://fonts.gstatic.com; "
        "img-src 'self' data:; "
-       "connect-src 'self' https://api.binance.com wss://stream.binance.com:9443 wss://ws.finnhub.io https://min-api.cryptocompare.com; "
+       "connect-src 'self' https://api.binance.com wss://stream.binance.com:9443 wss://ws.finnhub.io; "
        "object-src 'none'; base-uri 'none'; form-action 'none'")
 
 
@@ -179,11 +179,6 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
         x = d.iloc[-1]
         item["au_dessus_200"] = bool(x["Close"] > x["sma200"]) if x["sma200"] == x["sma200"] else None
         item["indice_nom"] = config.NOM_BENCHMARK.get(a.indice_ref, a.indice_ref)
-        # quelques chiffres d'entreprise gardés dans la page légère (filtre de recherche) ; le détail reste dans la fiche
-        fv = ((a.fondamentaux or {}).get("valeurs") or {}) if getattr(a, "fondamentaux", None) else {}
-        item["div"] = _arrondi(fv.get("dividendYield")) if fv.get("dividendYield") is not None else None
-        item["per"] = _arrondi(fv.get("trailingPE")) if fv.get("trailingPE") is not None else None
-        item["secteur"] = (a.fondamentaux or {}).get("secteur") or None if getattr(a, "fondamentaux", None) else None
         item["perf_an"] = _arrondi(float(d["Close"].iloc[-1] / d["Close"].iloc[-min(len(d), 253)] - 1)) if len(d) > 200 else None
         titres.append(item)
 
@@ -243,24 +238,12 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
             "resume": qualite["resume"],
             "a_verifier": [{"ticker": t, "problemes": v["problemes"]} for t, v in qualite["details"].items() if not v["ok"]],
             "demo": demo},
-        "sante": _sante(analyses, qualite, demo),
         "telegram": config.TELEGRAM_CHAINE.lstrip("@") if config.TELEGRAM_CHAINE else "",
         "fondamentaux_libelles": fondamentaux.libelles(),
         "resultats": resultats,   # liste complète des prédictions vérifiées (page « résultats » seulement)
         "elargissement_resultats": fondamentaux.ELARGISSEMENT_RESULTATS,
         "entrainement": _dernier_entrainement(),
     })
-
-
-def _sante(analyses, qualite, demo) -> dict:
-    """Version 49 : état de santé des données, affiché aux visiteurs si quelque chose ne va pas."""
-    from . import data
-    tks = [a.ticker for a in analyses if a.marche != "tendances"]
-    sources = data.SOURCES_UTILISEES
-    anciens = [t for t in tks if sources.get(t) == "ancien cache"]
-    a_verifier = [t for t, v in ((qualite or {}).get("details") or {}).items() if not v.get("ok") and t in set(tks)]
-    return {"total": len(tks), "anciens": len(anciens), "a_verifier": len(a_verifier),
-            "exemples": (anciens + a_verifier)[:6], "demo": bool(demo)}
 
 
 def _json_sur(payload: dict) -> str:
@@ -326,17 +309,16 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
         lib = '<script src="lightweight-charts.js"></script>'
         # balises de référencement complètes à la place des balises minimales de l'aperçu
         debut, fin = tete.index("<!--META-->"), tete.index("<!--/META-->") + len("<!--/META-->")
-        tete = (tete[:debut] + seo.balises_tete(seo.url_site(), seo.TITRE_ACCUEIL,
+        tete = (tete[:debut] + seo.balises_tete(seo.url_site(), f"{seo.NOM} : prévisions boursières à un mois, actions et cryptos",
                                                  seo.DESCRIPTION, "", jsonld=seo.jsonld_accueil(),
-                                                 alternates=__import__("bourse_bot.langues", fromlist=["x"]).alternates_accueil()) + tete[fin:])
+                                                 alternates={"fr": "", "en": "en/index.html", "x-default": ""}) + tete[fin:])
         faq = json.dumps(seo.jsonld_faq(), ensure_ascii=False).replace("</", "<\\/")
         tete = tete.replace("<!--__LIB__-->", f'<script type="application/ld+json">{faq}</script>\n<!--__LIB__-->', 1)
         tete = tete.replace("<title>Radar Bourse</title>",
-                            f"<title>{seo.TITRE_ACCUEIL}</title>", 1)
+                            f"<title>{seo.NOM} : prévisions boursières à un mois, actions et cryptos</title>", 1)
         corps = corps.replace("<!--__LIENS_SEO__-->", seo.liens_accueil(payload), 1)
         securite = (f'<meta http-equiv="Content-Security-Policy" content="{seo.csp_avec_stats(CSP)}">\n'
                     '<meta name="referrer" content="strict-origin-when-cross-origin">\n'
-                    '<meta name="radar-sw" content="1">\n'   # le site en ligne peut s'ouvrir hors connexion
                     + seo.script_stats() + "\n")
         html = ("<!doctype html>\n<html lang=\"fr\">\n<head>\n<meta charset=\"utf-8\">\n"
                 "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"

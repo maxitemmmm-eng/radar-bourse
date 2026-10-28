@@ -51,9 +51,8 @@ button{font:inherit;color:inherit}
 .top .wrap{display:flex;align-items:center;gap:16px;padding-block:12px;flex-wrap:wrap}
 .brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
 .brand h1{font-size:24px;font-weight:700;white-space:nowrap}
-@media (max-width:520px){.brand{flex-wrap:wrap;row-gap:0}.brand .stamp{flex-basis:100%;margin-left:0}}
-.brand .logo{width:26px;height:26px;flex:none;align-self:center}
-@media (max-width:440px){.brand .logo{display:none}}
+@media (max-width:520px){.brand{flex-wrap:wrap;row-gap:0}.brand .stamp{flex-basis:100%;margin-left:19px}}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--up);display:inline-block;box-shadow:0 0 0 3px var(--up-soft)}
 .stamp{font-size:13px;color:var(--muted)}
 .demo{background:var(--warn-soft);color:var(--warn);border-bottom:1px solid var(--line);font-size:13.5px}
 .demo .wrap{padding-block:8px}
@@ -72,7 +71,7 @@ section{margin-top:36px}
 /* Prédictions du jour */
 .duo{display:grid;grid-template-columns:1.35fr 1fr;gap:20px}
 @media (max-width:900px){.duo{grid-template-columns:1fr}}
-.simple #duo-pred{grid-template-columns:1fr}
+.simple #duo-pred{grid-template-columns:minmax(0,820px)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
 .picks{display:grid;gap:8px}
 .pick{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border-radius:8px;background:var(--surface-2);border:1px solid transparent;cursor:pointer;text-align:left;width:100%}
@@ -332,70 +331,13 @@ footer nav{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13.5px}
 footer a{color:var(--accent);text-underline-offset:3px}
 .lnk{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-size:inherit}
 
-.jeu{display:grid;gap:12px;align-content:start}
-.arene{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
-@media (max-width:900px){.arene{grid-template-columns:1fr}}
-.arene-modes{display:flex;gap:6px;flex-wrap:wrap}
-.arene-stats{display:grid;gap:10px}.arene-stats h3{font-size:18px}.arene-stats h4{margin:6px 0 0;font-size:14px;font-family:var(--f-body)}
-.arene-chiffres{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.arene-chiffres div{background:var(--surface-2);border-radius:8px;padding:8px 10px}
-.arene-chiffres b{display:block;font-family:var(--f-display);font-size:24px;font-weight:600;line-height:1.1}
-.arene-chiffres span{font-size:12.5px;color:var(--muted)}
-.badges{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:13.5px}
-.badges li{display:flex;gap:8px;align-items:center;color:var(--muted)}.badges li b{font-weight:500}.badges li.gagne{color:var(--ink)}.badges li.gagne b{font-weight:700}
-.badges li:not(.gagne) span:first-child{filter:grayscale(1)}
-.badges li span:first-child{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line)}
-.badges li.gagne span:first-child{background:var(--accent-soft);border-color:var(--accent)}
-.jeu-manche{margin:0;font-size:14px;font-weight:500}
-.jeu-cadre{position:relative}
-.jeu-fin{position:absolute;transform:translate(-100%,-130%);font:600 13px var(--f-mono);white-space:nowrap;padding:2px 7px;border-radius:6px;color:var(--sur-couleur);pointer-events:none}
-.jeu-fin.h{background:var(--up)}.jeu-fin.b{background:var(--down)}
-.jeu-vide{height:230px;border-radius:8px;background:var(--surface-2);display:grid;place-items:center;text-align:center;padding:16px;color:var(--muted);font-size:14.5px}
+.jeu{display:grid;gap:12px}
 .jeu-tete{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
 .jeu-tete p{margin:0}.jeu-score{font-size:14px}
 #jeu-svg{width:100%;height:230px;background:var(--surface-2);border-radius:8px}
 #jeu-zone{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .jeu-res{display:grid;gap:6px;font-size:15px}.jeu-res p{margin:0}
 .jeu-verdict{font-family:var(--f-display);font-size:22px;font-weight:600}
-.etat-marches{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:18px 0 -8px}
-.etat-marches span{display:inline-flex;align-items:center;gap:6px}
-.etat-marches i{width:8px;height:8px;border-radius:50%;background:var(--line);display:inline-block}
-.etat-marches i.on{background:var(--up);box-shadow:0 0 0 3px var(--up-soft)}
-.agenda{margin-top:16px}.agenda h3{font-size:18px;margin-bottom:6px}
-.agenda-liste{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
-.agenda-liste li button{width:100%;text-align:left;display:flex;gap:10px;align-items:center;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}
-.agenda-liste .d{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);white-space:nowrap;flex:none}
-.robots-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
-.robot{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:10px;align-content:start}
-.robot h3{font-size:19px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
-.robot h3 small{font-family:var(--f-body);font-size:12px;font-weight:500;color:var(--muted)}
-.robot p{margin:0;font-size:14px;color:var(--muted)}
-.robot .bilan{display:grid;gap:6px}
-.robot .robot-verdict{font-weight:600;font-size:14.5px;color:var(--ink)}.robot .robot-verdict.up{color:var(--up)}.robot .robot-verdict.down{color:var(--down)}
-.robot .robot-jour{color:var(--ink)}.robot details summary{cursor:pointer;font-size:13.5px;color:var(--accent)}.robot details p{margin-top:6px}
-.robot .sb{grid-template-columns:1fr 52px;grid-template-areas:"lib lib" "piste val";row-gap:4px;column-gap:8px}
-.robot .sb > span:first-child{grid-area:lib}.robot .sb .piste{grid-area:piste}.robot .sb > b{grid-area:val;text-align:right}
-.robot .puces{display:flex;flex-wrap:wrap;gap:6px}
-.robot .puces button{font-size:12.5px;padding:3px 9px;border-radius:99px;border:1px solid var(--line);background:var(--surface-2);cursor:pointer}
-.robot .puces .ach{border-color:var(--up);color:var(--up)}.robot .puces .ven{border-color:var(--down);color:var(--down)}
-.votes-robots{display:flex;flex-wrap:wrap;gap:6px;font-size:13px}
-.votes-robots span{padding:3px 9px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line)}
-.votes-robots .ach{color:var(--up);border-color:var(--up)}.votes-robots .ven{color:var(--down);border-color:var(--down)}
-.nuage{margin-top:16px}.nuage h3{font-size:18px}
-.nuage-tete{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
-.nuage-zone{position:relative}#nuage-svg{width:100%;height:380px;display:block}
-.nuage-bulle{position:absolute;pointer-events:none;background:var(--ink);color:var(--surface);padding:8px 10px;border-radius:8px;font-size:13px;line-height:1.4;max-width:230px;z-index:3;box-shadow:0 8px 24px rgba(5,10,20,.25)}
-#nuage-svg .pt{cursor:pointer;outline:none}
-#nuage-svg .pt:focus-visible circle{stroke:var(--accent);stroke-width:3}
-#nuage-svg .pt:hover circle:last-child{stroke:var(--ink);stroke-width:2.5}
-.nuage-leg{display:flex;gap:14px;margin:0;font-size:12.5px;color:var(--muted)}
-.nuage-leg span{display:inline-flex;align-items:center;gap:6px}
-.nuage-leg i{width:10px;height:10px;border-radius:50%;border:2px solid var(--accent);display:inline-block}.nuage-leg i.plein{background:var(--accent)}
-.trois-points{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px}
-.tp{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;gap:2px}
-.tp .tp-l{font-size:13px;color:var(--muted)}.tp b{font-family:var(--f-display);font-size:21px;font-weight:600;line-height:1.2}
-.tp > span:nth-of-type(2){font-size:13.5px}.tp .tp-f{font-size:12px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:6px}
-.retour-haut{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));z-index:15;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;cursor:pointer;box-shadow:0 6px 18px rgba(5,10,20,.18)}
 /* Version 22 : avis net, raisons, agitation */
 .conf-ic{display:inline-flex;gap:2px;align-items:flex-end;height:14px;vertical-align:middle}
 .conf-ic i{display:block;width:4px;border-radius:1px;background:var(--line)}
@@ -403,15 +345,17 @@ footer a{color:var(--accent);text-underline-offset:3px}
 .conf-ic.c-faible i:nth-child(1),.conf-ic.c-moyenne i:nth-child(-n+2),.conf-ic.c-forte i{background:var(--ink)}
 .agit-cell{display:block;font-family:var(--f-mono);font-size:12px;color:var(--muted);font-weight:400}
 .vue-picks{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.ligne-conf{font-size:14px;margin:6px 0}.ligne-conf p{margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.ligne-conf p.muted{font-size:13px;margin-top:2px}
+.ligne-conf{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14px}
 .sans-avis{display:flex;align-items:center;gap:8px;color:var(--muted)}
 .sans-avis .gauge{opacity:.35;filter:grayscale(1)}
-.raisons-ia h3{font-size:18px;margin-bottom:10px}
+.raisons-ia h3,.agit h3{font-size:18px;margin-bottom:10px}
 .raisons-ia ol{list-style:none;margin:0;padding:0;display:grid;gap:12px}
 .raisons-ia .r-tete{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14.5px}
 .raisons-ia p{margin:4px 0 0;color:var(--muted);font-size:13.5px}
 .r-barre{height:6px;background:var(--surface-2);border-radius:3px;margin-top:5px;overflow:hidden}
 .r-barre i{display:block;height:100%;border-radius:3px}.r-barre.h i{background:var(--up)}.r-barre.b i{background:var(--down)}
+.agit-l{display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-size:14.5px}
+.agit-v{font-family:var(--f-display);font-size:36px;font-weight:600;line-height:1}
 
 /* Accroche */
 .hero{padding-block:36px 8px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px 48px;align-items:start}
@@ -497,8 +441,6 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .toast button{background:var(--surface);color:var(--ink);border:0;border-radius:6px;padding:5px 10px;font-weight:600;cursor:pointer}
 
 /* Statut du direct */
-.alerte-donnees{margin:10px auto 0;max-width:1180px;padding:10px 14px;border-radius:10px;border:1px solid var(--warn);background:color-mix(in srgb, var(--warn) 12%, var(--surface));color:var(--ink);font-size:14px;line-height:1.45}
-@media (max-width:700px){.alerte-donnees{margin:8px 12px 0}}
 .live{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:3px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
 .live i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
 .live.on{color:var(--up);border-color:var(--up-soft);background:var(--up-soft)}
@@ -510,12 +452,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .src{font-size:12px;color:var(--muted);margin-left:4px}
 
 /* Bandeau d'avertissement (premier passage) */
-.consent{position:fixed;inset:0;z-index:35;background:rgba(5,10,20,.55);display:grid;place-items:center;padding:16px;overflow-y:auto}
-.consent-boite{background:var(--surface);color:var(--ink);border-radius:14px;max-width:560px;width:100%;padding:24px;box-shadow:0 24px 60px rgba(5,10,20,.35);border-top:4px solid var(--warn)}
-.consent-boite h2{font-size:28px;margin-bottom:10px}
-.consent-boite p{margin:0 0 10px;font-size:15px}
-.consent-boite ul{margin:0 0 12px;padding-left:20px;display:grid;gap:8px;font-size:15px}
-.consent-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}
+.consent{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(5,10,20,.12);padding-bottom:max(14px,env(safe-area-inset-bottom,0px))}
+.consent .wrap{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding-top:14px}
+.consent p{margin:0;font-size:14px;flex:1 1 380px;max-width:80ch}
 .btn{border:0;border-radius:8px;padding:9px 16px;font-weight:600;cursor:pointer;background:var(--ink);color:var(--surface)}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
 
@@ -681,17 +620,12 @@ html.calme *{animation:none!important;transition:none!important}
 .modal-risque .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .modal-risque .btn.danger{background:var(--down);color:var(--sur-couleur)}
 .modal-risque .btn.danger:disabled{opacity:.4;cursor:not-allowed}
-.affiner{margin:4px 0 12px;border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--surface)}
-.affiner summary{cursor:pointer;font-weight:600}
-.aff-grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 14px;margin-top:10px;align-items:end}
-.aff-grille label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
-.aff-grille select{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 8px}
 </style>
 <!--__CORPS__-->
 
 <a class="skip" href="#contenu">Aller au contenu</a>
 <header class="top gutter"><div class="wrap">
-  <div class="brand"><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#0f1b2d" stroke="var(--line)" stroke-width="1"/><circle cx="16" cy="16" r="9.5" fill="none" stroke="#7398ff" stroke-width="1.4"/><circle cx="16" cy="16" r="4.8" fill="none" stroke="#7398ff" stroke-width="1" opacity=".55"/><path d="M16 16 L26.5 9.5" stroke="#35c27d" stroke-width="2.6" stroke-linecap="round"/><circle cx="16" cy="16" r="2.1" fill="#35c27d"/><circle cx="21.5" cy="21" r="1.5" fill="#35c27d" opacity=".8"/></svg><h1>Radar Bourse</h1><span class="stamp" id="stamp"></span></div>
+  <div class="brand"><span class="dot" aria-hidden="true"></span><h1>Radar Bourse</h1><span class="stamp" id="stamp"></span></div>
   <div class="recherche" role="search">
     <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.6 3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
     <input id="rech" type="search" placeholder="Chercher une action, une crypto…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="rech-liste" aria-label="Chercher un titre">
@@ -707,20 +641,19 @@ html.calme *{animation:none!important;transition:none!important}
   <button class="theme-btn" id="theme" aria-label="Changer de thème" title="Thème clair / sombre"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg></button>
 </div>
 <nav class="wrap nav-sec" id="nav-sec" aria-label="Sections du site">
-  <a href="#previsions">Prévisions</a><a href="#simulation">Simulation</a><a href="#remonte">L'Arène</a><a href="#portefeuille">Portefeuille</a>
-  <a href="#signaux">Signaux forts</a><a href="#robots">Robots</a><a href="#carte-sec">Carte du marché</a><a href="#confiance">Fiabilité</a>
+  <a href="#previsions">Prévisions</a><a href="#simulation">Simulation</a><a href="#remonte">Remonte le temps</a><a href="#portefeuille">Portefeuille</a>
+  <a href="#signaux">Signaux forts</a><a href="#carte-sec">Carte du marché</a><a href="#confiance">Fiabilité</a>
   <a href="#tous">Tous les titres</a><a href="resultats.html" class="ext lien-site">Résultats réels</a><a href="connaissances.html" class="ext lien-site">Ce que sait l'IA</a>
-  <a href="point.html" class="ext lien-site">Point du jour</a><a href="comparer.html" class="ext lien-site">Comparer</a><a href="portefeuille.html" class="ext lien-site">Sélection IA du mois</a><a href="apprendre.html" class="ext lien-site">Apprendre</a>
+  <a href="point.html" class="ext lien-site">Point du jour</a><a href="apprendre.html" class="ext lien-site">Apprendre</a>
 </nav></header>
-<div class="alerte-donnees" id="alerte-donnees" role="status" hidden></div>
 <div class="demo gutter" id="demo" hidden role="region" aria-label="Avertissement : données de démonstration"><div class="wrap">Données fictives de démonstration. Lance <span class="num">python -m bourse_bot site</span> sur ton PC pour afficher les vrais cours.</div></div>
 
 <main class="gutter" id="contenu" tabindex="-1"><div class="wrap">
   <div class="hero">
    <div>
     <h2>Les marchés, lus calmement par les chiffres.</h2>
-    <p class="intro">Chaque heure, deux intelligences artificielles relisent les cours de plus de 160 actions, ETF et cryptos. Ce qu'elles prévoient le mieux : de combien un prix risque de bouger le mois prochain, et quels titres pourraient faire mieux que leur marché. Deviner la hausse est bien plus dur : elles se trompent souvent, et on te montre exactement combien. C'est un projet éducatif et gratuit, pas un conseil.</p>
-    <div class="hero-liens"><a class="btn" href="#simulation">À combien dans un mois ?</a><a class="btn ghost" href="#remonte">Jouer contre l'IA</a><a class="btn ghost" href="#portefeuille">Portefeuille virtuel</a><a class="btn ghost lien-site" href="resultats.html">Résultats réels</a><a class="btn ghost lien-site" href="apprendre.html">Apprendre la Bourse</a><a class="btn ghost lien-site" href="guides.html">Guides</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
+    <p class="intro">Chaque heure, deux intelligences artificielles relisent les cours de plus de 80 actions et cryptos et estiment leurs chances de monter d'ici un mois. Elles se trompent souvent, et on te montre exactement combien. C'est un projet éducatif et gratuit, pas un conseil.</p>
+    <div class="hero-liens"><a class="btn" href="#simulation">À combien dans un mois ?</a><a class="btn ghost" href="#portefeuille">Portefeuille virtuel</a><a class="btn ghost lien-site" href="resultats.html">Résultats réels</a><a class="btn ghost lien-site" href="apprendre.html">Apprendre la Bourse</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
    </div>
    <aside class="bref" id="bref" aria-labelledby="bref-t" hidden><h3 id="bref-t">Aujourd'hui en bref</h3><p id="bref-txt"></p><p class="sig" id="bref-sig"></p></aside>
   </div>
@@ -735,31 +668,8 @@ html.calme *{animation:none!important;transition:none!important}
     <div class="bas"><span class="muted" style="font-size:13.5px">Les petits boutons <span class="def" aria-hidden="true" style="pointer-events:none">?</span> expliquent chaque mot compliqué. <b>Rien n'est sûr</b> : ce site t'aide à comprendre, pas à deviner l'avenir.</span>
       <button class="btn ghost" id="depart-ok">J'ai compris, masquer</button></div>
   </div>
-  <p class="etat-marches" id="etat-marches" aria-live="polite"></p>
   <div class="tape" id="tape" aria-label="Marchés"></div>
   <div class="mood panel" id="mood" aria-label="Météo du marché"></div>
-
-  <section aria-labelledby="h-pred" id="previsions">
-    <div class="sec-head"><h2 id="h-pred">Ce que le radar prévoit</h2>
-      <p id="pred-sub"></p></div>
-    <div class="duo" id="duo-pred">
-      <div class="panel"><div class="vue-picks" role="group" aria-label="Classer les titres par">
-        <button class="chip" data-vp="hausse" aria-pressed="true">Chances de hausse</button><button class="chip" data-vp="marche" aria-pressed="false">Mieux que leur marché</button><button class="chip" data-vp="calme" aria-pressed="false">Les plus calmes</button><button class="chip" data-vp="chute" aria-pressed="false" hidden>Risque de forte chute</button><button class="chip" data-vp="semaine" aria-pressed="false" hidden>Agités cette semaine</button></div>
-        <p class="muted" id="vp-note" style="font-size:13px;margin:0 0 10px"></p><div class="picks" id="picks"></div></div>
-      <div class="panel expert"><div class="label" style="margin-bottom:10px">Configurations de décollage</div><div class="rocket-list" id="rockets"></div></div>
-    </div>
-    <div class="panel nuage" id="nuage" hidden>
-      <div class="nuage-tete"><h3>La carte des chances et des risques</h3>
-        <p class="nuage-leg" aria-hidden="true"><span><i class="plein"></i>avis net</span><span><i></i>les IA hésitent</span></p>
-        <div class="vue-picks" role="group" aria-label="Filtrer par marché" id="nuage-filtres"></div></div>
-      <p class="muted" style="font-size:13.5px;margin:0 0 6px">Chaque point est un titre. Plus il est à droite, plus les IA lui donnent de chances de monter ; plus il est haut, plus il risque de bouger le mois prochain. Clique sur un point pour ouvrir sa fiche.</p>
-      <div class="nuage-zone" id="nuage-zone"><svg id="nuage-svg" role="group" aria-label="Carte des titres : chances de hausse et agitation prévue"></svg><div class="nuage-bulle" id="nuage-bulle" hidden></div></div>
-    </div>
-    <div class="panel agenda" id="agenda" hidden><h3>Agenda des résultats d'entreprises</h3>
-      <p class="muted" style="font-size:13.5px;margin:0 0 8px">Le jour où une entreprise publie ses comptes, son cours peut beaucoup bouger, même au-delà des fourchettes prévues.</p>
-      <ol class="agenda-liste" id="agenda-liste"></ol></div>
-    <p class="note-pred">Calculs statistiques automatiques, identiques pour tout le monde. Ce ne sont pas des recommandations d'achat ou de vente. <button class="lnk" data-legal="risques">Lire l'avertissement sur les risques</button></p>
-  </section>
 
   <section aria-labelledby="h-carte" id="carte-sec">
     <div class="sec-head"><h2 id="h-carte">La carte du marché</h2>
@@ -785,19 +695,25 @@ html.calme *{animation:none!important;transition:none!important}
     </div>
   </section>
 
+  <section aria-labelledby="h-pred" id="previsions">
+    <div class="sec-head"><h2 id="h-pred">Ce que le radar prévoit</h2>
+      <p id="pred-sub"></p></div>
+    <div class="duo" id="duo-pred">
+      <div class="panel"><div class="vue-picks" role="group" aria-label="Classer les titres par">
+        <button class="chip" data-vp="hausse" aria-pressed="true">Chances de hausse</button><button class="chip" data-vp="marche" aria-pressed="false">Mieux que leur marché</button><button class="chip" data-vp="calme" aria-pressed="false">Les plus calmes</button></div>
+        <p class="muted" id="vp-note" style="font-size:13px;margin:0 0 10px"></p><div class="picks" id="picks"></div></div>
+      <div class="panel expert"><div class="label" style="margin-bottom:10px">Configurations de décollage</div><div class="rocket-list" id="rockets"></div></div>
+    </div>
+    <p class="note-pred">Calculs statistiques automatiques, identiques pour tout le monde. Ce ne sont pas des recommandations d'achat ou de vente. <button class="lnk" data-legal="risques">Lire l'avertissement sur les risques</button></p>
+  </section>
+
   <section aria-labelledby="h-fort" id="signaux">
     <div class="sec-head"><h2 id="h-fort">Signaux forts</h2>
-      <p>Le modèle est confiant (probabilité calibrée d'au moins 55 %) <b>et</b> la tendance technique est haussière. C'est plus rare. Leur vrai taux de réussite est affiché juste en dessous, même quand il n'est pas flatteur.</p></div>
+      <p>Le modèle est confiant (probabilité calibrée d'au moins 55 %) <b>et</b> la tendance technique est haussière. C'est plus rare, et c'est là que le radar a été le plus juste sur l'historique.</p></div>
     <div class="panel fort-panel">
       <div class="fort-stats" id="fort-stats"></div>
       <div class="fort-list" id="fort-list"></div>
     </div>
-  </section>
-
-  <section aria-labelledby="h-robots" id="robots" hidden>
-    <div class="sec-head"><h2 id="h-robots">Les mini-robots</h2>
-      <p>Neuf stratégies classiques de Bourse et de crypto, chacune avec une règle simple et fixe. Voici ce qu'elles disent aujourd'hui, et ce qu'elles ont vraiment donné sur tout l'historique. L'IA écoute leur avis moyen, mais seulement s'il l'aide de façon prouvée.</p></div>
-    <div class="robots-grille" id="robots-grille"></div>
   </section>
 
   <section aria-labelledby="h-pf" id="portefeuille">
@@ -843,28 +759,15 @@ html.calme *{animation:none!important;transition:none!important}
   </section>
 
   <section aria-labelledby="h-temps" id="remonte">
-    <div class="sec-head"><h2 id="h-temps">L'Arène : remonte le temps</h2>
-      <p>Un moment du passé, tiré au hasard. Le graphique s'arrête ce jour-là : devine la suite, face à l'IA. Elle n'avait jamais vu ces périodes. Des points et des badges, jamais d'argent.</p></div>
-    <div class="arene">
-      <div class="panel jeu">
-        <div class="arene-modes" role="group" aria-label="Mode de jeu">
-          <button class="chip" data-mode-jeu="libre" aria-pressed="true">Partie libre</button>
-          <button class="chip" data-mode-jeu="jour" aria-pressed="false">Défi du jour (5 manches)</button>
-        </div>
-        <div class="jeu-tete"><p class="muted" id="jeu-info">Titre et date mystères, révélés après ta réponse. Le pointillé bleu marque le jour mystère.</p><p class="jeu-manche" id="jeu-manche"></p></div>
-        <div class="jeu-vide" id="jeu-vide">Appuie sur « Commencer » : le graphique d'un moment du passé va apparaître ici.</div>
-        <div class="jeu-cadre"><span class="jeu-fin" id="jeu-fin" hidden></span>
-        <svg id="jeu-svg" hidden viewBox="0 0 640 230" preserveAspectRatio="none" role="img" aria-labelledby="jeu-svg-t"><title id="jeu-svg-t">Évolution du prix avant le jour mystère</title></svg></div>
-        <div id="jeu-zone"><button class="btn" id="jeu-debut">Commencer une partie</button></div>
-        <div id="jeu-res" aria-live="polite"></div>
+    <div class="sec-head"><h2 id="h-temps">Remonte le temps</h2>
+      <p>Un moment du passé, tiré au hasard. Le graphique s'arrête ce jour-là : devine la suite, face à l'IA. Elle n'avait jamais vu cette période, elle a dû la prévoir comme si on y était.</p></div>
+    <div class="panel jeu">
+      <div class="jeu-tete"><p class="muted" id="jeu-info">Titre et date mystères, révélés après ta réponse. Le pointillé bleu marque le jour mystère.</p><p class="jeu-score" id="jeu-score" aria-live="polite"></p></div>
+      <svg id="jeu-svg" viewBox="0 0 640 230" preserveAspectRatio="none" role="img" aria-labelledby="jeu-svg-t"><title id="jeu-svg-t">Évolution du prix avant le jour mystère</title></svg>
+      <div id="jeu-zone">
+        <button class="btn" id="jeu-debut">Commencer une partie</button>
       </div>
-      <div class="panel arene-stats">
-        <h3 id="arene-t">Ton tableau de bord</h3>
-        <div class="arene-chiffres" id="arene-chiffres"></div>
-        <h4>Badges</h4>
-        <ul class="badges" id="badges"></ul>
-        <button class="lnk" id="jeu-raz" style="font-size:13px;justify-self:start">Remettre mes scores à zéro</button>
-      </div>
+      <div id="jeu-res" aria-live="polite"></div>
     </div>
   </section>
 
@@ -910,17 +813,6 @@ html.calme *{animation:none!important;transition:none!important}
       <button class="chip expert" data-m="rocket" aria-pressed="false">Décollage</button>
       <input class="search" id="q" type="search" placeholder="Rechercher un titre…" aria-label="Rechercher un titre">
     </div>
-    <details class="affiner" id="affiner"><summary>Filtrer selon mes critères <span class="muted" id="aff-nb"></span></summary>
-      <div class="aff-grille">
-        <label>Agitation prévue<select data-f="agit"><option value="">Toutes</option><option value="calme">Le tiers le plus calme</option><option value="moyen">Le tiers du milieu</option><option value="fort">Le tiers le plus agité</option></select></label>
-        <label>Avis des IA<select data-f="avis"><option value="">Tous</option><option value="net">Avec un avis net</option><option value="hausse">Plutôt à la hausse</option><option value="baisse">Plutôt à la baisse</option></select></label>
-        <label>Face à son marché<select data-f="marche"><option value="">Tous</option><option value="mieux">Plutôt mieux</option><option value="moins">Plutôt moins bien</option></select></label>
-        <label>Dividende<select data-f="div"><option value="">Peu importe</option><option value="2">Au moins 2 %</option><option value="4">Au moins 4 %</option><option value="0">Sans dividende</option></select></label>
-        <label>PER<select data-f="per"><option value="">Peu importe</option><option value="bas">Moins de 15</option><option value="moyen">De 15 à 30</option><option value="haut">Plus de 30</option></select></label>
-        <button class="btn ghost" id="aff-raz" type="button">Effacer les critères</button>
-      </div>
-      <p class="muted" style="font-size:12.5px;margin:6px 0 0">Les chiffres d'entreprise (dividende, PER) viennent de Yahoo Finance et ne concernent que les actions. Un filtre trie des chiffres : il ne dit pas quoi acheter.</p>
-    </details>
     <div class="tablewrap"><table>
       <thead><tr>
         <th data-k="ticker" scope="col">Titre</th><th data-k="prix" scope="col">Cours</th><th data-k="j1" scope="col">1 jour</th><th data-k="m1" scope="col">1 mois</th><th data-k="m3" scope="col">3 mois</th>
@@ -969,20 +861,7 @@ html.calme *{animation:none!important;transition:none!important}
       </div>
       <div><h3>Pour aller plus loin</h3><nav aria-label="Pages du site">
         <a class="lien-site" href="resultats.html">Résultats réels</a>
-        <a class="lien-site" href="fiche-technique-ia.html">Fiche technique de l'IA</a>
         <a class="lien-site" href="en/index.html" hreflang="en" lang="en">English version</a>
-        <a class="lien-site" href="es/index.html" hreflang="es" lang="es">Español</a>
-        <a class="lien-site" href="de/index.html" hreflang="de" lang="de">Deutsch</a>
-        <a class="lien-site" href="it/index.html" hreflang="it" lang="it">Italiano</a>
-        <a class="lien-site" href="pt/index.html" hreflang="pt" lang="pt">Português</a>
-        <a class="lien-site" href="nl/index.html" hreflang="nl" lang="nl">Nederlands</a>
-        <a class="lien-site" href="ru/index.html" hreflang="ru" lang="ru">Русский</a>
-        <a class="lien-site" href="tr/index.html" hreflang="tr" lang="tr">Türkçe</a>
-        <a class="lien-site" href="ar/index.html" hreflang="ar" lang="ar">العربية</a>
-        <a class="lien-site" href="hi/index.html" hreflang="hi" lang="hi">हिन्दी</a>
-        <a class="lien-site" href="zh/index.html" hreflang="zh" lang="zh">中文</a>
-        <a class="lien-site" href="ja/index.html" hreflang="ja" lang="ja">日本語</a>
-        <a class="lien-site" href="ko/index.html" hreflang="ko" lang="ko">한국어</a>
         <a href="#engagements">Nos engagements</a>
         <a href="#prevention">Besoin d'aide ?</a>
       </nav></div>
@@ -1057,7 +936,7 @@ html.calme *{animation:none!important;transition:none!important}
           <li><b>Utilisateur</b> : toute personne qui consulte le Site, de quelque manière que ce soit.</li>
           <li><b>Contenus</b> : l'ensemble des informations affichées (cours, graphiques, indicateurs, scores, signaux, probabilités, scénarios, simulations, textes générés automatiquement, actualités, données fondamentales et de contexte).</li>
           <li><b>Signal</b> : toute qualification automatique d'un titre (par exemple « haussier », « baissier », « signal fort », « configuration de décollage »).</li>
-          <li><b>Données tierces</b> : les informations fournies par des services extérieurs (Yahoo Finance, Binance, CryptoCompare, Finnhub, CoinGecko, alternative.me, éditeurs de presse).</li>
+          <li><b>Données tierces</b> : les informations fournies par des services extérieurs (Yahoo Finance, Binance, Finnhub, CoinGecko, alternative.me, éditeurs de presse).</li>
         </ul>
 
         <h4>Article 2 – Objet</h4>
@@ -1111,7 +990,7 @@ html.calme *{animation:none!important;transition:none!important}
         <p>La structure du Site, ses textes et son code sont protégés. Toute reproduction ou réutilisation substantielle sans autorisation est interdite, sauf usage strictement personnel et non commercial. Les marques, noms de sociétés et dénominations de titres cités appartiennent à leurs propriétaires et ne sont utilisés qu'à des fins d'identification. Les graphiques utilisent la bibliothèque TradingView Lightweight Charts™, sous licence Apache 2.0.</p>
 
         <h4>Article 13 – Utilisations interdites</h4>
-        <p>Il est interdit : d'extraire massivement ou automatiquement les Contenus ; de les revendre, de les intégrer dans un service payant ou de les présenter comme des conseils professionnels ; de porter atteinte à la sécurité ou au fonctionnement du Site ; d'afficher le Site dans un autre site en le faisant passer pour le sien (l'encadré officiel proposé sur chaque fiche, qui affiche le nom du Site et renvoie vers lui, peut en revanche être intégré librement) ; d'utiliser le Site dans un but illicite, notamment de manipulation de cours ou de diffusion d'informations trompeuses.</p>
+        <p>Il est interdit : d'extraire massivement ou automatiquement les Contenus ; de les revendre, de les intégrer dans un service payant ou de les présenter comme des conseils professionnels ; de porter atteinte à la sécurité ou au fonctionnement du Site ; d'afficher le Site dans un autre site en le faisant passer pour le sien ; d'utiliser le Site dans un but illicite, notamment de manipulation de cours ou de diffusion d'informations trompeuses.</p>
 
         <h4>Article 14 – Données personnelles</h4>
         <p>Le Site ne collecte aucune donnée personnelle. Les détails figurent dans la rubrique « Confidentialité ».</p>
@@ -1137,7 +1016,7 @@ html.calme *{animation:none!important;transition:none!important}
         <h4>Sources de données</h4>
         <ul>
           <li>Cours historiques quotidiens des actions, ETF, indices, cryptos, du VIX, des taux, du dollar et de l'or : Yahoo Finance, avec Binance et Stooq en secours. Chaque titre passe un contrôle qualité automatique (fraîcheur, trous, sauts invraisemblables, comparaison entre deux sources pour les cryptos).</li>
-          <li>Cours en direct des cryptos : Binance, et CryptoCompare pour celles absentes de Binance. Cours en direct des actions américaines et actualités des entreprises américaines : Finnhub.</li>
+          <li>Cours en direct des cryptos : Binance. Cours en direct des actions américaines et actualités des entreprises américaines : Finnhub.</li>
           <li>Cryptos en tendance : CoinGecko. Indice Fear &amp; Greed crypto : alternative.me. Autres actualités et données fondamentales : Yahoo Finance.</li>
         </ul>
         <h4>Méthode</h4>
@@ -1168,7 +1047,7 @@ html.calme *{animation:none!important;transition:none!important}
         <b>Contact :</b> <span id="m-contact" class="num"></span></p>
         <p><b>Conflits d'intérêts :</b> <span class="leg-conflits"></span></p>
         <p><b>Hébergeur :</b> GitHub, Inc. (service GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.</p>
-        <p><b>Sources des données :</b> Yahoo Finance (cours historiques), CoinGecko (cryptos en tendance), Binance et CryptoCompare (cours des cryptos en direct) et, le cas échéant, Finnhub (cours des actions américaines en direct). Ces données restent la propriété de leurs fournisseurs respectifs.</p>
+        <p><b>Sources des données :</b> Yahoo Finance (cours historiques), CoinGecko (cryptos en tendance), Binance (cours des cryptos en direct) et, le cas échéant, Finnhub (cours des actions américaines en direct). Ces données restent la propriété de leurs fournisseurs respectifs.</p>
       </article>
 
       <article class="legal" data-pane="confidentialite" hidden>
@@ -1176,31 +1055,17 @@ html.calme *{animation:none!important;transition:none!important}
         <p>Le site ne demande aucun compte, ne collecte aucune donnée personnelle et n'utilise aucun cookie publicitaire ni outil de mesure d'audience.</p>
         <p>Ton navigateur garde seulement en mémoire locale le fait que tu as lu l'avertissement, tes favoris, ton thème, ton mode d'affichage, tes paris du défi et ton portefeuille virtuel. Le bouton « Sauvegarder dans un fichier » crée un fichier sur ton appareil : rien n'est envoyé. Ces informations ne quittent jamais ton appareil ; tu peux les effacer en vidant les données du site.</p>
         <p id="conf-stats" hidden><b>Mesure d'audience :</b> le site compte les visites avec GoatCounter, un outil respectueux de la vie privée : aucun cookie, aucun suivi d'un site à l'autre, pas de profil. Seuls des chiffres agrégés sont conservés (nombre de visites, pages vues, pays, type d'appareil) ; l'adresse IP n'est pas enregistrée. Cette mesure sert uniquement à savoir si le site est utile.</p>
-        <p>Pour afficher la page, ton navigateur se connecte à des services tiers (Google Fonts pour les polices, Binance, CryptoCompare et éventuellement Finnhub pour les cours en direct). Ces services reçoivent ton adresse IP, comme pour toute page web, selon leurs propres politiques de confidentialité.</p>
+        <p>Pour afficher la page, ton navigateur se connecte à des services tiers (Google Fonts pour les polices, Binance et éventuellement Finnhub pour les cours en direct). Ces services reçoivent ton adresse IP, comme pour toute page web, selon leurs propres politiques de confidentialité.</p>
       </article>
     </div>
   </div>
 </div>
 
-<button class="retour-haut" id="retour-haut" hidden aria-label="Revenir en haut de la page">↑</button>
-
-<div class="consent" id="consent" hidden role="dialog" aria-modal="true" aria-labelledby="consent-t" aria-describedby="consent-d">
-  <div class="consent-boite">
-    <h2 id="consent-t">Avant de commencer</h2>
-    <div id="consent-d">
-      <p>Radar Bourse est un <b>projet éducatif et gratuit</b>. Quatre choses à savoir :</p>
-      <ul>
-        <li><b>Rien n'est sûr.</b> Les prévisions sont des calculs automatiques qui se trompent souvent. Le site montre exactement combien.</li>
-        <li><b>Ce ne sont pas des conseils.</b> Personne ici ne te dit d'acheter ou de vendre. Tu restes seul·e responsable de tes décisions.</li>
-        <li><b>Investir peut faire perdre de l'argent</b>, parfois tout l'argent investi. N'investis que ce que tu peux te permettre de perdre.</li>
-        <li><b>Nous ne sommes pas responsables.</b> Radar Bourse et son éditeur ne peuvent être tenus responsables d'aucune perte, d'aucune erreur ou retard dans les données, ni d'aucune décision prise à partir du site. Les décisions d'investissement sont réservées aux personnes majeures.</li>
-      </ul>
-      <p class="muted" style="font-size:13.5px">En cliquant sur « J'ai compris », tu acceptes les conditions d'utilisation, dont la limitation de responsabilité (article 10). Aucun cookie publicitaire, aucun compte, rien à acheter.</p>
-    </div>
-    <div class="consent-actions">
-      <button class="btn ghost" data-legal="conditions">Lire les conditions</button>
-      <button class="btn" id="accept">J'ai compris</button>
-    </div>
+<div class="consent gutter" id="consent" hidden role="region" aria-label="Avertissement">
+  <div class="wrap">
+    <p><b>Avant de commencer :</b> Radar Bourse est un projet éducatif et gratuit. Ses prévisions sont des calculs automatiques qui se trompent souvent : <b>rien n'y est sûr</b>, ce ne sont pas des conseils en investissement et tu peux perdre tout l'argent investi. En continuant, tu acceptes les conditions d'utilisation et tu restes seul·e responsable de tes décisions.</p>
+    <button class="btn ghost" data-legal="conditions">Lire les conditions</button>
+    <button class="btn" id="accept">J'ai compris et j'accepte</button>
   </div>
 </div>
 
@@ -1242,7 +1107,6 @@ const px = (v, cur) => {
   return `${v.toLocaleString('fr-FR', opts)} ${cur}`;
 };
 const token = t => t.replace(/[^A-Za-z0-9._-]/g, "");
-const affTk = tk => String(tk).replace(/\d+(-USD)$/, "$1");   // TON11419-USD → TON-USD (numéro interne de Yahoo)
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 /* Mode d'affichage : « simple » (par défaut, pour tout le monde) ou « expert » (tous les indicateurs) */
 let MODE = "simple";
@@ -1264,22 +1128,21 @@ function spark(vals, w=90, h=32){
   const pts=vals.map((v,i)=>`${(i/(vals.length-1)*(w-4)+2).toFixed(1)},${(h-3-(v-mn)/r*(h-6)).toFixed(1)}`).join(" ");
   const col = vals.at(-1)>=vals[0] ? "var(--up)" : "var(--down)";
   const last = pts.split(" ").at(-1).split(",");
-  const aire = `2,${h - 1} ${pts} ${last[0]},${h - 1}`;
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polygon points="${aire}" fill="${col}" opacity=".1"/><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="${col}" stroke="var(--surface)" stroke-width="1"/></svg>`;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="${last[0]}" cy="${last[1]}" r="2.4" fill="${col}"/></svg>`;
 }
 const LIB_CONF = {faible: "Confiance faible", moyenne: "Confiance moyenne", forte: "Confiance forte"};
 const barresConf = c => !LIB_CONF[c] ? "" : `<span class="conf-ic c-${c}" role="img" aria-label="${LIB_CONF[c]}" title="${LIB_CONF[c]}"><i></i><i></i><i></i></span>`;
 function gauge(p, accord, net, conf){
   if(p==null) return `<span class="muted">–</span>`;
-  if(net === false) return `<div class="sans-avis" title="Pas d'avis net : dans ces cas-là, les IA n'ont pas fait mieux que le hasard"><div class="gauge" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span><span class="num">${Math.round(p*100)} %</span> · pas d'avis net</span></div>`;
+  if(net === false) return `<div class="sans-avis" title="Avis trop peu tranché : dans ces cas-là, les IA n'ont pas fait mieux que le hasard"><div class="gauge" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span><span class="num">${Math.round(p*100)} %</span> · pas d'avis net</span></div>`;
   const desaccord = accord === false ? ` <span title="Les deux IA ne sont pas d'accord : avis peu fiable" role="img" aria-label="Les deux IA ne sont pas d'accord" style="color:var(--warn);font-weight:700">⚠</span>` : "";
-  return `<div style="display:flex;align-items:center;gap:8px"><div class="gauge ${p<0.5?'lo':''}" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span class="num" style="white-space:nowrap">${Math.round(p*100)} %</span>${barresConf(conf)}${desaccord}</div>`;
+  return `<div style="display:flex;align-items:center;gap:8px"><div class="gauge ${p<0.5?'lo':''}" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span class="num">${Math.round(p*100)} %</span>${barresConf(conf)}${desaccord}</div>`;
 }
 
 /* ---------- Définitions des mots compliqués (bouton « ? ») ---------- */
 const DEFS = {
   confiance: ["Niveau de confiance", "Une seule échelle pour tout le site. Faible : les IA hésitent ou ne sont pas d'accord. Moyenne : avis net. Forte : avis très tranché et les deux IA d'accord. Chaque niveau affiche ce qu'il a vraiment donné sur des années jamais vues."],
-  avis_net: ["Pas d'avis net", "Quand les chances de hausse sont proches de 50 %, les IA hésitent. Testé sur des années qu'elles n'avaient jamais vues : dans ces cas-là, elles n'ont pas fait mieux que le hasard. Sur certains marchés (par exemple les cryptos), même les avis tranchés n'ont pas fait mieux que « toujours la même réponse » : là, le radar ne donne jamais d'avis de direction. Il le dit franchement plutôt que de faire semblant de savoir."],
+  avis_net: ["Pas d'avis net", "Quand les chances de hausse sont proches de 50 %, les IA hésitent. Testé sur des années qu'elles n'avaient jamais vues : dans ces cas-là, elles n'ont pas fait mieux que le hasard. Le radar le dit franchement plutôt que de faire semblant de savoir."],
   agitation: ["Agitation prévue", "De combien le prix risque de bouger le mois prochain, à la hausse comme à la baisse. Les périodes agitées ont tendance à durer : c'est beaucoup plus prévisible que la direction du prix. « ±6 % » veut dire qu'en général, le prix finira le mois entre 6 % plus bas et 6 % plus haut, mais il peut en sortir."],
   raisons: ["Les raisons de l'avis", "Pour chaque titre, on retire tour à tour chaque famille d'indicateurs et on regarde de combien l'avis des IA change. Les familles qui le font le plus bouger sont affichées. Ce sont les raisons du calcul, pas des certitudes sur l'avenir."],
   proba: ["Chances de hausse", "Sur 100 situations passées qui ressemblaient à celle d'aujourd'hui, combien de fois le prix était plus haut un mois après. 50 % = pile ou face : le radar ne sait pas."],
@@ -1353,38 +1216,25 @@ $("#pred-sub").innerHTML = `Les chances, selon les deux IA, que le prix soit plu
 const avecProba = T.filter(t => t.proba_hausse!=null).sort((a,b)=>b.proba_hausse-a.proba_hausse);
 const VUES_PICKS = {
   hausse: {note: "Les titres avec le plus de chances d'être plus hauts dans un mois.",
-    liste: () => [...avecProba.filter(t => t.avis_net !== false), ...avecProba.filter(t => t.avis_net === false)], droite: t => gauge(t.proba_hausse, t.accord_ia, t.avis_net, t.confiance)},
+    liste: () => avecProba, droite: t => gauge(t.proba_hausse, t.accord_ia, t.avis_net, t.confiance)},
   marche: {note: "Les titres avec le plus de chances de faire mieux que leur indice (CAC 40, S&P 500, Bitcoin…). Utile même quand tout le marché baisse.",
     liste: () => T.filter(t => t.proba_marche != null).sort((a,b) => b.proba_marche - a.proba_marche),
     droite: t => `<span class="num ${t.proba_marche >= .55 ? "up" : ""}">${Math.round(t.proba_marche*100)} %</span><span class="muted" style="font-size:12px"> vs ${esc(t.indice_nom || "son indice")}</span>`},
   calme: {note: "Les titres dont l'IA prévoit qu'ils bougeront le moins le mois prochain : moins de surprises, à la hausse comme à la baisse.",
     liste: () => T.filter(t => t.risque_prevu && t.risque_prevu.mouvement != null).sort((a,b) => a.risque_prevu.mouvement - b.risque_prevu.mouvement),
-    droite: t => `<span class="num" style="white-space:nowrap" title="mouvement prévu sur un mois">±${(t.risque_prevu.mouvement*100).toFixed(1).replace(".", ",")}&nbsp;%</span>`},
-  semaine: {note: "Les titres dont on prévoit qu'ils bougeront le plus sur les 5 prochaines séances, dans un sens ou dans l'autre. Testé sur 138 000 cas réels : plus fiable que « comme la semaine dernière » chaque année depuis 2009.",
-    liste: () => T.filter(t => t.risque_prevu && t.risque_prevu.semaine != null).sort((a,b) => b.risque_prevu.semaine - a.risque_prevu.semaine),
-    droite: t => `<span class="num" style="white-space:nowrap" title="mouvement prévu sur 5 séances">±${(t.risque_prevu.semaine*100).toFixed(1).replace(".", ",")}&nbsp;%</span>`},
-  // version 46 : la prévision la plus fiable du radar, mise en avant sur l'accueil (seulement si elle a fait ses preuves)
-  chute: {note: "Les titres auxquels les IA donnent le plus de risque de perdre plus de 10 % le mois prochain. C'est ce qu'elles prévoient le mieux : sur des années jamais vues, ces titres ont chuté bien plus souvent que les autres. Ce n'est pas un conseil de vente.",
-    liste: () => T.filter(t => t.risque_prevu && t.risque_prevu.chute != null).sort((a,b) => b.risque_prevu.chute - a.risque_prevu.chute),
-    droite: t => `<span class="num down" style="white-space:nowrap" title="risque de perdre plus de 10 % le mois prochain">${Math.round(t.risque_prevu.chute*100)}&nbsp;%</span>`},
+    droite: t => `<span class="num">±${(t.risque_prevu.mouvement*100).toFixed(1).replace(".", ",")} %</span><span class="muted" style="font-size:12px"> en un mois</span>`},
 };
-{ const Ch = ((DATA.modele || {}).risque || {}).chute || {}, bt = document.querySelector('[data-vp="chute"]');
-  if(bt && Ch.prouve && T.some(t => t.risque_prevu && t.risque_prevu.chute != null)) bt.hidden = false; else delete VUES_PICKS.chute; }
-{ const bs = document.querySelector('[data-vp="semaine"]');
-  if(bs && T.some(t => t.risque_prevu && t.risque_prevu.semaine != null)) bs.hidden = false; else delete VUES_PICKS.semaine; }
 function rendrePicks(vue){
   const V = VUES_PICKS[vue] || VUES_PICKS.hausse;
   document.querySelectorAll("[data-vp]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.vp === vue)));
   $("#vp-note").textContent = V.note;
   $("#picks").innerHTML = V.liste().slice(0,7).map(t => `<button class="pick" data-t="${esc(t.ticker)}">
-  <span style="min-width:0"><span class="t">${esc(t.nom)}</span><span class="s">${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche]||""}</span></span>
+  <span style="min-width:0"><span class="t">${esc(t.nom)}</span><span class="s">${esc(t.ticker)} · ${NOM_MARCHE[t.marche]||""}</span></span>
   <span class="pick-mid">${spark(t.spark,64,22)}${V.droite(t)}</span>
-  <span class="pill ${SIG[t.signal]}" title="Tendance technique (moyennes, RSI, MACD…), indépendante de l'avis des IA">${esc(LIB[t.signal] || t.signal)}</span></button>`).join("") || `<div class="empty">Pas encore de données pour ce classement.</div>`;
+  <span class="pill ${SIG[t.signal]}">${esc(LIB[t.signal] || t.signal)}</span></button>`).join("") || `<div class="empty">Pas encore de données pour ce classement.</div>`;
 }
 document.querySelectorAll("[data-vp]").forEach(b => b.addEventListener("click", () => rendrePicks(b.dataset.vp)));
-{ const Mo = DATA.modele || {}, Re = Mo.relatif || {};
-  // on ouvre sur ce que les IA font le mieux : « mieux que son marché » si c'est plus fiable que la direction
-  rendrePicks(Re.auc != null && Mo.auc != null && Re.auc > Mo.auc + .005 && (Re.avis_net || {}).marge != null ? "marche" : "hausse"); }
+rendrePicks("hausse");
 const rockets = T.filter(t => t.potentiel_hausse).sort((a,b)=>b.score-a.score);
 $("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t="${esc(t.ticker)}">
   <div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(t.nom)}</b><span class="num">score ${Math.round(t.score)}</span></div>
@@ -1392,232 +1242,60 @@ $("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t
   || `<div class="empty">Aucune configuration de décollage aujourd'hui. Le radar ne force pas les signaux quand le marché n'en donne pas.</div>`;
 
 
-/* ---------- L'Arène : jeu « Remonte le temps » ---------- */
+/* ---------- Jeu « Remonte le temps » ---------- */
 (function(){
-  const CLE = "radar-bourse-arene-v1", sec = $("#remonte");
+  const CLE = "radar-bourse-jeu-temps";
+  let items = Array.isArray(DATA.jeu_temps) ? DATA.jeu_temps : null, actuel = null, score = {toi: 0, ia: 0, n: 0}, deja = new Set();
+  try{ score = Object.assign(score, JSON.parse(localStorage.getItem(CLE) || "{}")); }catch(e){}
+  const sec = $("#remonte");
   if(!DATA.jeu_temps){ sec.hidden = true; document.querySelector('#nav-sec a[href="#remonte"]')?.remove(); return; }
-  let items = Array.isArray(DATA.jeu_temps) ? DATA.jeu_temps : null, actuel = null, mode = "libre", deja = new Set(), indice = false;
-  const vide = () => ({n: 0, toi: 0, ia: 0, points: 0, serie: 0, meilleure: 0, battu: 0, jours: {}});
-  let S = vide();
-  try{ S = Object.assign(vide(), JSON.parse(localStorage.getItem(CLE) || "{}")); }catch(e){}
-  const sauver = () => { try{ localStorage.setItem(CLE, JSON.stringify(S)); }catch(e){} };
-  const auj = new Date().toISOString().slice(0, 10);
   const svg = $("#jeu-svg"), zone = $("#jeu-zone"), res = $("#jeu-res");
-  const BADGES = [
-    ["🎯", "Premier pas", "Jouer une manche", () => S.n >= 1],
-    ["🔥", "En feu", "5 bonnes réponses d'affilée", () => S.meilleure >= 5],
-    ["📈", "Analyste", "25 bonnes réponses", () => S.toi >= 25],
-    ["🤖", "Plus fort que l'IA", "Faire mieux que l'IA sur au moins 20 manches", () => S.n >= 20 && S.toi > S.ia],
-    ["🗓️", "Fidèle", "Finir 3 défis du jour", () => Object.values(S.jours).filter(j => j.fini).length >= 3],
-    ["🏆", "Défi parfait", "5 sur 5 à un défi du jour", () => Object.values(S.jours).some(j => j.fini && j.toi === 5)],
-  ];
-  function tableau(){
-    const pc = S.n ? Math.round(S.toi / S.n * 100) : null, pia = S.n ? Math.round(S.ia / S.n * 100) : null;
-    $("#arene-chiffres").innerHTML = `<div><b>${S.points}</b><span>points</span></div><div><b>${S.serie}</b><span>série en cours (record ${S.meilleure})</span></div>
-      <div><b>${pc == null ? "–" : pc + " %"}</b><span>tes bonnes réponses${S.n ? ` (${S.toi}/${S.n})` : ""}</span></div><div><b>${pia == null ? "–" : pia + " %"}</b><span>celles de l'IA</span></div>`;
-    $("#badges").innerHTML = BADGES.map(([ic, nom, txt, ok]) => `<li class="${ok() ? "gagne" : ""}"><span aria-hidden="true">${ic}</span><span><b>${nom}</b> · <span class="muted">${txt}</span>${ok() ? "" : " <span class=\"sr\">(pas encore obtenu)</span>"}</span></li>`).join("");
-  }
-  tableau();
+  const montrerScore = () => { $("#jeu-score").innerHTML = score.n ? `Ton score : <b>${score.toi} sur ${score.n}</b> · l'IA : <b>${score.ia} sur ${score.n}</b>` : ""; };
+  montrerScore();
   function dessiner(it, revele){
     const s = it.s, a = it.a, vis = revele ? s : s.slice(0, a + 1);
     const lo = Math.min(...vis), hi = Math.max(...vis), W = 640, H = 230, m = 12;
     const x = i => m + i / (s.length - 1) * (W - 2 * m), y = v => H - m - (v - lo) / ((hi - lo) || 1) * (H - 2 * m);
-    const pts = (arr, d0 = 0) => arr.map((v, i) => `${x(i + d0).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
-    const aire = `<polygon points="${x(0)},${H} ${pts(s.slice(0, a + 1))} ${x(a)},${H}" fill="var(--accent-soft)" opacity=".6"/>`;
+    const pts = arr => arr.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
     const passe = `<polyline points="${pts(s.slice(0, a + 1))}" fill="none" stroke="var(--ink)" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
-    const futur = revele ? `<polyline points="${pts(s.slice(a), a)}" fill="none" stroke="${it.r > 0 ? "var(--up)" : "var(--down)"}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>` : "";
-    const ligne = `<line x1="${x(a)}" x2="${x(a)}" y1="0" y2="${H}" stroke="var(--accent)" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>`
-      + `<line x1="${x(0)}" x2="${x(s.length - 1)}" y1="${y(100)}" y2="${y(100)}" stroke="var(--muted)" stroke-dasharray="2 4" opacity=".6" vector-effect="non-scaling-stroke"/>`;
-    const fin = $("#jeu-fin");
-    if(revele){ fin.hidden = false; fin.className = "jeu-fin " + (it.r > 0 ? "h" : "b");
-      fin.textContent = (it.r > 0 ? "+" : "") + (it.r * 100).toFixed(1).replace(".", ",") + " %";
-      fin.style.left = Math.min(92, x(s.length - 1) / W * 100) + "%"; fin.style.top = Math.max(2, Math.min(86, y(s.at(-1)) / H * 100)) + "%"; }
-    else fin.hidden = true;
-    svg.removeAttribute("hidden"); $("#jeu-vide").hidden = true;
-    svg.innerHTML = `<title id="jeu-svg-t">${revele ? "Le prix avant et après le jour mystère" : "Le prix avant le jour mystère"}</title>${aire}${ligne}${passe}${futur}`;
+    const futur = revele ? `<polyline points="${s.slice(a).map((v, i) => `${x(a + i).toFixed(1)},${y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${it.r > 0 ? "var(--up)" : "var(--down)"}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>` : "";
+    const ligne = `<line x1="${x(a)}" x2="${x(a)}" y1="0" y2="${H}" stroke="var(--accent)" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>`;
+    svg.innerHTML = `<title id="jeu-svg-t">${revele ? "Le prix avant et après le jour mystère" : "Le prix avant le jour mystère"}</title>${ligne}${passe}${futur}`;
   }
-  function graine(txt){ let h = 1779033703; for(const c of txt){ h = Math.imul(h ^ c.charCodeAt(0), 3432918353); h = h << 13 | h >>> 19; } return () => { h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296; }; }
-  function defiDuJour(){ const r = graine("radar-" + auj), choix = []; while(choix.length < Math.min(5, items.length)){ const k = Math.floor(r() * items.length); if(!choix.includes(k)) choix.push(k); } return choix; }
-  function manche(){
-    if(mode === "jour"){ const j = S.jours[auj] || (S.jours[auj] = {k: 0, toi: 0, ia: 0, fini: false});
-      if(j.fini){ finDefi(); return; } actuel = items[defiDuJour()[j.k]]; $("#jeu-manche").textContent = `Défi du jour · manche ${j.k + 1} sur 5`; }
-    else { if(deja.size >= items.length) deja.clear(); let k; do { k = Math.floor(Math.random() * items.length); } while(deja.has(k)); deja.add(k); actuel = items[k]; $("#jeu-manche").textContent = ""; }
-    indice = false; dessiner(actuel, false); res.innerHTML = "";
-    zone.innerHTML = `<span>Dans un mois, le prix sera…</span><button class="btn" data-pari="1">Plus haut ↑</button><button class="btn" data-pari="0">Plus bas ↓</button><button class="btn ghost" id="jeu-indice">Voir l'avis de l'IA (−3 points)</button>`;
+  function tirer(){
+    const libres = items.filter((_, i) => !deja.has(i));
+    if(!libres.length) deja.clear();
+    let k; do { k = Math.floor(Math.random() * items.length); } while(deja.has(k) && deja.size < items.length);
+    deja.add(k); actuel = items[k];
+    dessiner(actuel, false);
+    res.innerHTML = "";
+    zone.innerHTML = `<span>Dans un mois, le prix sera…</span><button class="btn" data-pari="1">Plus haut ↑</button><button class="btn" data-pari="0">Plus bas ↓</button>`;
     zone.querySelector("[data-pari]").focus();
   }
   function repondre(pari){
-    const it = actuel, vrai = it.r > 0 ? 1 : 0, iaDit = it.p > .5 ? 1 : 0, juste = pari === vrai, iaJuste = iaDit === vrai;
+    const it = actuel, vrai = it.r > 0 ? 1 : 0, iaDit = it.p > .5 ? 1 : 0;
     const marge = (((DATA.modele || {}).avis_net) || {}).marge, hesite = marge != null && Math.abs(it.p - .5) < marge;
-    S.n++; if(juste) S.toi++; if(iaJuste) S.ia++;
-    const gain = (juste ? 10 : 0) + (juste && !iaJuste ? 5 : 0) - (indice ? 3 : 0);
-    S.points = Math.max(0, S.points + gain); S.serie = juste ? S.serie + 1 : 0; S.meilleure = Math.max(S.meilleure, S.serie);
-    if(juste && !iaJuste) S.battu++;
-    if(mode === "jour"){ const j = S.jours[auj]; j.k++; if(juste) j.toi++; if(iaJuste) j.ia++; if(j.k >= 5) j.fini = true; }
-    sauver(); dessiner(it, true); tableau();
+    score.n++; if(pari === vrai) score.toi++; if(iaDit === vrai) score.ia++;
+    try{ localStorage.setItem(CLE, JSON.stringify(score)); }catch(e){}
+    dessiner(it, true); montrerScore();
     const t = T.find(x => x.ticker === it.t), nom = t ? t.nom : it.t;
     res.innerHTML = `<div class="jeu-res">
-      <p class="jeu-verdict ${juste ? "up" : "down"}">${juste ? (iaJuste ? "Bien vu !" : "Bien vu, et mieux que l'IA !") : "Raté !"} <span class="muted" style="font-size:15px;font-family:var(--f-body)">${gain >= 0 ? "+" : ""}${gain} points</span></p>
+      <p class="jeu-verdict ${pari === vrai ? "up" : "down"}">${pari === vrai ? "Bien vu !" : "Raté !"}</p>
       <p>C'était <b>${esc(nom)}</b>, le ${fmtDate(it.d)}. Un mois plus tard : <b class="${it.r > 0 ? "up" : "down"}">${it.r > 0 ? "+" : ""}${(it.r * 100).toFixed(1).replace(".", ",")} %</b>.</p>
-      <p>L'IA donnait <b>${Math.round(it.p * 100)} % de chances de hausse</b> : elle penchait pour ${iaDit ? "la hausse" : "la baisse"}${hesite ? ", mais sans avis net" : ""}. Elle ${iaJuste ? "a vu juste" : "s'est trompée"}.</p></div>`;
-    const fini = mode === "jour" && S.jours[auj].fini;
-    zone.innerHTML = fini ? `<button class="btn" id="jeu-suivant">Voir mon résultat du jour</button>` : `<button class="btn" id="jeu-suivant">${mode === "jour" ? "Manche suivante" : "Une autre période au hasard"}</button>`;
+      <p>L'IA donnait <b>${Math.round(it.p * 100)} % de chances de hausse</b> : elle penchait pour ${iaDit ? "la hausse" : "la baisse"}${hesite ? ", mais sans avis net" : ""}. Elle ${iaDit === vrai ? "a vu juste" : "s'est trompée"}.</p></div>`;
+    zone.innerHTML = `<button class="btn" id="jeu-suivant">Une autre période au hasard</button>${score.n ? `<button class="btn ghost" id="jeu-raz">Remettre le score à zéro</button>` : ""}`;
     $("#jeu-suivant").focus();
-  }
-  function finDefi(){
-    const j = S.jours[auj];
-    $("#jeu-manche").textContent = "Défi du jour terminé";
-    const texte = `Radar Bourse · Défi du ${new Date().toLocaleDateString("fr-FR")} : ${j.toi}/5 (l'IA : ${j.ia}/5). Arriveras-tu à faire mieux ?`;
-    res.innerHTML = `<div class="jeu-res"><p class="jeu-verdict">${j.toi > j.ia ? "Tu as battu l'IA aujourd'hui !" : j.toi === j.ia ? "Égalité avec l'IA." : "L'IA gagne aujourd'hui."}</p>
-      <p>Ton score : <b>${j.toi} sur 5</b> · l'IA : <b>${j.ia} sur 5</b>. Un nouveau défi arrive demain, le même pour tout le monde.</p></div>`;
-    zone.innerHTML = `<button class="btn" id="jeu-partager">Copier mon score</button><button class="btn ghost" data-mode-aller="libre">Continuer en partie libre</button>`;
-    zone.dataset.partage = texte;
   }
   async function charger(){
     if(items) return true;
-    try{ const r = await fetch(DATA.jeu_temps); const j = await r.json(); items = j.items || j; return Array.isArray(items) && items.length > 4; }
+    try{ const r = await fetch(DATA.jeu_temps); items = await r.json(); items = items.items || items; return Array.isArray(items) && items.length > 0; }
     catch(e){ res.innerHTML = `<p class="muted">Impossible de charger les périodes du jeu. Vérifie ta connexion puis réessaie.</p>`; return false; }
   }
-  function changerMode(m){
-    mode = m; document.querySelectorAll("[data-mode-jeu]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modeJeu === m)));
-    res.innerHTML = ""; $("#jeu-manche").textContent = "";
-    zone.innerHTML = `<button class="btn" id="jeu-debut">${m === "jour" ? "Commencer le défi du jour" : "Commencer une partie"}</button>`;
-  }
-  document.querySelectorAll("[data-mode-jeu]").forEach(b => b.addEventListener("click", () => changerMode(b.dataset.modeJeu)));
   zone.addEventListener("click", async e => {
     const b = e.target.closest("button"); if(!b) return;
-    if(b.id === "jeu-debut" || b.id === "jeu-suivant"){ if(await charger()) manche(); }
+    if(b.id === "jeu-debut" || b.id === "jeu-suivant"){ if(await charger()) tirer(); }
     else if(b.dataset.pari != null) repondre(Number(b.dataset.pari));
-    else if(b.id === "jeu-indice"){ indice = true; b.outerHTML = `<span class="muted">L'IA donne <b>${Math.round(actuel.p * 100)} %</b> de chances de hausse.</span>`; }
-    else if(b.id === "jeu-partager"){ try{ await navigator.clipboard.writeText(zone.dataset.partage); flash("Score copié : colle-le où tu veux."); }catch(err){ flash(zone.dataset.partage); } }
-    else if(b.dataset.modeAller){ changerMode(b.dataset.modeAller); }
-  });
-  $("#jeu-raz").addEventListener("click", () => { S = vide(); sauver(); tableau(); flash("Scores remis à zéro."); });
-})();
-
-
-/* ---------- État des marchés (ouvert / fermé), calculé en direct à l'heure de chaque place ---------- */
-(function(){
-  const el = $("#etat-marches");
-  const heure = tz => { const f = new Intl.DateTimeFormat("en-GB", {timeZone: tz, weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false}).formatToParts(new Date());
-    const g = k => f.find(x => x.type === k).value; return {j: g("weekday"), m: +g("hour") * 60 + +g("minute")}; };
-  const ouvert = (tz, debut, fin) => { const h = heure(tz); return !["Sat", "Sun"].includes(h.j) && h.m >= debut && h.m < fin; };
-  function maj(){
-    const places = [["Paris", ouvert("Europe/Paris", 540, 1050)], ["Francfort", ouvert("Europe/Berlin", 540, 1050)],
-                    ["New York", ouvert("America/New_York", 570, 960)], ["Cryptos", true]];
-    el.innerHTML = `<span style="color:var(--ink);font-weight:500">Marchés en ce moment</span>` + places.map(([n, o]) =>
-      `<span><i class="${o ? "on" : ""}" aria-hidden="true"></i>${n} : ${n === "Cryptos" ? "ouvert 24 h/24" : o ? "ouvert" : "fermé"}</span>`).join("")
-      + `<span title="Les jours fériés ne sont pas pris en compte">(hors jours fériés)</span>`;
-  }
-  maj(); setInterval(maj, 60000);
-})();
-
-/* ---------- Agenda des résultats (30 prochains jours) ---------- */
-(function(){
-  const auj = new Date(); auj.setHours(0, 0, 0, 0);
-  const proches = DATA.titres.filter(t => t.resultats_le).map(t => ({t, d: new Date(t.resultats_le + "T12:00")}))
-    .filter(x => x.d >= auj && (x.d - auj) / 864e5 <= 30).sort((a, b) => a.d - b.d).slice(0, 12);
-  if(!proches.length) return;
-  $("#agenda-liste").innerHTML = proches.map(({t, d}) => `<li><button data-t="${esc(t.ticker)}"><span class="d">${d.toLocaleDateString("fr-FR", {weekday: "short", day: "numeric", month: "short"})}</span><b>${esc(t.nom)}</b></button></li>`).join("");
-  $("#agenda").hidden = false;
-})();
-
-
-/* ---------- Les mini-robots ---------- */
-const ROBOTS = DATA.robots || [];
-(function(){
-  if(!ROBOTS.length){ document.querySelector('#nav-sec a[href="#robots"]')?.remove(); return; }
-  const nomDe = tk => (T.find(x => x.ticker === tk) || {}).nom || tk;
-  const puces = (liste, cl) => liste.slice(0, 5).map(tk => `<button class="${cl}" data-t="${esc(tk)}">${esc(nomDe(tk))}</button>`).join("")
-    + (liste.length > 5 ? `<span class="muted" style="font-size:12.5px">+${liste.length - 5} autres</span>` : "");
-  $("#robots-grille").innerHTML = ROBOTS.map(r => {
-    const A = r.achat || {}, V = r.vente || {}, b = r.base_hausse;
-    const juge = A.nb >= 30 && b != null;
-    const verdict = !juge ? "Pas encore assez de signaux pour le juger." : A.taux > b + .01 ? "Un peu mieux qu'acheter au hasard" : A.taux < b - .01 ? "Moins bien qu'acheter au hasard" : "Pas mieux qu'acheter au hasard";
-    const ach = r.du_jour.achat, ven = r.du_jour.vente;
-    return `<article class="robot"><h3>${esc(r.nom)}<small>${r.pour === "crypto" ? "cryptos" : "actions et cryptos"}</small></h3>
-      <p class="robot-verdict ${juge && A.taux > b + .01 ? "up" : juge && A.taux < b - .01 ? "down" : ""}">${verdict}</p>
-      ${juge ? `<div class="bilan">${barreStat("Quand il dit « acheter »", A.taux, null)}${barreStat("Acheter au hasard", b, null, true)}</div>` : ""}
-      <p class="robot-jour">Aujourd'hui : <b class="up">${ach.length} achat${ach.length > 1 ? "s" : ""}</b> · <b class="down">${ven.length} vente${ven.length > 1 ? "s" : ""}</b></p>
-      ${ach.length ? `<div class="puces">${puces(ach, "ach")}</div>` : ""}
-      ${ven.length ? `<div class="puces">${puces(ven, "ven")}</div>` : ""}
-      <details><summary>Comment il raisonne</summary><p>${esc(r.idee)}</p>
-        <p>${juge ? `Testé sur ${A.nb.toLocaleString("fr-FR")} signaux d'achat, prix vérifié ${DATA.horizon} séances après.` : ""}${V.nb >= 30 ? ` Quand il dit « vendre », le prix a bien baissé ${Math.round(V.taux * 100)} fois sur 100 (au hasard : ${Math.round((1 - b) * 100)}).` : ""}</p></details>
-    </article>`;
-  }).join("");
-  $("#robots").hidden = false;
-})();
-function votesRobots(t){
-  const v = t.robots || {}, R = (DATA.robots || []).filter(r => v[r.cle] != null);
-  if(!R.length) return "";
-  const ach = R.filter(r => v[r.cle] === 1).length, ven = R.filter(r => v[r.cle] === -1).length;
-  return `<div class="panel"><h3 style="font-size:18px;margin-bottom:8px">Ce que disent les mini-robots</h3>
-    <p class="muted" style="font-size:13.5px;margin:0 0 8px">${ach} acheteur${ach > 1 ? "s" : ""}, ${ven} vendeur${ven > 1 ? "s" : ""}, ${R.length - ach - ven} sans avis. Ce sont des règles simples : elles se contredisent souvent.</p>
-    <div class="votes-robots">${R.map(r => `<span class="${v[r.cle] === 1 ? "ach" : v[r.cle] === -1 ? "ven" : ""}">${esc(r.nom)} : ${v[r.cle] === 1 ? "acheter" : v[r.cle] === -1 ? "vendre" : "rien"}</span>`).join("")}</div></div>`;
-}
-
-
-/* ---------- Carte des chances et des risques (nuage de points) ---------- */
-(function(){
-  const pts = T.filter(t => t.proba_hausse != null && t.risque_prevu && t.risque_prevu.mouvement != null);
-  if(pts.length < 5) return;
-  $("#nuage").hidden = false;
-  const svg = $("#nuage-svg"), bulle = $("#nuage-bulle"), zone = $("#nuage-zone");
-  const marches = [["all", "Tout"], ...["fr", "eu", "us", "crypto", "etf"].filter(m => pts.some(t => t.marche === m)).map(m => [m, NOM_MARCHE[m]])];
-  let filtre = "all";
-  $("#nuage-filtres").innerHTML = marches.map(([k, n]) => `<button class="chip" data-nf="${k}" aria-pressed="${k === "all"}">${esc(n)}</button>`).join("");
-  $("#nuage-filtres").addEventListener("click", e => { const b = e.target.closest("[data-nf]"); if(!b) return; filtre = b.dataset.nf;
-    document.querySelectorAll("[data-nf]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); dessiner(); });
-  function dessiner(){
-    const W = Math.max(300, zone.clientWidth), H = 380, g = {l: 64, r: 14, t: 14, b: 42};
-    const vis = pts.filter(t => filtre === "all" || t.marche === filtre);
-    const xs = pts.map(t => t.proba_hausse), ys = pts.map(t => t.risque_prevu.mouvement * 100);
-    const x0 = Math.min(.4, Math.min(...xs) - .01), x1 = Math.max(.6, Math.max(...xs) + .01), y1 = Math.ceil(Math.max(...ys) / 5) * 5 || 5;
-    const X = v => g.l + (v - x0) / (x1 - x0) * (W - g.l - g.r), Y = v => H - g.b - v / y1 * (H - g.t - g.b);
-    let h = "";
-    for(let v = 0; v <= y1; v += y1 > 30 ? 10 : 5) h += `<line x1="${g.l}" x2="${W - g.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${g.l - 8}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">±${v} %</text>`;
-    for(let v = Math.ceil(x0 * 20) / 20; v <= x1 + 1e-9; v += .05) h += `<text x="${X(v)}" y="${H - g.b + 16}" text-anchor="middle" font-size="11" fill="var(--muted)">${Math.round(v * 100)} %</text>`;
-    h += `<line x1="${X(.5)}" x2="${X(.5)}" y1="${g.t}" y2="${H - g.b}" stroke="var(--muted)" stroke-dasharray="4 4"/>`;
-    h += `<text x="${X(.5) + 6}" y="${g.t + 12}" font-size="11" fill="var(--muted)">50 % = pile ou face</text>`;
-    h += `<text x="${(g.l + W - g.r) / 2}" y="${H - 6}" text-anchor="middle" font-size="12" fill="var(--muted)">Chances de hausse dans un mois →</text>`;
-    if(W > 520){   // les quatre coins, en mots simples
-      const c = (x, y, a, t) => `<text x="${x}" y="${y}" text-anchor="${a}" font-size="11.5" fill="var(--muted)" opacity=".85">${t}</text>`;
-      h += c(W - g.r - 4, g.t + 14, "end", "Plus de chances, mais agité") + c(W - g.r - 4, H - g.b - 8, "end", "Plus de chances, et calme")
-         + c(g.l + 6, g.t + 14, "start", "Moins de chances, et agité") + c(g.l + 6, H - g.b - 8, "start", "Moins de chances, mais calme");
-    }
-    h += `<text transform="translate(14 ${(g.t + H - g.b) / 2}) rotate(-90)" text-anchor="middle" font-size="12" fill="var(--muted)">Agitation prévue ↑</text>`;
-    h += vis.map(t => { const net = t.avis_net !== false, cx = X(t.proba_hausse), cy = Y(t.risque_prevu.mouvement * 100);
-      return `<g class="pt" tabindex="0" role="button" data-t="${esc(t.ticker)}" aria-label="${esc(t.nom)} : ${Math.round(t.proba_hausse * 100)} % de chances de hausse, agitation ±${Math.round(t.risque_prevu.mouvement * 100)} %${net ? "" : ", pas d'avis net"}">
-        <circle cx="${cx}" cy="${cy}" r="11" fill="transparent"/>
-        <circle cx="${cx}" cy="${cy}" r="5.5" fill="${net ? "var(--accent)" : "var(--surface)"}" stroke="${net ? "var(--surface)" : "var(--accent)"}" stroke-width="2"/></g>`; }).join("");
-    svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = h;
-  }
-  function montrer(e){
-    const gEl = e.target.closest(".pt"); if(!gEl){ bulle.hidden = true; return; }
-    const t = T.find(x => x.ticker === gEl.dataset.t), c = gEl.querySelectorAll("circle")[1], r = zone.getBoundingClientRect(), b = c.getBoundingClientRect();
-    bulle.innerHTML = `<b>${esc(t.nom)}</b><br>${Math.round(t.proba_hausse * 100)} % de chances de hausse${t.avis_net === false ? " (pas d'avis net)" : ""}<br>Agitation prévue : ±${(t.risque_prevu.mouvement * 100).toFixed(1).replace(".", ",")} %`;
-    bulle.hidden = false;
-    const gx = b.left - r.left + b.width / 2, gy = b.top - r.top;
-    bulle.style.left = Math.min(Math.max(0, gx - 115), r.width - 230) + "px"; bulle.style.top = Math.max(0, gy - bulle.offsetHeight - 10) + "px";
-  }
-  svg.addEventListener("mousemove", montrer); svg.addEventListener("focusin", montrer);
-  svg.addEventListener("mouseleave", () => bulle.hidden = true); svg.addEventListener("focusout", () => bulle.hidden = true);
-  svg.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ const gEl = e.target.closest(".pt"); if(gEl){ e.preventDefault(); ouvrir(gEl.dataset.t); } } });
-  dessiner(); let tm; addEventListener("resize", () => { clearTimeout(tm); tm = setTimeout(dessiner, 150); });
-})();
-
-
-/* ---------- Petits conforts : bouton « haut de page », touche « / » pour chercher ---------- */
-(function(){
-  const b = $("#retour-haut");
-  addEventListener("scroll", () => { b.hidden = scrollY < 1200; }, {passive: true});
-  b.addEventListener("click", () => { scrollTo({top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"}); $("#rech").focus({preventScroll: true}); });
-  document.addEventListener("keydown", e => {
-    if(e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
-    const cible = e.target, tag = (cible.tagName || "").toLowerCase();
-    if(["input", "textarea", "select"].includes(tag) || cible.isContentEditable) return;
-    if(!$("#sheet").hidden || !$("#consent").hidden) return;
-    e.preventDefault(); $("#rech").focus();
+    else if(b.id === "jeu-raz"){ score = {toi: 0, ia: 0, n: 0}; try{ localStorage.removeItem(CLE); }catch(err){} montrerScore(); b.remove(); }
   });
 })();
 
@@ -1834,7 +1512,7 @@ function rendreSim(){
   if(!L.length){ el.innerHTML = `<div class="empty">Aucune estimation disponible pour ces critères.</div>`; $("#sim-plus").hidden = true; return; }
   el.innerHTML = L.slice(0, SIM.n).map(t => `<div class="sim-ligne" data-sim="${esc(t.ticker)}">
       <div class="nom"><b>${esc(t.nom)}${t.resultats_le ? `<span class="badge-res" title="Publication de résultats : forte volatilité possible${t.fourchette_elargie ? " ; fourchette élargie de 30 % par prudence" : ""}">résultats le ${new Date(t.resultats_le + "T12:00").toLocaleDateString("fr-FR", {day:"numeric", month:"short"})}${t.fourchette_elargie ? " · fourchette élargie" : ""}</span>` : ""}${t.qualite_ok === false ? ' <span title="Données à vérifier" style="color:var(--warn)">⚠</span>' : ""}</b>
-        <span>${esc(affTk(t.ticker))} · aujourd'hui <span class="num" data-px="${esc(t.ticker)}">${px(t.prix, t.devise)}</span></span></div>
+        <span>${esc(t.ticker)} · aujourd'hui <span class="num" data-px="${esc(t.ticker)}">${px(t.prix, t.devise)}</span></span></div>
       ${plage(t, prevDirect(t, SIM.h))}
       <div class="sim-btns"><button class="mini-btn" data-simuler="${esc(t.ticker)}">Simuler</button><button class="mini-btn" data-parier="${esc(t.ticker)}">Je parie</button></div>
     </div>`).join("");
@@ -1903,7 +1581,7 @@ function rendreRisque(){
     .sort((a, b) => b.g - a.g).slice(0, 8);
   z.innerHTML = `<div class="alerte-sim" style="border-color:var(--down);background:var(--down-soft)"><b style="color:var(--down)">Les plus explosifs à un mois… dans les deux sens</b>
     <span>Pour chaque titre : le gain extrême ET la perte extrême, chacun environ 1 chance sur 20. ${F && F.couverture_extreme != null ? `Mesuré sur le passé : le prix est resté entre ces extrêmes ${Math.round(F.couverture_extreme*100)} fois sur 100, donc il les a dépassés environ ${Math.round((1 - F.couverture_extreme)*10)} fois sur 10.` : ""} Ce n'est pas une liste d'achats.</span></div>
-    <div class="risque-liste">${L.map(({t, g, pe}) => `<button class="rcarte" data-t="${esc(t.ticker)}"><b>${esc(t.nom)}</b><span class="deux"><span class="up">${g >= 0 ? "+" : ""}${Math.round(g*100)} %</span><span class="muted">ou</span><span class="down">${Math.round(pe*100)} %</span></span><span class="muted" style="font-size:12.5px">${esc(affTk(t.ticker))} · risque ${esc(t.risque.toLowerCase())}</span></button>`).join("")}</div>`;
+    <div class="risque-liste">${L.map(({t, g, pe}) => `<button class="rcarte" data-t="${esc(t.ticker)}"><b>${esc(t.nom)}</b><span class="deux"><span class="up">${g >= 0 ? "+" : ""}${Math.round(g*100)} %</span><span class="muted">ou</span><span class="down">${Math.round(pe*100)} %</span></span><span class="muted" style="font-size:12.5px">${esc(t.ticker)} · risque ${esc(t.risque.toLowerCase())}</span></button>`).join("")}</div>`;
   z.hidden = false;
 }
 function changerRisque(on){
@@ -1949,7 +1627,7 @@ function rendreCarte(){
     return `<div class="carte-groupe"><span class="label">${nom}</span><div class="tuiles">${L.map(t => {
       const v = t.perf[PERIODE_CARTE], f = Math.min(1, Math.abs(v) / echelle);
       const fond = melange(surf, v >= 0 ? up : down, .12 + .6 * f);
-      return `<button class="tuile" data-t="${esc(t.ticker)}" style="background:${fond};color:${texteLisible(fond)}" title="${esc(t.nom)}" aria-label="${esc(t.nom)} : ${(v >= 0 ? "+" : "") + (v * 100).toFixed(1).replace(".", ",")} %"><b>${esc(affTk(t.ticker).replace(/-USD$|\.(PA|DE|AS|MC|MI)$|^\^/, ""))}</b><span>${(v >= 0 ? "+" : "") + (v * 100).toFixed(1).replace(".", ",")} %</span></button>`;
+      return `<button class="tuile" data-t="${esc(t.ticker)}" style="background:${fond};color:${texteLisible(fond)}" title="${esc(t.nom)}" aria-label="${esc(t.nom)} : ${(v >= 0 ? "+" : "") + (v * 100).toFixed(1).replace(".", ",")} %"><b>${esc(t.ticker.replace(/-USD$|\.(PA|DE|AS|MC|MI)$|^\^/, ""))}</b><span>${(v >= 0 ? "+" : "") + (v * 100).toFixed(1).replace(".", ",")} %</span></button>`;
     }).join("")}</div></div>`;
   }).join("");
 }
@@ -1996,7 +1674,7 @@ $("#news-marche").innerHTML = (DATA.actus_marche||[]).map(n => carteActu(n)).joi
   $("#fort-list").innerHTML = forts.slice(0, 9).map(t => `<button class="fcard" data-t="${esc(t.ticker)}">
       <span class="tete"><b>${esc(t.nom)}</b><span class="num">${Math.round(t.proba_hausse*100)} %</span></span>
       ${spark(t.spark, 180, 30)}
-      <span class="m muted" style="font-size:12px">${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche]||""} · actus ${ton(t.tonalite)}</span></button>`).join("")
+      <span class="m muted" style="font-size:12px">${esc(t.ticker)} · ${NOM_MARCHE[t.marche]||""} · actus ${ton(t.tonalite)}</span></button>`).join("")
     || `<div class="empty">Aucun signal fort aujourd'hui. Le radar n'en invente pas quand les conditions ne sont pas réunies.</div>`;
 })();
 
@@ -2040,7 +1718,6 @@ const M = DATA.modele;
       ${barreStat("Avis nets", AN.precision, null)}
       ${AN.precision_reste != null ? barreStat("Avis hésitants", AN.precision_reste, null, true) : ""}
       ${["faible","moyenne","forte"].map(n => AN.niveaux && AN.niveaux[n] ? barreStat(`${LIB_CONF[n]} (${Math.round(AN.niveaux[n].part*100)} % des cas)`, AN.niveaux[n].precision, AN.niveaux[n].ic, n === "faible") : "").join("")}
-      ${AN.marches_sans_avis && Object.keys(AN.marches_sans_avis).length ? `<p style="margin:0;font-size:13.5px"><b>Aucun avis de direction</b> sur : ${Object.keys(AN.marches_sans_avis).map(m => esc(NOM_MARCHE[m] || m)).join(", ")}. Même tranchés, les avis n'y ont pas fait mieux que « toujours la même réponse ».</p>` : ""}
       <p class="muted" style="margin:0;font-size:13px">Les avis hésitants sont marqués « pas d'avis net » sur le site. Gain des avis nets sur « toujours la même réponse » : de ${(AN.ic_gain[0]*100).toFixed(1).replace(".", ",")} à ${(AN.ic_gain[1]*100).toFixed(1).replace(".", ",")} points (marge d'erreur).</p>`
       : `<p style="margin:0;font-size:14px">Pour l'instant, même leurs avis les plus tranchés n'ont pas fait mieux que le hasard de façon prouvée. Tous les avis sont donc marqués « pas d'avis net » : à lire comme de simples indications.</p>`}</div>`);
   }
@@ -2087,22 +1764,6 @@ const M = DATA.modele;
       <p style="margin:0;font-size:14px">Chaque soir, plusieurs façons de prévoir sont comparées. Le radar ne change que si la nouvelle fait mieux <b>de façon prouvée</b>, jamais sur un coup de chance.</p>
       <p class="muted" style="margin:0;font-size:13px">Méthode actuelle : ${esc(CH.actuel)}. ${esc(CH.raison || "")}${M.date_evaluation ? ` Dernier test complet : ${new Date(M.date_evaluation).toLocaleString("fr-FR", {day:"numeric", month:"long", hour:"2-digit", minute:"2-digit"})}.` : ""}</p></div>`);
   }
-  const CMP = (M.comparaison || []).filter(c => c.auc != null);
-  if(CMP.length >= 2){   // toutes les façons de prévoir testées au dernier calcul complet, de la meilleure à la moins bonne
-    const top = [...CMP].sort((a, b) => b.auc - a.auc).slice(0, 8);
-    blocs.push(`<div class="panel"><h3>Les façons de prévoir testées</h3>
-      <p style="margin:0;font-size:14px">À chaque calcul complet, plusieurs recettes s'affrontent sur des années que l'IA n'a jamais vues. Note : de combien chacune fait mieux que le hasard (0 = pile ou face).</p>
-      <ol class="controles">${top.map(c => `<li><span aria-hidden="true">${c.nom === M.configuration ? "★" : "·"}</span><span><b>${esc(c.nom)}</b> <span class="muted">· ${((c.auc - .5) * 100).toFixed(1).replace(".", ",")} point${Math.abs(c.auc - .5) >= .02 ? "s" : ""}${c.nom === M.configuration ? " · utilisée" : ""}</span></span></li>`).join("")}</ol>
-      <p class="muted" style="margin:0;font-size:13px">La recette en place ne change que si une autre fait mieux de façon prouvée, jamais sur un petit écart qui pourrait venir du hasard.</p></div>`);
-  }
-  const CL = (M.ia || {}).climat;
-  if(CL && CL.precision_ia != null){   // version 33 : la couche « climat du marché » (dire « baisse » quand le marché se dégrade)
-    const p = v => `${(v * 100).toFixed(1).replace(".", ",")} %`;
-    blocs.push(`<div class="panel"><h3>Savoir dire « baisse »</h3>
-      <p style="margin:0;font-size:14px">Les marchés montent plus souvent qu'ils ne baissent, alors une IA dit facilement « hausse ». Une couche « climat du marché » (tendance de l'indice, peur des investisseurs, taux, crédit) essaie de repérer les moments où il vaut mieux dire « baisse ».</p>
-      <p style="margin:6px 0 0;font-size:14px">Sur ${CL.nb.toLocaleString("fr-FR")} cas d'années jamais vues : <b>${p(CL.precision_climat)}</b> de bonnes directions avec elle (dit « baisse » ${p(CL.baisse_climat)} du temps), contre <b>${p(CL.precision_ia)}</b> sans (« baisse » ${p(CL.baisse_ia)} du temps).</p>
-      <p class="muted" style="margin:6px 0 0;font-size:13px">${CL.adopte ? "Elle fait mieux de façon prouvée : elle est utilisée." : "Elle ne fait pas mieux de façon prouvée : elle n'est pas utilisée. Elle est retestée à chaque calcul complet."}</p></div>`);
-  }
   const E = DATA.entrainement;
   if(E && E.date){
     blocs.push(`<div class="panel"><h3>Dernier entraînement approfondi</h3>
@@ -2114,7 +1775,7 @@ const M = DATA.modele;
 if(M && M.precision!=null){
   const adv = M.precision - M.precision_base;
   $("#trust").innerHTML = `
-   <div class="kpi"><div class="label">Bonnes directions</div><div class="v num">${pctPlain(M.precision)}</div><div class="d">sur ${(M.nb_tests || 0).toLocaleString('fr-FR')} prédictions testées (${esc(M.periode)})</div></div>
+   <div class="kpi"><div class="label">Bonnes directions</div><div class="v num">${pctPlain(M.precision)}</div><div class="d">sur ${M.nb_tests.toLocaleString('fr-FR')} prédictions testées (${esc(M.periode)})</div></div>
    <div class="kpi"><div class="label">Référence naïve</div><div class="v num">${pctPlain(M.precision_base)}</div><div class="d">en répondant toujours la même chose</div></div>
    <div class="kpi"><div class="label">Avantage</div><div class="v num ${adv>0?'up':'down'}">${adv>0?'+':''}${(adv*100).toFixed(1).replace('.',',')} pts</div><div class="d">au-dessus de la référence</div></div>
    <div class="kpi"><div class="label">AUC</div><div class="v num">${M.auc.toFixed(3).replace('.',',')}</div><div class="d">0,500 = hasard · 1 = parfait</div></div>`;
@@ -2161,7 +1822,7 @@ $("#suivi").innerHTML = S.nb_verifiees ? `
   <div class="fact"><div class="label">Justes</div><div class="v">${pctPlain(S.precision)}</div></div>
   <div class="fact"><div class="label">Signaux d'achat gagnants</div><div class="v">${pctPlain(S.precision_signaux_achat)}</div></div>
   ${S.detail && S.detail.fourchette && S.detail.fourchette.nb ? `<div class="fact"><div class="label">Prix dans la fourchette</div><div class="v">${pctPlain(S.detail.fourchette.taux, 0)}</div></div>` : ""}</div>
-  <div class="tablewrap" style="margin-top:10px"><table><tbody>${S.dernieres.slice(0,6).map(r=>`<tr><td class="num">${esc(r.date)}</td><td>${esc(affTk(r.ticker))}</td><td>${r.juste?'<span class="up">Juste</span>':'<span class="down">Faux</span>'}</td><td>${pct(r.rendement_reel)}</td></tr>`).join("")}</tbody></table></div>`
+  <div class="tablewrap" style="margin-top:10px"><table><tbody>${S.dernieres.slice(0,6).map(r=>`<tr><td class="num">${esc(r.date)}</td><td>${esc(r.ticker)}</td><td>${r.juste?'<span class="up">Juste</span>':'<span class="down">Faux</span>'}</td><td>${pct(r.rendement_reel)}</td></tr>`).join("")}</tbody></table></div>`
   : `<p class="muted" style="margin:0;font-size:14px;max-width:48ch">Le suivi commence avec cette mise à jour : ${S.nb_en_attente || T.length} prédictions sont enregistrées et seront vérifiées dans ${H} séances. Relance le bot régulièrement pour voir le vrai taux de réussite apparaître ici.</p>`;
 
 /* ---------- Qualité des données ---------- */
@@ -2175,49 +1836,28 @@ $("#suivi").innerHTML = S.nb_verifiees ? `
       ${r.croisees ? `<div class="fact"><div class="label">Cryptos confirmées par Binance</div><div class="v">${r.croisees_ok} / ${r.croisees}</div></div>` : ""}
     </div>
     <p class="muted" style="font-size:13px;margin:8px 0 0">Chaque titre est contrôlé à chaque mise à jour : fraîcheur, séances manquantes, variations invraisemblables${r.croisees ? ", et comparaison du cours des cryptos entre deux sources indépendantes" : ""}. Un titre douteux est exclu des signaux forts. Sources utilisées : ${src || "–"}.</p>
-    ${Q.a_verifier.length ? `<ul style="font-size:13px;margin:8px 0 0;padding-left:18px">${Q.a_verifier.slice(0, 8).map(x => `<li><b>${esc(affTk(x.ticker))}</b> : ${esc(x.problemes.join(", "))}</li>`).join("")}</ul>` : ""}`;
+    ${Q.a_verifier.length ? `<ul style="font-size:13px;margin:8px 0 0;padding-left:18px">${Q.a_verifier.slice(0, 8).map(x => `<li><b>${esc(x.ticker)}</b> : ${esc(x.problemes.join(", "))}</li>`).join("")}</ul>` : ""}`;
 })();
 
 /* ---------- Tableau ---------- */
 let filtre = "all", tri = {k:"score", asc:false};
 const val = (t,k) => ({ticker:t.ticker, prix:t.prix, j1:t.perf["1 jour"], m1:t.perf["1 mois"], m3:t.perf["3 mois"], score:t.score,
   signal:t.score, proba:t.proba_hausse ?? -1, marche:t.proba_marche ?? -1, risque:(t.risque_prevu && t.risque_prevu.mouvement != null ? t.risque_prevu.mouvement * 100 : RISK[t.risque]), rocket:t.potentiel_hausse?1:0, actus:t.tonalite ?? -9})[k];
-/* Filtre selon mes critères (version 33) */
-const CRIT = {agit:"", avis:"", marche:"", div:"", per:""};
-// seuils d'agitation qui s'adaptent aux titres du jour (un tiers des titres dans chaque groupe)
-const MVS = T.map(t => t.risque_prevu && t.risque_prevu.mouvement).filter(v => v != null).sort((a, b) => a - b);
-const S1 = MVS.length ? MVS[Math.floor(MVS.length / 3)] : .05, S2 = MVS.length ? MVS[Math.floor(MVS.length * 2 / 3)] : .12;
-{ const o = document.querySelectorAll('#affiner select[data-f="agit"] option'), f = v => Math.round(v * 100);
-  if(o.length === 4 && MVS.length){ o[1].textContent = `Calme (moins de ±${f(S1)} %)`; o[2].textContent = `Moyenne (±${f(S1)} à ${f(S2)} %)`; o[3].textContent = `Forte (plus de ±${f(S2)} %)`; } }
-function critere(t){
-  const mv = t.risque_prevu && t.risque_prevu.mouvement, p = t.proba_hausse, pm = t.proba_marche;
-  if(CRIT.agit && (mv == null || (CRIT.agit === "calme" ? mv >= S1 : CRIT.agit === "moyen" ? (mv < S1 || mv >= S2) : mv < S2))) return false;
-  if(CRIT.avis && (p == null || t.avis_net === false || (CRIT.avis === "hausse" && p < .5) || (CRIT.avis === "baisse" && p >= .5))) return false;
-  if(CRIT.marche && (pm == null || t.marche_net === false || (CRIT.marche === "mieux" ? pm < .5 : pm >= .5))) return false;
-  if(CRIT.div && (t.div == null || (CRIT.div === "0" ? t.div > .05 : t.div < +CRIT.div))) return false;
-  if(CRIT.per && (t.per == null || t.per <= 0 || (CRIT.per === "bas" ? t.per >= 15 : CRIT.per === "moyen" ? (t.per < 15 || t.per > 30) : t.per <= 30))) return false;
-  return true;
-}
-document.querySelectorAll("#affiner select[data-f]").forEach(s => s.addEventListener("change", () => { CRIT[s.dataset.f] = s.value; rendre(); }));
-$("#aff-raz").addEventListener("click", () => { document.querySelectorAll("#affiner select[data-f]").forEach(s => { s.value = ""; CRIT[s.dataset.f] = ""; }); rendre(); });
 function rendre(){
   const q = $("#q").value.trim().toLowerCase();
   let L = T.filter(t => !filtre || filtre==="all" || (filtre==="rocket" ? t.potentiel_hausse : filtre==="fort" ? t.signal_fort : filtre==="fav" ? FAV.has(t.ticker) : t.marche===filtre))
-           .filter(t => !q || t.ticker.toLowerCase().includes(q) || t.nom.toLowerCase().includes(q))
-           .filter(critere);
-  const nbCrit = Object.values(CRIT).filter(Boolean).length;
-  $("#aff-nb").textContent = nbCrit ? `· ${nbCrit} critère${nbCrit > 1 ? "s" : ""}, ${L.length} titre${L.length > 1 ? "s" : ""}` : "";
+           .filter(t => !q || t.ticker.toLowerCase().includes(q) || t.nom.toLowerCase().includes(q));
   L.sort((a,b) => { const x=val(a,tri.k), y=val(b,tri.k);
     return (typeof x==="string" ? x.localeCompare(y) : (x??-9)-(y??-9)) * (tri.asc?1:-1); });
   $("#rows").innerHTML = L.map(t => `<tr data-t="${esc(t.ticker)}" tabindex="0">
-    <td><div class="tk">${FAV.has(t.ticker) ? '<span class="etoile" title="Dans tes favoris">★</span>' : ""}${esc(affTk(t.ticker))}${t.qualite_ok === false ? ' <span title="Données à vérifier : exclu des signaux" style="color:var(--warn)">⚠</span>' : ""}</div><div class="nm">${esc(t.nom)}</div></td>
+    <td><div class="tk">${FAV.has(t.ticker) ? '<span class="etoile" title="Dans tes favoris">★</span>' : ""}${esc(t.ticker)}${t.qualite_ok === false ? ' <span title="Données à vérifier : exclu des signaux" style="color:var(--warn)">⚠</span>' : ""}</div><div class="nm">${esc(t.nom)}</div></td>
     <td class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}${t.live?'<span class="src">direct</span>':''}</td><td data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</td><td>${pct(t.perf["1 mois"])}</td>
     <td class="spk"><span>${spark(t.spark,72,24)}</span><span>${pct(t.perf["3 mois"],0)}</span></td>
     <td class="expert"><span class="score"><span class="num">${Math.round(t.score)}</span><span class="mini"><i style="width:${t.score}%"></i></span></span></td>
-    <td><span class="pill ${SIG[t.signal]}" title="Tendance technique (moyennes, RSI, MACD…), indépendante de l'avis des IA">${esc(LIB[t.signal] || t.signal)}</span>${t.signal_fort?'<span class="badge-fort">Fort</span>':''}</td>
-    <td>${gauge(t.proba_hausse, t.accord_ia, t.avis_net, t.confiance)}</td><td>${t.proba_marche != null ? `<span class="num ${t.marche_net === false ? "muted" : t.proba_marche >= .55 ? "up" : t.proba_marche <= .45 ? "down" : ""}" title="vs ${esc(t.indice_nom || "son indice")}${t.marche_net === false ? " · pas d'avis net" : ""}">${Math.round(t.proba_marche*100)} %</span>` : '<span class="muted">–</span>'}</td><td class="expert">${ton(t.tonalite)}</td><td class="risk r${RISK[t.risque]}">${esc(t.risque)}${t.risque_prevu && t.risque_prevu.mouvement != null ? `<span class="agit-cell" title="Agitation prévue le mois prochain">±${Math.round(t.risque_prevu.mouvement*100)} %</span>` : ""}</td>
+    <td><span class="pill ${SIG[t.signal]}">${esc(LIB[t.signal] || t.signal)}</span>${t.signal_fort?'<span class="badge-fort">Fort</span>':''}</td>
+    <td>${gauge(t.proba_hausse, t.accord_ia, t.avis_net, t.confiance)}</td><td>${t.proba_marche != null ? `<span class="num ${t.proba_marche >= .55 ? "up" : t.proba_marche <= .45 ? "down" : ""}" title="vs ${esc(t.indice_nom || "son indice")}">${Math.round(t.proba_marche*100)} %</span>` : '<span class="muted">–</span>'}</td><td class="expert">${ton(t.tonalite)}</td><td class="risk r${RISK[t.risque]}">${esc(t.risque)}${t.risque_prevu && t.risque_prevu.mouvement != null ? `<span class="agit-cell" title="Agitation prévue le mois prochain">±${Math.round(t.risque_prevu.mouvement*100)} %</span>` : ""}</td>
     <td class="expert">${t.potentiel_hausse?'<span title="Configuration de décollage" role="img" aria-label="Configuration de décollage">🚀</span>':''}</td></tr>`).join("")
-    || `<tr><td colspan="12" class="empty">${Object.values(CRIT).some(Boolean) ? "Aucun titre ne remplit tous ces critères aujourd'hui. Essaie d'en retirer un." : filtre === "fav" ? "Pas encore de favori : ouvre un titre et clique sur « ☆ Suivre » pour le retrouver ici." : "Aucun titre ne correspond."}</td></tr>`;
+    || `<tr><td colspan="12" class="empty">${filtre === "fav" ? "Pas encore de favori : ouvre un titre et clique sur « ☆ Suivre » pour le retrouver ici." : "Aucun titre ne correspond."}</td></tr>`;
 }
 // (seulement les puces du tableau : celles de l'espace simulation ont leur propre rôle)
 document.querySelectorAll(".filters .chip[data-m]").forEach(c => c.onclick = () => {
@@ -2320,52 +1960,24 @@ function resumeSimple(t){
   const med = t.cone ? t.cone.mediane.at(-1) : null;
   const accordTxt = t.accord_ia === true ? `<span class="accord oui">✓ Les deux IA sont d'accord</span>`
     : t.accord_ia === false ? `<span class="accord non">⚠ Les deux IA ne sont pas d'accord : avis peu fiable</span>` : "";
-  const SA = ((AN.marches_sans_avis) || {})[t.ticker.endsWith("-USD") ? "crypto" : t.marche];
-  return `${troisPoints(t)}<div class="panel resume"><div class="freq">${points100(p)}<p class="phrase muted" style="font-size:13px;max-width:260px">${t.source_proba === "marche" ? `Tendance habituelle de ce marché : il a fini plus haut <b>${Math.round(p*100)}</b> mois sur 100.` : sansAvis ? `Chiffre brut des IA : <b>${Math.round(p*100)}</b> sur 100. Ici, il n'est pas assez fiable pour compter.` : `Sur 100 situations passées comme celle-ci, <b class="up">${Math.round(p*100)}</b> ont fini plus haut un mois après.`}</p><span class="expert">${compteur(p)}</span></div>
+  return `<div class="panel resume"><div class="freq">${points100(p)}<p class="phrase muted" style="font-size:13px;max-width:260px">Sur 100 situations passées comme celle-ci, <b class="up">${Math.round(p*100)}</b> ont fini plus haut un mois après.</p><span class="expert">${compteur(p)}</span></div>
     <div><div class="label">En résumé, pour le mois qui vient ${aide("proba")}</div>
       <div class="verdict-grand ${sansAvis ? "" : p >= .52 ? "up" : p <= .48 ? "down" : ""}">${titre}${sansAvis ? ` ${aide("avis_net")}` : ""}</div>
-      ${sansAvis && SA ? `<p class="muted" style="font-size:14px">Sur ce marché, même les avis tranchés des IA n'ont pas fait mieux que « toujours la même réponse » (${Math.round(SA.precision * 100)} % de bonnes directions contre ${Math.round(SA.base * 100)} %). Le radar ne donne donc pas d'avis de direction ici. Regarde plutôt l'agitation prévue et la comparaison avec son marché.</p>` : ""}
-      ${sansAvis && !SA && AN.marge ? `<p class="muted" style="font-size:14px">Les IA hésitent : leur avis est trop proche de 50 % pour compter. Quand elles sont plus tranchées (sous ${Math.round((.5 - AN.marge) * 100)} % ou au-dessus de ${Math.round((.5 + AN.marge) * 100)} %), elles ont vu juste ${Math.round(AN.precision * 100)} fois sur 100 ; sinon, pas mieux que le hasard.</p>` : ""}
-      <p>${t.source_proba === "marche" ? `Sur ce marché, l'avis des IA n'a pas fait mieux que sa tendance habituelle sur les années testées. Le radar affiche donc cette tendance (${Math.round(p * 100)} mois sur 100 en hausse) plutôt que l'avis des IA${t.proba_ia != null ? ` (pour info : ${Math.round(t.proba_ia * 100)} sur 100)` : ""}.` : sansAvis ? `Pour info, le chiffre brut des IA est de ${Math.round(p * 100)} sur 100, à ne pas prendre comme un avis.` : `Le radar donne <b>${Math.round(p * 100)} chances sur 100</b> que ${esc(t.nom)} soit plus haut dans un mois.`}${med ? ` Le scénario le plus probable : environ <b class="num">${px(med, t.devise)}</b> (${pct(med / t.prix - 1)}).` : ""}${t.signal_fort ? " <b>Signal fort</b> : la tendance technique va dans le même sens." : ""}</p>
+      ${sansAvis && AN.marge ? `<p class="muted" style="font-size:14px">Les IA hésitent : leur avis est trop proche de 50 % pour compter. Quand elles sont plus tranchées (sous ${Math.round((.5 - AN.marge) * 100)} % ou au-dessus de ${Math.round((.5 + AN.marge) * 100)} %), elles ont vu juste ${Math.round(AN.precision * 100)} fois sur 100 ; sinon, pas mieux que le hasard.</p>` : ""}
+      <p>Le radar donne <b>${Math.round(p * 100)} chances sur 100</b> que ${esc(t.nom)} soit plus haut dans un mois.${med ? ` Le scénario le plus probable : environ <b class="num">${px(med, t.devise)}</b> (${pct(med / t.prix - 1)}).` : ""}${t.signal_fort ? " <b>Signal fort</b> : la tendance technique va dans le même sens." : ""}</p>
       ${t.proba_marche != null ? `<p><span class="badge-marche">Face à son marché</span>${aide("marche")} ${Math.round(t.proba_marche * 100)} chances sur 100 de faire <b>mieux que ${esc(t.indice_nom || "son marché")}</b> sur la même période.</p>` : ""}
       ${t.fourchette_elargie ? `<p class="muted" style="font-size:13.5px">📅 Résultats de l'entreprise avant l'échéance : la fourchette a été élargie par prudence.</p>` : ""}
       ${accordTxt ? `<p>${accordTxt} ${aide("accord")}</p>` : ""}
       ${ligneConfiance(t)}${lignePalmares(t)}
       ${t.actu_contredit ? `<p class="muted" style="font-size:13.5px">📰 Les actualités récentes vont plutôt dans l'autre sens : prudence.</p>` : ""}</div></div>
-    ${blocRisquer(t)}${blocRaisons(t)}${votesRobots(t)}`;
-}
-
-/* Le résumé en 3 points : ce que les IA savent faire, du plus fiable au moins fiable */
-function troisPoints(t){
-  const M_ = DATA.modele || {}, R = M_.relatif || {}, RQ = M_.risque || {}, rq = t.risque_prevu;
-  const cases = [];
-  if(rq && rq.mouvement != null){
-    const h = rq.habitude, hab = h == null ? "" : h > 1.25 ? ", plus que d'habitude" : h < .8 ? ", moins que d'habitude" : ", comme d'habitude";
-    cases.push(`<div class="tp"><span class="tp-l">Agitation prévue</span><b>±${Math.round(rq.mouvement * 100)} %</b><span>en un mois${hab}</span>
-      <span class="tp-f">${RQ.prouve && RQ.concordance_ia ? `La prévision la plus fiable des IA : entre deux titres, elle désigne le plus agité ${Math.round(RQ.concordance_ia * 100)} fois sur 100` : RQ.prouve ? "La prévision la plus fiable des IA" : "Estimation tirée des dernières semaines"}</span></div>`);
-  }
-  if(rq && rq.semaine != null){   // version 48 : agitation sur 5 séances
-    cases.push(`<div class="tp"><span class="tp-l">Agitation sur une semaine</span><b>±${(rq.semaine * 100).toFixed(1).replace(".", ",")} %</b><span>sur les 5 prochaines séances</span>
-      <span class="tp-f">Testée sur 138 000 cas réels : plus proche de la réalité que « comme la semaine dernière » 57 fois sur 100, et chaque année depuis 2009</span></div>`);
-  }
-  if(t.proba_marche != null){
-    const net = t.marche_net !== false, p = t.proba_marche;
-    cases.push(`<div class="tp"><span class="tp-l">Face à ${esc(t.indice_nom || "son marché")}</span><b>${!net ? "Pas d'avis net" : p >= .5 ? "Plutôt mieux" : "Plutôt moins bien"}</b><span>${net ? `${Math.round(p * 100)} chances sur 100 de faire mieux` : `chiffre brut ${Math.round(p * 100)} sur 100, trop incertain`}</span>
-      <span class="tp-f">${R.precision != null ? `Juste ${Math.round(R.precision * 100)} fois sur 100 (hasard : ${Math.round(R.precision_base * 100)})` : ""}</span></div>`);
-  }
-  if(t.proba_hausse != null){
-    const p = t.proba_hausse, net = t.avis_net !== false;
-    cases.push(`<div class="tp"><span class="tp-l">Sens du prix</span><b>${!net ? "Pas d'avis net" : p >= .5 ? "Plutôt à la hausse" : "Plutôt à la baisse"}</b><span>${net ? `${Math.round(p * 100)} chances sur 100 de monter` : `chiffre brut ${Math.round(p * 100)} sur 100, trop incertain`}</span>
-      <span class="tp-f">${M_.precision != null ? `Juste ${Math.round(M_.precision * 100)} fois sur 100 (toujours la même réponse : ${Math.round(M_.precision_base * 100)})` : ""}</span></div>`);
-  }
-  return cases.length ? `<div class="trois-points" role="group" aria-label="Résumé en 3 points">${cases.join("")}</div>` : "";
+    ${blocRaisons(t)}${blocAgitation(t)}`;
 }
 
 /* Échelle de confiance unique, avec ce que chaque niveau a vraiment donné */
 function ligneConfiance(t){
   if(!LIB_CONF[t.confiance]) return "";
   const N = (((DATA.modele || {}).avis_net) || {}).niveaux || {}, n = N[t.confiance];
-  return `<div class="ligne-conf"><p>${barresConf(t.confiance)} <b>${LIB_CONF[t.confiance]}</b> ${aide("confiance")}</p>${n ? `<p class="muted">À ce niveau de confiance, les IA ont vu juste ${Math.round(n.precision * 100)} fois sur 100 (années jamais vues).</p>` : ""}</div>`;
+  return `<p class="ligne-conf">${barresConf(t.confiance)} <b>${LIB_CONF[t.confiance]}</b>${n ? ` <span class="muted">· à ce niveau, les IA ont vu juste ${Math.round(n.precision * 100)} fois sur 100 (années jamais vues)</span>` : ""} ${aide("confiance")}</p>`;
 }
 /* Palmarès réel sur ce titre (prévisions publiées puis vérifiées) */
 function lignePalmares(t){
@@ -2375,41 +1987,6 @@ function lignePalmares(t){
 }
 
 /* Les raisons de l'avis : ce qui a le plus pesé dans le calcul des deux IA */
-/* Hors connexion : seulement sur le site en ligne (https), jamais en aperçu ni en fichier local */
-try{ if("serviceWorker" in navigator && location.protocol === "https:" && document.querySelector('meta[name="radar-sw"]'))
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {})); }catch(e){}
-/* Calculateur « combien risquer » (version 33) : s'appuie sur ce que l'IA prévoit le mieux, l'agitation */
-function blocRisquer(t){
-  const mv = t.risque_prevu && t.risque_prevu.mouvement, f = t.fourchette || [];
-  if(!mv || !t.prix) return "";
-  return `<div class="panel risquer" data-mv="${mv}" data-bas="${f.length === 2 ? f[0] / t.prix - 1 : ""}" data-haut="${f.length === 2 ? f[1] / t.prix - 1 : ""}">
-    <h3 style="margin:0 0 6px">Combien ça peut bouger ? ${aide("agitation")}</h3>
-    <label style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px">Si je mettais
-      <input class="risquer-montant" type="number" inputmode="decimal" min="1" step="50" value="1000" aria-label="Montant en euros" style="width:110px;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"> € sur ${esc(t.nom)}…</label>
-    <div class="risquer-res" aria-live="polite" style="margin-top:8px;font-size:14px"></div>
-    ${ligneChute(t)}
-    <p class="muted" style="margin:6px 0 0;font-size:12.5px">Calculé avec l'agitation prévue par l'IA (sa prévision la plus fiable) et la fourchette du mois. Ce n'est pas une promesse : le prix peut sortir de ces écarts. Règle de prudence : ne mets jamais une somme dont la perte te gênerait.</p>
-  </div>`;
-}
-/* Risque de forte chute (version 33) : affiché seulement s'il a fait ses preuves sur des années jamais vues */
-function ligneChute(t){
-  const C = ((DATA.modele || {}).risque || {}).chute || {}, p = t.risque_prevu && t.risque_prevu.chute;
-  if(!C.prouve || p == null) return "";
-  const base = t.ticker.endsWith("-USD") ? C.base_cryptos : C.base_actions, r = v => Math.round(v * 100);
-  const niveau = base ? (p >= base * 1.5 ? "nettement plus que d'habitude" : p <= base * 0.67 ? "moins que d'habitude" : "comme d'habitude") : "";
-  return `<p style="margin:8px 0 0;font-size:14px">⚠ Risque de <b>perdre plus de 10 %</b> ce mois-ci : <b>${r(p)} sur 100</b>${base ? ` (d'habitude ${r(base)} sur 100 ${t.ticker.endsWith("-USD") ? "pour une crypto" : "pour une action"} : ${niveau})` : ""}.</p>
-    <p class="muted" style="margin:2px 0 0;font-size:12.5px">Testé sur des années jamais vues : quand l'IA annonçait ses risques les plus élevés, une chute de plus de 10 % arrivait ${r(C.taux_risque_haut)} fois sur 100.</p>`;
-}
-function majRisquer(bloc){
-  const m = +bloc.querySelector(".risquer-montant").value || 0, mv = +bloc.dataset.mv;
-  const eur = v => Math.round(v).toLocaleString("fr-FR") + " €";
-  const bas = bloc.dataset.bas === "" ? null : +bloc.dataset.bas, haut = bloc.dataset.haut === "" ? null : +bloc.dataset.haut;
-  bloc.querySelector(".risquer-res").innerHTML = m > 0 ? `En général, ta somme varierait d'environ <b>± ${eur(m * mv)}</b> sur un mois (dans un sens ou dans l'autre).`
-    + (bas != null && haut != null ? `<br>8 fois sur 10 environ, elle finirait entre <b>${eur(m * (1 + bas))}</b> et <b>${eur(m * (1 + haut))}</b>.` : "") : "Indique un montant.";
-}
-document.addEventListener("input", e => { const b = e.target.closest && e.target.closest(".risquer"); if(b) majRisquer(b); });
-new MutationObserver(() => document.querySelectorAll(".risquer:not([data-ok])").forEach(b => { b.dataset.ok = "1"; majRisquer(b); }))
-  .observe(document.body, {childList: true, subtree: true});
 function blocRaisons(t){
   const R = t.raisons_ia || [];
   if(!R.length) return "";
@@ -2424,6 +2001,19 @@ function blocRaisons(t){
     <p class="muted" style="font-size:12.5px;margin:6px 0 0">En points de probabilité : de combien les chances de hausse changeraient si cet élément était à son niveau habituel.</p></div>`;
 }
 
+/* L'agitation prévue pour le mois prochain */
+function niveauAgitation(m){ return m < .04 ? "Calme" : m < .08 ? "Modérée" : m < .15 ? "Forte" : "Très forte"; }
+function blocAgitation(t){
+  const r = t.risque_prevu;
+  if(!r || r.mouvement == null) return "";
+  const h = r.habitude, hab = h == null ? "" : h > 1.25 ? "plus agité que d'habitude" : h < .8 ? "plus calme que d'habitude" : "comme d'habitude";
+  const R = (DATA.modele || {}).risque || {};
+  const fiab = r.source === "ia" && R.concordance_ia ? `Sur deux titres pris au hasard, l'IA a désigné le plus agité du mois suivant ${Math.round(R.concordance_ia * 100)} fois sur 100 (années jamais vues).`
+    : "Estimation tirée de l'agitation des dernières semaines.";
+  return `<div class="panel agit"><h3>Agitation prévue le mois prochain ${aide("agitation")}</h3>
+    <div class="agit-l"><span class="agit-v">±${(r.mouvement * 100).toFixed(0)} %</span><span><b>${niveauAgitation(r.mouvement)}</b>${hab ? ` · ${hab}` : ""}<br><span class="muted">En général, le prix bougera d'environ ${(r.mouvement * 100).toFixed(0)} % sur un mois, dans un sens ou dans l'autre.</span></span></div>
+    <p class="muted" style="font-size:12.5px;margin:8px 0 0">${fiab}</p></div>`;
+}
 
 /* Guide illustré « Comment lire ce graphique ? » */
 function guide(){
@@ -2496,7 +2086,7 @@ function grapheComplet(id, t, opts = {}){
     layout:{background:{type:"solid", color:C.surf}, textColor:C.muted, fontFamily:"IBM Plex Mono, monospace", fontSize:11},
     grid:{vertLines:{color:rgba(C.line, .55)}, horzLines:{color:rgba(C.line, .55)}}};
   const chart = LightweightCharts.createChart(el, {...base, crosshair:{mode:1},
-    watermark:{visible:true, text:affTk(t.ticker).replace(/-USD$/, ""), fontSize:64, fontFamily:"IBM Plex Sans, Arial, sans-serif", fontStyle:"bold", color:rgba(C.muted, .1), horzAlign:"center", vertAlign:"center"},
+    watermark:{visible:true, text:t.ticker.replace(/-USD$/, ""), fontSize:64, fontFamily:"Schibsted Grotesk, Arial, sans-serif", fontStyle:"bold", color:rgba(C.muted, .1), horzAlign:"center", vertAlign:"center"},
     rightPriceScale:{borderColor:C.line, minimumWidth:76, scaleMargins:{top:.06, bottom:.2}},
     timeScale:{borderColor:C.line, rightOffset:2}});
   const s = t.serie, series = {sma50:[], sma200:[], bb:[], vol:[], prev:[], bougies:[]};
@@ -2648,7 +2238,7 @@ function lecture(t, court = false){
         <div class="sc neg"><span class="label">Scénario défavorable</span><b class="num">${px(f[0], dev)}</b><span>${pct(f[0]/t.prix - 1)} · 1 chance sur 10 de finir plus bas</span></div>
         <div class="sc mid"><span class="label">Scénario central</span><b class="num">${px(med, dev)}</b><span>${pct(med/t.prix - 1)} · trajectoire médiane</span></div>
         <div class="sc pos"><span class="label">Scénario favorable</span><b class="num">${px(f[1], dev)}</b><span>${pct(f[1]/t.prix - 1)} · 1 chance sur 10 de finir plus haut</span></div>
-      </div>${tenueFourchette()}`);
+      </div>`);
   }
   if(court) return parts.join("");
 
@@ -2829,7 +2419,7 @@ function ouvrir(tk, pousser=true){
   courant = t;
   try{ if(window.goatcounter && window.goatcounter.count) window.goatcounter.count({path: "fiche/" + token(t.ticker), title: t.nom}); }catch(e){}
   $("#d-title").textContent = t.nom;
-  $("#d-sub").innerHTML = `${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche]||""} · <span class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}</span> <span data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</span>`;
+  $("#d-sub").innerHTML = `${esc(t.ticker)} · ${NOM_MARCHE[t.marche]||""} · <span class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}</span> <span data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</span>`;
   const p = t.proba_hausse, f = t.fourchette;
   const phrase = p==null ? `Pas de probabilité disponible pour ce titre.` :
     `Le modèle estime à <b>${Math.round(p*100)} %</b> la probabilité que ${esc(t.nom)} soit plus haut dans ${H} séances. ` +
@@ -2850,7 +2440,7 @@ function ouvrir(tk, pousser=true){
       ${resumeSimple(t)}
       <div class="forecast">
         <div class="panel kpi"><div class="label">Dans un mois, le plus probable</div><div class="v num">${t.cone ? px(t.cone.mediane.at(-1), t.devise) : '–'}${t.signal_fort?'<span class="badge-fort">Signal fort</span>':''}</div><div class="d">${f && f.length ? `8 chances sur 10 entre ${px(f[0], t.devise)} et ${px(f[1], t.devise)}` : ''}</div></div>
-        <div class="panel kpi"><div class="label">Score technique</div><div class="v num">${Math.round(t.score)} / 100</div><span class="pill ${SIG[t.signal]}" title="Tendance technique (moyennes, RSI, MACD…), indépendante de l'avis des IA">${esc(LIB[t.signal] || t.signal)}</span></div>
+        <div class="panel kpi"><div class="label">Score technique</div><div class="v num">${Math.round(t.score)} / 100</div><span class="pill ${SIG[t.signal]}">${esc(LIB[t.signal] || t.signal)}</span></div>
         <div class="panel kpi"><div class="label">Risque</div><div class="v">${esc(t.risque)}</div><div class="d">volatilité annuelle ${pctPlain(t.perf["volatilité annuelle"],0)}</div></div>
       </div>
       ${coque("g-detail")}
@@ -3000,7 +2590,7 @@ new MutationObserver(redessinerTout).observe(document.documentElement, {attribut
     $("#main-sub").textContent = `${nom} · ${t.ticker}`;
     $("#main-prix").innerHTML = `<span class="num" data-px="${esc(t.ticker)}">${px(t.prix, t.devise)}</span> <span style="font-size:16px" data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"], 2)}</span>`;
     $("#main-lecture").innerHTML = lecture(t, true);
-    $("#main-resume").innerHTML = troisPoints(t) + `<p class="muted" style="font-size:13.5px;margin:0 0 12px">Les raisons de l'avis, les mini-robots et le simulateur sont dans la <button class="lnk" onclick="ouvrir('${esc(t.ticker)}')">fiche complète</button>.</p>`;
+    $("#main-resume").innerHTML = resumeSimple(t);
     grapheComplet("g-main", t, {periode:63});
   };
   $("#main-tabs").innerHTML = choix.map(([t, nom]) => `<button data-tk="${esc(t.ticker)}" aria-pressed="false">${esc(nom)}</button>`).join("");
@@ -3017,26 +2607,6 @@ $("#theme").onclick = () => {
   document.documentElement.dataset.theme = nouveau;
   try{ localStorage.setItem("radar-theme", nouveau); }catch(e){}
 };
-
-/* Version 50 : la promesse des fourchettes, vérifiée (sur les années testées, et en direct depuis la mise en ligne) */
-function tenueFourchette(){
-  const F = (DATA.modele || {}).fourchette || {}, S = ((DATA.suivi || {}).detail || {}).fourchette || {};
-  if(F.couverture == null && !S.nb) return "";
-  const p = v => Math.round(v * 100);
-  return `<p class="muted" style="font-size:13px;margin:8px 0 0">Promesse « 8 fois sur 10 » vérifiée : tenue ${F.couverture != null ? `<b>${p(F.couverture)} fois sur 100</b> sur les années testées` : ""}${F.couverture != null && S.nb ? " et " : ""}${S.nb ? `<b>${p(S.taux)} fois sur 100</b> en conditions réelles (${S.nb} prévisions vérifiées)` : ""}. <a href="fiche-technique-ia.html" class="lien-site">Fiche technique</a></p>`;
-}
-/* ---------- Surveillance des données (version 49) : prévenir le visiteur si quelque chose ne va pas ---------- */
-function verifierSante(){
-  const el = $("#alerte-donnees"); if(!el || DATA.demo) return;
-  const S = DATA.sante || {}, msgs = [];
-  const h = (Date.now() - new Date(DATA.genere_le)) / 3600000;
-  if(h > 6) msgs.push(`Les prévisions datent de ${h >= 48 ? Math.round(h / 24) + " jours" : Math.round(h) + " heures"} : la mise à jour automatique est en retard. Les cours en direct restent à jour quand ils sont disponibles.`);
-  if(S.total && S.anciens / S.total > .1) msgs.push(`Une source de données n'a pas répondu : ${S.anciens} titre${S.anciens > 1 ? "s affichent" : " affiche"} des cours de la veille ou plus anciens.`);
-  if(S.total && S.a_verifier / S.total > .1) msgs.push(`${S.a_verifier} titres ont des données à vérifier : ils sont exclus des signaux forts.`);
-  el.hidden = !msgs.length;
-  el.innerHTML = msgs.length ? `<b>⚠ Données à prendre avec prudence.</b> ${msgs.map(esc).join(" ")}` : "";
-}
-verifierSante(); setInterval(verifierSante, 300000);
 
 /* ---------- Heure de mise à jour et nouvelles prévisions ---------- */
 function majHorodatage(){
@@ -3078,8 +2648,7 @@ function etat(src, on){
   el.classList.toggle("on", actifs.length > 0);
   el.querySelector("span").textContent = actifs.length ? "En direct · " + actifs.map(k => NOM_SOURCE[k]).join(", ") : "Cours différés";
 }
-const RECUS = new Set();   // cryptos qui ont reçu au moins un cours en direct
-function recevoir(tk, prix, ts){ if(OBJETS[tk] && isFinite(prix) && prix > 0){ enAttente.set(tk, {prix, ts: ts || Date.now()}); RECUS.add(tk); } }
+function recevoir(tk, prix, ts){ if(OBJETS[tk] && isFinite(prix) && prix > 0) enAttente.set(tk, {prix, ts: ts || Date.now()}); }
 function reference(o, ts){
   const jour = new Date(ts).toISOString().slice(0,10);
   return jour > o.date_cours ? o.prix_base : (o.prev_close ?? o.prix_base);
@@ -3117,7 +2686,7 @@ setInterval(appliquer, 1000);
 
 function demarrerBinance(){
   const parSymbole = {};
-  for(const tk of Object.keys(OBJETS)) if(tk.endsWith("-USD")) (parSymbole[tk.replace(/\d*-USD$/,"USDT")] ||= []).push(tk);
+  for(const tk of Object.keys(OBJETS)) if(tk.endsWith("-USD")) (parSymbole[tk.replace("-USD","USDT")] ||= []).push(tk);
   const syms = Object.keys(parSymbole);
   if(!syms.length) return;
   let essais = 0, secoursLance = false;
@@ -3139,22 +2708,6 @@ function demarrerBinance(){
     ws.onclose = () => { etat("crypto", false); if(++essais <= 3) setTimeout(connecter, 2000 * essais); else secours(); };
   };
   connecter();
-  // version 47 : les cryptos absentes de Binance (Monero, Kaspa…) passent par CryptoCompare, toutes les 30 s
-  setTimeout(() => {
-    const manquants = {};
-    for(const tk of Object.keys(OBJETS)) if(tk.endsWith("-USD") && !RECUS.has(tk)) (manquants[tk.replace(/\d*-USD$/,"")] ||= []).push(tk);
-    const noms = Object.keys(manquants);
-    if(!noms.length) return;
-    const tour = () => { if(document.hidden) return setTimeout(tour, 30000);
-      fetch("https://min-api.cryptocompare.com/data/pricemulti?tsyms=USD&fsyms=" + encodeURIComponent(noms.slice(0, 60).join(",")))
-        .then(r => r.ok ? r.json() : Promise.reject())
-        .then(d => { const now = Date.now(); let n = 0;
-          for(const [s, v] of Object.entries(d || {})) if(v && isFinite(v.USD)){ (manquants[s]||[]).forEach(tk => recevoir(tk, +v.USD, now)); n++; }
-          if(n) etat("crypto", true); })
-        .catch(() => {})
-        .finally(() => setTimeout(tour, 30000)); };
-    tour();
-  }, 45000);
 }
 
 function demarrerFinnhub(){
@@ -3262,7 +2815,7 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
       const rang = k2 === q || k === q ? 0 : n.startsWith(q) || k.startsWith(q) ? 1 : n.includes(" " + q) ? 2 : n.includes(q) || k.includes(q) ? 3 : 9;
       return [rang, t];
     }).filter(([r]) => r < 9).sort((a, b) => a[0] - b[0] || a[1].nom.localeCompare(b[1].nom)).slice(0, 8).map(([, t]) => t);
-    liste.innerHTML = trouves.length ? trouves.map((t, i) => `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}</b><span class="num">${px(t.prix, t.devise)}</span><span>${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche] || ""}</span><span>${t.proba_hausse != null ? Math.round(t.proba_hausse * 100) + " % de hausse" : ""}</span></li>`).join("")
+    liste.innerHTML = trouves.length ? trouves.map((t, i) => `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}</b><span class="num">${px(t.prix, t.devise)}</span><span>${esc(t.ticker)} · ${NOM_MARCHE[t.marche] || ""}</span><span>${t.proba_hausse != null ? Math.round(t.proba_hausse * 100) + " % de hausse" : ""}</span></li>`).join("")
       : `<li role="option" aria-disabled="true" aria-selected="false"><span>Aucun titre suivi ne correspond. Le radar suit ${T.length} titres.</span></li>`;
     liste.hidden = false; champ.setAttribute("aria-expanded", "true"); choisi = trouves.length ? 0 : -1; marquer();
   };
@@ -3406,8 +2959,8 @@ function grapheComparaison(A, B, jours){
   cmpGraph = LightweightCharts.createChart(el, {autoSize:true, localization:{locale:"fr-FR", priceFormatter:formatPrixAxe},
     layout:{background:{type:"solid", color:C.surf}, textColor:C.muted, fontFamily:"IBM Plex Mono, monospace", fontSize:11},
     grid:{vertLines:{color:rgba(C.line, .55)}, horzLines:{color:rgba(C.line, .55)}}, rightPriceScale:{borderColor:C.line}, timeScale:{borderColor:C.line}});
-  const la = cmpGraph.addLineSeries({color:C.acc, lineWidth:2.5, priceLineVisible:false, title:affTk(A.ticker).replace(/-USD$/, "")});
-  const lb = cmpGraph.addLineSeries({color:C.warn, lineWidth:2.5, priceLineVisible:false, title:affTk(B.ticker).replace(/-USD$/, "")});
+  const la = cmpGraph.addLineSeries({color:C.acc, lineWidth:2.5, priceLineVisible:false, title:A.ticker.replace(/-USD$/, "")});
+  const lb = cmpGraph.addLineSeries({color:C.warn, lineWidth:2.5, priceLineVisible:false, title:B.ticker.replace(/-USD$/, "")});
   la.setData(communes.map(([d, x]) => ({time:d, value:+(x / a0 * 100).toFixed(2)})));
   lb.setData(communes.map(([d, , y]) => ({time:d, value:+(y / b0 * 100).toFixed(2)})));
   la.createPriceLine({price:100, color:rgba(C.muted, .7), lineWidth:1, lineStyle:2, axisLabelVisible:false, title:""});
@@ -3477,17 +3030,11 @@ $("#l-close").onclick = fermerLegal;
 $("#legal").addEventListener("click", e => { if(e.target.id === "legal") fermerLegal(); });
 document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#legal").hidden) fermerLegal(); });
 
-const CLE_AVERT = "radar-bourse-avertissement-v2";   // v2 : point sur la responsabilité, réaffiché une fois à tous
+const CLE_AVERT = "radar-bourse-avertissement-v1";
 let dejaVu = false;
 try{ dejaVu = localStorage.getItem(CLE_AVERT) === "1"; }catch(e){}
 $("#consent").hidden = dejaVu;
-if(!dejaVu){ document.body.style.overflow = "hidden"; setTimeout(() => $("#accept").focus(), 50); }
-$("#consent").addEventListener("keydown", e => {   // le focus clavier reste dans l'avertissement
-  if(e.key !== "Tab" || !$("#legal").hidden) return;
-  const f = [...$("#consent").querySelectorAll("button")], i = f.indexOf(document.activeElement);
-  if(e.shiftKey && i <= 0){ e.preventDefault(); f.at(-1).focus(); } else if(!e.shiftKey && i === f.length - 1){ e.preventDefault(); f[0].focus(); }
-});
-$("#accept").onclick = () => { try{ localStorage.setItem(CLE_AVERT, "1"); }catch(e){} $("#consent").hidden = true; document.body.style.overflow = ""; };
+$("#accept").onclick = () => { try{ localStorage.setItem(CLE_AVERT, "1"); }catch(e){} $("#consent").hidden = true; };
 
 if(location.hash){
   const h = location.hash.slice(1);

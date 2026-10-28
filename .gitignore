@@ -8,4 +8,3 @@ erreur_mise_en_ligne.txt
 *.url
 .cache_entrainement/
 rapports/
-.cache_modeles/
