@@ -58,7 +58,7 @@ jobs:
 
       # Le cache des cours sert de secours si Yahoo ne répond pas pour certains titres
       # Le cache garde aussi les IA entraînées du jour : les mises à jour horaires vont ainsi 2 à 3 fois plus vite
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: |
             .cache_cours
