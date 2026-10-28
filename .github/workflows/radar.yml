@@ -106,7 +106,7 @@ jobs:
       url: ${{ steps.deploiement.outputs.page_url }}
     steps:
       - id: deploiement
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
       # Le soir, envoie TOUTES les pages du plan du site aux moteurs IndexNow (Bing, DuckDuckGo, Yahoo, Yandex, Seznam…)
       # en un seul envoi (jusqu'à 10 000 adresses). Google n'utilise pas IndexNow : lui lit le sitemap.
