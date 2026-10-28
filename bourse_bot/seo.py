@@ -455,7 +455,8 @@ def _page_duel(base, a, b, date, csp):
     desc = f"{na} ou {nb} ? Cours, volatilité, agitation prévue et avis des IA côte à côte, mis à jour chaque jour."
     jsonld = {"@context": "https://schema.org", "@graph": [
         {"@type": "WebPage", "name": f"{na} ou {nb}", "inLanguage": "fr-FR"},
-        {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": re.sub(r"<[^>]+>", "", r)}} for q, r in faq]}]}
+        {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": re.sub(r"<[^>]+>", "", r)}} for q, r in faq]},
+        _jsonld_fil(base, [(NOM, ""), ("Comparer", "comparer.html"), (f"{na} ou {nb}", chemin)])]}
     return chemin, _page(base, titre, desc, chemin, corps, jsonld, csp)
 
 
@@ -603,6 +604,15 @@ def _md(txt):
     return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", _e(txt))
 
 
+def _jsonld_liste(base, nom, chemin, elements, parent=None):
+    """Données structurées d'une page « liste » (classement, secteur, guides) : ItemList + fil d'Ariane."""
+    etapes = [(NOM, "")] + ([parent] if parent else []) + [(nom, chemin)]
+    return {"@context": "https://schema.org", "@graph": [
+        {"@type": "ItemList", "name": nom, "numberOfItems": len(elements), "itemListElement": [
+            {"@type": "ListItem", "position": i + 1, "name": n, "url": (base + c) if base else c} for i, (n, c) in enumerate(elements)]},
+        _jsonld_fil(base, etapes)]}
+
+
 def _pages_guides(base, payload, dossier, csp, date):
     """Version 38 : 100 guides qui répondent honnêtement aux recherches les plus tapées sur la Bourse et la crypto
     (« débuter en bourse », « argent facile », « prévision bitcoin »…), avec les chiffres du jour quand c'est utile."""
@@ -661,7 +671,7 @@ def _pages_guides(base, payload, dossier, csp, date):
     with open(os.path.join(dossier, "guides.html"), "w", encoding="utf-8") as f:
         f.write(_page(base, f"Guides bourse et crypto pour débutants | {NOM}",
                       "Débuter en bourse, investir petit budget, crypto, ETF, arnaques, argent facile : 100 guides simples et honnêtes.",
-                      "guides.html", corps, csp=csp))
+                      "guides.html", corps, _jsonld_liste(base, "Guides bourse et crypto", "guides.html", [(g["h"], f"guides/{g['i']}.html") for g in GUIDES]), csp=csp))
     faits.append("guides.html")
     return faits
 
@@ -752,7 +762,8 @@ def _pages_secteurs(base, titres, dossier, csp, date):
                  "(<a href='../resultats.html'>résultats réels</a>). Ce n'est pas un conseil d'achat.</p>")
         chemin = f"classements/secteur-{slug(sec)}.html"
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
-            f.write(_page(base, f"Actions secteur {lib} : prévisions {datetime.now().year}"[:60] + f" | {NOM}", intro[:155], chemin, corps, csp=csp))
+            jl = _jsonld_liste(base, h1, chemin, [(t["nom"], f"titres/{slug(t['ticker'])}.html") for t in items], ("Classements", "classements.html"))
+            f.write(_page(base, f"Actions secteur {lib} : prévisions {datetime.now().year}"[:60] + f" | {NOM}", intro[:155], chemin, corps, jl, csp=csp))
         faits.append((h1, chemin))
     return faits
 
@@ -786,7 +797,8 @@ def _pages_classements(base, payload, dossier, csp, date):
         chemin = f"classements/{cle}.html"
         an = datetime.now().year
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
-            f.write(_page(base, f"{titre_h1} ({an}) | {NOM}", intro[:155], chemin, corps, csp=csp))
+            jl = _jsonld_liste(base, titre_h1, chemin, [(t["nom"], f"titres/{slug(t['ticker'])}.html") for t in sel], ("Classements", "classements.html"))
+            f.write(_page(base, f"{titre_h1} ({an}) | {NOM}", intro[:155], chemin, corps, jl, csp=csp))
         faits.append(chemin)
         liens.append((titre_h1, chemin))
     try:
@@ -801,7 +813,7 @@ def _pages_classements(base, payload, dossier, csp, date):
         with open(os.path.join(dossier, "classements.html"), "w", encoding="utf-8") as f:
             f.write(_page(base, f"Classements du jour : dividende, risque, PER | {NOM}",
                           "Actions à fort dividende, actions les plus calmes, cryptos les plus volatiles, PER les plus bas : les classements du jour.",
-                          "classements.html", corps, csp=csp))
+                          "classements.html", corps, _jsonld_liste(base, "Classements du jour", "classements.html", [(t, c) for t, c in liens]), csp=csp))
         faits.append("classements.html")
     return faits
 

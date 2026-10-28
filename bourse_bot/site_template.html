@@ -1172,13 +1172,14 @@ html.calme *{animation:none!important;transition:none!important}
   <div class="consent-boite">
     <h2 id="consent-t">Avant de commencer</h2>
     <div id="consent-d">
-      <p>Radar Bourse est un <b>projet éducatif et gratuit</b>. Trois choses à savoir :</p>
+      <p>Radar Bourse est un <b>projet éducatif et gratuit</b>. Quatre choses à savoir :</p>
       <ul>
         <li><b>Rien n'est sûr.</b> Les prévisions sont des calculs automatiques qui se trompent souvent. Le site montre exactement combien.</li>
         <li><b>Ce ne sont pas des conseils.</b> Personne ici ne te dit d'acheter ou de vendre. Tu restes seul·e responsable de tes décisions.</li>
         <li><b>Investir peut faire perdre de l'argent</b>, parfois tout l'argent investi. N'investis que ce que tu peux te permettre de perdre.</li>
+        <li><b>Nous ne sommes pas responsables.</b> Radar Bourse et son éditeur ne peuvent être tenus responsables d'aucune perte, d'aucune erreur ou retard dans les données, ni d'aucune décision prise à partir du site. Les décisions d'investissement sont réservées aux personnes majeures.</li>
       </ul>
-      <p class="muted" style="font-size:13.5px">En continuant, tu acceptes les conditions d'utilisation. Aucun cookie publicitaire, aucun compte, rien à acheter.</p>
+      <p class="muted" style="font-size:13.5px">En cliquant sur « J'ai compris », tu acceptes les conditions d'utilisation, dont la limitation de responsabilité (article 10). Aucun cookie publicitaire, aucun compte, rien à acheter.</p>
     </div>
     <div class="consent-actions">
       <button class="btn ghost" data-legal="conditions">Lire les conditions</button>
@@ -3408,7 +3409,7 @@ $("#l-close").onclick = fermerLegal;
 $("#legal").addEventListener("click", e => { if(e.target.id === "legal") fermerLegal(); });
 document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#legal").hidden) fermerLegal(); });
 
-const CLE_AVERT = "radar-bourse-avertissement-v1";
+const CLE_AVERT = "radar-bourse-avertissement-v2";   // v2 : point sur la responsabilité, réaffiché une fois à tous
 let dejaVu = false;
 try{ dejaVu = localStorage.getItem(CLE_AVERT) === "1"; }catch(e){}
 $("#consent").hidden = dejaVu;

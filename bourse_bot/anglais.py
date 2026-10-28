@@ -42,6 +42,7 @@ def _pct(v, d=1):
 
 def _page(base, titre, description, chemin, corps, csp, alternates):
     prefixe = "../" * chemin.count("/")
+    titre, description = seo.titre_court(titre), seo.desc_courte(description)
     jsonld = {"@context": "https://schema.org", "@type": "WebPage", "name": titre, "description": description,
               "inLanguage": "en", "dateModified": datetime.now().isoformat(timespec="seconds"),
               "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None}}
@@ -50,8 +51,6 @@ def _page(base, titre, description, chemin, corps, csp, alternates):
                         '<meta name="keywords" content="stock forecast, crypto forecast, technical analysis, RSI, MACD, '
                         'S&amp;P 500, CAC 40, Bitcoin, stock prediction, market outlook">')
     csp = seo.csp_avec_stats(csp)
-    titre = seo.titre_court(titre)
-    description = seo.desc_courte(description)
     return f"""<!doctype html>
 <html lang="en">
 <head>

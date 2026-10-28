@@ -52,6 +52,54 @@ def _logit(p):
     return np.log(p / (1 - p))
 
 
+NOM_SITE = "IA prudente par marché (tendance habituelle là où l'IA n'a pas fait ses preuves) ← utilisée sur le site"
+
+
+def examen_final(methodes, ok, yy, dates_ok, hausse, noms):
+    """Version 43 : un examen plus dur et plus fiable que le simple score sur 5000.
+    Une méthode ne le réussit que si elle bat la règle « toujours hausse » :
+      1. de façon sûre MÊME en tenant compte du nombre de méthodes essayées (sinon, en en essayant 15, une finit
+         toujours devant par chance) ;
+      2. sur la majorité des années, pas grâce à une seule année exceptionnelle ;
+      3. sur les 24 derniers mois, jamais utilisés pour choisir quoi que ce soit ;
+    et on montre de combien le score sur 5000 varie d'un tirage à l'autre."""
+    nb_meth = sum(1 for k in methodes if not k.startswith("("))
+    j_ref = (yy == 1) if hausse >= .5 else (yy == 0)
+    annee = dates_ok.year.to_numpy()
+    recent = dates_ok >= dates_ok.max() - pd.DateOffset(months=24)
+    rng = np.random.default_rng(7)
+    out = ["", "   EXAMEN FINAL (plus dur) : pour réussir, il faut battre « toujours hausse » sur les 3 épreuves",
+           f"   1) de façon sûre même en comptant les {nb_meth} méthodes essayées · 2) sur la majorité des années · 3) sur les 24 derniers mois"]
+    vus = set()
+    for nom in noms:
+        if nom in vus:
+            continue
+        vus.add(nom)
+        pp = np.asarray(methodes[nom])[ok]
+        if not np.isfinite(pp).all():
+            continue
+        juste = (pp >= 0.5) == (yy == 1)
+        d = pd.DataFrame({"g": juste.astype(float) - j_ref.astype(float)}, index=dates_ok)
+        boot = model.bootstrap_mois(d, lambda x: np.array([x["g"].mean()]), graine=43)
+        lo = float(np.percentile(boot[:, 0], 100 * 0.025 / max(nb_meth, 1))) if len(boot) else -1.0
+        e1 = lo > 0
+        ans = sorted(set(annee))
+        gagne = sum(1 for a in ans if juste[annee == a].mean() > j_ref[annee == a].mean() + 1e-9)
+        e2 = gagne > len(ans) / 2
+        sr, rr = float(juste[recent].mean()), float(j_ref[recent].mean())
+        e3 = sr > rr
+        tirages = [int(juste[rng.choice(len(juste), 5000, replace=False)].sum()) for _ in range(30)] if len(juste) > 5000 else []
+        court = nom.split(" (")[0].split(" ←")[0]
+        out.append(f"   • {court} : {'RÉUSSI ✅' if e1 and e2 and e3 else 'pas réussi'}")
+        out.append(f"       épreuve 1 {'✅' if e1 else '❌'} (écart sûr minimum : {lo * 5000:+.0f} sur 5000)"
+                   f" · épreuve 2 {'✅' if e2 else '❌'} ({gagne} année{'s' if gagne > 1 else ''} gagnée{'s' if gagne > 1 else ''} sur {len(ans)})"
+                   f" · épreuve 3 {'✅' if e3 else '❌'} (24 derniers mois : {round(sr * 5000)} contre {round(rr * 5000)})")
+        if tirages:
+            out.append(f"       sur 30 tirages de 5000 cas, son score va de {min(tirages)} à {max(tirages)} (moyenne {round(np.mean(tirages))}) : "
+                       "un écart de quelques dizaines entre deux tests est normal")
+    return out
+
+
 def explorer(jeu, oof, rel, masque, horizon):
     """Essaie d'autres façons de choisir « hausse » ou « baisse », toutes testées sans tricher :
     chaque méthode n'apprend que sur les années AVANT celle qu'elle prévoit, puis on compte ses bonnes réponses
@@ -288,6 +336,7 @@ def explorer(jeu, oof, rel, masque, horizon):
     if choix_annees:
         out.append("   Méthodes choisies automatiquement : " + " · ".join(choix_annees))
     meilleur = max(res)
+    out += examen_final(methodes, ok, yy, dates_ok, hausse, [m for m in (meilleur[1], NOM_SITE, "IA actuelle") if m in methodes])
     out.append("")
     if meilleur[1] != "IA actuelle" and "de façon sûre" in meilleur[2] and "mieux" in meilleur[2]:
         out.append(f"   ➜ « {meilleur[1]} » fait mieux que l'IA actuelle de façon sûre ({round(meilleur[0] * 5000)} sur 5000). "
