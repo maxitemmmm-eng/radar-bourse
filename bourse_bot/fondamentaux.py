@@ -90,7 +90,12 @@ def elargir_fourchette(a) -> None:
 def enrichir(analyses) -> None:
     aujourd_hui = datetime.now().date()
     for a in analyses:
-        a.fondamentaux = recuperer(a.ticker, a.marche)
+        appel = []
+        if data.DEMO:
+            a.fondamentaux = recuperer(a.ticker, a.marche)
+        else:   # les fondamentaux changent peu : une fois par jour suffit (cache de 20 h)
+            a.fondamentaux = data.cache_json("fondamentaux", a.ticker, 20,
+                                             lambda: appel.append(1) or recuperer(a.ticker, a.marche))
         date = (a.fondamentaux or {}).get("resultats_le")
         if date:
             ecart = (datetime.strptime(date, "%Y-%m-%d").date() - aujourd_hui).days
@@ -101,7 +106,7 @@ def enrichir(analyses) -> None:
                                     "le cours peut bouger fortement, même au-delà de la fourchette prévue")
                 if ecart <= 28:   # publication avant l'échéance de la prévision (~20 séances)
                     elargir_fourchette(a)
-        if not data.DEMO and a.fondamentaux is not None:
+        if appel and a.fondamentaux is not None:
             time.sleep(0.2)
 
 

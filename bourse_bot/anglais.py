@@ -6,9 +6,11 @@ Google and read the key figures. Every page links to its French twin (hreflang t
 from __future__ import annotations
 
 import html
+import math
 import os
+from datetime import datetime
 
-from . import seo
+from . import langues, seo
 
 NOM = seo.NOM
 SIGNAL_EN = {"ACHAT FORT": "strongly bullish", "ACHAT": "bullish", "NEUTRE": "neutral",
@@ -24,7 +26,10 @@ def _e(s) -> str:
 def _px(v, dev):
     if v is None:
         return "–"
-    txt = f"{v:,.2f}" if abs(v) >= 1 else f"{v:.4g}"
+    if abs(v) >= 1 or v == 0:
+        txt = f"{v:,.2f}"
+    else:   # petites cryptos (SHIB, PEPE…) : 4 chiffres significatifs, jamais d'écriture « 1.2e-05 »
+        txt = f"{v:.{max(2, 3 - math.floor(math.log10(abs(v))))}f}"
     return f"{'€' if dev == '€' else '$'}{txt}"
 
 
@@ -37,7 +42,11 @@ def _pct(v, d=1):
 
 def _page(base, titre, description, chemin, corps, csp, alternates):
     prefixe = "../" * chemin.count("/")
-    tete = seo.balises_tete(base, titre, description, chemin, alternates=alternates, langue="en")
+    titre, description = seo.titre_court(titre), seo.desc_courte(description)
+    jsonld = {"@context": "https://schema.org", "@type": "WebPage", "name": titre, "description": description,
+              "inLanguage": "en", "dateModified": datetime.now().isoformat(timespec="seconds"),
+              "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None}}
+    tete = seo.balises_tete(base, titre, description, chemin, jsonld=jsonld, alternates=alternates, langue="en")
     tete = tete.replace(f'<meta name="keywords" content="{_e(seo.MOTS_CLES)}">',
                         '<meta name="keywords" content="stock forecast, crypto forecast, technical analysis, RSI, MACD, '
                         'S&amp;P 500, CAC 40, Bitcoin, stock prediction, market outlook">')
@@ -51,16 +60,26 @@ def _page(base, titre, description, chemin, corps, csp, alternates):
 <title>{_e(titre)}</title>
 {tete}
 <link rel="icon" href="{prefixe}icone-192.png">
+{seo.SCRIPT_THEME}
+{seo.POLICES}
 {seo.script_stats()}
 <style>{seo.CSS_PAGE}</style>
 </head>
-<body><div class="w">
-<nav class="fil"><a href="{prefixe}en/index.html">{NOM} (English)</a> · <a href="{prefixe}en/index.html#all">All stocks</a> · <a href="{prefixe}index.html" hreflang="fr">Version française (interactive app)</a></nav>
+<body>
+{seo.entete(prefixe, chemin, "en/index.html", "Checked forecasts, no promises",
+            [("All stocks and cryptos", "en/index.html"), ("Guides", "en/guides.html"), ("Version française", "index.html", 'hreflang="fr" lang="fr"')],
+            ("Open the app (FR)", "index.html"), aria_nav="Site pages", aria_theme="Light / dark theme", aller="Skip to content")}
+<div class="w">
+<main id="contenu" tabindex="-1">
 {corps}
-<p class="avert"><b>Nothing is certain in the markets.</b> {NOM} is a free educational project. These figures are generated
+</main>
+<footer><p class="avert"><b>Nothing is certain in the markets.</b> {NOM} is a free educational project. These figures are generated
 automatically, may contain errors and are not investment advice or a recommendation to buy or sell. You can lose all the
 money you invest. Full terms of use (in French): <a href="{prefixe}index.html#conditions">conditions d'utilisation</a>.</p>
-</div></body></html>
+{f'<p class="muted">Languages: {langues.selecteur(prefixe, "en", alternates)}</p>' if alternates and "es" in alternates else ""}</footer>
+</div>
+{seo.SCRIPT_BOUTON}
+</body></html>
 """
 
 
@@ -76,9 +95,10 @@ def _page_titre(base, t, horizon, date, csp, modele):
     nom, tk = t["nom"], t["ticker"]
     s = seo.slug(tk)
     chemin = f"en/stocks/{s}.html"
-    titre = f"{nom} ({tk}) forecast: one-month outlook and analysis | {NOM}"
-    desc = (f"{nom} ({tk}) on {date}: {SIGNAL_EN.get(t['signal'], 'neutral')} technical trend"
-            + (f", {sur10} in 10 chance of trading higher in a month according to the model" if sur10 is not None else "")
+    titre = f"{nom} ({seo.aff_tk(tk)}) forecast: one-month outlook and analysis | {NOM}"
+    desc = (f"{nom} ({seo.aff_tk(tk)}) on {date}: {SIGNAL_EN.get(t['signal'], 'neutral')} technical trend"
+            + (", no clear call from the AIs for the coming month" if sur10 is not None and t.get("avis_net") is False else
+               f", {sur10} in 10 chance of trading higher in a month according to the model" if sur10 is not None else "")
             + (f", central scenario {_px(med, dev)}" if med else "") + ". Free educational project, not advice.")
     perf, niv = t.get("perf", {}), t.get("niveaux") or {}
     pm = t.get("proba_marche")
@@ -93,13 +113,13 @@ def _page_titre(base, t, horizon, date, csp, modele):
         fiab = (f"<p>Measured accuracy of the model on periods it never saw: <b>{round(modele['precision'] * 100)}%</b> "
                 f"correct directions (naive baseline {round(modele['precision_base'] * 100)}%). A forecast is a probability, never a promise.</p>")
     corps = f"""
-<h1>{_e(nom)} ({_e(tk)}): forecast and analysis</h1>
+<h1>{_e(nom)} ({_e(seo.aff_tk(tk))}): forecast and analysis</h1>
 <p class="muted">Updated automatically · prices as of {_e(date)}</p>
 <div class="carte grille">
   <div class="k"><b>{_px(t['prix'], dev)}</b><span>last price</span></div>
   <div class="k"><b>{_pct(perf.get('1 mois'))}</b><span>over 1 month</span></div>
   <div class="k"><b>{round(t['score'])} / 100</b><span>technical score ({SIGNAL_EN.get(t['signal'], '')})</span></div>
-  <div class="k"><b>{f'{sur10} in 10' if sur10 is not None else '–'}</b><span>chance of being higher in {horizon} sessions</span></div>
+  <div class="k"><b>{'no clear call' if sur10 is not None and t.get("avis_net") is False else f'{sur10} in 10' if sur10 is not None else '–'}</b><span>chance of being higher in {horizon} sessions</span></div>
 </div>
 <h2>Summary</h2>
 <p>For the coming month, the radar sees {_e(nom)} <b>{verdict}</b>.
@@ -112,6 +132,7 @@ def _page_titre(base, t, horizon, date, csp, modele):
 <div class="carte"><table>
 <tr><td>RSI (14)</td><td class="m">{'–' if niv.get('rsi') is None else round(niv['rsi'])}</td></tr>
 <tr><td>ADX (trend strength)</td><td class="m">{'–' if niv.get('adx') is None else round(niv['adx'])}</td></tr>
+{f"<tr><td>Expected move over the next 5 sessions</td><td class='m'>±{(t.get('risque_prevu') or {})['semaine'] * 100:.1f}%</td></tr>" if (t.get('risque_prevu') or {}).get('semaine') else ""}
 <tr><td>3-month performance</td><td>{_pct(perf.get('3 mois'))}</td></tr>
 <tr><td>Annualised volatility</td><td>{_pct(perf.get('volatilité annuelle'), 0)}</td></tr>
 <tr><td>Risk level</td><td>{_e({'Faible': 'Low', 'Moyen': 'Medium', 'Élevé': 'High', 'Très élevé': 'Very high'}.get(t.get('risque'), t.get('risque')))}</td></tr>
@@ -120,7 +141,7 @@ def _page_titre(base, t, horizon, date, csp, modele):
 <h2>Reliability</h2>{fiab or "<p>Statistical forecast: it is often wrong.</p>"}
 """
     return chemin, _page(base, titre, desc, chemin, corps, csp,
-                         {"en": chemin, "fr": f"titres/{s}.html", "x-default": f"titres/{s}.html"})
+                         langues.alternates_titre(s))
 
 
 def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
@@ -155,7 +176,7 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
     corps = f"""
 <h1>{NOM}: one-month stock and crypto forecasts, explained simply</h1>
 <p class="muted">French, European and US stocks, ETFs and major cryptocurrencies, analysed automatically every hour. Free, no sign-up, educational.</p>
-<p><a class="btn" href="../index.html">Open the interactive app (French)</a></p>
+<p><a class="btn" href="../index.html">Open the interactive app (French)</a> <a class="btn ghost" href="guides.html">Beginner guides</a></p>
 <h2>Highest probability of rising over the next month</h2>
 <div class="carte"><table>{top or "<tr><td>Model unavailable today.</td></tr>"}</table></div>
 <h2>Strong signals today</h2>
@@ -168,5 +189,5 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
     desc = ("Free one-month forecasts for French, European and US stocks and major cryptocurrencies: probability of rising, "
             "price range, technical analysis and measured reliability. Educational project, not advice.")
     with open(os.path.join(dossier, "en", "index.html"), "w", encoding="utf-8") as f:
-        f.write(_page(base, titre, desc, "en/index.html", corps, csp, {"en": "en/index.html", "fr": "", "x-default": ""}))
+        f.write(_page(base, titre, desc, "en/index.html", corps, csp, langues.alternates_accueil()))
     return urls

@@ -29,21 +29,54 @@ def vol_futur(close: pd.Series, horizon: int) -> pd.Series:
     return np.log(v.where(v > 0))
 
 
+# Version 51 : le risque de forte chute regarde aussi le risque PROPRE à chaque titre (sa volatilité à lui, hors marché,
+# son bêta, ses à-coups, sa liquidité). Testé sur des périodes jamais vues : meilleur sur les 5 marchés à la fois
+# (note 0,754 contre 0,747 ; 10 % les plus risqués : 2,1× le risque habituel contre 1,9×). Des modèles séparés
+# cryptos / actions ont été testés aussi : moins bons (moins d'exemples pour apprendre), donc écartés.
+# Même ajout pour l'agitation à un mois : erreur médiane 23,9 % contre 24,2 %, meilleure sur les 5 marchés.
+RISQUE_PROPRE = ["rang_vol_20j", "cx_volatilite_propre_60j", "cx_beta_faible_1an", "cx_asymetrie_60j", "cx_loterie_1m",
+                 "rang_cx_volatilite_propre_60j", "marche_largeur", "cx_illiquidite_60j"]
+
+
 def _variables_risque(jeu, variables_base):
     extra = ["vol_20j", "atr_pct", "bb_largeur", "marche_vol", "vix", "vix_structure", "drawdown",
-             "marche_dispersion", "spread_credit", "conditions_fin", "est_crypto"]
+             "marche_dispersion", "spread_credit", "conditions_fin", "est_crypto"] + RISQUE_PROPRE
     vs = [v for v in dict.fromkeys(list(variables_base) + extra) if v in jeu.columns]
     return [v for v in vs if jeu[v].nunique(dropna=True) > 1]
+
+
+def _variables_chute(jeu, variables_base):
+    return _variables_risque(jeu, variables_base)
 
 
 def _naif(df):
     return np.log(df["vol_20j"].clip(lower=1e-4))
 
 
+class SansColonnesVides:
+    """Enveloppe un modèle : écarte à l'apprentissage les colonnes vides ou constantes sur la période apprise
+    (ex. un indicateur économique qui n'existait pas encore en 2014). Les versions récentes de scikit-learn
+    plantent sinon (« window shape cannot be larger than input array shape »)."""
+
+    def __init__(self, modele):
+        self.modele, self.cols = modele, None
+
+    def fit(self, X, y, **kw):
+        self.cols = [c for c in X.columns if X[c].nunique(dropna=True) > 1]
+        self.modele.fit(X[self.cols] if self.cols else X.iloc[:, :0].assign(_z=0.0), y, **kw)
+        return self
+
+    def predict(self, X):
+        return self.modele.predict(X[self.cols] if self.cols else X.iloc[:, :0].assign(_z=0.0))
+
+    def predict_proba(self, X):
+        return self.modele.predict_proba(X[self.cols] if self.cols else X.iloc[:, :0].assign(_z=0.0))
+
+
 def _modele():
     from sklearn.ensemble import HistGradientBoostingRegressor
-    return HistGradientBoostingRegressor(max_depth=3, learning_rate=0.05, max_iter=300, min_samples_leaf=300,
-                                         l2_regularization=1.0, random_state=0)
+    return SansColonnesVides(HistGradientBoostingRegressor(max_depth=3, learning_rate=0.05, max_iter=300, min_samples_leaf=300,
+                                                           l2_regularization=1.0, random_state=0))
 
 
 def _concordance(df, col_p, col_y, pas=5):
@@ -92,17 +125,108 @@ def evaluer_risque(jeu, horizon, variables_base, n_plis=5):
             "ic_gain": ic, "prouve": bool(ic and ic[0] > 0), "variables": vs}
 
 
-def predire_risque(jeu, actuel, tous, horizon, variables_base, utiliser_ia=True):
+SEUIL_CHUTE = -0.10   # « forte chute » : perdre plus de 10 % en un mois
+
+
+def _modele_chute():
+    from sklearn.ensemble import HistGradientBoostingClassifier
+    return SansColonnesVides(HistGradientBoostingClassifier(max_depth=3, learning_rate=0.05, max_iter=200, min_samples_leaf=500,
+                                                            random_state=0))
+
+
+def evaluer_chute(jeu, horizon, variables_base, n_plis=5):
+    """Version 33 : le risque de forte chute (plus de 10 % en un mois), testé sur des périodes jamais vues.
+    Plus prévisible que le sens du prix, car lié à l'agitation (le point fort des IA). Utilisé seulement si prouvé."""
+    from .model import _auc, _ic, _plis, bootstrap_mois
+    et = jeu.dropna(subset=["rendement_futur"]).copy()
+    et["cible"] = (et["rendement_futur"] < SEUIL_CHUTE).astype(float)
+    vs = _variables_chute(et, variables_base)
+    morceaux = []
+    for train, test in _plis(et, horizon, n_plis):
+        if len(train) < 5000 or test.empty or train["cible"].nunique() < 2:
+            continue
+        m = _modele_chute().fit(train[vs], train["cible"].to_numpy())
+        morceaux.append(pd.DataFrame({"y": test["cible"].to_numpy(), "p": m.predict_proba(test[vs])[:, 1],
+                                      "crypto": test["est_crypto"].to_numpy() if "est_crypto" in test else 0.0}, index=test.index))
+    if not morceaux:
+        return {}
+    o = pd.concat(morceaux)
+    boot = bootstrap_mois(o, lambda d: np.array([_auc(d["y"].to_numpy(), d["p"].to_numpy())]), graine=17)
+    ic = _ic(boot[:, 0]) if len(boot) else None
+    haut = o["p"] >= o["p"].quantile(0.9)
+    return {"nb": int(len(o)), "auc": _auc(o["y"].to_numpy(), o["p"].to_numpy()), "ic_auc": ic,
+            "base": float(o["y"].mean()), "base_actions": float(o.loc[o["crypto"] < 0.5, "y"].mean()) if (o["crypto"] < 0.5).any() else None,
+            "base_cryptos": float(o.loc[o["crypto"] >= 0.5, "y"].mean()) if (o["crypto"] >= 0.5).any() else None,
+            "taux_risque_haut": float(o.loc[haut, "y"].mean()), "seuil": SEUIL_CHUTE,
+            "prouve": bool(ic and ic[0] > 0.55)}
+
+
+def predire_chute(jeu, actuel, variables_base, mod=None):
+    """{ticker: probabilité de perdre plus de 10 % dans le mois}, et le modèle (gardé pour les mises à jour horaires)."""
+    if mod is None:
+        et = jeu.dropna(subset=["rendement_futur"]).copy()
+        et["cible"] = (et["rendement_futur"] < SEUIL_CHUTE).astype(float)
+        vs = _variables_chute(et, variables_base)
+        mod = (_modele_chute().fit(et[vs], et["cible"].to_numpy()), vs)
+    m, vs = mod
+    p = m.predict_proba(actuel[vs])[:, 1]
+    return {t: float(v) for t, v in zip(actuel["ticker"], p) if np.isfinite(v)}, mod
+
+
+H_SEMAINE = 5
+
+
+def _vols_semaine(c):
+    r = np.log(c.astype(float)).diff()
+    return r, r.rolling(5).std(), r.rolling(20).std(), r.rolling(63).std()
+
+
+def agitation_semaine(tous: dict) -> dict:
+    """Version 48 : de combien chaque titre risque de bouger sur les 5 prochaines séances.
+    Modèle simple (agitation de la semaine, du mois et du trimestre passés), appris sur tous les historiques.
+    Testé sur les vrais cours (138 000 cas, 2009–2026, chaque année n'apprenant que du passé) : plus proche du
+    mouvement réel que « comme la semaine dernière » dans 57 % des cas, et meilleur 18 années sur 18.
+    Renvoie {ticker: mouvement typique sur 5 séances}."""
+    from sklearn.linear_model import LinearRegression
+    X, y, actuels = [], [], {}
+    for t, df in tous.items():
+        if df is None or len(df) < 200 or "Close" not in df:
+            continue
+        c = df["Close"].dropna()
+        r, v5, v20, v63 = _vols_semaine(c)
+        cr = float(str(t).endswith("-USD"))
+        fut = r[::-1].rolling(H_SEMAINE).std()[::-1].shift(-1)
+        d = pd.DataFrame({"v5": v5, "v20": v20, "v63": v63, "fut": fut}).dropna()
+        d = d[(d > 1e-5).all(axis=1)].iloc[::5]
+        if len(d):
+            X.append(np.c_[np.log(d[["v5", "v20", "v63"]].to_numpy()), np.full(len(d), cr)])
+            y.append(np.log(d["fut"].to_numpy()))
+        der = [v5.iloc[-1], v20.iloc[-1], v63.iloc[-1]]
+        if all(np.isfinite(der)) and min(der) > 1e-5:
+            actuels[t] = [*np.log(der), cr]
+    if not X or not actuels:
+        return {}
+    m = LinearRegression().fit(np.vstack(X), np.concatenate(y))
+    tks = list(actuels)
+    p = m.predict(np.array([actuels[t] for t in tks]))
+    return {t: float(np.exp(v) * np.sqrt(H_SEMAINE)) for t, v in zip(tks, p) if np.isfinite(v)}
+
+
+def predire_risque(jeu, actuel, tous, horizon, variables_base, utiliser_ia=True, mod=None):
     """{ticker: {"vol": vol annualisée prévue, "mouvement": mouvement typique sur l'horizon,
     "habitude": rapport à son agitation habituelle, "source": "ia" ou "naif"}}"""
-    et = jeu.dropna(subset=["vol_futur", "vol_20j"])
-    et = et[np.isfinite(et["vol_futur"])]
-    vs = _variables_risque(et, variables_base)
-    if utiliser_ia and len(et) > 3000:
-        mod = _modele().fit(et[vs], et["vol_futur"])
-        lp, source = mod.predict(actuel[vs]), "ia"
+    if mod is not None and utiliser_ia:   # modèle du matin réutilisé (mises à jour horaires)
+        modele, vs = mod
+        lp, source = modele.predict(actuel[vs]), "ia"
+    elif utiliser_ia and len(jeu) > 3000:
+        et = jeu.dropna(subset=["vol_futur", "vol_20j"])
+        et = et[np.isfinite(et["vol_futur"])]
+        vs = _variables_risque(et, variables_base)
+        modele = _modele().fit(et[vs], et["vol_futur"])
+        mod = (modele, vs)
+        lp, source = modele.predict(actuel[vs]), "ia"
     else:
-        lp, source = _naif(actuel).to_numpy(), "naif"
+        lp, source, mod = _naif(actuel).to_numpy(), "naif", None
     out = {}
     for t, l in zip(actuel["ticker"], lp):
         if not np.isfinite(l) or t not in tous:
@@ -113,7 +237,7 @@ def predire_risque(jeu, actuel, tous, horizon, variables_base, utiliser_ia=True)
         out[t] = {"vol": vol, "mouvement": float(vol / np.sqrt(ANNEE) * np.sqrt(horizon)),
                   "habitude": float(vol / hist.median()) if len(hist) > 60 and hist.median() > 0 else None,
                   "source": source}
-    return out
+    return out, mod
 
 
 # ----------------------------------------------------------------------------
@@ -310,4 +434,58 @@ def echantillon_jeu(oof, proba, donnees, horizon, n=300, avant=120):
                     "r": round(float(ligne["r"]), 4), "s": [round(float(v), 2) for v in serie], "a": avant})
         if len(out) >= n:
             break
+    return out
+
+
+# ----------------------------------------------------------------------------
+# 6. « Je ne sais pas » par marché : si, sur un marché, même les avis nets n'ont pas fait mieux que
+#    « toujours la même réponse », on ne donne pas d'avis de direction sur ce marché.
+# ----------------------------------------------------------------------------
+def prudence_par_marche(oof, gain_min=0.005, nb_min=300):
+    """Version 33 (ton test sur 5000 cas : +60 bonnes réponses) : sur un marché où l'IA n'a PAS fait mieux que la
+    tendance habituelle de ce marché (sur des années jamais vues), on publie cette tendance habituelle
+    (la part des mois où ce marché a fini plus haut) au lieu de l'avis de l'IA. C'est affiché comme tel sur le site."""
+    if "marche" not in oof:
+        return {}
+    y, p, m = oof["cible"].to_numpy(), oof["proba"].to_numpy(), oof["marche"].astype(str).to_numpy()
+    out = {}
+    for nom in sorted(set(m)):
+        sel = m == nom
+        if sel.sum() < nb_min:
+            continue
+        juste = float(((p[sel] >= 0.5) == (y[sel] == 1)).mean())
+        taux = float(y[sel].mean())
+        if juste <= max(taux, 1 - taux) + gain_min:
+            out[nom] = {"precision_ia": juste, "taux_hausse": taux, "base": max(taux, 1 - taux), "nb": int(sel.sum())}
+    return out
+
+
+def fiabilite_baisse(oof, marge, nb_min=300):
+    """Quand l'IA a dit « baisse » avec un avis net (proba ≤ 50 % − marge), sur des années jamais vues, à quelle fréquence
+    le prix a-t-il vraiment baissé ? Si ce n'est pas plus d'une fois sur deux de façon sûre, le site n'affiche pas de « baisse »."""
+    from .model import bootstrap_mois
+    m = 0.0 if marge is None else float(marge)
+    sel = oof["proba"].to_numpy() <= 0.5 - m
+    if sel.sum() < nb_min:
+        return {"fiable": False, "nb": int(sel.sum()), "raison": "trop peu de cas"}
+    d = oof.loc[sel, ["cible"]].copy()
+    d["juste"] = (d["cible"] == 0).astype(float)
+    boot = bootstrap_mois(d, lambda x: np.array([x["juste"].mean()]), graine=29)
+    lo = float(np.percentile(boot[:, 0], 2.5)) if len(boot) else 0.0
+    return {"fiable": bool(lo > 0.5), "nb": int(sel.sum()), "precision": float(d["juste"].mean()), "ic_bas": lo}
+
+
+def marches_sans_avis(oof, marge, gain_min=0.005):
+    if marge is None or "marche" not in oof:
+        return {}
+    y, p, m = oof["cible"].to_numpy(), oof["proba"].to_numpy(), oof["marche"].to_numpy()
+    out = {}
+    for nom in sorted(set(m)):
+        sel = (m == nom) & (np.abs(p - 0.5) >= marge)
+        if sel.sum() < 300:
+            continue
+        juste = float(((p[sel] > 0.5) == (y[sel] == 1)).mean())
+        base = float(max(y[sel].mean(), 1 - y[sel].mean()))
+        if juste - base < gain_min:
+            out[str(nom)] = {"precision": juste, "base": base, "nb": int(sel.sum())}
     return out

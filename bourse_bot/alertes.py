@@ -54,7 +54,7 @@ def resume(payload: dict) -> str:
         med = t["cone"]["mediane"][-1] if t.get("cone") else None
         lien = f'{base}titres/{seo.slug(t["ticker"])}.html' if base else ""
         nom = f'<a href="{e(lien)}">{e(t["nom"])}</a>' if lien else e(t["nom"])
-        return (f"• {nom} ({e(t['ticker'])}) : {round(p * 10)} chances sur 10 de hausse à 1 mois"
+        return (f"• {nom} ({e(seo.aff_tk(t['ticker']))}) : {round(p * 10)} chances sur 10 de hausse à 1 mois"
                 + (f", scénario central {_pct(med / t['prix'] - 1)}" if med else ""))
 
     morceaux = [f"📡 <b>Radar Bourse · {date}</b>"]

@@ -8,6 +8,27 @@ graphique avec la prévision, raisons du signal, et résultat d'un backtest.
 > ⚠️ **Outil éducatif, pas un conseil en investissement.** Aucun programme ne prédit la Bourse de façon
 > fiable. Le site affiche lui-même sa précision pour que tu saches quand ne pas le croire.
 
+## En bref : ce que tu as à faire
+
+**Presque rien.** Une fois en ligne, tout tourne tout seul :
+- **chaque heure**, le site se met à jour avec les derniers cours ;
+- **chaque soir**, les IA sont réévaluées et l'historique des prévisions est sauvegardé ;
+- **chaque nuit**, l'IA s'entraîne sur GitHub et retient tout ce qu'elle apprend ;
+- **toutes les 6 heures**, une surveillance relance ce qui serait en panne, et t'envoie un e-mail si ça dure.
+
+Pour tout le reste, il n'y a qu'**un seul fichier** : double-clique sur **`Radar Bourse.bat`**, puis tape un numéro dans le menu.
+
+| N° | Choix du menu | Quand l'utiliser |
+|---|---|---|
+| 1 | Installer une nouvelle version reçue en zip | Quand tu reçois `radar_bourse_mise_a_jour.zip` (laisse-le dans Téléchargements) |
+| 2 | Remettre le site en ligne | Après une modification faite à la main |
+| 3 | Entraîner l'IA sur ce PC | Facultatif : en plus de l'entraînement automatique de chaque nuit |
+| 4 | Mon bilan privé | Pour savoir combien de fois les IA ont vraiment eu raison |
+| 5 | Voir le site sur ce PC | Pour regarder sans passer par Internet |
+| 6 à 9 | Google, statistiques, nom de domaine, Telegram | Réglages facultatifs, à faire une fois |
+
+Les anciens fichiers `.bat` marchent toujours ; le menu les regroupe.
+
 ## Installation (une seule fois)
 
 1. Installe Python 3.10 ou plus récent depuis python.org (sur Windows, coche **« Add Python to PATH »**).
@@ -111,13 +132,236 @@ Le **défi pronostic** permet de parier (sans argent) contre le radar et de comp
 - **Alertes Telegram** (facultatif) : chaque soir, le robot publie les signaux forts sur ta chaîne.
   Pour l'activer plus tard : double-clique sur `alertes_telegram.bat`.
 
+# Historique des versions
+
+## Version 36 : voir venir les baisses
+
+Ton test a montré que, quand les méthodes disent souvent « baisse », elles ont raison moins d'une fois sur deux. Deux réponses honnêtes :
+
+- **Risque de forte chute** (sur les fiches et dans une nouvelle page classement) : la probabilité de perdre plus de 10 % dans le mois, comparée à l'habitude pour une action ou une crypto.
+  - C'est bien plus prévisible que le sens du prix, parce que c'est lié à l'agitation.
+  - Elle est testée chaque soir sur des années jamais vues, et affichée seulement si elle bat le hasard de façon sûre (note de tri au-dessus de 0,55).
+- **Le test sur 5000 cas a une nouvelle partie « 5. Prévoir les baisses »** :
+  - A : un avis « baisse » donné seulement là où il a eu raison au moins 55 fois sur 100 les années d'avant, avec sa fréquence et sa vraie réussite ;
+  - B : le risque de forte chute, mesuré sur tous les cas.
+  - C : quand les avis très pessimistes sont suivis de hausses, le test vérifie année par année s'il s'agit d'un vrai effet « rebond » régulier, ou de quelques mois exceptionnels comme un krach suivi d'une remontée.
+- **Le nom du site, pour Google** :
+  - l'accueil s'appelle maintenant « Radar Bourse : prévisions bourse et crypto par IA… », avec le nom en premier ;
+  - des données structurées disent à Google le nom du site, ses variantes (« Bourse Radar », « RadarBourse »…), son logo et son dépôt GitHub. C'est ce qui aide à sortir sur les recherches « radar bourse ».
+- **Deux dernières méthodes pour le sens du prix** dans le test (partie 4) :
+  - le risque de forte chute utilisé comme indice, puisque c'est la prévision la plus forte de l'IA ;
+  - le choix automatique, chaque année, de la méthode qui a le mieux marché les années d'avant, sans regarder l'avenir.
+- Résultat sur tes vrais cours (1 372 603 cas) : le risque de forte chute a une note de tri de 0,683. Une chute de plus de 10 % arrive 20,3 % du temps quand l'IA annonce un risque élevé, contre 8,4 % d'habitude et 4,5 % quand elle annonce un risque faible.
+
+## Version 35 : la sélection IA du mois, le calculateur de risque et plus de pages utiles
+
+D'après ton test précis (758 469 cas des années jamais vues), la prudence par marché fait 2801 sur 5000 et l'IA seule 2783. Les vraies forces de l'IA sont l'agitation (plus juste que la méthode simple 62,5 % du temps) et « mieux que son marché ». Cette version s'appuie sur elles.
+
+- **Sélection IA du mois** (`portefeuille.html`) : au premier calcul du soir de chaque mois, les 10 actions auxquelles l'IA donne le plus de chances de battre leur indice sont enregistrées avec le prix du jour, et ce choix n'est plus jamais modifié. Le site suit ensuite, sur un mois, chaque titre face à son indice (CAC 40, Euro Stoxx 50, S&P 500), avec un bilan de tous les mois, ratés compris.
+- **« Mieux que son marché » amélioré** : deux nouvelles versions sont testées chaque soir. L'une compare les indicateurs entre titres du jour, l'autre fait la même chose en apprenant à classer. Elles ne sont gardées que si elles font mieux. Ton test les mesure aussi, sur tous les cas.
+- **Calculateur « Combien ça peut bouger ? »** sur chaque fiche : tu tapes un montant, et il affiche la variation habituelle sur un mois et la fourchette 8 fois sur 10, d'après l'agitation prévue par l'IA.
+- **Une page par mot du glossaire** (25 pages) : définition, à quoi ça sert, le piège à éviter et, quand c'est possible, un exemple avec les chiffres du jour (VIX actuel, PER les plus bas, stop-loss de LVMH…).
+- **La semaine en Bourse** (`semaines.html`) : un résumé automatique chaque semaine, avec les indices, les plus fortes hausses et baisses, et les titres les plus agités prévus.
+- **Images pour Google Discover** : une grande image pour chacun des 7 derniers points du jour.
+- **Hors connexion sur téléphone** : le site déjà ouvert une fois s'affiche même sans réseau. En ligne, il demande toujours d'abord les cours du jour, il ne montre jamais une vieille copie quand le réseau marche.
+- **IndexNow** : chaque soir, toutes les pages du plan du site (plus de 500) sont envoyées d'un coup à Bing, DuckDuckGo, Yahoo, Yandex et Seznam, au lieu de 6. Google, lui, lit le sitemap.
+- **Campagne** :
+  - `campagne_google.bat` lit maintenant l'export « Performances » de Search Console. Il liste les pages souvent vues mais peu cliquées, et les recherches presque en première page.
+  - Nouveau fichier `LISTES_A_PROPOSER.md`, avec les textes prêts à copier pour GitHub, awesome-quant, AlternativeTo et Product Hunt.
+
+## Version 33 : 169 titres, filtre de recherche, prévisions honnêtes à un an
+
+- **169 titres au lieu de 99** :
+  - toutes les grandes valeurs de Paris (Engie, Michelin, Thales, Renault, Danone…) ;
+  - 40 grandes actions américaines de plus (Coca-Cola, McDonald's, Boeing, Mastercard, Coinbase…) ;
+  - 12 européennes de plus (BASF, Rheinmetall, Volkswagen…).
+  La plupart servaient déjà à l'apprentissage de l'IA : le calcul ne s'alourdit presque pas.
+- **Filtre « selon mes critères »** dans « Tous les titres » : agitation prévue, avis des IA, face à son marché, dividende, PER.
+- **Chiffres d'entreprise mis en cache 24 h** et **actus mises en cache 2 h** : avec plus de titres, on reste poli avec Yahoo et Finnhub, et la mise à jour reste rapide.
+- **Questions Google sur chaque fiche** :
+  - « Quel est le dividende de X ? » et « Quel est le PER de X ? » ;
+  - « Quelle est la prévision pour X en 2026 ? ». La réponse est honnête : personne ne sait à un an. On donne la prévision à un mois et l'écart habituel du prix sur un an, tiré de sa volatilité.
+- **Nouvelle page « Prévisions 2026 »** : tous les titres avec leur agitation prévue, leurs chances à un mois et leur écart habituel sur un an.
+- **16 comparaisons de plus** : Coca-Cola ou Pepsi, Visa ou Mastercard, Renault ou Stellantis, Boeing ou Airbus… Le dividende et le PER s'ajoutent dans les tableaux.
+- **Savoir dire « baisse » (couche « climat du marché »)** : le calcul du soir teste une couche qui apprend quand dire « baisse » à partir de l'avis de l'IA et de l'état du marché (tendance de l'indice, VIX, taux, crédit, part des titres en hausse).
+  - Elle est testée année par année, en n'apprenant que sur les années d'avant.
+  - Elle n'est utilisée que si elle donne plus de bonnes directions de façon prouvée.
+  - Le résultat s'affiche sur le site dans « Savoir dire « baisse » », adoptée ou non.
+- **Campagne Google** (`campagne_google.bat`, ou le menu), à lancer une fois par semaine :
+  - il vérifie les pages en ligne comme Google (titre, description, titre principal, page bloquée) ;
+  - il rappelle les tâches de la semaine du plan ;
+  - il ouvre Search Console, copie une par une les adresses des 10 pages du jour (il suffit de les coller dans la barre d'inspection) et se souvient de celles déjà envoyées.
+  Son premier passage a trouvé des descriptions trop longues et un titre de 106 caractères : c'est corrigé.
+- **Objectif 3000 sur 5000** : le test essaie aussi 4 autres façons de décider « hausse » ou « baisse » sur les mêmes cas, chacune apprise seulement sur les années d'avant. Il dit combien de fois chacune répond « baisse », et comment elle s'en sort les années de baisse (2008, 2011, 2015, 2018, 2020, 2022). Les 4 façons :
+  - une règle de tendance du marché ;
+  - un modèle du climat économique ;
+  - deux combinaisons apprises.
+  Une méthode n'ira sur le site que si elle fait nettement mieux sur les vrais cours.
+- **Test plus précis** : 5000 cas tirés au hasard donnent une marge d'erreur d'environ ±70 (ton test a donné 2793 un jour, puis 2753 le lendemain pour la même méthode).
+  - Toutes les méthodes sont maintenant notées sur **tous** les cas des années jamais vues (des dizaines de milliers, marge d'environ ±15). L'IA actuelle est elle aussi recalée année par année, sans tricher.
+  - Pour chaque méthode, le test dit si l'écart avec l'IA actuelle est sûr ou non, et combien de fois elle a raison quand elle dit « baisse ».
+  - Une nouvelle méthode s'ajoute : le vote des 3 meilleures.
+- **Prudence par marché, sur le site** : ton test sur les vrais cours a donné 2793 sur 5000 avec cette méthode, contre 2733 pour l'IA seule et 2763 pour « toujours hausse ».
+  - Sur un marché où l'avis des IA n'a pas fait mieux que la tendance habituelle de ce marché (sur des années jamais vues), le site publie cette tendance (« il a fini plus haut N mois sur 100 »). Il l'affiche clairement comme telle, avec l'avis brut des IA pour info.
+  - Le choix des marchés est refait chaque soir.
+  - Le test d'agitation est corrigé : les cours figés faussaient la moyenne (« 261612 % »). Il affiche maintenant l'erreur habituelle (médiane) et la part des cas où l'IA est plus proche que la méthode simple (62,5 % sur tes vrais cours).
+  - Les avertissements techniques qui encombraient la fenêtre sont masqués.
+- **Objectif 2800 sur 5000, et une IA qui ose dire « baisse »** (d'après ton test sur les vrais cours : 2766 sur 5000, mais seulement 49 % de justes sur les cryptos et environ 10 points perdus en 2018, 2022 et 2026) :
+  - **Bug corrigé** : sur les versions récentes de scikit-learn, un indicateur vide sur une période (par exemple le « fear & greed », qui n'existe que depuis 2018) faisait planter les tests d'agitation et de méthodes. Il pouvait aussi faire retomber l'agitation du site sur la méthode simple sans prévenir. Ces colonnes vides sont maintenant écartées avant l'apprentissage.
+  - **Le test compare maintenant 9 façons de décider**, dont :
+    - une décision apprise par marché (l'avis de l'IA croisé avec le type de marché) ;
+    - un seuil appris pour chaque marché, qui laisse l'IA dire « baisse » bien plus souvent ;
+    - une « prudence » sur les marchés où l'IA n'a pas fait ses preuves ;
+    - un repère honnête, qui répond ce qui arrivait le plus souvent.
+    Chacune n'apprend que sur les années d'avant. Le test indique celles qui atteignent 2800.
+  - **Sur le site**, la couche « climat du marché » testée chaque soir peut apprendre que l'IA vaut moins sur les cryptos. Elle n'est utilisée que si elle donne plus de bonnes directions de façon prouvée.
+- **Plus de visibilité** :
+  - **Classements du jour** (`classements/…`), pour les recherches très tapées : actions à fort dividende, actions les moins agitées prévues, cryptos les plus volatiles, actions qui pourraient battre leur indice, PER les plus bas. Une page « Classements » est ajoutée au menu.
+  - **Flux RSS** (`flux.xml`) : le point du jour et les bilans du mois, repris par les lecteurs de flux et les agrégateurs.
+  - **Encadré à intégrer** : chaque fiche donne un code à copier pour afficher le titre (cours, agitation, avis des IA) sur un autre site, avec un lien vers la fiche. Chaque site qui l'utilise crée un lien vers Radar Bourse, ce qui compte beaucoup pour Google. Les encadrés ne sont pas indexés, pour ne pas faire de doublons. Les conditions d'utilisation autorisent cet encadré.
+- **Toncoin et cryptos à trous** : si Yahoo renvoie une série trop courte ou figée pour une crypto, le site prend maintenant l'historique de Binance, au lieu d'ignorer le titre. C'était pour ça que Toncoin manquait dans ton test.
+- **Balises essentielles ajoutées** sur toutes les pages :
+  - `author`, `application-name`, `apple-mobile-web-app-title` ;
+  - `format-detection` : sur iPhone, les prix ne se transforment plus en numéros de téléphone ;
+  - `og:image:alt` et `twitter:image:alt`, la description de l'image de partage ;
+  - `robots` complété (`max-snippet:-1`, `max-video-preview:-1`).
+  Les pages anglaises ont maintenant des données structurées (WebPage). Sur les fiches d'actions, l'entreprise est décrite comme une `Corporation` avec son symbole boursier. Vérifié : aucune balise en double, et les données structurées sont valides.
+- **Titres Google retravaillés** pour coller à ce que les gens tapent : « Action LVMH (MC.PA) : cours, prévision et analyse IA », « Bitcoin (BTC) : cours, prévision et analyse IA ». L'accueil devient « Prévisions bourse et crypto par IA, gratuites et vérifiées ».
+- **Test sur 5000 cas** (`tester_ia.bat`, ou choix 5 du menu) : l'IA s'entraîne sur le passé, prévoit des mois qu'elle n'a jamais vus, puis on tire 5000 cas au hasard et on compte ses bonnes réponses. Il mesure trois choses : le sens du prix, « mieux que son marché » et l'agitation, chaque fois comparées à une référence simple, avec la marge d'erreur, et détaillé par marché et par année. Il est calculé avec les vrais cours, sur ton PC, et le rapport reste dans « rapports ».
+- **Correction du suivi** : un titre retiré de la cote (cours figé) avait été enregistré à la date de son dernier cours (février 2025). La page « Résultats réels » annonçait donc « premiers résultats vers mars 2025 ». Ces lignes fantômes sont maintenant ignorées, et une prévision n'est plus jamais enregistrée sur un cours de plus de 10 jours.
+- **Corrections** :
+  - les numéros internes de Yahoo n'apparaissent plus dans le tableau des titres, ni dans les dernières prévisions vérifiées ;
+  - les pages Google (françaises et anglaises) ont maintenant une zone principale et un pied de page bien marqués, pour les lecteurs d'écran (vérifié avec axe : aucune erreur) ;
+  - le filtre d'agitation s'adapte aux titres du jour (un tiers des titres dans chaque groupe), au lieu de seuils fixes qui pouvaient ne rien donner.
+
+## Version 32 : deux nouvelles façons d'apprendre, et plus de contradictions
+
+- **« Comparer les titres entre eux »** : l'IA peut voir chaque indicateur comme une place parmi les titres du jour (« RSI parmi les plus hauts ») au lieu d'un chiffre brut. Ça marche pareil en marché calme ou agité. Cette façon de prévoir est testée chaque soir, et l'entraînement de la nuit l'explore aussi.
+- **« Ignorer les petits mouvements »** : à l'entraînement, l'IA peut laisser de côté les cas où le titre a fini presque pareil que les autres (du pur pile ou face). Seul l'entraînement de la nuit l'essaie, avec 20 %, 35 % ou 50 % des cas retirés.
+- Comme toujours, ces options ne sont adoptées que si elles font mieux sur les vraies données.
+- **Bilan du mois** : une page par mois (`bilan/2026-10.html`…) avec le score honnête, la comparaison avec la référence naïve, l'agitation prévue contre la réalité, les plus beaux coups ET les pires ratés. Les pages sont reliées depuis « Résultats réels ».
+- **Pages « X ou Y ? »** : 31 comparaisons très recherchées sur Google (or ou bitcoin, MSCI World ou S&P 500, LVMH ou Hermès, Nvidia ou AMD…), mises à jour automatiquement. Elles sont reliées depuis les fiches, avec une page « Comparer » dans le menu.
+- **Image de partage par titre** : partager la page d'un titre affiche maintenant sa propre carte (prix, variation, mini-courbe, agitation prévue, avis des IA).
+- **Accueil** : « Ce que le radar prévoit » remonte juste après la météo du marché. Le texte d'accueil dit ce que les IA prévoient le mieux (l'agitation, et la comparaison avec son marché). Dans « Chances de hausse », les titres avec un avis net passent en premier.
+- **Corrections** :
+  - « le 1 septembre » devient « le 1er septembre » ;
+  - quand les IA n'ont pas d'avis net, la fiche, le résumé en 3 points et les pages Google (français et anglais) n'affichent plus en même temps « 58 chances sur 100 de monter ». Le chiffre brut est présenté comme tel ;
+  - dans les alertes Telegram, les cryptos n'affichent plus le numéro interne de Yahoo (TON-USD au lieu de TON11419-USD).
+
+## Version 31 : de nouvelles façons de prévoir, testées chaque soir
+
+- **IA « classement »** : au lieu de deviner « monte / baisse », elle apprend à classer les titres du plus prometteur au moins prometteur. C'est souvent plus stable en bourse.
+- **IA « par ambiance »** : une IA pour les marchés calmes, une autre pour les marchés nerveux (selon le VIX).
+- **Nouveaux indicateurs** :
+  - l'élan ajusté au risque (hausse divisée par l'agitation) ;
+  - le rang de chaque titre dans sa famille (actions ou cryptos).
+- **IA n°2 plus sobre** : une version avec moins d'indicateurs est essayée, et gardée seulement si elle fait mieux.
+- **Prévision « mieux que son marché »** : la version classement est essayée et gardée seulement si elle fait mieux.
+- **Journal du ton des actus** : chaque jour, il est enregistré pour qu'on puisse vérifier plus tard s'il aide vraiment.
+- **Entraînement de la nuit** : il explore aussi ces nouvelles options. Le dimanche, il teste en plus un univers d'apprentissage élargi (environ 80 titres de plus).
+- **Site** : une carte « Les façons de prévoir testées » montre honnêtement le score de chaque recette.
+- **Règle d'or inchangée** : une nouveauté n'est adoptée que si elle prouve qu'elle fait mieux sur les vraies données. Sinon, l'ancienne recette reste.
+
+## Version 30 : finitions graphiques
+
+- **Logo radar dans l'en-tête**, le même dessin que l'icône de l'onglet. Il est masqué sur les très petits écrans.
+- **Mini-courbes plus lisibles** : une aire légère sous la courbe et un point final bien détaché.
+- **Carte des chances et des risques** : les quatre coins sont expliqués en mots (« Plus de chances, et calme »…), une vraie légende dessinée montre point plein / rond vide, et le point survolé est mis en évidence.
+- **Arène** : une ligne pointillée marque le prix du jour mystère, et une étiquette affiche le résultat final (« +9,0 % ») au bout de la courbe.
+- **Fiche** : la ligne de confiance ne commence plus par un « · » orphelin.
+- **Signal technique** : une bulle d'aide explique qu'il est indépendant de l'avis des IA.
+- **Corrections** :
+  - en mode simple, les prévisions prennent toute la largeur ;
+  - dans l'agenda, les dates ne se coupent plus en deux ;
+  - sur mobile, le nom du site ne passe plus à la ligne.
+
+## Version 29 : l'IA apprend toute seule, chaque nuit
+
+- **Entraînement automatique** (nouvelle tâche GitHub « Entraînement automatique de l'IA ») : chaque nuit à 2 h 40 UTC, un entraînement « rapide » tourne sur GitHub avec les vrais cours ; le dimanche, c'est un entraînement « normal », avec l'examen des crises et des horizons.
+  - La recherche est guidée par la mémoire de tous les essais passés, et la mémoire grandit chaque nuit.
+  - Une nouvelle recette n'est adoptée que si elle fait mieux de façon prouvée. Dans ce cas, le site est mis à jour tout de suite.
+  - Tu n'as rien à faire. Tu peux toujours lancer `entrainement_ia.bat` sur ton PC en plus ; les deux mémoires sont fusionnées.
+- **Plus aucune connaissance perdue.** La mise à jour du soir fusionne maintenant ce qu'elle enregistre avec ce que les entraînements ont appris entre-temps, au lieu de l'écraser.
+- **Surveillance qui répare toute seule** (toutes les 6 h) :
+  - si le site n'a pas été mis à jour depuis 6 h, la mise à jour est relancée ;
+  - après 26 h, GitHub t'envoie aussi un e-mail ;
+  - si l'IA n'a pas été entraînée depuis 3 jours, l'entraînement est relancé.
+- **Robustesse.** Une mise à jour interrompue au milieu d'un envoi ne bloque plus les suivantes.
+
+## Version 28 : revue complète du site
+
+**Corrections**
+- **Accueil.** Sous le graphique du jour, il n'y a plus qu'un résumé en 3 points et un lien vers la fiche, au lieu de tout répéter (3 500 px de moins sur mobile).
+- **Fiche.** L'agitation prévue n'apparaît plus deux fois. Sa fiabilité est donnée dans le résumé en 3 points.
+- **Mini-robots.** Les cartes sont plus compactes : un verdict clair, les signaux du jour, et « Comment il raisonne » qui se déplie. Une phrase trop affirmative sur les fonds professionnels a été corrigée.
+- **Arène.** Une invitation remplace le grand cadre vide avant la première partie.
+- **Pourcentages.** Ils ne passent plus à la ligne dans les listes sur mobile.
+
+**Ajouts**
+- **Page publique « Les mini-robots »** (robots.html). On y trouve leurs règles, leur vrai palmarès et leurs signaux du jour, avec des liens vers chaque titre. Elle est mise à jour chaque jour, ajoutée au plan du site et reliée depuis toutes les pages.
+- **Bouton « haut de page »** quand on descend loin dans la page, surtout utile sur mobile.
+- **Touche « / »** sur ordinateur, pour aller directement à la recherche.
+
+## Version 27 : l'IA dit ce qu'elle sait vraiment faire
+
+Cette version part des **vrais résultats** du site en ligne, qui montrent trois choses :
+- Pour deviner si un prix va monter, les IA sont à peine meilleures que le hasard.
+- Pour dire si un titre fera mieux que son marché, elles sont un peu meilleures.
+- Pour prévoir l'agitation (de combien un prix va bouger), elles sont nettement meilleures.
+
+Le site s'organise maintenant autour de ça :
+- **Résumé en 3 points sur chaque fiche** : agitation prévue, face à son marché, sens du prix. Chaque point affiche sa fiabilité réelle (« juste X fois sur 100, hasard : Y »).
+- **« Pas d'avis » par marché.** Si, sur un marché (par exemple les cryptos), même les avis tranchés n'ont pas fait mieux que « toujours la même réponse », le site ne donne plus d'avis de direction sur ce marché, et il explique pourquoi.
+- **« Pas d'avis net » aussi pour la comparaison avec le marché**, calculé de la même façon.
+- **Classement par défaut** : le site ouvre sur la compétence la plus fiable des IA.
+- **Deux nouvelles recettes testées chaque soir** : indicateurs de base + avis des robots, et indicateurs de base + économie. Elles ne sont adoptées que si elles font mieux de façon prouvée.
+- **Entraînement.** Le résultat est maintenant **toujours enregistré sur ton PC**, même si tu fermes la fenêtre ou choisis « Ne rien envoyer ». La prochaine mise en ligne l'envoie automatiquement. Avant, tes entraînements n'arrivaient jamais sur le site.
+- **Corrections.**
+  - Les numéros internes de Yahoo n'apparaissent plus (« TON-USD » au lieu de « TON11419-USD »).
+  - La confiance affichée est toujours « faible » quand il n'y a pas d'avis net.
+  - Les pages Google ont une question « va-t-il faire mieux que son marché ? ».
+
+## Version 26 : l'Arène, les mini-robots, plus de cryptos
+
+- **Avertissement d'entrée.** Une fenêtre claire au premier passage résume ce qu'il faut savoir : rien n'est sûr, ce ne sont pas des conseils, on peut perdre de l'argent.
+- **L'Arène** (anciennement « Remonte le temps ») :
+  - deux modes, partie libre et défi du jour (5 manches, le même pour tout le monde, score à copier et partager) ;
+  - des points (+10 si tu as raison, +5 de bonus si tu bats l'IA, −3 si tu demandes son avis avant de répondre) ;
+  - des séries, 6 badges et un tableau de bord.
+
+  Il n'y a jamais d'argent en jeu. Le mode expert n'a volontairement pas été transformé en casino : mélanger Bourse et jeux d'argent pousse à parier.
+- **Les mini-robots.** 9 stratégies classiques avec des règles fixes : suiveur de tendance, chasseur de rebonds (RSI), momentum 6 mois, cassure des « Turtle traders », MACD, Bollinger, le prudent, et pour les cryptos l'horloge du halving et le contrarien de la peur. Pour chacun, le site montre :
+  - ses signaux du jour ;
+  - son vrai palmarès sur tout l'historique, comparé à « toujours acheter ».
+
+  Chaque fiche affiche aussi leurs votes. L'IA reçoit leur avis moyen comme indicateur, et ne s'en sert que s'il l'aide de façon prouvée.
+- **31 cryptos au lieu de 16**, avec le prix en direct via Binance (Toncoin, Shiba Inu, Uniswap, Sui, Aptos, Pepe…).
+- **Carte des chances et des risques.** C'est un nouveau graphique interactif : chaque titre placé selon ses chances de hausse et son agitation prévue, avec un filtre par marché, une info-bulle et un clic pour ouvrir la fiche. Il est utilisable au clavier.
+- **État des marchés en direct** (Paris, Francfort, New York ouverts ou fermés, cryptos 24 h/24) et **agenda des résultats d'entreprises** des 30 prochains jours.
+- **Corrections.**
+  - Les titres aux cours figés (crypto abandonnée, homonyme sur Yahoo) ne reçoivent plus de prévision.
+  - Les très petits prix (SHIB, PEPE) ne s'affichent plus en « 1.2e-05 » sur les pages Google.
+  - Une phrase trop flatteuse de la FAQ a été corrigée.
+
+## Version 25 : des pages plus riches pour Google
+
+- **Pages de chaque titre plus complètes, avec un contenu propre à chacune** (environ 650 à 800 mots au lieu de 450). Elles contiennent maintenant :
+  - les performances passées ;
+  - l'entreprise en chiffres (capitalisation, PER, marges, dette, dividende) ;
+  - le palmarès réel des IA sur ce titre ;
+  - des questions fréquentes, celles que les gens tapent vraiment (« LVMH va-t-il monter ? », « Faut-il acheter… ? », « Quand LVMH publie-t-il ses résultats ? »), avec des réponses honnêtes tirées des chiffres du jour ;
+  - des liens vers les titres du même marché.
+- **5 pages par marché**, qui visent des recherches plus larges : actions françaises (CAC 40), actions européennes, actions américaines, cryptomonnaies, ETF et indices. Chacune a son tableau du jour (cours, chances de hausse, agitation prévue).
+- **Fil d'Ariane et données structurées** (BreadcrumbList, FAQPage) : Google comprend mieux l'organisation du site.
+- Les nouvelles pages sont ajoutées automatiquement au plan du site (sitemap) et reliées depuis l'accueil.
+
 ## Être trouvé sur Google : `google.bat`
 
 Double-clique sur `google.bat` : il te guide pas à pas pour inscrire le site sur Google Search Console. Il ouvre la page, tu colles le code, il l'ajoute au site et republie, puis il te dit quoi valider. Compte 5 minutes.
 
 ## Mettre à jour en un clic (version 24)
 
-1. Télécharge le nouveau `radar_bourse.zip`. Laisse-le dans Téléchargements, inutile de le dézipper.
+1. Télécharge le nouveau `radar_bourse_mise_a_jour.zip`. Laisse-le dans Téléchargements, inutile de le dézipper.
 2. Double-clique sur `mettre_a_jour.bat`, dans ton dossier Radar Bourse habituel.
 
 Le script trouve le zip, remplace le code par la nouvelle version, puis met le site en ligne avec tes réponses habituelles. Il ne touche jamais :
@@ -409,3 +653,23 @@ Tout se règle dans `bourse_bot/config.py` : listes de titres, horizon de prédi
 - **« python n'est pas reconnu »** : réinstalle Python en cochant « Add Python to PATH ».
 - **Beaucoup de titres ignorés** : Yahoo bloque parfois temporairement. Attends quelques minutes et relance.
 - **Autre erreur** : copie le message rouge complet, il indique le fichier et la ligne en cause.
+
+- **Version 37** : le site n'affiche plus « Plutôt à la baisse » si les avis « baisse » de l'IA n'ont pas été justes plus d'une fois sur deux sur les années testées (ton test : 45,8 %). À la place : « Pas d'avis net ».
+- **Version 38** : 101 guides (débuter en bourse, petit budget, argent facile, arnaques, trading, crypto, ETF, dividendes, PER…) avec une page « Guides », un lien dans le menu, et les chiffres du jour (agitation, risque de chute) quand c'est utile. Ils sont ajoutés automatiquement au sitemap.
+- **Version 39** : jusqu'à 450 duels « X ou Y ? » (avant : 47), créés automatiquement entre actions du même marché et du même secteur, et entre les 14 plus grosses cryptos. Chaque duel affiche les vrais chiffres du jour.
+- **Version 39 (suite)** : 20 classements par marché (actions françaises, européennes ou américaines à fort dividende, calmes, agitées, à risque de chute, PER bas, mieux que leur indice) + cryptos calmes et à risque de chute + une page par secteur (santé, énergie, technologie…).
+- **Version 40** : la Sélection IA du mois écarte le quart des candidats au plus fort risque de chute prévu (la prévision la plus fiable du radar).
+- **Version 41 (corrections)** : liens « Comparer » des fiches réparés (plus de 400 liens cassés depuis les duels automatiques), liens du glossaire PER réparés, lien « La semaine en Bourse » affiché seulement s'il existe, page Sélection IA toujours présente, titres et descriptions trop longs raccourcis pour Google, phrase « le radar voit X non disponible » corrigée, guides sans lien vers un classement absent.
+- **Kit de campagne** : KIT_CAMPAGNE.md (calendrier de 14 jours, posts Reddit/Discord/Show HN prêts à copier, 4 scripts de vidéos courtes, réponses aux commentaires).
+- **Version 42 (balises)** : données structurées ItemList + fil d'Ariane sur les classements, les pages secteurs, la page Guides et le hub des classements ; fil d'Ariane sur les 450 duels ; description anglaise raccourcie. 946 blocs de données structurées vérifiés sans erreur.
+- **Version 43 (test de l'IA plus dur)** : nouvel « examen final » dans tester_ia : une méthode ne réussit que si elle bat « toujours hausse » 1) de façon sûre même en comptant toutes les méthodes essayées, 2) sur la majorité des années, 3) sur les 24 derniers mois ; et le test montre de combien le score sur 5000 varie d'un tirage à l'autre (30 tirages).
+- **Version 44** : l'avertissement d'ouverture a un 4e point « Nous ne sommes pas responsables » (pertes, erreurs ou retards de données, décisions ; réservé aux majeurs) et renvoie à l'article 10 des conditions. Il réapparaît une fois chez tous les visiteurs.
+- **Version 45** : Toncoin réparé à la source (Yahoo ne renvoie plus que le jour même : nouveau secours CryptoCompare après Binance, téléchargement via « requests » pour éviter les erreurs de certificats sur Windows, et un fichier en cache presque vide n'est plus gardé). Test de l'IA : noms des méthodes complets dans l'examen final. Expérience sur ~200 000 cas réels (2005–2026) : aucune nouvelle méthode pour le sens du prix ne réussit l'examen final, la prévision n'est donc pas modifiée.
+- **Version 46** : nouvel onglet « Risque de forte chute » dans les prévisions de l'accueil (la prévision la plus fiable du radar ; affiché seulement si elle a fait ses preuves) ; chiffres des listes de l'accueil qui ne se coupent plus en deux sur téléphone.
+- **Version 47 (grande mise à jour)** : le site dans 14 langues (français, anglais, espagnol, allemand, italien, portugais, néerlandais, russe, turc, arabe, hindi, chinois, japonais, coréen) avec balises hreflang partout ; 95 guides traduits en anglais ; 15 nouvelles cryptos (Monero, Kaspa, Render, Bittensor, Quant, Tezos, EOS, Zcash, Dash, Ondo, Ethena, The Sandbox, Decentraland, Theta, Pudgy Penguins) ; suivi public du risque de chute (10 titres les plus et 10 les moins à risque chaque mois, résultat publié) ; calendrier des résultats des entreprises ; duels enrichis (risque de chute, « lequel va bouger le plus ? »). Environ 3 500 pages, vérifiées sans lien cassé.
+- **Version 48** : agitation prévue sur une semaine (5 séances) — testée sur les vrais cours : plus proche de la réalité que « comme la semaine dernière » dans 57,7 % des 328 000 cas, et meilleure 24 années sur 24 ; affichée sur les fiches, dans un onglet « Agités cette semaine » de l'accueil, sur les pages de chaque langue, et vérifiable dans tester_ia (section 3 bis). 20 nouvelles cryptos (Optimism, Polygon, Stacks, Immutable, Lido, Fetch.ai, The Graph, Sei, Celestia, Jupiter, dogwifhat, Bonk, Floki, Worldcoin, Pyth, Starknet, Gala, Axie Infinity, Curve, THORChain), dont les cours viennent directement de Binance puis CryptoCompare (pas de Yahoo : symboles ambigus) — 66 cryptos en tout. Cours en direct : les cryptos absentes de Binance (Monero, Kaspa…) passent par CryptoCompare toutes les 30 s.
+- **Version 49 (IA « pro » et surveillance)** : tester_ia affiche les notes des professionnels (score de Brier, écart entre probabilités annoncées et réelles) et garde l'historique de chaque test (rapports/historique_tests.csv) avec une alerte si une note baisse nettement. Le site prévient les visiteurs par un bandeau si les prévisions sont en retard ou si une source de données n'a pas répondu. Tests sur 515 000 cas réels : fourchettes (78,7 % tenues pour 80 % promis), risque de chute (écart 2,4 points) et agitation sont déjà calibrés au mieux — aucune des 9 variantes testées ne fait mieux, donc rien n'est changé. Audit : accessibilité sans défaut, affichage en moins d'une seconde sur téléphone en 4G lente, prix identiques sur 1 030 pages.
+- **Version 50** : page « Fiche technique de l'IA » (résultats mesurés, données, méthode de test, limites, surveillance), mise à jour chaque soir avec les vrais chiffres ; chaque fiche de titre affiche si la promesse de la fourchette est tenue (années testées et conditions réelles) ; lien dans le menu et le pied de page ; affichage plus robuste si un chiffre du modèle manque.
+- **Version 50 (balises)** : données structurées ajoutées — jeu de données (Dataset) pour le suivi du risque de chute, liste pour le calendrier des résultats, fil d'Ariane sur la fiche technique, les guides anglais et les pages des 12 autres langues. 3 694 blocs vérifiés sans erreur.
+- **Version 51** : toutes les pages (fiches, guides, classements, comparaisons, 13 langues) ont la même identité que l'appli : en-tête avec logo, menu en pastilles (la rubrique en cours est marquée), mêmes polices, bouton clair/sombre ; le thème et les réglages de lecture choisis dans l'appli sont repris partout (plus de page blanche en mode sombre). Vraie page 404 au design du site. Balises : couleur de barre en clair et en sombre, color-scheme, og:locale:alternate ; titres trop longs raccourcis.
+- **Version 51 (IA)** : le risque de forte chute regarde aussi le risque propre à chaque titre (volatilité hors marché, bêta, à-coups, liquidité). Testé sur des périodes jamais vues : meilleur sur les 5 marchés (note 0,754 contre 0,747 ; dans chaque marché 0,647 contre 0,637 ; les 10 % jugés les plus risqués chutent 2,1× plus souvent que d'habitude contre 1,9×). Des IA séparées cryptos / actions ont été testées : moins bonnes, écartées. Même ajout pour l'agitation à un mois (erreur médiane 23,9 % contre 24,2 %, mieux sur les 5 marchés) ; les autres variantes (IA séparées, cible relative, modèle plus fin) faisaient moins bien.

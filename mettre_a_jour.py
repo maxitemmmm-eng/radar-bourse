@@ -1,6 +1,6 @@
 """Mise à jour en un clic.
 
-1. Télécharge le nouveau radar_bourse.zip (il arrive en général dans « Téléchargements »).
+1. Télécharge le nouveau radar_bourse_mise_a_jour.zip (il arrive en général dans « Téléchargements »).
 2. Double-clique sur mettre_a_jour.bat, dans ton dossier Radar Bourse habituel.
 
 Le script trouve le zip le plus récent, remplace le code de ton dossier par la nouvelle version
@@ -14,7 +14,7 @@ import os
 import subprocess
 import sys
 import zipfile
-from datetime import datetime
+from datetime import datetime, timedelta
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 os.chdir(ICI)
@@ -34,9 +34,23 @@ def trouver_zip():
              os.path.dirname(ICI)]
     zips = []
     for lieu in lieux:
-        zips += glob.glob(os.path.join(lieu, "radar_bourse*.zip"))
-    zips = [z for z in set(zips) if os.path.isfile(z) and "_installe_" not in os.path.basename(z)]
+        zips += glob.glob(os.path.join(lieu, "*radar_bourse*.zip"))
+    zips = [z for z in set(zips) if os.path.isfile(z) and "_installe_" not in os.path.basename(z)
+            and "_ancien_" not in os.path.basename(z)]
     return max(zips, key=os.path.getmtime) if zips else None
+
+
+def date_code_zip(chemin_zip):
+    """Date du code contenu dans le zip (dates des fichiers à l'intérieur, pas date de téléchargement)."""
+    with zipfile.ZipFile(chemin_zip) as z:
+        dates = [datetime(*i.date_time) for i in z.infolist() if "bourse_bot/" in i.filename and i.filename.endswith((".py", ".html"))]
+    return max(dates) if dates else None
+
+
+def date_code_local():
+    dossier = os.path.join(ICI, "bourse_bot")
+    dates = [os.path.getmtime(os.path.join(dossier, f)) for f in os.listdir(dossier) if f.endswith((".py", ".html"))]
+    return datetime.fromtimestamp(max(dates)) if dates else None
 
 
 def racine_du_zip(noms):
@@ -78,9 +92,29 @@ def main():
         return 1
     z = trouver_zip()
     if not z:
-        dire("Aucun fichier radar_bourse.zip trouvé dans Téléchargements, sur le Bureau ou dans ce dossier.")
-        dire("Télécharge d'abord la nouvelle version, puis relance ce fichier.")
-        return 1
+        # Pas de nouvelle version : on met directement le site à jour avec la version actuelle (comme mettre_en_ligne)
+        dire("Pas de nouvelle version en zip : je garde la version actuelle et je mets le site à jour directement.\n")
+        if "--sans-envoi" in sys.argv:
+            return 0
+        return subprocess.call([sys.executable, os.path.join(ICI, "mettre_en_ligne.py")], cwd=ICI)
+    # Version 51 : sécurité. Un vieux zip oublié ne doit JAMAIS remplacer une version plus récente
+    # (c'est arrivé : un ancien zip a été réinstallé puis mis en ligne).
+    try:
+        dz, dl = date_code_zip(z), date_code_local()
+    except (OSError, zipfile.BadZipFile, ValueError):
+        dz = dl = None
+    if dz and dl and dz < dl - timedelta(hours=3):
+        dire(f"⚠️ Ce zip contient une version PLUS ANCIENNE que la tienne ({dz:%d/%m/%Y %H:%M} contre {dl:%d/%m/%Y %H:%M}) :")
+        dire(f"   {z}")
+        dire("   Je ne l'installe pas, et je le renomme en « _ancien_ » pour ne plus le reprendre.\n")
+        try:
+            os.replace(z, z[:-4] + f"_ancien_{datetime.now():%Y%m%d_%H%M}.zip")
+        except OSError:
+            pass
+        if "--sans-envoi" in sys.argv:
+            return 0
+        dire("Je mets directement le site à jour avec ta version actuelle.\n")
+        return subprocess.call([sys.executable, os.path.join(ICI, "mettre_en_ligne.py")], cwd=ICI)
     quand = datetime.fromtimestamp(os.path.getmtime(z)).strftime("%d/%m/%Y à %H:%M")
     dire(f"Nouvelle version trouvée : {z}  (du {quand})")
     if "--oui" not in sys.argv:

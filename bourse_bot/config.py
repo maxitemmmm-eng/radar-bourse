@@ -8,6 +8,12 @@ ACTIONS_FR = {
     "SAF.PA": "Safran", "CS.PA": "AXA", "DG.PA": "Vinci", "KER.PA": "Kering",
     "STLAP.PA": "Stellantis", "GLE.PA": "Société Générale", "CAP.PA": "Capgemini",
     "DSY.PA": "Dassault Systèmes", "ORA.PA": "Orange", "RI.PA": "Pernod Ricard",
+    # ajoutées en version 33 : les autres grandes valeurs de la Bourse de Paris
+    "ENGI.PA": "Engie", "VIE.PA": "Veolia", "SGO.PA": "Saint-Gobain", "LR.PA": "Legrand",
+    "ML.PA": "Michelin", "PUB.PA": "Publicis", "ACA.PA": "Crédit Agricole", "BN.PA": "Danone",
+    "HO.PA": "Thales", "EN.PA": "Bouygues", "STMPA.PA": "STMicroelectronics", "RNO.PA": "Renault",
+    "AC.PA": "Accor", "ERF.PA": "Eurofins Scientific", "TEP.PA": "Teleperformance", "URW.PA": "Unibail-Rodamco-Westfield",
+    "BVI.PA": "Bureau Veritas", "AM.PA": "Dassault Aviation", "SOI.PA": "Soitec", "UBI.PA": "Ubisoft",
 }
 
 # --- Actions américaines (grandes capitalisations)
@@ -17,6 +23,16 @@ ACTIONS_US = {
     "JPM": "JPMorgan", "V": "Visa", "NFLX": "Netflix", "AMD": "AMD",
     "PLTR": "Palantir", "COST": "Costco", "LLY": "Eli Lilly", "XOM": "ExxonMobil",
     "UNH": "UnitedHealth", "CRM": "Salesforce", "INTC": "Intel", "DIS": "Disney",
+    # ajoutées en version 33 (elles servaient déjà à l'apprentissage de l'IA)
+    "ADBE": "Adobe", "ORCL": "Oracle", "CSCO": "Cisco", "PEP": "PepsiCo", "KO": "Coca-Cola",
+    "PG": "Procter & Gamble", "JNJ": "Johnson & Johnson", "MRK": "Merck", "PFE": "Pfizer", "ABBV": "AbbVie",
+    "WMT": "Walmart", "HD": "Home Depot", "MCD": "McDonald's", "NKE": "Nike", "BA": "Boeing",
+    "CAT": "Caterpillar", "GE": "GE Aerospace", "IBM": "IBM", "QCOM": "Qualcomm", "TXN": "Texas Instruments",
+    "BAC": "Bank of America", "WFC": "Wells Fargo", "GS": "Goldman Sachs", "MS": "Morgan Stanley",
+    "T": "AT&T", "VZ": "Verizon", "CVX": "Chevron", "COP": "ConocoPhillips", "SBUX": "Starbucks",
+    "UPS": "UPS", "LMT": "Lockheed Martin", "HON": "Honeywell", "AMAT": "Applied Materials", "MU": "Micron",
+    "PYPL": "PayPal", "UBER": "Uber", "MA": "Mastercard", "BRK-B": "Berkshire Hathaway", "COIN": "Coinbase",
+    "MSTR": "Strategy (MicroStrategy)",
 }
 
 # --- Cryptomonnaies principales (cotées en dollars)
@@ -26,7 +42,33 @@ CRYPTOS = {
     "DOGE-USD": "Dogecoin", "AVAX-USD": "Avalanche", "LINK-USD": "Chainlink",
     "DOT-USD": "Polkadot", "LTC-USD": "Litecoin", "BCH-USD": "Bitcoin Cash",
     "TRX-USD": "Tron", "XLM-USD": "Stellar", "NEAR-USD": "Near", "ATOM-USD": "Cosmos",
+    # ajoutées en version 26 (cryptos établies, présentes sur Yahoo Finance et Binance).
+    # Les numéros après certains symboles sont ceux de Yahoo, qui distingue ainsi des jetons homonymes.
+    "TON11419-USD": "Toncoin", "SHIB-USD": "Shiba Inu", "UNI7083-USD": "Uniswap", "ICP-USD": "Internet Computer",
+    "ETC-USD": "Ethereum Classic", "HBAR-USD": "Hedera", "APT21794-USD": "Aptos", "SUI20947-USD": "Sui",
+    "ARB11841-USD": "Arbitrum", "FIL-USD": "Filecoin", "AAVE-USD": "Aave", "ALGO-USD": "Algorand",
+    "PEPE24478-USD": "Pepe", "INJ-USD": "Injective", "VET-USD": "VeChain",
+    # ajoutées en version 47 (au moins un an d'historique chez Yahoo ; secours Binance puis CryptoCompare)
+    "XMR-USD": "Monero", "KAS-USD": "Kaspa", "RENDER-USD": "Render", "TAO-USD": "Bittensor", "QNT-USD": "Quant",
+    "XTZ-USD": "Tezos", "EOS-USD": "EOS", "ZEC-USD": "Zcash", "DASH-USD": "Dash", "ONDO-USD": "Ondo",
+    "ENA-USD": "Ethena", "SAND-USD": "The Sandbox", "MANA-USD": "Decentraland", "THETA-USD": "Theta Network",
+    "PENGU-USD": "Pudgy Penguins",
+    # ajoutées en version 48 : cours pris directement chez Binance (puis CryptoCompare), pas chez Yahoo,
+    # pour éviter les jetons homonymes (même symbole, autre crypto)
+    "OP-USD": "Optimism", "POL-USD": "Polygon", "STX-USD": "Stacks", "IMX-USD": "Immutable", "LDO-USD": "Lido DAO",
+    "FET-USD": "Fetch.ai (ASI)", "GRT-USD": "The Graph", "SEI-USD": "Sei", "TIA-USD": "Celestia", "JUP-USD": "Jupiter",
+    "WIF-USD": "dogwifhat", "BONK-USD": "Bonk", "FLOKI-USD": "Floki", "WLD-USD": "Worldcoin", "PYTH-USD": "Pyth Network",
+    "STRK-USD": "Starknet", "GALA-USD": "Gala", "AXS-USD": "Axie Infinity", "CRV-USD": "Curve DAO", "RUNE-USD": "THORChain",
 }
+CRYPTOS_SANS_YAHOO = {"OP-USD", "POL-USD", "STX-USD", "IMX-USD", "LDO-USD", "FET-USD", "GRT-USD", "SEI-USD", "TIA-USD",
+                      "JUP-USD", "WIF-USD", "BONK-USD", "FLOKI-USD", "WLD-USD", "PYTH-USD", "STRK-USD", "GALA-USD",
+                      "AXS-USD", "CRV-USD", "RUNE-USD"}
+
+
+def symbole_binance(ticker: str) -> str:
+    """BTC-USD → BTCUSDT ; UNI7083-USD → UNIUSDT (on retire le numéro propre à Yahoo)."""
+    import re as _re
+    return _re.sub(r"\d+$", "", ticker[:-4]) + "USDT"
 
 # --- Grandes actions européennes (hors France), cotées en euros
 ACTIONS_EU = {
@@ -34,6 +76,10 @@ ACTIONS_EU = {
     "ADS.DE": "Adidas", "BMW.DE": "BMW", "MBG.DE": "Mercedes-Benz", "ASML.AS": "ASML",
     "INGA.AS": "ING", "ADYEN.AS": "Adyen", "PRX.AS": "Prosus", "IBE.MC": "Iberdrola",
     "ITX.MC": "Inditex", "SAN.MC": "Banco Santander", "ENEL.MI": "Enel", "RACE.MI": "Ferrari",
+    # ajoutées en version 33
+    "BAS.DE": "BASF", "BAYN.DE": "Bayer", "MUV2.DE": "Munich Re", "PHIA.AS": "Philips", "AD.AS": "Ahold Delhaize",
+    "BBVA.MC": "BBVA", "UCG.MI": "UniCredit", "ISP.MI": "Intesa Sanpaolo", "RHM.DE": "Rheinmetall",
+    "VOW3.DE": "Volkswagen", "IFX.DE": "Infineon",
 }
 
 # --- ETF de référence (indices) : servent aussi de "marché" pour comparer
@@ -55,7 +101,7 @@ ENTRAINEMENT_SUPPLEMENTAIRE = {
            "COP", "SBUX", "UPS", "LMT", "HON", "AMAT", "MU", "PYPL", "UBER"],
     "fr": ["ENGI.PA", "VIE.PA", "SGO.PA", "LR.PA", "ML.PA", "PUB.PA", "ACA.PA", "BN.PA"],
     "eu": ["BAS.DE", "BAYN.DE", "MUV2.DE", "PHIA.AS", "AD.AS", "BBVA.MC", "UCG.MI", "ISP.MI"],
-    "crypto": ["ETC-USD", "ALGO-USD", "FIL-USD", "HBAR-USD"],
+    "crypto": [],   # XTZ, EOS, ZEC et DASH sont maintenant affichés sur le site (version 47)
 }
 
 MAX_APPRENTISSAGE_EN_LIGNE = 80   # titres d'apprentissage en plus, au maximum, lors des mises à jour en ligne

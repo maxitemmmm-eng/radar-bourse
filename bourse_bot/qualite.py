@@ -17,7 +17,7 @@ import urllib.request
 import numpy as np
 import pandas as pd
 
-from . import data
+from . import config, data
 
 SAUT_MAX = {"crypto": 0.60, "autre": 0.35}   # variation quotidienne au-delà de laquelle on se méfie
 ECART_CROISE_MAX = 0.05                      # 5 % d'écart entre deux sources = suspect
@@ -59,7 +59,7 @@ def controler(donnees: dict[str, pd.DataFrame]) -> dict:
         if an["Close"].iloc[-5:].nunique() == 1:
             problemes.append("cours figé depuis 5 séances")
         if crypto and binance:
-            sym = t[:-4] + "USDT"
+            sym = config.symbole_binance(t)
             if sym in binance:
                 resume["croisees"] += 1
                 ecart = abs(binance[sym] / float(d["Close"].iloc[-1]) - 1)
