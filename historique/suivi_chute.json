@@ -1,0 +1,131 @@
+{
+ "mois": {
+  "2026-10": {
+   "date": "2026-10-28",
+   "risque_haut": [
+    {
+     "ticker": "QNT-USD",
+     "nom": "Quant",
+     "prix": 193.74000549316406,
+     "risque": 0.5483
+    },
+    {
+     "ticker": "TIA-USD",
+     "nom": "Celestia",
+     "prix": 0.5286,
+     "risque": 0.5258
+    },
+    {
+     "ticker": "STRK-USD",
+     "nom": "Starknet",
+     "prix": 0.0461,
+     "risque": 0.5155
+    },
+    {
+     "ticker": "ENA-USD",
+     "nom": "Ethena",
+     "prix": 0.19753000140190125,
+     "risque": 0.4934
+    },
+    {
+     "ticker": "ZEC-USD",
+     "nom": "Zcash",
+     "prix": 1281.1800537109375,
+     "risque": 0.4865
+    },
+    {
+     "ticker": "NEAR-USD",
+     "nom": "Near",
+     "prix": 4.606900215148926,
+     "risque": 0.4849
+    },
+    {
+     "ticker": "PEPE24478-USD",
+     "nom": "Pepe",
+     "prix": 4.879999778495403e-06,
+     "risque": 0.4701
+    },
+    {
+     "ticker": "FIL-USD",
+     "nom": "Filecoin",
+     "prix": 0.8949999809265137,
+     "risque": 0.4518
+    },
+    {
+     "ticker": "ARB11841-USD",
+     "nom": "Arbitrum",
+     "prix": 0.16734999418258667,
+     "risque": 0.4512
+    },
+    {
+     "ticker": "OP-USD",
+     "nom": "Optimism",
+     "prix": 0.1105,
+     "risque": 0.4479
+    }
+   ],
+   "risque_bas": [
+    {
+     "ticker": "IBE.MC",
+     "nom": "Iberdrola",
+     "prix": 22.030000686645508,
+     "risque": 0.0312
+    },
+    {
+     "ticker": "QQQ",
+     "nom": "Nasdaq 100 (ETF)",
+     "prix": 721.780029296875,
+     "risque": 0.03
+    },
+    {
+     "ticker": "KO",
+     "nom": "Coca-Cola",
+     "prix": 91.6050033569336,
+     "risque": 0.028
+    },
+    {
+     "ticker": "COST",
+     "nom": "Costco",
+     "prix": 987.2614135742188,
+     "risque": 0.0225
+    },
+    {
+     "ticker": "TRX-USD",
+     "nom": "Tron",
+     "prix": 0.32998284697532654,
+     "risque": 0.0207
+    },
+    {
+     "ticker": "^STOXX50E",
+     "nom": "Euro Stoxx 50 (indice)",
+     "prix": 6167.81005859375,
+     "risque": 0.0159
+    },
+    {
+     "ticker": "^FCHI",
+     "nom": "CAC 40 (indice)",
+     "prix": 7886.9599609375,
+     "risque": 0.0153
+    },
+    {
+     "ticker": "BRK-B",
+     "nom": "Berkshire Hathaway",
+     "prix": 543.6199951171875,
+     "risque": 0.0143
+    },
+    {
+     "ticker": "SPY",
+     "nom": "S&P 500 (ETF)",
+     "prix": 770.5399780273438,
+     "risque": 0.0126
+    },
+    {
+     "ticker": "CW8.PA",
+     "nom": "MSCI World (ETF Amundi)",
+     "prix": 716.4299926757812,
+     "risque": 0.0108
+    }
+   ]
+  }
+ }
+}
