@@ -3341,413 +3341,304 @@
    "crises": null
   }
  ],
- "date": "2026-10-28T18:42:45",
+ "date": "2026-10-28T20:38:08",
  "horizon": 20,
  "configuration": "Un seul modèle, indicateurs de base",
- "mode": "commun",
+ "mode": "ia1",
  "evaluation": {
-  "precision": 0.5606597987256595,
-  "precision_base": 0.5546572976835586,
-  "auc": 0.5335449955139075,
-  "nb_tests": 419825,
+  "precision": 0.5631126435257324,
+  "precision_base": 0.5637370288101317,
+  "auc": 0.5248676946237407,
+  "nb_tests": 361956,
   "calibration": [
    {
     "tranche": "< 40 %",
     "min": 0.0,
     "max": 0.4,
-    "nb": 83,
-    "taux_hausse": 0.39759036144578314,
+    "nb": 98,
+    "taux_hausse": 0.5204081632653061,
     "ic": [
-     0.299087663224007,
-     0.5051536220586227
+     0.42260631994489084,
+     0.6166703607042743
     ],
-    "rendement_moyen": 0.0
+    "rendement_moyen": 0.008219025158000437
    },
    {
     "tranche": "40–45 %",
     "min": 0.4,
     "max": 0.45,
-    "nb": 3118,
-    "taux_hausse": 0.4127645926876203,
+    "nb": 597,
+    "taux_hausse": 0.39865996649916247,
     "ic": [
-     0.39560098528241444,
-     0.43014289614962226
+     0.3601520308194973,
+     0.4384637774068305
     ],
-    "rendement_moyen": -0.003581571361116087
+    "rendement_moyen": 0.0
    },
    {
     "tranche": "45–50 %",
     "min": 0.45,
     "max": 0.5,
-    "nb": 29777,
-    "taux_hausse": 0.46710548409846525,
+    "nb": 4571,
+    "taux_hausse": 0.5375191424196019,
     "ic": [
-     0.4614432152770477,
-     0.4727762394209686
+     0.523039464117272,
+     0.5519358093435622
     ],
-    "rendement_moyen": -0.007495249967017892
+    "rendement_moyen": 0.01995390204471259
    },
    {
     "tranche": "50–55 %",
     "min": 0.5,
     "max": 0.55,
-    "nb": 127580,
-    "taux_hausse": 0.5437842922088102,
+    "nb": 66292,
+    "taux_hausse": 0.5270017498340674,
     "ic": [
-     0.5410498662403116,
-     0.5465160814525505
+     0.5231996149735617,
+     0.5308007553905426
     ],
-    "rendement_moyen": 0.00861130507963681
+    "rendement_moyen": 0.006143035303497801
    },
    {
     "tranche": "55–60 %",
     "min": 0.55,
     "max": 0.6,
-    "nb": 232530,
-    "taux_hausse": 0.5650625725712811,
+    "nb": 283774,
+    "taux_hausse": 0.5723004926455559,
     "ic": [
-     0.5630464992696118,
-     0.567076496126685
+     0.5704791914251732,
+     0.5741198363517721
     ],
-    "rendement_moyen": 0.010420161456948684
+    "rendement_moyen": 0.011431552255511734
    },
    {
     "tranche": "> 60 %",
     "min": 0.6,
     "max": 1.0,
-    "nb": 26737,
-    "taux_hausse": 0.6305868272431462,
+    "nb": 6624,
+    "taux_hausse": 0.5981280193236715,
     "ic": [
-     0.624783119143812,
-     0.6363530150308132
+     0.5862675018502052,
+     0.6098747837469644
     ],
-    "rendement_moyen": 0.019779528832184035
+    "rendement_moyen": 0.01889926742214587
    }
   ],
   "par_marche": {
    "crypto": {
-    "precision": 0.5043839719964323,
-    "base": 0.544100570505377,
-    "nb": 59421
+    "precision": 0.47433039122865955,
+    "base": 0.5264942125034359,
+    "nb": 32743
    },
    "etf": {
-    "precision": 0.5982922695867553,
-    "base": 0.6022031025941859,
-    "nb": 15342
+    "precision": 0.6026707824453094,
+    "base": 0.6060260367735875,
+    "nb": 14902
    },
    "eu": {
-    "precision": 0.5613332362294564,
-    "base": 0.5621586191828709,
-    "nb": 41193
+    "precision": 0.56214234124118,
+    "base": 0.5623090171676204,
+    "nb": 35998
    },
    "fr": {
-    "precision": 0.5563755507133428,
-    "base": 0.5487570181158844,
-    "nb": 62873
+    "precision": 0.5658433466844682,
+    "base": 0.5539385847797063,
+    "nb": 44940
    },
    "tendances": {
-    "precision": 0.5444869449526027,
-    "base": 0.5460668551471811,
-    "nb": 24052
+    "precision": 0.5450592292697556,
+    "base": 0.5470085470085471,
+    "nb": 26676
    },
    "us": {
-    "precision": 0.5763192344568183,
-    "base": 0.5795827494652998,
-    "nb": 216944
+    "precision": 0.5762299404442252,
+    "base": 0.5795197801612989,
+    "nb": 206697
    }
   },
   "periode": "03/2014 – 10/2026",
-  "verdict": "Léger avantage possible, mais pas prouvé : la marge d'erreur inclut le hasard. Les probabilités sont indicatives.",
-  "niveau_preuve": "possible",
+  "verdict": "Pas d'avantage mesurable sur le hasard : les probabilités sont indicatives seulement.",
+  "niveau_preuve": "aucun",
   "signaux_forts": {
-   "nb": 69386,
-   "precision": 0.571152682097253,
+   "nb": 77180,
+   "precision": 0.5734516714174657,
    "ic": [
-    0.5424432039220435,
-    0.5984236155878319
+    0.5456129549462545,
+    0.5988422889851956
    ],
-   "rendement_median": 0.01031885507783159,
-   "part": 0.16527362591556005,
-   "base": 0.5546572976835586
+   "rendement_median": 0.010652183592121611,
+   "part": 0.2132303373890749,
+   "base": 0.5637370288101317
   },
   "top_confiance": {
-   "nb": 41983,
-   "precision": 0.6146535502465283,
+   "nb": 36196,
+   "precision": 0.6017239473975025,
    "ic": [
-    0.5550360785429063,
-    0.6658106766446965
+    0.5535108106589508,
+    0.6424776486641478
    ],
-   "rendement_median": 0.017394643410432842,
-   "part": 0.10000119097242899
+   "rendement_median": 0.016199464786310847,
+   "part": 0.10000110510669805
   },
   "seuil_fort": 0.55,
   "configuration": "Un seul modèle, indicateurs de base",
   "comparaison": [
    {
-    "nom": "Un seul modèle, tous les indicateurs",
-    "auc": 0.5377210521292083
-   },
-   {
-    "nom": "Une IA par ambiance (calme / nerveux), indicateurs de base",
-    "auc": 0.5357867036037367
-   },
-   {
-    "nom": "Indicateurs de base + avis des mini-robots",
-    "auc": 0.5321885835309867
-   },
-   {
     "nom": "Un seul modèle, indicateurs de base",
-    "auc": 0.5319908026730842
+    "auc": 0.5248676946237407
+   },
+   {
+    "nom": "Un seul modèle, tous les indicateurs",
+    "auc": 0.5059070560499014
    },
    {
     "nom": "Un modèle par marché (actions / cryptos)",
-    "auc": 0.5313708445639859
-   },
-   {
-    "nom": "Indicateurs de base + économie",
-    "auc": 0.5313548697715074
-   },
-   {
-    "nom": "Indicateurs de base comparés entre titres du même jour",
-    "auc": 0.5270235388577964
-   },
-   {
-    "nom": "Classement des titres, indicateurs de base",
-    "auc": 0.5064882466866949
-   },
-   {
-    "nom": "Classement des titres, indicateurs de base + nouveaux",
-    "auc": 0.5056248993185138
+    "auc": 0.5052551813463346
    }
   ],
   "fourchette": {
    "cible": 0.8,
    "cible_extreme": 0.9,
-   "nb": 419825,
-   "couverture_brute": 0.7633728339188948,
-   "couverture": 0.7868307346376833,
+   "nb": 361956,
+   "couverture_brute": 0.7608908265092995,
+   "couverture": 0.7819845506083613,
    "ic": [
-    0.7716762911588919,
-    0.8019218424363613
+    0.7683983167640867,
+    0.7956050550748958
    ],
-   "ajustement": 0.007632213201774008,
-   "couverture_brute_extreme": 0.8685356993985589,
-   "couverture_extreme": 0.8939417758785783,
+   "ajustement": 0.007614792951622667,
+   "couverture_brute_extreme": 0.8673568057996,
+   "couverture_extreme": 0.8934621887743261,
    "ic_extreme": [
-    0.8827003345873036,
-    0.9040084344616208
+    0.883135179298676,
+    0.902742636361063
    ],
-   "ajustement_extreme": 0.011685257708970023,
-   "largeur_mediane": 0.16940336168293285
+   "ajustement_extreme": 0.011579699985529868,
+   "largeur_mediane": 0.1623600448817717
   },
   "relatif": {
-   "methode": "classique",
-   "avis_net": {
-    "marge": 0.02,
-    "part": 0.47399335586926566,
-    "precision": 0.5597249851315601,
-    "base": 0.5170987059330203,
-    "ic_gain": [
-     0.032006122263741735,
-     0.05555704417159673
-    ],
-    "precision_reste": 0.5140981394983529
-   },
-   "auc": 0.5511017256226827,
-   "precision": 0.5357249611777657,
-   "precision_base": 0.5078750203528145,
-   "nb": 411491,
+   "auc": 0.5417601392752518,
+   "precision": 0.5275224430726093,
+   "precision_base": 0.5008734142866834,
+   "nb": 353784,
    "ic_auc": [
-    0.5417549874262021,
-    0.5584297967545269
+    0.5348342051212177,
+    0.5492249208560857
    ],
    "ic_precision": [
-    0.5290307672422258,
-    0.5412389290230136
+    0.5222692375353553,
+    0.5329817752805283
    ],
-   "precision_confiants": 0.5728583343262242,
-   "nb_confiants": 8393
+   "precision_confiants": 0.5802158273381295,
+   "nb_confiants": 8340
   },
   "ic": {
    "precision": [
-    0.5389810258016112,
-    0.586361145384492
+    0.5415006018866847,
+    0.5891041735885229
    ],
    "auc": [
-    0.5137535471726787,
-    0.5572035499911389
+    0.5092567466874348,
+    0.5466875476722238
    ],
    "avantage": [
-    -0.005331489545430684,
-    0.01537791461230938
+    -0.00468550791888691,
+    0.002561308175196226
    ],
    "p_hasard": 0.0,
    "nb_mois": 152
   },
   "brier": {
-   "brier": 0.24582806114034958,
-   "reference": 0.24701257980993085,
-   "progres": 0.004795377913516474
+   "brier": 0.24545688646179695,
+   "reference": 0.24593759115845645,
+   "progres": 0.001954579998914352
   },
   "ia": {
    "ia1": {
-    "auc": 0.5319908026730842,
-    "precision": 0.5568653605669028
+    "auc": 0.5248676946237407,
+    "precision": 0.5631181690592226
    },
    "ia2": {
-    "auc": 0.5329642515478346,
-    "precision": 0.5599737986065623
+    "auc": 0.5124464817080878,
+    "precision": 0.5637370288101317
    },
    "commun": {
-    "auc": 0.5335449955139075,
-    "precision": 0.5606597987256595
+    "auc": 0.5178705007320774,
+    "precision": 0.5645409939329642
    },
    "comite": {
-    "auc_test": 0.4751593599930676,
-    "auc_reference_test": 0.5506776409756312
+    "auc_test": 0.5055463728099615,
+    "auc_reference_test": 0.538936246569223
    },
-   "mode": "commun",
-   "variables_ia2": "toutes",
-   "climat": {
-    "nb": 398378,
-    "precision_ia": 0.5589063653113375,
-    "precision_climat": 0.5437950890862447,
-    "auc_ia": 0.5332763421262522,
-    "auc_climat": 0.5189690360262749,
-    "baisse_ia": 0.08273549242177028,
-    "baisse_climat": 0.18884074923816074,
-    "ic_gain": [
-     -0.0283444694468837,
-     -0.0032269136492689946
-    ],
-    "adopte": false
-   }
+   "mode": "ia1"
   },
   "accord": {
-   "part": 0.9413326981480379,
-   "precision_accord": 0.5626766532977391,
-   "precision_desaccord": 0.5282988225740967,
+   "part": 0.9854512703201495,
+   "precision_accord": 0.5643612100142982,
+   "precision_desaccord": 0.4785415875427269,
    "ic_accord": [
-    0.5402561153488946,
-    0.5846428695118046
+    0.5406916671657586,
+    0.5865764691913072
    ],
    "ic_desaccord": [
-    0.47670446676442263,
-    0.5730856805483673
+    0.3773166983575386,
+    0.602152793545045
    ]
   },
   "champion": {
    "actuel": "Un seul modèle, indicateurs de base",
-   "challenger": "Un seul modèle, tous les indicateurs",
    "change": false,
-   "ic_gain_auc": [
-    -0.013302031600473678,
-    0.026861349948451123
-   ],
-   "raison": "Un autre modèle a eu un meilleur score, mais l'écart peut venir du hasard : le modèle en place est gardé."
+   "raison": "Le modèle en place reste le meilleur."
   },
   "controles": [],
-  "date_evaluation": "2026-10-28T18:42",
+  "date_evaluation": "2026-10-28T20:38",
   "horizon": 20,
   "risque": {
-   "nb": 419741,
+   "nb": 361047,
    "periode": "03/2014 – 10/2026",
-   "erreur_ia": 0.24076042685464244,
-   "erreur_naif": 0.31498883831360436,
-   "r2_ia": 0.6529022103157792,
-   "r2_naif": 0.6285003784052057,
-   "concordance_ia": 0.7738825442437076,
-   "concordance_naif": 0.736250086832325,
+   "erreur_ia": 0.239465631845891,
+   "erreur_naif": 0.31404543673408314,
+   "r2_ia": 0.530119242557508,
+   "r2_naif": 0.3625979880217849,
+   "concordance_ia": 0.7731754332271903,
+   "concordance_naif": 0.7306480898053914,
    "ic_gain": [
-    0.06474998366410847,
-    0.08082660226912948
+    0.0646218017393172,
+    0.07865924359847265
    ],
-   "prouve": true,
-   "chute": {
-    "nb": 419825,
-    "auc": 0.7550561945681027,
-    "ic_auc": [
-     0.7224457532814371,
-     0.7838862636885826
-    ],
-    "base": 0.10278330256654558,
-    "base_actions": 0.06703033262671891,
-    "base_cryptos": 0.3196344726611804,
-    "taux_risque_haut": 0.329704880546888,
-    "seuil": -0.1,
-    "prouve": true
-   }
+   "prouve": true
   },
   "avis_net": {
    "marge": null,
    "niveaux": {
     "faible": {
      "part": 1.0,
-     "precision": 0.5606597987256595,
-     "nb": 419825,
+     "precision": 0.5631126435257324,
+     "nb": 361956,
      "ic": [
-      0.5591579344628482,
-      0.5621605528661558
+      0.5614960967197014,
+      0.5647278506608746
      ]
     }
-   },
-   "marches_sans_avis": {},
-   "prudence": {
-    "crypto": {
-     "precision_ia": 0.5043839719964323,
-     "taux_hausse": 0.4558994294946231,
-     "base": 0.544100570505377,
-     "nb": 59421
-    },
-    "etf": {
-     "precision_ia": 0.5982922695867553,
-     "taux_hausse": 0.6022031025941859,
-     "base": 0.6022031025941859,
-     "nb": 15342
-    },
-    "eu": {
-     "precision_ia": 0.5613332362294564,
-     "taux_hausse": 0.5621586191828709,
-     "base": 0.5621586191828709,
-     "nb": 41193
-    },
-    "tendances": {
-     "precision_ia": 0.5444869449526027,
-     "taux_hausse": 0.5460668551471811,
-     "base": 0.5460668551471811,
-     "nb": 24052
-    },
-    "us": {
-     "precision_ia": 0.5763192344568183,
-     "taux_hausse": 0.5795827494652998,
-     "base": 0.5795827494652998,
-     "nb": 216944
-    }
-   },
-   "baisse": {
-    "fiable": false,
-    "nb": 32978,
-    "precision": 0.5382072897082903,
-    "ic_bas": 0.4789172169720418
    }
   }
  },
  "platt": {
   "ia1": {
-   "coef": 0.5836812427191056,
-   "intercept": 0.053844896171402014
+   "coef": 0.4750560307993966,
+   "intercept": 0.11253977668479749
   },
   "ia2": {
-   "coef": 0.7207321329799836,
-   "intercept": 0.004074512713670765
+   "coef": 0.2603553894550411,
+   "intercept": 0.17398647952000032
   },
   "final": {
-   "coef": 0.8577250547829368,
-   "intercept": -0.030163015028895557
+   "coef": 0.4750560307993966,
+   "intercept": 0.11253977668479749
   },
   "relatif": {
-   "coef": 0.8776210695946561,
-   "intercept": -0.051969713884367205
+   "coef": 0.8339423016268741,
+   "intercept": -0.04252260757891391
   },
   "comite": null
  }
