@@ -67,12 +67,14 @@ def _page(base, titre, description, chemin, corps, csp, alternates):
 </head>
 <body>
 {seo.entete(prefixe, chemin, "en/index.html", "Checked forecasts, no promises",
-            [("All stocks and cryptos", "en/index.html"), ("Guides", "en/guides.html"), ("Version française", "index.html", 'hreflang="fr" lang="fr"')],
+            [("All stocks and cryptos", "en/index.html"), ("If I had invested…", "en/tools/if-i-had-invested.html"),
+             ("Crypto converter", "en/tools/crypto-converter.html"), ("Guides", "en/guides.html"), ("Version française", "index.html", 'hreflang="fr" lang="fr"')],
             ("Open the app (FR)", "index.html"), aria_nav="Site pages", aria_theme="Light / dark theme", aller="Skip to content")}
 <div class="w">
 <main id="contenu" tabindex="-1">
 {corps}
 </main>
+{seo.barre_partage(base, chemin, titre, "Share this page")}
 <footer><p class="avert"><b>Nothing is certain in the markets.</b> {NOM} is a free educational project. These figures are generated
 automatically, may contain errors and are not investment advice or a recommendation to buy or sell. You can lose all the
 money you invest. Full terms of use (in French): <a href="{prefixe}index.html#conditions">conditions d'utilisation</a>.</p>

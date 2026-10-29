@@ -9,3 +9,4 @@ erreur_mise_en_ligne.txt
 .cache_entrainement/
 rapports/
 .cache_modeles/
+*.zip

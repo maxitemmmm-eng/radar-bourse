@@ -119,11 +119,11 @@ GUIDES_3 = [
     {"i": "fiscalite-crypto", "c": "crypto", "h": "Comment sont imposées les cryptos en France ?",
      "t": "Impôts crypto en France : les principes",
      "d": "Fiscalité des cryptomonnaies en France : imposition lors de la conversion en euros, échange entre cryptos, déclaration des comptes à l'étranger.",
-     "r": "Pour un particulier, l'impôt porte en principe sur la plus-value réalisée quand tu **convertis tes cryptos en euros** (ou que tu achètes un bien avec), avec un taux forfaitaire. Les échanges entre cryptos ne sont en principe pas imposés. Les comptes à l'étranger doivent être déclarés.",
+     "r": "Pour un particulier, l'impôt porte en principe sur la plus-value réalisée quand tu **convertis tes cryptos en euros** (ou que tu achètes un bien avec), avec un taux forfaitaire (31,4 % en 2026). Les échanges entre cryptos ne sont en principe pas imposés. Les comptes à l'étranger doivent être déclarés.",
      "p": [("Ce qui déclenche l'impôt", "Vendre contre des euros ou payer un achat avec des cryptos. Garder ses cryptos, même si elles ont beaucoup monté, ne déclenche pas d'impôt."),
            ("Le calcul", "Le calcul de la plus-value tient compte de la valeur de l'ensemble de ton portefeuille crypto au moment de la vente, ce qui le rend plus complexe que pour une action."),
            ("Toujours vérifier", "Les règles et taux évoluent avec les lois de finances. Vérifie sur impots.gouv.fr ou demande à un professionnel pour ta situation.")],
-     "l": [("Guide : fiscalité en bourse", "guides/fiscalite-bourse.html"), ("Guide : plateforme crypto fiable", "guides/plateforme-crypto-fiable.html")]},
+     "l": [("Outil : calcul de plus-value et flat tax", "outils/plus-value.html"), ("Guide : fiscalité en bourse", "guides/fiscalite-bourse.html"), ("Guide : plateforme crypto fiable", "guides/plateforme-crypto-fiable.html")]},
 
     {"i": "halving-bitcoin", "c": "crypto", "h": "C'est quoi le halving du Bitcoin ?",
      "t": "Halving Bitcoin : explication et effet sur le prix",

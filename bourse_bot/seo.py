@@ -96,6 +96,7 @@ footer .muted{font-size:13.5px}
 dt{font-weight:700;margin-top:16px}dd{margin:4px 0 0}nav.fil{font-size:14px}
 html.contraste{--muted:#2f3b4c;--line:#8795a8}html.contraste[data-theme="dark"]{--muted:#c3cede;--line:#4b5d78}
 html.lisible body{letter-spacing:.02em;word-spacing:.08em;line-height:1.75}
+.partager-page{font-size:14px;margin-top:34px}
 html.texte-115 body{font-size:18px}html.texte-130 body{font-size:20px}"""
 
 LOGO = ('<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#0f1b2d" stroke="var(--line)" stroke-width="1"/>'
@@ -135,11 +136,24 @@ def entete(prefixe: str, chemin: str, accueil: str, sous_titre: str, liens: list
             f'<nav class="nav-sec" aria-label="{_e(aria_nav)}">{pastilles}</nav></header>')
 
 
+def barre_partage(base: str, chemin: str, titre: str, libelle: str = "Partager cette page") -> str:
+    """Version 52 : liens de partage simples (aucun script tiers, aucun pisteur). Seulement si l'adresse du site est connue."""
+    if not base or chemin == "404.html":
+        return ""
+    from urllib.parse import quote
+    u, t = quote(base + chemin, safe=""), quote(titre.split(" | ")[0], safe="")
+    liens = [("WhatsApp", f"https://wa.me/?text={t}%20{u}"), ("X", f"https://twitter.com/intent/tweet?text={t}&url={u}"),
+             ("Facebook", f"https://www.facebook.com/sharer/sharer.php?u={u}"), ("LinkedIn", f"https://www.linkedin.com/sharing/share-offsite/?url={u}"),
+             ("Reddit", f"https://www.reddit.com/submit?url={u}&title={t}")]
+    return ("<p class='partager-page muted'>" + _e(libelle) + " : " + " · ".join(
+        f"<a href='{_e(h)}' target='_blank' rel='noopener noreferrer'>{n}</a>" for n, h in liens) + "</p>")
+
+
 def liens_fr() -> list:
     return [("Le point du jour", "point.html"), ("Résultats réels", "resultats.html"),
             ("Tous les titres", "titres.html"), ("Comparer", "comparer.html"), ("Classements", "classements.html"),
             ("Sélection IA du mois", "portefeuille.html"), (f"Prévisions {datetime.now().year}", "previsions.html"),
-            ("Guides", "guides.html"), ("Apprendre", "apprendre.html"), ("Glossaire", "glossaire.html"),
+            ("Outils gratuits", "outils.html"), ("Guides", "guides.html"), ("Apprendre", "apprendre.html"), ("Glossaire", "glossaire.html"),
             ("Les mini-robots", "robots.html"), ("Ce que sait l'IA", "connaissances.html"),
             ("Fiche technique", "fiche-technique-ia.html"), ("English", "en/index.html", 'hreflang="en" lang="en"')]
 
@@ -315,6 +329,7 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 <main id="contenu" tabindex="-1">
 {corps}
 </main>
+{barre_partage(base, chemin, titre)}
 <footer><p class="avert"><b>Rien n'est sûr en Bourse.</b> {NOM} est un projet éducatif : ces informations sont générées automatiquement,
 peuvent contenir des erreurs et ne constituent pas un conseil en investissement. Tu peux perdre tout l'argent investi.
 Conditions d'utilisation, méthodologie et aide : voir la <a href="{prefixe}index.html#conditions">page d'accueil</a>.</p></footer>
@@ -367,6 +382,32 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     else:
         titre = f"{nom} : cours, prévision et analyse IA | {NOM}"
     faq = _faq_titre(t, nom, date, verdict)
+    # version 52 : « si j'avais investi 100 il y a un an » (vrais cours) + lien vers le simulateur
+    investi_html = ""
+    try:
+        from .outils import valeur_un_an
+        vi = valeur_un_an(t)
+    except Exception:
+        vi = None
+    if vi:
+        dev = t.get("devise", "")
+        sym = {"EUR": "€", "USD": "$"}.get(dev, dev)
+        cent = f"100 {sym}"
+        lignes_vi = []
+        for cle, quand in (("an", "il y a un an"), ("six_mois", "il y a six mois")):
+            if cle in vi:
+                d0, v = vi[cle]
+                lignes_vi.append(f"<li><b>{cent}</b> investis dans {_e(nom)} {quand} (le {_e(date_longue(d0))}) vaudraient aujourd'hui "
+                                 f"<b class='{'up' if v >= 100 else 'down'}'>{_px(v, dev)}</b> ({_pct(v / 100 - 1)}).</li>")
+        if lignes_vi:
+            investi_html = (f"<h2>Si tu avais investi dans {_e(nom)}</h2><ul>{''.join(lignes_vi)}</ul>"
+                            f"<p class='muted'>Performance brute du cours, sans frais, dividendes, impôts{' ni effet du change euro/dollar' if dev in ('$', 'USD') else ''}. "
+                            f"Le passé ne prévoit pas l'avenir. <a href='../outils/si-javais-investi.html?t={_e(tk)}'>Simuler une autre somme ou un investissement chaque mois</a></p>")
+            if "an" in vi:
+                d0, v = vi["an"]
+                faq = list(faq) + [(f"Combien vaudraient {cent} investis dans {nom} il y a un an ?",
+                                    f"{cent} investis dans {_e(nom)} le {_e(date_longue(d0))} vaudraient environ {_px(v, dev)} au {_e(date)}, "
+                                    f"soit {_pct(v / 100 - 1)} (performance brute, sans frais ni impôts).")]
     duels_html = ("<h2>Comparer</h2><ul class='liste'>" + "".join(
         f"<li><a href='../{ch}'>{_e(nom)} ou {_e(o['nom'])}</a></li>"
         for o, ch in (t.get("_duels") or [])[:10]) + "</ul>") if t.get("_duels") else ""
@@ -419,6 +460,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
 {f"<h2>Niveaux à surveiller</h2><div class='carte'><table>{niveaux}</table></div>" if niveaux else ""}
 {f"<h2>Dernières actualités</h2><ul>{actus}</ul>" if actus else ""}
 {f"<h2>Performances passées</h2><div class='carte'><table>{perfs}</table></div>" if perfs else ""}
+{investi_html}
 {profil}
 <h2>Fiabilité</h2>{palmares}{fiab or "<p>Prévision statistique : elle se trompe souvent.</p>"}
 {f"<h2>Questions fréquentes sur {_e(nom)}</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{r}</p>" for q, r in faq) if faq else ""}
@@ -1851,6 +1893,11 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     except Exception as e:
         print(f"Semaines non générées : {e}")
 
+    try:   # version 52 : outils gratuits (simulateur sur les vrais cours, convertisseur, intérêts composés, plus-value)
+        from . import outils
+        urls += outils.generer(payload, dossier, csp, base)
+    except Exception as e:
+        print(f"Outils non générés : {e}")
     try:
         _page_404(base, dossier, csp)
     except Exception as e:
@@ -2017,7 +2064,7 @@ def liens_accueil(payload: dict) -> str:
     """Liens texte vers chaque page de titre, ajoutés en bas de l'accueil (Google suit les liens)."""
     items = "".join(f'<a href="titres/{slug(t["ticker"])}.html">{_e(t["nom"])}</a>' for t in payload.get("titres", []))
     return (f'<nav class="seo-liens" aria-label="Pages des titres"><b>Analyses détaillées :</b> {items} '
-            f'· <a href="titres.html">tous les titres</a> · <a href="apprendre.html">apprendre la Bourse</a> · <a href="glossaire.html">glossaire</a>'
+            f'· <a href="titres.html">tous les titres</a> · <a href="outils.html">outils gratuits</a> · <a href="outils/si-javais-investi.html">si j\'avais investi…</a> · <a href="outils/convertisseur.html">convertisseur crypto</a> · <a href="apprendre.html">apprendre la Bourse</a> · <a href="glossaire.html">glossaire</a>'
             + "".join(f' · <a href="marches/{m[0]}.html">{_e(m[1].lower())}</a>' for k, m in MARCHES.items()
                       if any(t.get("marche") == k for t in payload.get("titres", []))) + '</nav>')
 
