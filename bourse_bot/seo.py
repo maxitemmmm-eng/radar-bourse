@@ -18,11 +18,11 @@ from . import config
 
 NOM = "Radar Bourse"
 SLOGAN = "Analyse et prévisions boursières à un mois, expliquées simplement"
-TITRE_ACCUEIL = "Radar Bourse : prévisions bourse et crypto par IA, gratuites et vérifiées"   # le nom en premier : recherches « radar bourse »
-DESCRIPTION = ("Prévisions gratuites par IA pour plus de 160 actions et cryptos : agitation prévue, chances à un mois, "
-               "comparaisons. Tout est vérifié publiquement, ratés compris.")
-MOTS_CLES = ("prévision bourse, analyse technique, prévision action, prévision crypto, CAC 40, S&P 500, "
-             "Bitcoin, RSI, MACD, moyenne mobile, simulateur bourse, signaux bourse, apprendre la bourse")
+TITRE_ACCUEIL = "Radar Bourse : prévisions bourse et crypto par IA, gratuites"   # le nom en premier : recherches « radar bourse »
+DESCRIPTION = ("Prévisions bourse et crypto par IA, gratuites : agitation à un mois, risque de chute, simulateur boursier "
+               "à 10 000 € virtuels. Résultats vérifiés publiquement.")
+MOTS_CLES = ("prévision bourse IA, prévision action, prévision crypto, prévision bitcoin, simulateur boursier gratuit, "
+             "portefeuille virtuel, risque de chute action, volatilité, CAC 40, S&P 500, apprendre la bourse")
 LIB_SIGNAL = {"ACHAT FORT": "haussier fort", "ACHAT": "haussier", "NEUTRE": "neutre",
               "VENTE": "baissier", "VENTE FORTE": "baissier fort"}
 
@@ -153,9 +153,10 @@ def liens_fr() -> list:
     return [("Le point du jour", "point.html"), ("Résultats réels", "resultats.html"),
             ("Tous les titres", "titres.html"), ("Comparer", "comparer.html"), ("Classements", "classements.html"),
             ("Sélection IA du mois", "portefeuille.html"), (f"Prévisions {datetime.now().year}", "previsions.html"),
-            ("Outils gratuits", "outils.html"), ("Guides", "guides.html"), ("Apprendre", "apprendre.html"), ("Glossaire", "glossaire.html"),
+            ("Simulateur boursier", "simulateur-boursier.html"), ("Outils gratuits", "outils.html"), ("Guides", "guides.html"), ("Apprendre", "apprendre.html"), ("Glossaire", "glossaire.html"),
             ("Les mini-robots", "robots.html"), ("Ce que sait l'IA", "connaissances.html"),
-            ("Fiche technique", "fiche-technique-ia.html"), ("English", "en/index.html", 'hreflang="en" lang="en"')]
+            ("Fiche technique", "fiche-technique-ia.html"), ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"),
+            ("Contact", "contact.html"), ("English", "en/index.html", 'hreflang="en" lang="en"')]
 
 
 def url_site() -> str:
@@ -304,7 +305,18 @@ def titre_court(titre: str, maxi: int = 65) -> str:
     return titre
 
 
+IMAGES_PAGES: dict = {}   # version 53 : image de partage propre à chaque type de page (voir visuels.py)
+
+
+def _image_de(chemin, image="partage.png"):
+    if image != "partage.png":
+        return image
+    from .visuels import image_pour
+    return image_pour(chemin, IMAGES_PAGES) or image
+
+
 def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternates=None, image="partage.png"):
+    image = _image_de(chemin, image)
     prefixe = "../" * chemin.count("/")
     csp = csp_avec_stats(csp)
     titre = titre_court(titre)
@@ -332,7 +344,8 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 {barre_partage(base, chemin, titre)}
 <footer><p class="avert"><b>Rien n'est sûr en Bourse.</b> {NOM} est un projet éducatif : ces informations sont générées automatiquement,
 peuvent contenir des erreurs et ne constituent pas un conseil en investissement. Tu peux perdre tout l'argent investi.
-Conditions d'utilisation, méthodologie et aide : voir la <a href="{prefixe}index.html#conditions">page d'accueil</a>.</p></footer>
+Conditions d'utilisation, méthodologie et aide : voir la <a href="{prefixe}index.html#conditions">page d'accueil</a>.</p>
+<p class="muted"><a href="{prefixe}fonctionnalites.html">Fonctionnalités</a> · <a href="{prefixe}simulateur-boursier.html">Simulateur boursier</a> · <a href="{prefixe}outils.html">Outils gratuits</a> · <a href="{prefixe}a-propos.html">À propos</a> · <a href="{prefixe}contact.html">Contact</a></p></footer>
 </div>
 {SCRIPT_BOUTON}
 </body></html>
@@ -355,7 +368,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
                  + ", dans un sens ou dans l'autre.</p>") if rq.get("mouvement") else ""
     if rq.get("semaine"):
         agitation += (f"<p>Sur la semaine qui vient (5 séances) : environ <b class='m'>±{rq['semaine'] * 100:.1f} %</b>.".replace(".", ",", 1)
-                      + " Cette prévision à une semaine a été testée sur 138 000 cas réels : plus proche de la réalité que « comme la semaine dernière » 57 fois sur 100.</p>")
+                      + " Cette prévision à une semaine a été testée sur près de 290 000 cas réels : plus proche de la réalité que « comme la semaine dernière » 57 fois sur 100.</p>")
     pourquoi = "".join(f"<li><b>{_e(r['famille'])}</b> : pousse vers la {'hausse' if r['effet'] > 0 else 'baisse'}"
                        + (f" ({_e(r['etat'])})" if r.get("etat") else "") + "</li>" for r in (t.get("raisons_ia") or []))
     nom, tk = t["nom"], t["ticker"]
@@ -1149,7 +1162,7 @@ def _page_previsions(base, payload, dossier, csp, date):
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": r}} for q, r in faq]}
     corps += "<h2>Questions fréquentes</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{_e(r)}</p>" for q, r in faq)
     titre = f"Prévisions bourse et crypto {annees}, vérifiées | {NOM}"
-    desc = (f"Prévisions {annees} pour 160 actions et cryptos : agitation et chances de hausse à un mois par IA, "
+    desc = (f"Prévisions {annees} pour plus de 200 actions et cryptos : agitation et chances de hausse à un mois par IA, "
             "vérifiées publiquement, et écart habituel sur un an.")
     with open(os.path.join(dossier, "previsions.html"), "w", encoding="utf-8") as f:
         f.write(_page(base, titre, desc, "previsions.html", corps, jsonld, csp))
@@ -1344,7 +1357,15 @@ def _page_robots(base, payload, csp, date):
 
 
 def _image_partage(payload: dict, chemin: str) -> None:
-    """Image 1200×630 affichée quand le lien est partagé (WhatsApp, Discord, X…)."""
+    """Image 1200×630 affichée quand le lien est partagé (WhatsApp, Discord, X…).
+    Version 53 : même style que les images des autres pages, avec le nombre de titres du jour."""
+    try:
+        from .visuels import dessiner
+        n = len(payload.get("titres", []))
+        if dessiner(chemin, "Prévisions bourse et crypto par IA", f"{n} actions, ETF et cryptos · simulateur boursier · outils gratuits", "radar"):
+            return
+    except Exception:
+        pass
     try:
         from PIL import Image, ImageDraw, ImageFont
     except Exception:
@@ -1674,6 +1695,11 @@ def _page_point(base, r, csp, precedent, suivant, image="partage.png"):
 
 def generer(payload: dict, dossier: str, csp: str) -> None:
     """Écrit toutes les pages et fichiers de référencement dans le dossier du site."""
+    try:   # version 53 : images de partage par type de page
+        from . import visuels
+        IMAGES_PAGES.update(visuels.generer(dossier))
+    except Exception as e:
+        print(f"Images de partage non générées : {e}")
     base = url_site()
     date = payload.get("date_donnees", "")
     try:
@@ -1682,7 +1708,7 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
         pass
     horizon = payload.get("horizon", 20)
     os.makedirs(os.path.join(dossier, "titres"), exist_ok=True)
-    urls = [("", "hourly", "1.0"), ("titres.html", "daily", "0.8"), ("glossaire.html", "monthly", "0.6")]
+    urls = [("", "hourly", "1.0"), ("app-en.html", "hourly", "0.9"), ("titres.html", "daily", "0.8"), ("glossaire.html", "monthly", "0.6")]
 
     # Une page par titre
     duels = _duels_dispos(payload.get("titres", []))
@@ -1893,6 +1919,11 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     except Exception as e:
         print(f"Semaines non générées : {e}")
 
+    try:   # version 53 : fonctionnalités, simulateur boursier, à propos, contact
+        from . import pages_plus
+        urls += pages_plus.generer(payload, dossier, csp, base)
+    except Exception as e:
+        print(f"Pages fonctionnalités / à propos / contact non générées : {e}")
     try:   # version 52 : outils gratuits (simulateur sur les vrais cours, convertisseur, intérêts composés, plus-value)
         from . import outils
         urls += outils.generer(payload, dossier, csp, base)
@@ -2075,8 +2106,6 @@ def jsonld_accueil() -> dict:
     depot = os.environ.get("GITHUB_REPOSITORY", "")
     org = {"@type": "Organization", "@id": (base or "") + "#org", "name": NOM, "url": base or None,
            "logo": (base + "icone-512.png") if base else None}
-    if depot:
-        org["sameAs"] = [f"https://github.com/{depot}"]
     site = {"@type": "WebSite", "@id": (base or "") + "#site", "name": NOM,
             "alternateName": ["Radar-Bourse", "RadarBourse", "Bourse Radar", "Radar Bourse IA"],
             "url": base or None, "description": DESCRIPTION, "inLanguage": "fr-FR", "publisher": {"@id": (base or "") + "#org"}}

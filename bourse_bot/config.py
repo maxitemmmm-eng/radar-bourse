@@ -60,7 +60,7 @@ CRYPTOS = {
     "WIF-USD": "dogwifhat", "BONK-USD": "Bonk", "FLOKI-USD": "Floki", "WLD-USD": "Worldcoin", "PYTH-USD": "Pyth Network",
     "STRK-USD": "Starknet", "GALA-USD": "Gala", "AXS-USD": "Axie Infinity", "CRV-USD": "Curve DAO", "RUNE-USD": "THORChain",
 }
-CRYPTOS_SANS_YAHOO = {"OP-USD", "POL-USD", "STX-USD", "IMX-USD", "LDO-USD", "FET-USD", "GRT-USD", "SEI-USD", "TIA-USD",
+CRYPTOS_SANS_YAHOO = {"TON11419-USD", "OP-USD", "POL-USD", "STX-USD", "IMX-USD", "LDO-USD", "FET-USD", "GRT-USD", "SEI-USD", "TIA-USD",
                       "JUP-USD", "WIF-USD", "BONK-USD", "FLOKI-USD", "WLD-USD", "PYTH-USD", "STRK-USD", "GALA-USD",
                       "AXS-USD", "CRV-USD", "RUNE-USD"}
 

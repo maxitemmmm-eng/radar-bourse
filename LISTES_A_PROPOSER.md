@@ -30,7 +30,7 @@ Sur alternativeto.net, crée une fiche (compte gratuit, pseudo) :
 
 - **Nom** : Radar Bourse
 - **Alternative à** : Danelfin, Zonebourse, TradingView
-- **Description** : `Prévisions gratuites par IA pour plus de 160 actions et cryptos : agitation prévue, chances à un mois, comparaisons, classements. Chaque prévision est vérifiée publiquement, ratés compris. Sans inscription ni publicité.`
+- **Description** : `Prévisions gratuites par IA pour plus de 200 actions et cryptos : agitation prévue, chances à un mois, comparaisons, classements. Chaque prévision est vérifiée publiquement, ratés compris. Sans inscription ni publicité.`
 - **Mots-clés** : stock market, stock prediction, crypto, free, open source
 
 ## 4. Product Hunt (une seule fois)

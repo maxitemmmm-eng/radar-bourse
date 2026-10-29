@@ -294,6 +294,41 @@ def _decouper(payload: dict, dossier: str) -> dict:
     return leger
 
 
+TITRE_APP_EN = "Radar Bourse: free AI stock and crypto forecasts, checked"
+DESCRIPTION_APP_EN = ("Free one-month AI forecasts for 200+ stocks, ETFs and cryptos: chances of a rise, price ranges, "
+                      "volatility, live prices and measured reliability.")
+
+
+def _ecrire_anglais(gabarit: str, donnees: str, dossier: str, lib: str) -> None:
+    """Version 54 : la même appli en anglais (app-en.html). Les données restent celles du site français ;
+    seul le texte de l'interface est traduit (dictionnaire traductions_en), le code n'est jamais modifié."""
+    from . import traduction_appli, traductions_en
+    tete, corps = gabarit.split("<!--__CORPS__-->", 1)
+    base = seo.url_site()
+    alternates = {"fr": "", "en": "app-en.html", "x-default": ""}
+    debut, fin = tete.index("<!--META-->"), tete.index("<!--/META-->") + len("<!--/META-->")
+    jsonld = {"@context": "https://schema.org", "@type": "WebApplication", "name": "Radar Bourse",
+              "url": (base + "app-en.html") if base else None, "inLanguage": "en", "applicationCategory": "FinanceApplication",
+              "operatingSystem": "Any (web browser)", "isAccessibleForFree": True, "description": DESCRIPTION_APP_EN,
+              "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}}
+    tete = (tete[:debut] + seo.balises_tete(base, TITRE_APP_EN, DESCRIPTION_APP_EN, "app-en.html", jsonld=jsonld,
+                                            alternates=alternates, langue="en") + tete[fin:])
+    tete = tete.replace("<title>Radar Bourse</title>", f"<title>{TITRE_APP_EN}</title>", 1)
+    corps = corps.replace("<!--__FAQ__-->", "", 1).replace(
+        "<!--__LIENS_SEO__-->", '<p><a class="lien-site" href="en/index.html">All stocks and cryptos (English pages)</a> · '
+        '<a class="lien-site" href="en/guides.html">Beginner guides</a> · <a class="lien-site" href="index.html" hreflang="fr" lang="fr">Version française</a></p>', 1)
+    securite = (f'<meta http-equiv="Content-Security-Policy" content="{seo.csp_avec_stats(CSP)}">\n'
+                '<meta name="referrer" content="strict-origin-when-cross-origin">\n' + seo.script_stats() + "\n")
+    html = ("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n"
+            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
+            + securite + tete.replace("<!--__LIB__-->", lib) + "\n</head>\n<body>\n" + corps + "\n</body>\n</html>\n")
+    html = traduction_appli.traduire_page(html, traductions_en.EN)
+    html = html.replace("/*__DATA__*/null", donnees, 1)
+    html = html.replace("</body>", traduction_appli.SCRIPT_DONNEES_EN + "\n</body>", 1)
+    with open(os.path.join(dossier, "app-en.html"), "w", encoding="utf-8") as f:
+        f.write(html)
+
+
 def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: bool = False) -> str:
     gabarit = resources.files(__package__).joinpath("site_template.html").read_text(encoding="utf-8")
     # En ligne (robot GitHub), on découpe ; en local (ouverture du fichier sur le PC), tout reste
@@ -316,7 +351,8 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
             pour_page["jeu_temps"] = "jeu_temps.json"
         else:
             pour_page["jeu_temps"] = jeu_temps[:80]
-    page = gabarit.replace("/*__DATA__*/null", _json_sur(_decouper(pour_page, dossier) if decouper else pour_page))
+    donnees = _json_sur(_decouper(pour_page, dossier) if decouper else pour_page)
+    page = gabarit.replace("/*__DATA__*/null", donnees)
     tete, corps = page.split("<!--__CORPS__-->", 1)
     corps = corps.replace("<!--__FAQ__-->", seo.html_faq(), 1)
     if pour_artifact:  # aperçu Claude : bibliothèque depuis un CDN autorisé, pas de CSP propre
@@ -361,6 +397,7 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
                 f.write(config.DOMAINE + "\n")
         elif os.path.exists(cname):
             os.remove(cname)
+        _ecrire_anglais(gabarit, donnees, dossier, lib)
         ancien = os.path.join(dossier, "donnees.json")
         if os.path.exists(ancien):
             os.remove(ancien)

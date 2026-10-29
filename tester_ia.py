@@ -607,20 +607,34 @@ def lancer(nb_cas: int, demo: bool) -> int:
         bins = pd.qcut(p_, 10, labels=False, duplicates="drop")
         dd = pd.DataFrame({"p": p_, "y": y_, "k": bins}).groupby("k").agg(p=("p", "mean"), y=("y", "mean"), n=("y", "size"))
         ece = float(np.average(np.abs(dd["p"] - dd["y"]), weights=dd["n"]))
+        # version 53 : écart attendu par le seul hasard si l'IA était parfaitement calibrée (groupes de taille finie)
+        bruit = float(np.average(np.sqrt(2 / np.pi) * np.sqrt(dd["p"] * (1 - dd["p"]) / dd["n"]), weights=dd["n"]))
         lignes += ["", "Notes de pro (qualité des probabilités annoncées) :",
                    f"  Score de Brier : IA {brier:.4f} · référence « taux habituel » {brier_ref:.4f} · "
                    f"gain {(1 - brier / brier_ref) * 100:+.2f} % (au-dessus de 0 = mieux que la référence)".replace(".", ","),
-                   f"  Écart moyen entre probabilité annoncée et fréquence réelle : {ece * 100:.1f} point(s)".replace(".", ",")
-                   + (" (bien calibrée)" if ece < .02 else " (à surveiller)")]
+                   f"  Écart moyen entre probabilité annoncée et fréquence réelle : {ece * 100:.1f} point(s), "
+                   f"dont environ {bruit * 100:.1f} dû au seul hasard des 5000 cas".replace(".", ",")
+                   + (" (bien calibrée)" if ece < bruit + .01 else " (à surveiller)")]
         SCORES["brier_gain_pct"] = round((1 - brier / brier_ref) * 100, 3)
         SCORES["ecart_calibration_pt"] = round(ece * 100, 2)
     except Exception:
         pass
-    lignes += ["", "Par marché :"]
+    # version 53 : on signale les marchés où le SITE n'affiche pas l'avis brut de l'IA (prudence par marché)
+    try:
+        from bourse_bot import comprendre as _C
+        _col = "p" if "p" in reste else "proba"
+        _prud = _C.prudence_par_marche(reste[["cible", "marche"]].assign(proba=reste[_col].to_numpy()))
+    except Exception:
+        _prud = {}
+    lignes += ["", "Par marché (avis BRUT de l'IA, avant le garde-fou du site) :"]
     for m, g in test.groupby("marche"):
         if len(g) >= 30:
             hm = float(g["cible"].mean())
-            lignes.append(f"  {NOMS.get(m, m):<22} {len(g):>5} cas · justes {pct(float(g['juste'].mean()))} · référence {pct(max(hm, 1 - hm))}")
+            lignes.append(f"  {NOMS.get(m, m):<22} {len(g):>5} cas · justes {pct(float(g['juste'].mean()))} · référence {pct(max(hm, 1 - hm))}"
+                          + ("  → sur le site : tendance habituelle affichée à la place" if m in _prud else ""))
+    if _prud:
+        lignes.append("  (Là où l'IA n'a pas fait mieux que la tendance habituelle, le site affiche cette tendance : c'est la méthode "
+                      "« IA prudente par marché » mesurée plus bas.)")
     lignes += ["", "Par année :"]
     for an, g in test.groupby(test.index.year):
         if len(g) >= 30:

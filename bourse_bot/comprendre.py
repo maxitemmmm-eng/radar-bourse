@@ -184,8 +184,8 @@ def _vols_semaine(c):
 def agitation_semaine(tous: dict) -> dict:
     """Version 48 : de combien chaque titre risque de bouger sur les 5 prochaines séances.
     Modèle simple (agitation de la semaine, du mois et du trimestre passés), appris sur tous les historiques.
-    Testé sur les vrais cours (138 000 cas, 2009–2026, chaque année n'apprenant que du passé) : plus proche du
-    mouvement réel que « comme la semaine dernière » dans 57 % des cas, et meilleur 18 années sur 18.
+    Testé sur les vrais cours (près de 290 000 cas dans tester_ia, chaque année n'apprenant que du passé) : plus proche du
+    mouvement réel que « comme la semaine dernière » dans 57 % des cas, et meilleur 24 années sur 24.
     Renvoie {ticker: mouvement typique sur 5 séances}."""
     from sklearn.linear_model import LinearRegression
     X, y, actuels = [], [], {}

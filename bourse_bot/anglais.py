@@ -1,6 +1,6 @@
 """English version (static pages) : a landing page and one page per stock or crypto.
 
-The interactive app stays in French, but these pages let English-speaking visitors find the site on
+The interactive app also exists in English (app-en.html, version 54); these pages let English-speaking visitors find the site on
 Google and read the key figures. Every page links to its French twin (hreflang tags).
 """
 from __future__ import annotations
@@ -46,7 +46,7 @@ def _page(base, titre, description, chemin, corps, csp, alternates):
     jsonld = {"@context": "https://schema.org", "@type": "WebPage", "name": titre, "description": description,
               "inLanguage": "en", "dateModified": datetime.now().isoformat(timespec="seconds"),
               "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None}}
-    tete = seo.balises_tete(base, titre, description, chemin, jsonld=jsonld, alternates=alternates, langue="en")
+    tete = seo.balises_tete(base, titre, description, chemin, image=seo._image_de(chemin), jsonld=jsonld, alternates=alternates, langue="en")
     tete = tete.replace(f'<meta name="keywords" content="{_e(seo.MOTS_CLES)}">',
                         '<meta name="keywords" content="stock forecast, crypto forecast, technical analysis, RSI, MACD, '
                         'S&amp;P 500, CAC 40, Bitcoin, stock prediction, market outlook">')
@@ -68,8 +68,9 @@ def _page(base, titre, description, chemin, corps, csp, alternates):
 <body>
 {seo.entete(prefixe, chemin, "en/index.html", "Checked forecasts, no promises",
             [("All stocks and cryptos", "en/index.html"), ("If I had invested…", "en/tools/if-i-had-invested.html"),
-             ("Crypto converter", "en/tools/crypto-converter.html"), ("Guides", "en/guides.html"), ("Version française", "index.html", 'hreflang="fr" lang="fr"')],
-            ("Open the app (FR)", "index.html"), aria_nav="Site pages", aria_theme="Light / dark theme", aller="Skip to content")}
+             ("Crypto converter", "en/tools/crypto-converter.html"), ("Compound interest", "en/tools/compound-interest.html"),
+             ("Capital gains", "en/tools/capital-gains.html"), ("Guides", "en/guides.html"), ("Version française", "index.html", 'hreflang="fr" lang="fr"')],
+            ("Open the app", "app-en.html"), aria_nav="Site pages", aria_theme="Light / dark theme", aller="Skip to content")}
 <div class="w">
 <main id="contenu" tabindex="-1">
 {corps}
@@ -129,7 +130,7 @@ def _page_titre(base, t, horizon, date, csp, modele):
 {f"In 8 cases out of 10, the price should stay between <b class='m'>{_px(f[0], dev)}</b> and <b class='m'>{_px(f[1], dev)}</b>." if len(f) == 2 else ""}
 {"<b>Strong signal</b>: the model and the technical trend agree." if t.get("signal_fort") else ""}
 {f"Probability of beating {ind} over the same period: <b>{round(pm * 100)}%</b>." if pm is not None else ""}</p>
-<p><a class="btn" href="../../index.html#{_e(__import__('re').sub(r'[^A-Za-z0-9._-]', '', tk))}">Open the interactive chart and simulator (French)</a></p>
+<p><a class="btn" href="../../app-en.html#{_e(__import__('re').sub(r'[^A-Za-z0-9._-]', '', tk))}">Open the interactive chart and simulator</a></p>
 <h2>Key indicators</h2>
 <div class="carte"><table>
 <tr><td>RSI (14)</td><td class="m">{'–' if niv.get('rsi') is None else round(niv['rsi'])}</td></tr>
@@ -178,7 +179,7 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
     corps = f"""
 <h1>{NOM}: one-month stock and crypto forecasts, explained simply</h1>
 <p class="muted">French, European and US stocks, ETFs and major cryptocurrencies, analysed automatically every hour. Free, no sign-up, educational.</p>
-<p><a class="btn" href="../index.html">Open the interactive app (French)</a> <a class="btn ghost" href="guides.html">Beginner guides</a></p>
+<p><a class="btn" href="../app-en.html">Open the interactive app</a> <a class="btn ghost" href="guides.html">Beginner guides</a></p>
 <h2>Highest probability of rising over the next month</h2>
 <div class="carte"><table>{top or "<tr><td>Model unavailable today.</td></tr>"}</table></div>
 <h2>Strong signals today</h2>

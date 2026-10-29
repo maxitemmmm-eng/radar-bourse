@@ -269,7 +269,8 @@ function calc(){const c0=+$('c0').value||0,r=+$('r').value||0,n=Math.min(60,Math
     page = seo._page(base, f"Calculateur d'intérêts composés gratuit (avec versements mensuels) | {NOM}",
                      "Calcule ce que deviendra ton épargne avec des versements chaque mois, ou combien épargner pour atteindre un objectif. "
                      "Gratuit, détail année par année.", chemin, CSS_OUTIL + corps + JS_COMMUN + JS_LIENS_PARTAGE + js,
-                     _jsonld(base, chemin, nom, "Calculateur gratuit d'intérêts composés avec versements mensuels et mode objectif.", faq), csp=csp)
+                     _jsonld(base, chemin, nom, "Calculateur gratuit d'intérêts composés avec versements mensuels et mode objectif.", faq), csp=csp,
+                     alternates={"fr": chemin, "en": "en/tools/compound-interest.html", "x-default": chemin})
     return chemin, page
 
 
@@ -311,7 +312,8 @@ function calc(){const pa=+$('pa').value||0,pv=+$('pv').value||0,q=+$('q').value|
     page = seo._page(base, f"Calcul plus-value actions et crypto, flat tax 2026 ({taux.replace('.', ',')} %) | {NOM}",
                      f"Calcule ta plus-value ou moins-value après frais et l'impôt à prévoir (flat tax {taux.replace('.', ',')} % en 2026) : actions, ETF, cryptos. Gratuit.",
                      chemin, CSS_OUTIL + corps + JS_COMMUN + JS_LIENS_PARTAGE + js,
-                     _jsonld(base, chemin, nom, "Calculateur gratuit de plus-value et de flat tax pour actions et cryptos.", faq), csp=csp)
+                     _jsonld(base, chemin, nom, "Calculateur gratuit de plus-value et de flat tax pour actions et cryptos.", faq), csp=csp,
+                     alternates={"fr": chemin, "en": "en/tools/capital-gains.html", "x-default": chemin})
     return chemin, page
 
 
@@ -337,7 +339,10 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
         urls.append((chemin, "daily", "0.8"))
     corps = ("<h1>Outils gratuits pour la Bourse et la crypto</h1><p>Des calculateurs simples, sans compte, sans cookie publicitaire, "
              "qui marchent sur les vrais cours suivis par le radar.</p><div class='grille'>"
-             + "".join(f"<a class='carte' style='text-decoration:none;color:inherit;margin:0' href='{c}'><b style='font-size:18px'>{_e(n)}</b>"
+             + "".join(f"<a class='carte' style='text-decoration:none;color:inherit;margin:0' href='{c}'>"
+                       + (f"<img src='{seo.IMAGES_PAGES[c]}' alt='{_e(n)}' width='1200' height='630' loading='lazy' decoding='async' "
+                          "style='width:100%;height:auto;border-radius:8px;display:block;margin-bottom:10px'>" if c in seo.IMAGES_PAGES else "")
+                       + f"<b style='font-size:18px'>{_e(n)}</b>"
                        f"<p class='muted' style='margin:6px 0 0'>{_e(d)}</p></a>" for c, n, d in OUTILS)
              + "</div><p class='muted'>Ces outils servent à comprendre et à simuler. Ce ne sont pas des conseils d'investissement.</p>")
     jl = seo._jsonld_liste(base, "Outils gratuits pour la Bourse et la crypto", "outils.html", [(n, c) for c, n, _ in OUTILS])
@@ -476,4 +481,81 @@ maj('q');live();
                          "Convert Bitcoin, Ether, Solana or any stock to dollars and euros, both ways. Free, daily prices, live crypto prices.",
                          chemin, CSS_OUTIL + corps + JS_COMMUN_EN + JS_LIENS_PARTAGE + js, csp, alt)
     out.append((chemin, _avec_jsonld(page, _jsonld_en(base, chemin, "Crypto and stock converter", "Free converter to USD and EUR.", faq))))
+    # 3. Compound interest (version 53)
+    chemin = "en/tools/compound-interest.html"
+    faq = [("What is compound interest?", "Your gains earn gains in turn: money snowballs. The longer the period, the stronger the effect."),
+           ("What return should I use?", "No return is guaranteed in the stock market. Over very long periods, broad world indices have averaged a few percent a year after inflation, with some very negative years. Try several assumptions, including cautious ones."),
+           ("How much should I save each month to reach a goal?", "Use the \"Reach a goal\" mode: enter the target, the duration and the assumed return, and the tool computes the monthly amount.")]
+    corps = ("<h1>Compound interest calculator</h1><p>How much will your savings be worth in 10, 20 or 30 years with a monthly deposit? "
+             "Or how much should you put aside to reach a goal?</p>"
+             "<p class='choix-mode' role='group' aria-label='Calculation mode'><button type='button' data-mode='futur' aria-pressed='true'>What I'll have</button>"
+             "<button type='button' data-mode='objectif' aria-pressed='false'>Reach a goal</button></p>"
+             "<div class='carte'><form class='outil' onsubmit='return false'>"
+             "<label>Starting amount ($)<input id='c0' type='number' min='0' step='any' value='1000' inputmode='decimal'></label>"
+             "<label id='l-v'>Monthly deposit ($)<input id='v' type='number' min='0' step='any' value='100' inputmode='decimal'></label>"
+             "<label id='l-o' hidden>Goal ($)<input id='o' type='number' min='0' step='any' value='50000' inputmode='decimal'></label>"
+             "<label>Yearly return (%)<input id='r' type='number' step='any' value='5' inputmode='decimal'></label>"
+             "<label>Years<input id='n' type='number' min='1' max='60' step='1' value='20' inputmode='numeric'></label></form></div>"
+             "<div class='carte res' aria-live='polite'><div id='res'></div><div id='g'></div><div class='partage'><button type='button' id='btn-partage' "
+             "onclick=\"partager('Compound interest calculator')\">Share this result</button><a id='p-wa' href='#' target='_blank' rel='noopener'>WhatsApp</a>"
+             "<a id='p-x' href='#' target='_blank' rel='noopener'>X (Twitter)</a></div></div>"
+             "<details class='carte'><summary>Year-by-year details</summary><div style='overflow-x:auto'><table class='annees' id='tab'></table></div></details>"
+             "<p class='muted'>Assumes a constant return, with no fees, taxes or inflation: real returns vary a lot from year to year. Not investment advice.</p>"
+             "<p>See also: <a href='if-i-had-invested.html'>if I had invested… (real prices)</a> · <a href='capital-gains.html'>capital gains calculator</a></p>"
+             "<h2>FAQ</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{_e(r)}</p>" for q, r in faq))
+    js = r"""<script>
+let mode='futur';const $=id=>document.getElementById(id);
+const qs=new URLSearchParams(location.search);['c0','v','o','r','n'].forEach(k=>{if(qs.get(k))$(k).value=qs.get(k)});if(qs.get('mode')==='objectif')mode='objectif';
+function bascule(){document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===mode));$('l-v').hidden=mode!=='futur';$('l-o').hidden=mode!=='objectif';calc()}
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;bascule()});
+function serie(c0,v,r,n){const im=Math.pow(1+r/100,1/12)-1;let cap=c0,ver=c0;const ans=[{a:0,cap,ver}];for(let a=1;a<=n;a++){for(let m=0;m<12;m++){cap=cap*(1+im)+v;ver+=v}ans.push({a,cap,ver})}return ans}
+function calc(){const c0=+$('c0').value||0,r=+$('r').value||0,n=Math.min(60,Math.max(1,Math.round(+$('n').value||1)));let v=+$('v').value||0;
+  if(mode==='objectif'){const o=+$('o').value||0,im=Math.pow(1+r/100,1/12)-1,N=12*n,fv0=c0*Math.pow(1+im,N),k=im?((Math.pow(1+im,N)-1)/im):N;v=Math.max(0,(o-fv0)/k)}
+  const s=serie(c0,v,r,n),f=s[s.length-1],gain=f.cap-f.ver;
+  $('res').innerHTML=mode==='futur'?`<p>In ${n} years, you would have about</p><span class="gros">${fmtM(f.cap,'USD')}</span><p>including <b>${fmtM(f.ver,'USD')}</b> you paid in and <b class="up">${fmtM(gain,'USD')}</b> of compound interest.</p>`
+    :`<p>To reach ${fmtM(+$('o').value||0,'USD')} in ${n} years, you would need to save about</p><span class="gros">${fmtM(v,'USD')} a month</span><p>Total paid in: ${fmtM(f.ver,'USD')} · interest: ${fmtM(gain,'USD')}.</p>`;
+  courbe($('g'),s.map(x=>'year '+x.a),[{v:s.map(x=>x.ver),c:'var(--muted)',tiret:1},{v:s.map(x=>x.cap),c:'var(--accent)'}],'Balance and amount paid in over the years');
+  $('tab').innerHTML='<tr><td><b>Year</b></td><td><b>Paid in</b></td><td><b>Interest</b></td><td><b>Balance</b></td></tr>'+s.slice(1).map(x=>`<tr><td>${x.a}</td><td>${fmtM(x.ver,'USD')}</td><td>${fmtM(x.cap-x.ver,'USD')}</td><td>${fmtM(x.cap,'USD')}</td></tr>`).join('');
+  const u=new URL(location.href);['c0','v','o','r','n'].forEach(k=>u.searchParams.set(k,$(k).value));u.searchParams.set('mode',mode);history.replaceState(null,'',u);
+  majLiensPartage(mode==='futur'?`${fmtM(+$('v').value||0,'USD')} a month for ${n} years at ${fmt(r,1)}% = ${fmtM(f.cap,'USD')} 🤯`:`Goal ${fmtM(+$('o').value||0,'USD')} in ${n} years: ${fmtM(v,'USD')} a month`);}
+['c0','v','o','r','n'].forEach(k=>$(k).addEventListener('input',calc));bascule();
+</script>"""
+    alt = {"en": chemin, "fr": "outils/interets-composes.html", "x-default": "outils/interets-composes.html"}
+    page = anglais._page(base, f"Compound interest calculator with monthly deposits (free) | {NOM}",
+                         "Free compound interest calculator: see what your savings become with monthly deposits, or how much to save to reach a goal. Year-by-year table.",
+                         chemin, CSS_OUTIL + corps + JS_COMMUN_EN + JS_LIENS_PARTAGE + js, csp, alt)
+    out.append((chemin, _avec_jsonld(page, _jsonld_en(base, chemin, "Compound interest calculator", "Free compound interest calculator with monthly deposits.", faq))))
+    # 4. Capital gains (version 53) : taux à choisir selon son pays
+    chemin = "en/tools/capital-gains.html"
+    faq = [("How is a capital gain calculated?", "Sale value minus purchase value, minus fees. Buying fees add to your cost, selling fees reduce your proceeds. The calculator includes both."),
+           ("What tax rate should I enter?", "It depends on your country, your income and how long you held the asset. Check your tax authority's website: this tool only applies the rate you choose."),
+           ("Do crypto gains count?", "In most countries, selling crypto for cash (and often swapping crypto for crypto) can create a taxable gain. Rules differ a lot by country.")]
+    corps = ("<h1>Capital gains calculator: stocks and crypto</h1><p>How much did you gain (or lose) after fees, and how much tax to expect at your rate?</p>"
+             "<div class='carte'><form class='outil' onsubmit='return false'>"
+             "<label>Buy price (per unit)<input id='pa' type='number' min='0' step='any' value='100' inputmode='decimal'></label>"
+             "<label>Sell price (per unit)<input id='pv' type='number' min='0' step='any' value='130' inputmode='decimal'></label>"
+             "<label>Quantity<input id='q' type='number' min='0' step='any' value='10' inputmode='decimal'></label>"
+             "<label>Fees (buy + sell)<input id='fr' type='number' min='0' step='any' value='4' inputmode='decimal'></label>"
+             "<label>Your tax rate (%)<input id='t' type='number' min='0' max='100' step='any' value='15' inputmode='decimal'></label></form></div>"
+             "<div class='carte res' aria-live='polite'><div id='res'></div><div class='partage'><button type='button' id='btn-partage' "
+             "onclick=\"partager('Capital gains calculator')\">Share this result</button><a id='p-wa' href='#' target='_blank' rel='noopener'>WhatsApp</a>"
+             "<a id='p-x' href='#' target='_blank' rel='noopener'>X (Twitter)</a></div></div>"
+             "<p class='muted'>Simplified estimate, not tax advice. Rates and rules depend on your country: check your tax authority.</p>"
+             "<p>See also: <a href='if-i-had-invested.html'>if I had invested…</a> · <a href='compound-interest.html'>compound interest calculator</a></p>"
+             "<h2>FAQ</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{_e(r)}</p>" for q, r in faq))
+    js = r"""<script>
+const $=id=>document.getElementById(id);
+function calc(){const pa=+$('pa').value||0,pv=+$('pv').value||0,q=+$('q').value||0,fr=+$('fr').value||0,taux=+$('t').value||0;
+  const net=(pv-pa)*q-fr,imp=net>0?net*taux/100:0,apres=net-imp,pc=pa*q?net/(pa*q+fr)*100:0;
+  $('res').innerHTML=`<p>${net>=0?'Capital gain':'Capital loss'} after fees</p><span class="gros ${net>=0?'up':'down'}">${net>=0?'+':''}${fmtM(net,'USD')}</span>`+
+   `<p>${net>=0?'+':''}${fmt(pc,1)}% on ${fmtM(pa*q+fr,'USD')} invested · estimated tax: <b>${fmtM(imp,'USD')}</b> (${fmt(taux,1)}%) · <b>net gain: ${fmtM(apres,'USD')}</b></p>`+
+   (net<0?'<p class="muted">A loss creates no tax and, in many countries, can offset other gains.</p>':'');
+  majLiensPartage(`My capital gain: ${fmtM(net,'USD')}, estimated tax ${fmtM(imp,'USD')}`);}
+['pa','pv','q','fr','t'].forEach(k=>$(k).addEventListener('input',calc));calc();
+</script>"""
+    alt = {"en": chemin, "fr": "outils/plus-value.html", "x-default": "outils/plus-value.html"}
+    page = anglais._page(base, f"Capital gains calculator for stocks and crypto (free) | {NOM}",
+                         "Free capital gains calculator: your gain or loss after fees and the tax at your own rate, for stocks, ETFs and crypto.",
+                         chemin, CSS_OUTIL + corps + JS_COMMUN_EN + JS_LIENS_PARTAGE + js, csp, alt)
+    out.append((chemin, _avec_jsonld(page, _jsonld_en(base, chemin, "Capital gains calculator", "Free capital gains calculator for stocks and crypto.", faq))))
     return out

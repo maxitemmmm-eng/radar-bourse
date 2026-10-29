@@ -186,6 +186,8 @@ tbody tr:last-child td{border-bottom:0}
 .pf-ordre input{width:140px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:15px var(--f-mono)}
 
 .hero-liens{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.hero-visuel{display:block;width:100%;max-width:560px;height:auto;margin:0 0 18px}
+@media (max-width:640px){.hero-visuel{margin-bottom:12px}}
 .hero-liens .btn{text-decoration:none;display:inline-block}
 
 /* FAQ */
@@ -570,6 +572,54 @@ section[id],[id^="h-"]{scroll-margin-top:calc(var(--tete,118px) + 10px)}
 .mode button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
 html.simple .expert{display:none!important}
 
+/* Version 53 : sur téléphone, le bandeau des marchés devient un panneau qu'on fait glisser (et qui défile tout seul) */
+@media (max-width:640px){
+  .tape{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;gap:1px;-webkit-overflow-scrolling:touch}
+  .tape::-webkit-scrollbar{display:none}
+  .tape .tick{flex:0 0 78%;scroll-snap-align:start}
+  .tape-points{display:flex;justify-content:center;gap:6px;margin-top:8px}
+  .tape-points i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+  .tape-points i.on{background:var(--ink)}
+}
+@media (min-width:641px){.tape-points{display:none}}
+
+
+/* Version 53 : téléphone tourné à l'horizontale (écran bas) — en-tête de fiche sur une seule ligne fine */
+@media (max-height:500px) and (orientation:landscape){
+  .sheet-head{flex-wrap:nowrap;padding-block:6px;gap:10px}
+  .sheet-head h3{font-size:18px;white-space:nowrap}
+  .sheet-head .stamp{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:38vw;font-size:12px}
+  .sheet-head .actions{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;min-width:0}
+  .sheet-head .actions::-webkit-scrollbar{display:none}
+  .sheet-head .actions button{flex:none;padding:5px 10px;font-size:13.5px;min-height:34px}
+  .sheet-head .actions .close{order:-1;font-weight:700}
+  .top{position:static}
+}
+
+/* Version 53 : accueil plus clair (sections repliables), fiche plus tactile sur téléphone */
+section.repliable > .sec-head{cursor:pointer}
+section.repliable.replie > :not(.sec-head){display:none!important}
+section.repliable.replie > .sec-head > :not(h2):not(.replier):not(p:first-of-type){display:none!important}
+section.repliable.replie > .sec-head > p:first-of-type{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:0}
+section.repliable.replie{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-top:14px}
+.replier{margin-left:auto;flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:99px;padding:7px 14px;font:600 14px var(--f-body);cursor:pointer;min-height:40px}
+section.repliable.replie .replier{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+#tous:not(.tout) #rows tr:nth-child(n+26){display:none}
+.voir-tout{display:block;margin:12px auto 0;min-height:44px}
+@media (max-width:640px){
+  .sheet-head{flex-wrap:wrap;padding-block:10px;gap:6px 10px}
+  .sheet-head h3{font-size:20px}
+  .sheet-head .actions{width:100%;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;scrollbar-width:none;margin-left:0;padding-bottom:2px}
+  .sheet-head .actions::-webkit-scrollbar{display:none}
+  .sheet-head .actions button{flex:none;padding:8px 12px;font-size:14px;min-height:40px}
+  .sheet-head .actions .close{order:-1;font-weight:700}
+  .dtabs{scroll-snap-type:x proximity;-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}
+  .dtab{min-height:44px;scroll-snap-align:start}
+  .chip,.btn{min-height:40px}
+  section{margin-top:22px}
+}
+
+
 /* Alertes sur les favoris */
 .alerte-fav{margin-top:18px;border:2px solid var(--accent);background:var(--accent-soft);border-radius:var(--r);padding:12px 14px;display:grid;gap:6px}
 .alerte-fav ul{margin:0;padding-left:18px;font-size:14px;display:grid;gap:2px}
@@ -718,8 +768,19 @@ html.calme *{animation:none!important;transition:none!important}
 <main class="gutter" id="contenu" tabindex="-1"><div class="wrap">
   <div class="hero">
    <div>
+    <svg class="hero-visuel" viewBox="0 0 640 150" role="img" aria-label="Illustration : le radar analyse une courbe de prix et prévoit une fourchette pour le mois suivant">
+      <rect x="0" y="0" width="640" height="150" rx="14" fill="var(--surface)" stroke="var(--line)"/>
+      <g transform="translate(78 75)"><circle r="58" fill="none" stroke="var(--accent-soft)" stroke-width="3"/><circle r="38" fill="none" stroke="var(--accent-soft)" stroke-width="3"/>
+        <circle r="18" fill="none" stroke="var(--accent-soft)" stroke-width="3"/><line x1="0" y1="0" x2="46" y2="-36" stroke="var(--up)" stroke-width="5" stroke-linecap="round"/>
+        <circle r="6" fill="var(--up)"/><circle cx="22" cy="24" r="4" fill="var(--up)" opacity=".8"/><circle cx="-30" cy="-12" r="3.5" fill="var(--accent)" opacity=".8"/></g>
+      <polyline points="160,108 190,96 214,102 240,82 268,88 292,70 318,76 344,58 372,64 400,50" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+      <polygon points="400,50 600,14 600,92" fill="var(--accent-soft)"/><polygon points="400,50 600,30 600,72" fill="var(--accent)" opacity=".22"/>
+      <line x1="400" y1="50" x2="600" y2="50" stroke="var(--up)" stroke-width="3" stroke-dasharray="7 6"/><circle cx="400" cy="50" r="6" fill="var(--accent)"/>
+      <text x="160" y="134" font-size="13" fill="var(--muted)" font-family="var(--f-body)">les cours passés</text>
+      <text x="600" y="134" font-size="13" fill="var(--muted)" font-family="var(--f-body)" text-anchor="end">la fourchette prévue dans un mois</text>
+    </svg>
     <h2>Les marchés, lus calmement par les chiffres.</h2>
-    <p class="intro">Chaque heure, deux intelligences artificielles relisent les cours de plus de 160 actions, ETF et cryptos. Ce qu'elles prévoient le mieux : de combien un prix risque de bouger le mois prochain, et quels titres pourraient faire mieux que leur marché. Deviner la hausse est bien plus dur : elles se trompent souvent, et on te montre exactement combien. C'est un projet éducatif et gratuit, pas un conseil.</p>
+    <p class="intro">Chaque heure, l'IA analyse plus de 200 actions, ETF et cryptos. Elle prévoit surtout <b>de combien un prix peut bouger</b> et <b>le risque de forte chute</b>, et publie tous ses résultats, ratés compris. Gratuit et éducatif, pas un conseil.</p>
     <div class="hero-liens"><a class="btn" href="#simulation">À combien dans un mois ?</a><a class="btn ghost" href="#remonte">Jouer contre l'IA</a><a class="btn ghost" href="#portefeuille">Portefeuille virtuel</a><a class="btn ghost lien-site" href="resultats.html">Résultats réels</a><a class="btn ghost lien-site" href="apprendre.html">Apprendre la Bourse</a><a class="btn ghost lien-site" href="guides.html">Guides</a><a class="btn ghost lien-site" href="outils/si-javais-investi.html">Si j'avais investi…</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
    </div>
    <aside class="bref" id="bref" aria-labelledby="bref-t" hidden><h3 id="bref-t">Aujourd'hui en bref</h3><p id="bref-txt"></p><p class="sig" id="bref-sig"></p></aside>
@@ -736,7 +797,7 @@ html.calme *{animation:none!important;transition:none!important}
       <button class="btn ghost" id="depart-ok">J'ai compris, masquer</button></div>
   </div>
   <p class="etat-marches" id="etat-marches" aria-live="polite"></p>
-  <div class="tape" id="tape" aria-label="Marchés"></div>
+  <div class="tape" id="tape" role="region" aria-label="Marchés en ce moment" tabindex="0"></div>
   <div class="mood panel" id="mood" aria-label="Météo du marché"></div>
 
   <section aria-labelledby="h-pred" id="previsions">
@@ -971,6 +1032,10 @@ html.calme *{animation:none!important;transition:none!important}
         <a class="lien-site" href="resultats.html">Résultats réels</a>
         <a class="lien-site" href="fiche-technique-ia.html">Fiche technique de l'IA</a>
         <a class="lien-site" href="outils.html">Outils gratuits (simulateur, convertisseur, intérêts composés)</a>
+        <a class="lien-site" href="simulateur-boursier.html">Simulateur boursier</a>
+        <a class="lien-site" href="fonctionnalites.html">Toutes les fonctionnalités</a>
+        <a class="lien-site" href="a-propos.html">À propos</a>
+        <a class="lien-site" href="contact.html">Contact</a>
         <a class="lien-site" href="en/index.html" hreflang="en" lang="en">English version</a>
         <a class="lien-site" href="es/index.html" hreflang="es" lang="es">Español</a>
         <a class="lien-site" href="de/index.html" hreflang="de" lang="de">Deutsch</a>
@@ -1134,7 +1199,7 @@ html.calme *{animation:none!important;transition:none!important}
         <h4>Méthodologie, sources et conflits d'intérêts</h4>
         <p class="maj">Publiée pour permettre à chacun de juger les Contenus de façon éclairée.</p>
         <h4>Auteur</h4>
-        <p>Contenus produits automatiquement par un programme conçu par <span class="leg-editeur"></span>, particulier, sans qualification professionnelle en conseil en investissement.</p>
+        <p>Contenus produits automatiquement par un programme conçu par un particulier (éditeur de <span class="leg-editeur"></span>), sans qualification professionnelle en conseil en investissement.</p>
         <h4>Sources de données</h4>
         <ul>
           <li>Cours historiques quotidiens des actions, ETF, indices, cryptos, du VIX, des taux, du dollar et de l'or : Yahoo Finance, avec Binance et Stooq en secours. Chaque titre passe un contrôle qualité automatique (fraîcheur, trous, sauts invraisemblables, comparaison entre deux sources pour les cryptos).</li>
@@ -1165,7 +1230,7 @@ html.calme *{animation:none!important;transition:none!important}
 
       <article class="legal" data-pane="mentions" hidden>
         <h4>Mentions légales</h4>
-        <p><b>Éditeur :</b> <span id="m-editeur"></span>, particulier, à titre non professionnel.<br>
+        <p><b>Éditeur :</b> <span id="m-editeur"></span>, projet personnel d'un particulier, à titre non professionnel.<br>
         <b>Contact :</b> <span id="m-contact" class="num"></span></p>
         <p><b>Conflits d'intérêts :</b> <span class="leg-conflits"></span></p>
         <p><b>Hébergeur :</b> GitHub, Inc. (service GitHub Pages), 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.</p>
@@ -1327,7 +1392,7 @@ rendreTape();
   const hausse = idx.filter(i => i.var_jour > 0).length;
   const jour = !idx.length ? "" : hausse === idx.length ? "Les grands indices sont tous dans le vert aujourd'hui. "
     : hausse === 0 ? "Les grands indices reculent tous aujourd'hui. "
-    : `Journée partagée : ${hausse} grand${hausse>1?"s":""} indice${hausse>1?"s":""} sur ${idx.length} en hausse. `;
+    : `Journée partagée : ${hausse} ${hausse > 1 ? "grands indices" : "grand indice"} sur ${idx.length} en hausse. `;
   const ton = moy >= .56 ? "plutôt confiantes" : moy <= .48 ? "plutôt prudentes" : "assez partagées";
   const tri = avec.filter(t => t.avis_net !== false).sort((a,b) => b.proba_hausse - a.proba_hausse);
   const tete = tri.slice(0,2).filter(t => t.proba_hausse >= .55).map(t => esc(t.nom));
@@ -1361,7 +1426,7 @@ const VUES_PICKS = {
   calme: {note: "Les titres dont l'IA prévoit qu'ils bougeront le moins le mois prochain : moins de surprises, à la hausse comme à la baisse.",
     liste: () => T.filter(t => t.risque_prevu && t.risque_prevu.mouvement != null).sort((a,b) => a.risque_prevu.mouvement - b.risque_prevu.mouvement),
     droite: t => `<span class="num" style="white-space:nowrap" title="mouvement prévu sur un mois">±${(t.risque_prevu.mouvement*100).toFixed(1).replace(".", ",")}&nbsp;%</span>`},
-  semaine: {note: "Les titres dont on prévoit qu'ils bougeront le plus sur les 5 prochaines séances, dans un sens ou dans l'autre. Testé sur 138 000 cas réels : plus fiable que « comme la semaine dernière » chaque année depuis 2009.",
+  semaine: {note: "Les titres dont on prévoit qu'ils bougeront le plus sur les 5 prochaines séances, dans un sens ou dans l'autre. Testé sur près de 290 000 cas réels : plus fiable que « comme la semaine dernière » chaque année depuis 2009.",
     liste: () => T.filter(t => t.risque_prevu && t.risque_prevu.semaine != null).sort((a,b) => b.risque_prevu.semaine - a.risque_prevu.semaine),
     droite: t => `<span class="num" style="white-space:nowrap" title="mouvement prévu sur 5 séances">±${(t.risque_prevu.semaine*100).toFixed(1).replace(".", ",")}&nbsp;%</span>`},
   // version 46 : la prévision la plus fiable du radar, mise en avant sur l'accueil (seulement si elle a fait ses preuves)
@@ -2347,11 +2412,11 @@ function troisPoints(t){
   }
   if(rq && rq.semaine != null){   // version 48 : agitation sur 5 séances
     cases.push(`<div class="tp"><span class="tp-l">Agitation sur une semaine</span><b>±${(rq.semaine * 100).toFixed(1).replace(".", ",")} %</b><span>sur les 5 prochaines séances</span>
-      <span class="tp-f">Testée sur 138 000 cas réels : plus proche de la réalité que « comme la semaine dernière » 57 fois sur 100, et chaque année depuis 2009</span></div>`);
+      <span class="tp-f">Testée sur près de 290 000 cas réels : plus proche de la réalité que « comme la semaine dernière » 57 fois sur 100, et chaque année testée (24 sur 24)</span></div>`);
   }
   if(t.proba_marche != null){
     const net = t.marche_net !== false, p = t.proba_marche;
-    cases.push(`<div class="tp"><span class="tp-l">Face à ${esc(t.indice_nom || "son marché")}</span><b>${!net ? "Pas d'avis net" : p >= .5 ? "Plutôt mieux" : "Plutôt moins bien"}</b><span>${net ? `${Math.round(p * 100)} chances sur 100 de faire mieux` : `chiffre brut ${Math.round(p * 100)} sur 100, trop incertain`}</span>
+    cases.push(`<div class="tp"><span class="tp-l">Face ${aLe(t.indice_nom)}</span><b>${!net ? "Pas d'avis net" : p >= .5 ? "Plutôt mieux" : "Plutôt moins bien"}</b><span>${net ? `${Math.round(p * 100)} chances sur 100 de faire mieux` : `chiffre brut ${Math.round(p * 100)} sur 100, trop incertain`}</span>
       <span class="tp-f">${R.precision != null ? `Juste ${Math.round(R.precision * 100)} fois sur 100 (hasard : ${Math.round(R.precision_base * 100)})` : ""}</span></div>`);
   }
   if(t.proba_hausse != null){
@@ -2642,7 +2707,7 @@ function lecture(t, court = false){
     const med = k.mediane.at(-1);
     const avis = p >= 0.58 ? "plutôt favorable" : p >= 0.52 ? "légèrement favorable" : p > 0.48 ? "neutre, sans direction claire"
                : p > 0.42 ? "légèrement défavorable" : "plutôt défavorable";
-    const rel = t.proba_marche != null ? ` Par rapport à ${esc(t.indice_nom || "son marché")}, la probabilité de faire mieux sur la même période est de ${Math.round(t.proba_marche*100)} %${t.proba_marche >= .55 ? " : plutôt plus fort que son marché" : t.proba_marche <= .45 ? " : plutôt plus faible que son marché" : ", sans avantage net"}.` : "";
+    const rel = t.proba_marche != null ? ` Par rapport ${aLe(t.indice_nom)}, la probabilité de faire mieux sur la même période est de ${Math.round(t.proba_marche*100)} %${t.proba_marche >= .55 ? " : plutôt plus fort que son marché" : t.proba_marche <= .45 ? " : plutôt plus faible que son marché" : ", sans avantage net"}.` : "";
     parts.push(`<h3>Prévision à ${H} séances (environ un mois)</h3>
       <p>L'avis du modèle est <b>${avis}</b> : ${Math.round(p*100)} % de probabilité que le cours soit plus haut qu'aujourd'hui.${t.signal_fort ? " C'est un <b>signal fort</b> : la tendance technique va dans le même sens." : ""}${rel}${t.fourchette_elargie ? " La fourchette a été élargie car l'entreprise publie ses résultats avant l'échéance." : ""}</p>
       <div class="scen">
@@ -2804,6 +2869,7 @@ function dessinerSim(t){
 
 /* Détails d'un titre chargés à la demande (site en ligne) : la page d'accueil reste légère */
 const DETAILS_EN_COURS = {};
+function aLe(n){ n = n || "son marché"; return esc(/^le /i.test(n) ? "au " + n.slice(3) : /^les /i.test(n) ? "aux " + n.slice(4) : "à " + n); }
 function chargerDetail(t){
   if(t.serie || !t.detail) return Promise.resolve(t);
   if(!DETAILS_EN_COURS[t.ticker]){
@@ -3255,6 +3321,82 @@ function appliquerMode(m){
 document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { appliquerMode(b.dataset.mode);
   flash(b.dataset.mode === "simple" ? "Mode simple : l'essentiel, expliqué simplement" : "Mode expert : tous les indicateurs techniques"); });
 document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === MODE));
+
+
+
+/* ---------- Version 53 : bandeau des marchés en carrousel sur téléphone ---------- */
+(function(){
+  const tape = document.getElementById("tape"); if(!tape) return;
+  const pts = document.createElement("div"); pts.className = "tape-points"; pts.setAttribute("aria-hidden", "true"); tape.after(pts);
+  let touche = 0;
+  const cartes = () => [...tape.querySelectorAll(".tick")];
+  const index = () => { const c = cartes(); if(!c.length) return 0; const w = c[0].offsetWidth + 1; return Math.round(tape.scrollLeft / w); };
+  const majPoints = () => { const c = cartes(), i = index(); if(pts.children.length !== c.length) pts.innerHTML = c.map(() => "<i></i>").join("");
+    [...pts.children].forEach((x, k) => x.classList.toggle("on", k === i)); };
+  tape.addEventListener("scroll", () => requestAnimationFrame(majPoints), {passive: true});
+  ["touchstart", "pointerdown", "wheel"].forEach(ev => tape.addEventListener(ev, () => { touche = Date.now(); }, {passive: true}));
+  new MutationObserver(majPoints).observe(tape, {childList: true});
+  const calme = () => document.documentElement.classList.contains("calme") || matchMedia("(prefers-reduced-motion: reduce)").matches;
+  setInterval(() => {
+    if(document.hidden || calme() || Date.now() - touche < 10000 || tape.scrollWidth <= tape.clientWidth + 4) return;
+    const c = cartes(); if(!c.length) return; const w = c[0].offsetWidth + 1;
+    const fin = tape.scrollLeft + tape.clientWidth >= tape.scrollWidth - 4;
+    tape.scrollTo({left: fin ? 0 : tape.scrollLeft + w, behavior: "smooth"});
+  }, 4000);
+  majPoints();
+})();
+
+/* ---------- Version 53 : sections repliables (accueil plus court et plus clair) ---------- */
+(function(){
+  const REPLIEES = ["carte-sec", "h-ctx", "h-graph", "signaux", "robots", "simulation", "remonte", "confiance", "tous", "engagements", "h-faq", "prevention"];
+  let etat = {}; try{ etat = JSON.parse(localStorage.getItem("radar-sections") || "{}") || {}; }catch(e){}
+  const sauver = () => { try{ localStorage.setItem("radar-sections", JSON.stringify(etat)); }catch(e){} };
+  const sections = [];
+  document.querySelectorAll("main section").forEach(sec => {
+    const cle = sec.id || sec.getAttribute("aria-labelledby");
+    if(!REPLIEES.includes(cle)) return;
+    const tete = sec.querySelector(":scope > .sec-head"); if(!tete) return;
+    sec.classList.add("repliable");
+    const b = document.createElement("button"); b.type = "button"; b.className = "replier";
+    tete.appendChild(b);
+    const maj = () => { const r = sec.classList.contains("replie"); b.textContent = r ? "Voir" : "Replier"; b.setAttribute("aria-expanded", String(!r)); };
+    const ouvrirSec = (garder) => { if(!sec.classList.contains("replie")) return; sec.classList.remove("replie"); maj();
+      if(!garder){ etat[cle] = 1; sauver(); }
+      requestAnimationFrame(() => { try{ redessinerTout(); }catch(e){} window.dispatchEvent(new Event("resize")); }); };
+    const fermerSec = () => { sec.classList.add("replie"); maj(); etat[cle] = 0; sauver(); };
+    b.onclick = e => { e.stopPropagation(); sec.classList.contains("replie") ? ouvrirSec() : fermerSec(); };
+    tete.addEventListener("click", e => { if(sec.classList.contains("replie") && !e.target.closest("a,button,input,select")) ouvrirSec(); });
+    if(etat[cle] !== 1) sec.classList.add("replie");
+    maj(); sections.push({sec, ouvrirSec});
+  });
+  // un lien vers une section (menu, boutons de l'accueil, #adresse) l'ouvre automatiquement
+  const ouvrirCible = h => { if(!h || h.length < 2) return; let el; try{ el = document.querySelector(h); }catch(e){ return; }
+    if(!el) return; const s = sections.find(x => x.sec === el || x.sec.contains(el)); if(s) s.ouvrirSec(true); };
+  document.addEventListener("click", e => { const a = e.target.closest('a[href^="#"]'); if(a) ouvrirCible(a.getAttribute("href")); }, true);
+  window.addEventListener("hashchange", () => ouvrirCible(location.hash));
+  ouvrirCible(location.hash);
+  window.ouvrirSection = ouvrirCible;
+  // « Tous les titres » : les 25 premiers, puis un bouton pour tout afficher
+  const tous = document.getElementById("tous"), rows = document.getElementById("rows");
+  if(tous && rows){
+    const bt = document.createElement("button"); bt.type = "button"; bt.className = "btn ghost voir-tout";
+    tous.querySelector(".tablewrap").after(bt);
+    const majBt = () => { const n = rows.children.length; bt.hidden = n <= 25 || tous.classList.contains("tout"); bt.textContent = `Afficher les ${n} titres`; };
+    bt.onclick = () => { tous.classList.add("tout"); majBt(); };
+    new MutationObserver(majBt).observe(rows, {childList: true}); majBt();
+    const q = document.getElementById("q"); if(q) q.addEventListener("input", () => { if(q.value) tous.classList.add("tout"); majBt(); });
+  }
+})();
+
+/* ---------- Version 53 : fiche tactile — glisser vers la droite sur l'en-tête pour fermer ---------- */
+(function(){
+  document.querySelectorAll(".sheet").forEach(sh => {
+    const tete = sh.querySelector(".sheet-head"); if(!tete) return; let x0 = null, y0 = 0;
+    tete.addEventListener("touchstart", e => { if(e.touches.length === 1){ x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; } }, {passive: true});
+    tete.addEventListener("touchend", e => { if(x0 == null) return; const t = e.changedTouches[0], dx = t.clientX - x0, dy = Math.abs(t.clientY - y0); x0 = null;
+      if(dx > 90 && dy < 50){ const c = sh.querySelector(".close"); if(c) c.click(); } }, {passive: true});
+  });
+})();
 
 /* ---------- Recherche globale (en haut de page) ---------- */
 (function(){
