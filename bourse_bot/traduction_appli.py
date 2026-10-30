@@ -249,11 +249,13 @@ def _script_donnees(exact: dict, phrases: list) -> str:
     js = json.dumps({"E": exact, "R": regles}, ensure_ascii=False).replace("</", "<\\/")
     return ("<script>(()=>{const D=" + js + ";const R=D.R.map(([a,b])=>[new RegExp(a,'g'),b]);"
             "const tr=n=>{const t=n.nodeValue;if(!t||t.length<2)return;const s=t.trim();"
-            "if(D.E[s]!==undefined){n.nodeValue=t.replace(s,D.E[s]);return;}"
+            "if(D.E[s]!==undefined){const v=t.replace(s,D.E[s]);if(v!==t)n.nodeValue=v;return;}"
             "if(!/[a-zà-ÿ]{2}|\\d,\\d/i.test(t))return;let u=t;for(const[r,b]of R)u=u.replace(r,b);if(u!==t)n.nodeValue=u;};"
-            "const tout=r=>{const w=document.createTreeWalker(r,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode()))tr(n);};"
-            "const go=()=>{tout(document.body);new MutationObserver(l=>{for(const x of l){if(x.type==='characterData')tr(x.target);"
-            "else for(const n of x.addedNodes){if(n.nodeType===3)tr(n);else if(n.nodeType===1&&n.tagName!=='SCRIPT')tout(n);}}})"
+            "const SAUTE={SCRIPT:1,STYLE:1,NOSCRIPT:1,TEXTAREA:1,TEMPLATE:1};"
+            "const tout=r=>{const w=document.createTreeWalker(r,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentNode;"
+            "return p&&SAUTE[p.nodeName]||n.nodeValue.length>3000?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT;}});let n;while((n=w.nextNode()))tr(n);};"
+            "const go=()=>{tout(document.body);new MutationObserver(l=>{for(const x of l){if(x.type==='characterData'){const p=x.target.parentNode;if(!(p&&SAUTE[p.nodeName]))tr(x.target);}"
+            "else for(const n of x.addedNodes){if(n.nodeType===3){if(!SAUTE[x.target.nodeName])tr(n);}else if(n.nodeType===1&&!SAUTE[n.nodeName])tout(n);}}})"
             ".observe(document.body,{childList:true,subtree:true,characterData:true});};"
             "document.readyState==='loading'?document.addEventListener('DOMContentLoaded',go):go();})();</script>")
 

@@ -5,7 +5,9 @@
 <meta property="og:title" content="Radar Bourse">
 <meta property="og:description" content="Prévisions statistiques à un mois, cours en direct et fiabilité mesurée. Projet éducatif, pas un conseil en investissement.">
 <!--/META-->
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230f1b2d'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%237398ff' stroke-width='1.5'/%3E%3Cpath d='M16 16 L27 9' stroke='%2335c27d' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%2335c27d'/%3E%3C/svg%3E">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" type="image/png" sizes="96x96" href="icone-96.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -543,6 +545,14 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .nav-sec a[aria-current="true"]{color:var(--surface);background:var(--ink)}
 .nav-sec .ext::after{content:" ↗";font-weight:400}
 .top .nav-sec{gap:4px;padding-block:0 10px;flex-wrap:nowrap;margin-top:-4px}
+/* Version 55 : barre des onglets « tournante » — flèches collées aux bords, défilement en boucle */
+.nav-sec .nav-fl{position:sticky;z-index:2;flex:none;align-self:center;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink);font-size:18px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0;box-shadow:0 0 0 6px var(--bg)}
+.nav-sec .nav-fl[hidden]{display:none}
+.nav-sec .nav-g{left:0;margin-right:2px}
+.nav-sec .nav-d{right:0;margin-left:auto}
+.nav-sec{scroll-behavior:smooth}
+html.calme .nav-sec{scroll-behavior:auto}
 section[id],[id^="h-"]{scroll-margin-top:calc(var(--tete,118px) + 10px)}
 @media (max-width:640px){
   .top .wrap{gap:8px 10px;padding-block:10px}
@@ -3344,6 +3354,34 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
     tape.scrollTo({left: fin ? 0 : tape.scrollLeft + w, behavior: "smooth"});
   }, 4000);
   majPoints();
+})();
+
+/* ---------- Version 55 : barre des onglets tournante (flèches, glisser, défilement automatique en boucle) ---------- */
+(function(){
+  const nav = document.getElementById("nav-sec"); if(!nav) return;
+  const bouton = (cls, txt, label) => { const b = document.createElement("button"); b.type = "button"; b.className = "nav-fl " + cls;
+    b.textContent = txt; b.setAttribute("aria-label", label); return b; };
+  const g = bouton("nav-g", "‹", "Onglets précédents"), d = bouton("nav-d", "›", "Onglets suivants");
+  nav.prepend(g); nav.append(d);
+  let touche = 0;
+  const liens = () => [...nav.querySelectorAll("a")];
+  const deborde = () => nav.scrollWidth > nav.clientWidth + 4;
+  const auDebut = () => nav.scrollLeft <= 4, aLaFin = () => nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 4;
+  const maj = () => { const o = deborde(); g.hidden = !o; d.hidden = !o; };
+  const pas = () => { const l = liens(); return l.length ? Math.max(80, nav.clientWidth * 0.6) : 120; };
+  // les flèches tournent en boucle : au bout, on repart au début (et inversement)
+  d.addEventListener("click", () => { touche = Date.now(); nav.scrollTo({left: aLaFin() ? 0 : nav.scrollLeft + pas()}); });
+  g.addEventListener("click", () => { touche = Date.now(); nav.scrollTo({left: auDebut() ? nav.scrollWidth : nav.scrollLeft - pas()}); });
+  ["touchstart", "pointerdown", "wheel", "focusin", "mouseenter"].forEach(ev => nav.addEventListener(ev, () => { touche = Date.now(); }, {passive: true}));
+  const calme = () => document.documentElement.classList.contains("calme") || matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // tourne tout seul, un onglet à la fois, seulement en haut de la page (plus bas, la barre suit la section lue)
+  setInterval(() => {
+    if(document.hidden || calme() || !deborde() || Date.now() - touche < 12000 || window.scrollY > 300) return;
+    if(aLaFin()){ nav.scrollTo({left: 0}); return; }
+    const suivant = liens().find(a => a.offsetLeft + a.offsetWidth > nav.scrollLeft + nav.clientWidth - 34);
+    nav.scrollTo({left: suivant ? suivant.offsetLeft + suivant.offsetWidth - nav.clientWidth + 40 : nav.scrollLeft + 120});
+  }, 3500);
+  addEventListener("resize", maj, {passive: true}); maj(); setTimeout(maj, 1500);
 })();
 
 /* ---------- Version 53 : sections repliables (accueil plus court et plus clair) ---------- */

@@ -59,7 +59,7 @@ def _page(base, titre, description, chemin, corps, csp, alternates):
 {f'<meta http-equiv="Content-Security-Policy" content="{csp}">' if csp else ''}
 <title>{_e(titre)}</title>
 {tete}
-<link rel="icon" href="{prefixe}icone-192.png">
+{seo.liens_icones(prefixe)}
 {seo.SCRIPT_THEME}
 {seo.POLICES}
 {seo.script_stats()}

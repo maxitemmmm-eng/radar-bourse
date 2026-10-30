@@ -236,7 +236,7 @@ def balises_tete(base: str, titre: str, description: str, chemin: str = "", imag
         f'<meta name="twitter:image" content="{_e(img)}">',
         f'<link rel="manifest" href="{"../" * chemin.count("/")}manifest.webmanifest">',
         f'<link rel="alternate" type="application/rss+xml" title="{NOM}" href="{"../" * chemin.count("/")}flux.xml">',
-        f'<link rel="apple-touch-icon" href="{"../" * chemin.count("/")}icone-192.png">',
+        f'<link rel="apple-touch-icon" href="{"../" * chemin.count("/")}icone-180.png">',
     ]
     if url:
         lignes += [f'<link rel="canonical" href="{_e(url)}">', f'<meta property="og:url" content="{_e(url)}">']
@@ -249,6 +249,13 @@ def balises_tete(base: str, titre: str, description: str, chemin: str = "", imag
     verif = os.environ.get("GOOGLE_SITE_VERIFICATION", "").strip()
     if verif and re.fullmatch(r"[A-Za-z0-9_\-]{10,100}", verif):
         lignes.append(f'<meta name="google-site-verification" content="{verif}">')
+    if not jsonld and chemin and base and not chemin.startswith("widget/") and chemin != "404.html":
+        # Version 55 : toute page indexée décrit au moins ce qu'elle est et où elle se trouve dans le site
+        jsonld = {"@context": "https://schema.org", "@graph": [
+            {"@type": "WebPage", "name": titre, "description": description, "url": url,
+             "inLanguage": "en" if langue == "en" else "fr-FR", "isPartOf": {"@id": base + "#site"},
+             "primaryImageOfPage": img},
+            _jsonld_fil(base, [(NOM, ""), (titre.split(" : ")[0].split(" | ")[0][:60], chemin)])]}
     if jsonld:
         data = json.dumps(jsonld, ensure_ascii=False).replace("</", "<\\/")
         lignes.append(f'<script type="application/ld+json">{data}</script>')
@@ -329,7 +336,7 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 {f'<meta http-equiv="Content-Security-Policy" content="{csp}">' if csp else ''}
 <title>{_e(titre)}</title>
 {balises_tete(base, titre, description, chemin, image=image, jsonld=jsonld, alternates=alternates)}
-<link rel="icon" href="{prefixe}icone-192.png">
+{liens_icones(prefixe)}
 {SCRIPT_THEME}
 {POLICES}
 {script_stats()}
@@ -1471,19 +1478,60 @@ def _image_titre(t: dict, chemin: str, date: str) -> bool:
         return False
 
 
+ICONE_SVG = ("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
+             "<defs><linearGradient id='b' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#16294a'/>"
+             "<stop offset='1' stop-color='#0b1424'/></linearGradient></defs>"
+             "<rect width='64' height='64' rx='14' fill='url(#b)'/>"
+             "<circle cx='32' cy='32' r='21' fill='none' stroke='#7398ff' stroke-width='2.5' opacity='.9'/>"
+             "<circle cx='32' cy='32' r='12' fill='none' stroke='#7398ff' stroke-width='2' opacity='.55'/>"
+             "<path d='M32 32 L50 21 A21 21 0 0 0 39 12.2 Z' fill='#35c27d' opacity='.35'/>"
+             "<path d='M32 32 L50 21' stroke='#35c27d' stroke-width='4' stroke-linecap='round'/>"
+             "<circle cx='32' cy='32' r='4' fill='#35c27d'/><circle cx='22' cy='41' r='2.6' fill='#ffd166'/></svg>")
+
+
 def _icones(dossier: str) -> None:
+    """Icône du site (onglet, résultats Google, écran d'accueil du téléphone) : vrais fichiers, lisibles par Google
+    (une icône intégrée en « data: » n'est pas reprise dans les résultats de recherche)."""
+    with open(os.path.join(dossier, "favicon.svg"), "w", encoding="utf-8") as f:
+        f.write(ICONE_SVG)
     try:
         from PIL import Image, ImageDraw
     except Exception:
         return
-    for taille in (192, 512):
-        img = Image.new("RGB", (taille, taille), "#0f1b2d")
-        dr = ImageDraw.Draw(img)
-        c, r = taille / 2, taille * 0.32
-        dr.ellipse((c - r, c - r, c + r, c + r), outline="#7398ff", width=max(3, taille // 40))
-        dr.line((c, c, c + r * 0.95, c - r * 0.6), fill="#35c27d", width=max(5, taille // 22))
-        dr.ellipse((c - taille * .05, c - taille * .05, c + taille * .05, c + taille * .05), fill="#35c27d")
-        img.save(os.path.join(dossier, f"icone-{taille}.png"), optimize=True)
+    T = 1024                       # dessin en grand puis réduction : bords lisses
+    k = T / 64
+    img = Image.new("RGBA", (T, T), (0, 0, 0, 0))
+    fond = Image.new("RGBA", (T, T))
+    fd = ImageDraw.Draw(fond)
+    for y in range(T):             # dégradé diagonal simplifié (vertical)
+        t = y / T
+        fd.line((0, y, T, y), fill=(int(0x16 + (0x0b - 0x16) * t), int(0x29 + (0x14 - 0x29) * t), int(0x4a + (0x24 - 0x4a) * t), 255))
+    masque = Image.new("L", (T, T), 0)
+    ImageDraw.Draw(masque).rounded_rectangle((0, 0, T - 1, T - 1), radius=int(14 * k), fill=255)
+    img.paste(fond, (0, 0), masque)
+    dr = ImageDraw.Draw(img, "RGBA")
+    c = 32 * k
+    for r, w, a in ((21, 2.5, 230), (12, 2, 140)):
+        dr.ellipse((c - r * k, c - r * k, c + r * k, c + r * k), outline=(0x73, 0x98, 0xff, a), width=int(w * k))
+    dr.pieslice((c - 21 * k, c - 21 * k, c + 21 * k, c + 21 * k), start=-69, end=-31, fill=(0x35, 0xc2, 0x7d, 90))
+    dr.line((c, c, 50 * k, 21 * k), fill=(0x35, 0xc2, 0x7d, 255), width=int(4 * k))
+    dr.ellipse((50 * k - 2 * k, 21 * k - 2 * k, 50 * k + 2 * k, 21 * k + 2 * k), fill=(0x35, 0xc2, 0x7d, 255))
+    dr.ellipse((c - 4 * k, c - 4 * k, c + 4 * k, c + 4 * k), fill=(0x35, 0xc2, 0x7d, 255))
+    dr.ellipse((22 * k - 2.6 * k, 41 * k - 2.6 * k, 22 * k + 2.6 * k, 41 * k + 2.6 * k), fill=(0xff, 0xd1, 0x66, 255))
+    for taille in (48, 96, 180, 192, 512):
+        petit = img.resize((taille, taille), Image.LANCZOS)
+        if taille in (180, 192, 512):   # écran d'accueil du téléphone : fond plein, sans transparence
+            plein = Image.new("RGB", (taille, taille), "#0b1424")
+            plein.paste(petit, (0, 0), petit)
+            petit = plein
+        petit.save(os.path.join(dossier, f"icone-{taille}.png"), optimize=True)
+    img.resize((48, 48), Image.LANCZOS).save(os.path.join(dossier, "favicon.ico"), sizes=[(16, 16), (32, 32), (48, 48)])
+
+
+def liens_icones(prefixe: str = "") -> str:
+    return (f'<link rel="icon" href="{prefixe}favicon.ico" sizes="48x48">\n'
+            f'<link rel="icon" href="{prefixe}favicon.svg" type="image/svg+xml">\n'
+            f'<link rel="icon" type="image/png" sizes="96x96" href="{prefixe}icone-96.png">')
 
 
 MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre",

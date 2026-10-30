@@ -2,6 +2,8 @@
 Un texte absent reste en français : la traduction ne peut pas casser l'appli."""
 
 EN = {
+"Onglets précédents": "Previous tabs",
+"Onglets suivants": "Next tabs",
 "Aller au contenu": "Skip to content",
 "Chercher une action, une crypto…": "Search for a stock, a crypto…",
 "Chercher un titre": "Search for an asset",
@@ -1269,7 +1271,6 @@ EXACT_DONNEES = {
 "PER attendu": "Forward P/E",
 "Marge nette": "Net margin",
 "Le prudent": "The cautious one",
-"Radar Bourse": "Radar Bourse",
 "1 mois": "1 month",
 "3 mois": "3 months",
 "6 mois": "6 months",
