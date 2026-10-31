@@ -262,6 +262,45 @@ def balises_tete(base: str, titre: str, description: str, chemin: str = "", imag
     return "\n".join(lignes)
 
 
+_VOLATIL = re.compile(r"\d{4}-\d{2}-\d{2}(?:T[\d:.+Z-]*)?|\d{1,2}/\d{1,2}(?:/\d{2,4})?|\d{1,2}[h:]\d{2}(?::\d{2})?"
+                      r"|\b\d{1,2}(?:er)? (?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre) \d{4}"
+                      r"|\b(?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}", re.I)
+
+
+def _dates_modif(dossier: str, chemins: list, aujourdhui: str) -> dict:
+    """Version 55 : vraie date de dernière modification de chaque page pour le sitemap. Avant, toutes les pages
+    portaient la date du jour, même les guides qui ne changent jamais : Google finit alors par ignorer ces dates.
+    On garde une empreinte du contenu (sans les dates et heures) ; la date ne change que si le contenu change."""
+    import hashlib
+    fichier = os.path.join(config.DOSSIER_HISTORIQUE, "dates_pages.json")
+    try:
+        with open(fichier, encoding="utf-8") as f:
+            avant = json.load(f)
+    except (OSError, ValueError):
+        avant = {}
+    apres, dates = {}, {}
+    for c in chemins:
+        chemin = os.path.join(dossier, c or "index.html")
+        try:
+            with open(chemin, encoding="utf-8", errors="replace") as f:
+                texte = f.read()
+        except OSError:
+            dates[c] = aujourdhui
+            continue
+        texte = _VOLATIL.sub("", re.sub(r"<script\b[^>]*>.*?</script>", "", texte, flags=re.S))
+        empreinte = hashlib.sha1(texte.encode("utf-8", "replace")).hexdigest()[:16]
+        ancien = avant.get(c)
+        date = ancien[1] if isinstance(ancien, list) and len(ancien) == 2 and ancien[0] == empreinte else aujourdhui
+        apres[c], dates[c] = [empreinte, date], date
+    try:
+        os.makedirs(config.DOSSIER_HISTORIQUE, exist_ok=True)
+        with open(fichier, "w", encoding="utf-8") as f:
+            json.dump(apres, f, separators=(",", ":"), sort_keys=True)
+    except OSError:
+        pass
+    return dates
+
+
 def script_stats() -> str:
     """Compteur de visites GoatCounter (anonyme, sans cookie) si configuré."""
     code = config.GOATCOUNTER
@@ -2027,7 +2066,8 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     maintenant = datetime.now().strftime("%Y-%m-%d")
     if base:
         xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-        xml += [f"<url><loc>{html.escape(base + c)}</loc><lastmod>{maintenant}</lastmod><changefreq>{fq}</changefreq><priority>{pr}</priority></url>"
+        dates = _dates_modif(dossier, [c for c, _, _ in urls], maintenant)
+        xml += [f"<url><loc>{html.escape(base + c)}</loc><lastmod>{dates.get(c, maintenant)}</lastmod><changefreq>{fq}</changefreq><priority>{pr}</priority></url>"
                 for c, fq, pr in urls]
         xml.append("</urlset>")
         with open(os.path.join(dossier, "sitemap.xml"), "w", encoding="utf-8") as f:

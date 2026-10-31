@@ -305,7 +305,7 @@ def _ecrire_anglais(gabarit: str, donnees: str, dossier: str, lib: str) -> None:
     from . import traduction_appli, traductions_en
     tete, corps = gabarit.split("<!--__CORPS__-->", 1)
     base = seo.url_site()
-    alternates = {"fr": "", "en": "app-en.html", "x-default": ""}
+    alternates = None   # l'accueil déclare déjà en/index.html comme version anglaise : pas de liens de langue contradictoires
     debut, fin = tete.index("<!--META-->"), tete.index("<!--/META-->") + len("<!--/META-->")
     jsonld = {"@context": "https://schema.org", "@type": "WebApplication", "name": "Radar Bourse",
               "url": (base + "app-en.html") if base else None, "inLanguage": "en", "applicationCategory": "FinanceApplication",
