@@ -126,6 +126,133 @@
      "risque": 0.0108
     }
    ]
+  },
+  "2026-11": {
+   "date": "2026-11-01",
+   "risque_haut": [
+    {
+     "ticker": "PEPE24478-USD",
+     "nom": "Pepe",
+     "prix": 4.999999873689376e-06,
+     "risque": 0.6405
+    },
+    {
+     "ticker": "ZEC-USD",
+     "nom": "Zcash",
+     "prix": 1256.6300048828125,
+     "risque": 0.5752
+    },
+    {
+     "ticker": "STRK-USD",
+     "nom": "Starknet",
+     "prix": 0.04386,
+     "risque": 0.5625
+    },
+    {
+     "ticker": "STX-USD",
+     "nom": "Stacks",
+     "prix": 0.3244,
+     "risque": 0.5447
+    },
+    {
+     "ticker": "ENA-USD",
+     "nom": "Ethena",
+     "prix": 0.18850000202655792,
+     "risque": 0.5201
+    },
+    {
+     "ticker": "TIA-USD",
+     "nom": "Celestia",
+     "prix": 0.4754,
+     "risque": 0.5074
+    },
+    {
+     "ticker": "NEAR-USD",
+     "nom": "Near",
+     "prix": 4.42549991607666,
+     "risque": 0.4959
+    },
+    {
+     "ticker": "OP-USD",
+     "nom": "Optimism",
+     "prix": 0.1129,
+     "risque": 0.4954
+    },
+    {
+     "ticker": "ARB11841-USD",
+     "nom": "Arbitrum",
+     "prix": 0.1635800004005432,
+     "risque": 0.4953
+    },
+    {
+     "ticker": "QNT-USD",
+     "nom": "Quant",
+     "prix": 199.92999267578125,
+     "risque": 0.4789
+    }
+   ],
+   "risque_bas": [
+    {
+     "ticker": "AI.PA",
+     "nom": "Air Liquide",
+     "prix": 180.89999389648438,
+     "risque": 0.0375
+    },
+    {
+     "ticker": "BVI.PA",
+     "nom": "Bureau Veritas",
+     "prix": 29.299999237060547,
+     "risque": 0.0366
+    },
+    {
+     "ticker": "IBE.MC",
+     "nom": "Iberdrola",
+     "prix": 22.18000030517578,
+     "risque": 0.0351
+    },
+    {
+     "ticker": "KO",
+     "nom": "Coca-Cola",
+     "prix": 94.08000183105469,
+     "risque": 0.029
+    },
+    {
+     "ticker": "COST",
+     "nom": "Costco",
+     "prix": 1012.280029296875,
+     "risque": 0.0285
+    },
+    {
+     "ticker": "^STOXX50E",
+     "nom": "Euro Stoxx 50 (indice)",
+     "prix": 6131.31005859375,
+     "risque": 0.0235
+    },
+    {
+     "ticker": "^FCHI",
+     "nom": "CAC 40 (indice)",
+     "prix": 7969.419921875,
+     "risque": 0.0217
+    },
+    {
+     "ticker": "SPY",
+     "nom": "S&P 500 (ETF)",
+     "prix": 755.719970703125,
+     "risque": 0.0214
+    },
+    {
+     "ticker": "BRK-B",
+     "nom": "Berkshire Hathaway",
+     "prix": 542.489990234375,
+     "risque": 0.0172
+    },
+    {
+     "ticker": "CW8.PA",
+     "nom": "MSCI World (ETF Amundi)",
+     "prix": 705.010009765625,
+     "risque": 0.0157
+    }
+   ]
   }
  }
 }

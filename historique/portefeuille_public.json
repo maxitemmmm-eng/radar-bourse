@@ -84,6 +84,91 @@
      "proba_marche": 0.5158
     }
    ]
+  },
+  "2026-11": {
+   "date": "2026-11-01",
+   "titres": [
+    {
+     "ticker": "GLE.PA",
+     "nom": "Société Générale",
+     "prix": 60.9900016784668,
+     "indice": "^FCHI",
+     "prix_indice": 7969.419921875,
+     "proba_marche": 0.5168
+    },
+    {
+     "ticker": "VIE.PA",
+     "nom": "Veolia",
+     "prix": 33.0099983215332,
+     "indice": "^FCHI",
+     "prix_indice": 7969.419921875,
+     "proba_marche": 0.5161
+    },
+    {
+     "ticker": "ORA.PA",
+     "nom": "Orange",
+     "prix": 14.470000267028809,
+     "indice": "^FCHI",
+     "prix_indice": 7969.419921875,
+     "proba_marche": 0.5161
+    },
+    {
+     "ticker": "LMT",
+     "nom": "Lockheed Martin",
+     "prix": 636.9500122070312,
+     "indice": "SPY",
+     "prix_indice": 755.719970703125,
+     "proba_marche": 0.5154
+    },
+    {
+     "ticker": "ITX.MC",
+     "nom": "Inditex",
+     "prix": 56.13999938964844,
+     "indice": "^STOXX50E",
+     "prix_indice": 6131.31005859375,
+     "proba_marche": 0.5116
+    },
+    {
+     "ticker": "INGA.AS",
+     "nom": "ING",
+     "prix": 28.2549991607666,
+     "indice": "^STOXX50E",
+     "prix_indice": 6131.31005859375,
+     "proba_marche": 0.5111
+    },
+    {
+     "ticker": "BVI.PA",
+     "nom": "Bureau Veritas",
+     "prix": 29.299999237060547,
+     "indice": "^FCHI",
+     "prix_indice": 7969.419921875,
+     "proba_marche": 0.5104
+    },
+    {
+     "ticker": "BBVA.MC",
+     "nom": "BBVA",
+     "prix": 21.059999465942383,
+     "indice": "^STOXX50E",
+     "prix_indice": 6131.31005859375,
+     "proba_marche": 0.5099
+    },
+    {
+     "ticker": "BN.PA",
+     "nom": "Danone",
+     "prix": 65.5199966430664,
+     "indice": "^FCHI",
+     "prix_indice": 7969.419921875,
+     "proba_marche": 0.5096
+    },
+    {
+     "ticker": "BNP.PA",
+     "nom": "BNP Paribas",
+     "prix": 85.6500015258789,
+     "indice": "^FCHI",
+     "prix_indice": 7969.419921875,
+     "proba_marche": 0.5094
+    }
+   ]
   }
  }
 }
