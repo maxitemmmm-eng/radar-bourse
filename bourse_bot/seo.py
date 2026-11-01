@@ -21,8 +21,9 @@ SLOGAN = "Analyse et prévisions boursières à un mois, expliquées simplement"
 TITRE_ACCUEIL = "Radar Bourse : prévisions bourse et crypto par IA, gratuites"   # le nom en premier : recherches « radar bourse »
 DESCRIPTION = ("Prévisions bourse et crypto par IA, gratuites : agitation à un mois, risque de chute, simulateur boursier "
                "à 10 000 € virtuels. Résultats vérifiés publiquement.")
-MOTS_CLES = ("prévision bourse IA, prévision action, prévision crypto, prévision bitcoin, simulateur boursier gratuit, "
-             "portefeuille virtuel, risque de chute action, volatilité, CAC 40, S&P 500, apprendre la bourse")
+MOTS_CLES = ("radar bourse, prévision bourse IA, prévision action, prévision crypto, prévision bitcoin, simulateur boursier gratuit, "
+             "portefeuille virtuel, risque de chute action, volatilité, CAC 40, S&P 500, convertisseur bitcoin euro, "
+             "si j'avais investi, intérêts composés, calcul plus-value flat tax, apprendre la bourse")
 LIB_SIGNAL = {"ACHAT FORT": "haussier fort", "ACHAT": "haussier", "NEUTRE": "neutre",
               "VENTE": "baissier", "VENTE FORTE": "baissier fort"}
 
@@ -2179,10 +2180,37 @@ def html_faq() -> str:
     return "".join(f"<details class='faq'><summary>{_e(q)}</summary><p>{_e(r)}</p></details>" for q, r in FAQ)
 
 
+def _accueil_resume(payload: dict) -> str:
+    """Version 56 : un résumé lisible de tout le site, écrit dans la page (Google lit le texte visible et suit les liens ;
+    tant qu'il ne connaît que l'accueil, c'est par là qu'il découvre les recherches auxquelles le site répond)."""
+    titres = payload.get("titres", [])
+    n = len(titres)
+    connus = [t for t in titres if t.get("ticker") in ("MC.PA", "AAPL", "NVDA", "TSLA", "AIR.PA", "TTE.PA", "MSFT", "BTC-USD", "ETH-USD", "SOL-USD")]
+    exemples = ", ".join(f'<a href="titres/{slug(t["ticker"])}.html">prévision {_e(t["nom"])}</a>' for t in connus)
+    blocs = [
+        ("Prévisions bourse et crypto par IA", f"Chaque heure, {n} actions françaises, européennes et américaines, ETF et cryptomonnaies sont analysés : "
+         f"de combien le prix peut bouger dans un mois, le risque de forte chute, et les chances de faire mieux que son marché. Par exemple : {exemples}. "
+         '<a href="titres.html">Voir tous les titres</a>.'),
+        ("Simulateur boursier gratuit", 'Un portefeuille virtuel de 10 000 € pour acheter et vendre sur les vrais cours, sans risque et sans compte. '
+         '<a href="simulateur-boursier.html">Le simulateur boursier</a>.'),
+        ("Outils gratuits", '<a href="outils/si-javais-investi.html">« Si j\'avais investi… »</a> sur les vrais cours, '
+         '<a href="outils/convertisseur.html">convertisseur bitcoin euro et crypto</a>, '
+         '<a href="outils/interets-composes.html">calculateur d\'intérêts composés</a> et '
+         '<a href="outils/plus-value.html">calcul de plus-value et flat tax</a>.'),
+        ("Jouer et apprendre", 'Le <a href="#prono">pronostic du jour</a>, l\'Arène pour remonter le temps face à l\'IA, '
+         '<a href="guides.html">des guides pour débuter en Bourse</a> et <a href="apprendre.html">des mini-cours</a>.'),
+        ("Une IA honnête, qui progresse", 'Toutes les prévisions sont vérifiées un mois plus tard et publiées dans les '
+         '<a href="resultats.html">résultats réels</a>, ratés compris. Chaque nuit, l\'IA essaie de s\'améliorer : '
+         '<a href="journal-ia.html">son journal</a>.'),
+    ]
+    return ('<section class="seo-resume" aria-labelledby="h-resume"><h2 id="h-resume">Radar Bourse en bref</h2>'
+            + "".join(f"<h3>{_e(t)}</h3><p>{c}</p>" for t, c in blocs) + "</section>")
+
+
 def liens_accueil(payload: dict) -> str:
     """Liens texte vers chaque page de titre, ajoutés en bas de l'accueil (Google suit les liens)."""
     items = "".join(f'<a href="titres/{slug(t["ticker"])}.html">{_e(t["nom"])}</a>' for t in payload.get("titres", []))
-    return (f'<nav class="seo-liens" aria-label="Pages des titres"><b>Analyses détaillées :</b> {items} '
+    return _accueil_resume(payload) + (f'<nav class="seo-liens" aria-label="Pages des titres"><b>Analyses détaillées :</b> {items} '
             f'· <a href="titres.html">tous les titres</a> · <a href="outils.html">outils gratuits</a> · <a href="outils/si-javais-investi.html">si j\'avais investi…</a> · <a href="outils/convertisseur.html">convertisseur crypto</a> · <a href="apprendre.html">apprendre la Bourse</a> · <a href="glossaire.html">glossaire</a>'
             + "".join(f' · <a href="marches/{m[0]}.html">{_e(m[1].lower())}</a>' for k, m in MARCHES.items()
                       if any(t.get("marche") == k for t in payload.get("titres", []))) + '</nav>')
@@ -2197,7 +2225,17 @@ def jsonld_accueil() -> dict:
     site = {"@type": "WebSite", "@id": (base or "") + "#site", "name": NOM,
             "alternateName": ["Radar-Bourse", "RadarBourse", "Bourse Radar", "Radar Bourse IA"],
             "url": base or None, "description": DESCRIPTION, "inLanguage": "fr-FR", "publisher": {"@id": (base or "") + "#org"}}
-    return {"@context": "https://schema.org", "@graph": [site, org]}
+    rubriques = [("Prévisions par titre", "titres.html"), ("Simulateur boursier", "simulateur-boursier.html"),
+                 ("Outils gratuits", "outils.html"), ("Si j'avais investi", "outils/si-javais-investi.html"),
+                 ("Convertisseur crypto", "outils/convertisseur.html"), ("Résultats réels", "resultats.html"),
+                 ("Guides", "guides.html"), ("Journal de l'IA", "journal-ia.html")]
+    nav = {"@type": "ItemList", "@id": (base or "") + "#rubriques", "name": "Rubriques de Radar Bourse",
+           "itemListElement": [{"@type": "SiteNavigationElement", "position": i + 1, "name": n, "url": (base + c) if base else c}
+                               for i, (n, c) in enumerate(rubriques)]}
+    appli = {"@type": "WebApplication", "@id": (base or "") + "#appli", "name": NOM, "url": base or None,
+             "applicationCategory": "FinanceApplication", "operatingSystem": "Tous (navigateur web)", "isAccessibleForFree": True,
+             "inLanguage": "fr-FR", "description": DESCRIPTION, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}}
+    return {"@context": "https://schema.org", "@graph": [site, org, appli, nav]}
 
 
 # ----------------------------------------------------------------------------
