@@ -1066,13 +1066,21 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
 DOSSIER_MODELES = ".cache_modeles"
 
 
+def _signature_risque():
+    try:
+        from . import autoreglage
+        return autoreglage.signature()
+    except Exception:
+        return ""
+
+
 def _cle_modeles(variables, par_marche, params, mode, calibs, evaluation):
     """Les IA ne sont réentraînées qu'une fois par jour (ou quand la méthode change) : dans la journée,
     les mises à jour horaires réutilisent les IA du matin avec les cours de l'heure. Gain : plusieurs minutes."""
     import hashlib
     sig = json.dumps([sorted(variables), bool(par_marche), params or {}, mode, sorted(k for k, v in calibs.items() if v is not None),
                       getattr(evaluation, "date_evaluation", ""), datetime.now().strftime("%Y-%m-%d"),
-                      bool((evaluation.risque or {}).get("prouve")), sorted(VARIABLES)], sort_keys=True, default=str)
+                      bool((evaluation.risque or {}).get("prouve")), sorted(VARIABLES), _signature_risque()], sort_keys=True, default=str)
     return hashlib.sha256(sig.encode()).hexdigest()[:20]
 
 

@@ -63,6 +63,7 @@ jobs:
           python -m bourse_bot.savoir
           git add historique/modele.json historique/essais_ia.json
           [ -f historique/apprentissage.json ] && git add historique/apprentissage.json
+          [ -f historique/reglages_risque.json ] && git add historique/reglages_risque.json
           git commit -m "Entraînement automatique du $(date +%F)" || exit 0
           for essai in 1 2 3; do
             git pull --rebase -X theirs origin main && git push && exit 0

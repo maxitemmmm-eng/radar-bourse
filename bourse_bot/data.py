@@ -322,6 +322,16 @@ def telecharger(ticker: str) -> pd.DataFrame:
 # ----------------------------------------------------------------------------
 # Titres "en tendance"
 # ----------------------------------------------------------------------------
+def nom_propre(nom: str) -> str:
+    """Version 56 : noms Yahoo plus propres (« BrightSpring Health Services, I » → « BrightSpring Health Services »,
+    « Nokia Corporation Sponsored » → « Nokia Corporation »)."""
+    n = re.sub(r"\s+", " ", str(nom or "")).strip()
+    n = re.sub(r"\s+(Sponsored|Sponsored ADR|ADR|American Depositary Shares?|Common Stock|Class [A-Z]( Common Stock)?)$", "", n, flags=re.I)
+    n = re.sub(r",?\s+[A-Za-z]{1,2}\.?$", "", n) if re.search(r",\s*[A-Za-z]{1,2}\.?$", n) else n   # « …, I » coupé par Yahoo
+    n = re.sub(r"[,;\s]+$", "", n)
+    return n or str(nom)
+
+
 def tendances_actions(n: int = 15) -> dict[str, str]:
     """Plus fortes hausses et titres les plus échangés du jour (marché US, via Yahoo)."""
     if DEMO:
@@ -336,7 +346,7 @@ def tendances_actions(n: int = 15) -> dict[str, str]:
                 prix = q.get("regularMarketPrice") or 0
                 capi = q.get("marketCap") or 0
                 if q.get("quoteType", "EQUITY") == "EQUITY" and prix >= 5 and capi >= 2e9:
-                    out[q["symbol"]] = q.get("shortName") or q["symbol"]
+                    out[q["symbol"]] = nom_propre(q.get("longName") or q.get("shortName") or q["symbol"])
     except Exception:
         pass  # le screener Yahoo change parfois de format : on continue sans
     return out

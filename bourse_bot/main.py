@@ -8,6 +8,8 @@
 """
 from __future__ import annotations
 
+import re
+
 import argparse
 import os
 import sys
@@ -54,9 +56,14 @@ def _univers(marches: list[str]) -> tuple[dict[str, str], dict[str, str]]:
     if "tendances" in marches:
         with console.status("Recherche des titres en tendance…"):
             tend = data.tendances_actions() | data.tendances_crypto()
+        # version 56 : pas de doublon (ex. « Pepe » suivi en cryptos sous PEPE24478-USD et en tendance sous PEPE-USD)
+        base = lambda tk: re.sub(r"\d+$", "", tk.split("-")[0].split(".")[0]).upper()
+        deja_noms = {re.sub(r"[^a-z0-9]", "", str(v).lower()) for v in noms.values()}
+        deja_bases = {base(tk) for tk in noms}
         for t, n in tend.items():
-            if t not in noms:
-                noms[t], marche_de[t] = n, "tendances"
+            if t in noms or base(t) in deja_bases or re.sub(r"[^a-z0-9]", "", str(n).lower()) in deja_noms:
+                continue
+            noms[t], marche_de[t] = n, "tendances"
     return noms, marche_de
 
 

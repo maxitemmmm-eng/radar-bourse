@@ -30,6 +30,7 @@ PAGES = {
     "simulateur-boursier.html": ("Simulateur boursier gratuit", "10 000 € virtuels pour t'entraîner sans risque", "courbe"),
     "a-propos.html": ("À propos de Radar Bourse", "Un projet éducatif, gratuit et transparent", "radar"),
     "contact.html": ("Contacter Radar Bourse", "Un bug, une idée ? Écris-nous", "bulle"),
+    "journal-ia.html": ("Le journal de l'IA", "Ce qu'elle essaie chaque nuit pour progresser", "courbe"),
     "classements.html": ("Les classements du jour", "Les titres les plus agités, les plus calmes, les plus à risque", "barres"),
     "classements/": ("Classement du jour", "Mis à jour automatiquement chaque jour", "barres"),
     "comparer.html": ("Comparer deux titres", "Agitation, risque de chute, chances : côte à côte", "duel"),
@@ -43,6 +44,7 @@ PAGES = {
     "fonction:previsions": ("Prévisions à un mois", "Plus de 200 actions, ETF et cryptos, chaque heure", "radar"),
     "fonction:fourchette": ("À combien dans un mois ?", "Une fourchette de prix probable, vérifiée", "cone"),
     "fonction:arene": ("L'Arène : toi contre l'IA", "Remonte le temps et devine la suite", "manette"),
+    "fonction:prono": ("Ton pronostic du jour", "Plus haut ou plus bas demain ? Reviens voir", "cible"),
     "fonction:langues": ("En 14 langues", "Français, anglais, espagnol, arabe, chinois…", "globe"),
 }
 

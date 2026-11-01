@@ -155,7 +155,7 @@ def liens_fr() -> list:
             ("Sélection IA du mois", "portefeuille.html"), (f"Prévisions {datetime.now().year}", "previsions.html"),
             ("Simulateur boursier", "simulateur-boursier.html"), ("Outils gratuits", "outils.html"), ("Guides", "guides.html"), ("Apprendre", "apprendre.html"), ("Glossaire", "glossaire.html"),
             ("Les mini-robots", "robots.html"), ("Ce que sait l'IA", "connaissances.html"),
-            ("Fiche technique", "fiche-technique-ia.html"), ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"),
+            ("Fiche technique", "fiche-technique-ia.html"), ("Journal de l'IA", "journal-ia.html"), ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"),
             ("Contact", "contact.html"), ("English", "en/index.html", 'hreflang="en" lang="en"')]
 
 
@@ -391,7 +391,7 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 <footer><p class="avert"><b>Rien n'est sûr en Bourse.</b> {NOM} est un projet éducatif : ces informations sont générées automatiquement,
 peuvent contenir des erreurs et ne constituent pas un conseil en investissement. Tu peux perdre tout l'argent investi.
 Conditions d'utilisation, méthodologie et aide : voir la <a href="{prefixe}index.html#conditions">page d'accueil</a>.</p>
-<p class="muted"><a href="{prefixe}fonctionnalites.html">Fonctionnalités</a> · <a href="{prefixe}simulateur-boursier.html">Simulateur boursier</a> · <a href="{prefixe}outils.html">Outils gratuits</a> · <a href="{prefixe}a-propos.html">À propos</a> · <a href="{prefixe}contact.html">Contact</a></p></footer>
+<p class="muted"><a href="{prefixe}fonctionnalites.html">Fonctionnalités</a> · <a href="{prefixe}journal-ia.html">Journal de l'IA</a> · <a href="{prefixe}simulateur-boursier.html">Simulateur boursier</a> · <a href="{prefixe}outils.html">Outils gratuits</a> · <a href="{prefixe}a-propos.html">À propos</a> · <a href="{prefixe}contact.html">Contact</a></p></footer>
 </div>
 {SCRIPT_BOUTON}
 </body></html>

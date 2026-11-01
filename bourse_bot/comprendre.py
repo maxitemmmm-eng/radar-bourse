@@ -74,9 +74,9 @@ class SansColonnesVides:
 
 
 def _modele():
-    from sklearn.ensemble import HistGradientBoostingRegressor
-    return SansColonnesVides(HistGradientBoostingRegressor(max_depth=3, learning_rate=0.05, max_iter=300, min_samples_leaf=300,
-                                                           l2_regularization=1.0, random_state=0))
+    """Version 56 : réglages lus dans historique/reglages_risque.json (auto-réglage de nuit, adopté seulement si prouvé)."""
+    from . import autoreglage
+    return autoreglage.fabriquer("agitation", autoreglage.reglages("agitation"))
 
 
 def _concordance(df, col_p, col_y, pas=5):
@@ -129,9 +129,8 @@ SEUIL_CHUTE = -0.10   # « forte chute » : perdre plus de 10 % en un mois
 
 
 def _modele_chute():
-    from sklearn.ensemble import HistGradientBoostingClassifier
-    return SansColonnesVides(HistGradientBoostingClassifier(max_depth=3, learning_rate=0.05, max_iter=200, min_samples_leaf=500,
-                                                            random_state=0))
+    from . import autoreglage
+    return autoreglage.fabriquer("chute", autoreglage.reglages("chute"))
 
 
 def evaluer_chute(jeu, horizon, variables_base, n_plis=5):

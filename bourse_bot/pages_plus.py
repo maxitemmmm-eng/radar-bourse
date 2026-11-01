@@ -32,7 +32,11 @@ def fonctionnalites(payload):
          "simulateur-boursier.html", "simulateur-boursier.html"),
         ("« À combien dans un mois ? »", "Pour chaque titre, une fourchette de prix probable dans un mois, avec la preuve de sa fiabilité passée.",
          "index.html#simulation", "fonction:fourchette"),
+        ("Ton pronostic du jour", "Trois marchés, plus haut ou plus bas demain ? Reviens le lendemain voir ton résultat, et garde ta série de jours.",
+         "index.html#prono", "fonction:prono"),
         ("L'Arène : joue contre l'IA", "Remonte le temps sur un vrai graphique et devine la suite : toi contre le radar.", "index.html#remonte", "fonction:arene"),
+        ("Une IA qui s'améliore chaque nuit", "Chaque nuit, elle essaie de nouveaux réglages et n'adopte que ceux qui font mieux de façon prouvée. "
+         "Tout est noté dans son journal.", "journal-ia.html", "journal-ia.html"),
         ("Outils gratuits", "« Si j'avais investi… », convertisseur crypto, intérêts composés, plus-value et flat tax.", "outils.html", "outils.html"),
         ("Comparer deux titres", "Agitation, risque de chute, chances et performances côte à côte.", "comparer.html", "comparer.html"),
         ("Classements du jour", "Les titres les plus agités, les plus calmes, les plus à risque, par marché.", "classements.html", "classements.html"),
@@ -154,11 +158,69 @@ def _page_contact(base, csp):
                              "Comment contacter Radar Bourse pour signaler un bug, une erreur ou proposer une idée.", chemin, corps, jl, csp=csp)
 
 
+def _page_journal_ia(base, csp):
+    """Version 56 : ce que l'IA a essayé chaque nuit, ce qu'elle a adopté (seulement si c'est prouvé), et ses scores."""
+    from . import autoreglage, model
+    chemin = "journal-ia.html"
+    j = autoreglage.journal()
+    noms = {"agitation": ("L'IA de l'agitation à un mois", "erreur médiane", True),
+            "chute": ("L'IA du risque de forte chute", "note (AUC)", False)}
+
+    def score(nom, v):
+        if v is None:
+            return "–"
+        return f"{v * 100:.1f} %" if noms[nom][2] else f"{v:.3f}"
+    cartes = ""
+    for nom, (titre, lib, _) in noms.items():
+        a = (j["adoptes"] or {}).get(nom)
+        p = autoreglage.reglages(nom)
+        etat = (f"Réglages adoptés le {seo.date_longue(a['date'][:10])} : {lib} {score(nom, a.get('score_avant'))} → "
+                f"<b>{score(nom, a.get('score_apres'))}</b> sur les années sous clé." if a else
+                "Réglages d'origine : aucun essai n'a encore fait mieux de façon prouvée.")
+        cartes += (f"<div class='carte'><h3 style='margin-top:0'>{_e(titre)}</h3><p>{etat}</p>"
+                   f"<p class='muted' style='margin:0'>{_e(autoreglage._texte(p))} · "
+                   f"{sum(1 for e in j['journal'] if (e.get(nom) or {}).get('essayes'))} nuits d'essais</p></div>")
+    lignes = ""
+    for e in reversed(j["journal"][-30:]):
+        cell = lambda nom: ("–" if not e.get(nom) else
+                            f"{e[nom].get('essayes', 0)} essai{'s' if e[nom].get('essayes', 0) > 1 else ''}"
+                            + (" · <b>✅ adopté</b>" if e[nom].get("adopte") else ""))
+        lignes += (f"<tr><td>{_e(seo.date_longue(e['date'][:10]))}</td><td>{cell('agitation')}</td><td>{cell('chute')}</td></tr>")
+    tableau = (f"<table class='tab'><thead><tr><th>Nuit</th><th>Agitation</th><th>Forte chute</th></tr></thead><tbody>{lignes}</tbody></table>"
+               if lignes else "<p class='muted'>Le premier auto-réglage aura lieu lors du prochain entraînement de nuit.</p>")
+    sens = (model._lire_fichier_modele() or {}).get("entrainements") or []
+    der = sens[-1] if sens else None
+    texte_sens = (f"<p>L'IA du sens du prix (proche du hasard, voir la <a href='fiche-technique-ia.html'>fiche technique</a>) s'entraîne aussi : "
+                  f"{len(sens)} entraînement{'s' if len(sens) > 1 else ''} gardé{'s' if len(sens) > 1 else ''} en mémoire"
+                  + (f", le dernier le {seo.date_longue(str(der.get('date', ''))[:10])}" if der and der.get("date") else "") + ".</p>") if sens else ""
+    corps = ("<h1>Journal de l'IA : ce qu'elle essaie chaque nuit</h1>"
+             "<p>Chaque nuit, pendant que les marchés dorment, l'IA essaie de nouveaux réglages pour ses deux prévisions les plus fiables : "
+             "<b>l'agitation des prix à un mois</b> et <b>le risque de forte chute</b>. Elle garde la mémoire de tous ses essais : "
+             "la moitié des nouvelles idées part de ses meilleures pistes, l'autre moitié est tirée au hasard.</p>"
+             "<p><b>Règle anti-chance :</b> un réglage n'est adopté que s'il fait mieux que l'IA en place <b>de façon prouvée</b> "
+             "(marge d'erreur à 95 %) sur des années qu'elle n'a jamais vues, <b>et</b> sur chacune des deux moitiés de cet examen. "
+             "La plupart des nuits, rien ne change : c'est normal, et c'est voulu.</p>"
+             f"<h2>Où en est l'IA</h2>{cartes}"
+             f"<p class='muted'>{j['nb_essais']} réglages essayés au total, tous gardés en mémoire pour guider les nuits suivantes.</p>"
+             f"<h2>Les 30 dernières nuits</h2>{tableau}{texte_sens}"
+             "<p>Voir aussi : <a href='resultats.html'>les résultats réels, mois par mois</a> · "
+             "<a href='connaissances.html'>ce que sait l'IA</a> · <a href='a-propos.html'>à propos</a></p>")
+    url = (base + chemin) if base else None
+    jl = {"@context": "https://schema.org", "@graph": [
+        {"@type": "WebPage", "name": "Journal de l'IA de Radar Bourse", "url": url, "inLanguage": "fr",
+         "description": "Ce que l'IA de Radar Bourse a essayé chaque nuit pour s'améliorer, et ce qu'elle a adopté."},
+        seo._jsonld_fil(base, [(NOM, ""), ("Journal de l'IA", chemin)])]}
+    return chemin, seo._page(base, f"Journal de l'IA : comment elle s'améliore chaque nuit | {NOM}",
+                             "Chaque nuit, l'IA de Radar Bourse essaie de nouveaux réglages et n'adopte que ceux qui font mieux de façon prouvée "
+                             "sur des années jamais vues. Le journal complet, essais ratés compris.", chemin, corps, jl, csp=csp)
+
+
 def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
     urls = []
     for chemin, page in (_page_fonctionnalites(base, payload, csp), _page_simulateur(base, csp),
-                         _page_a_propos(base, payload, csp), _page_contact(base, csp)):
+                         _page_a_propos(base, payload, csp), _page_contact(base, csp), _page_journal_ia(base, csp)):
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(page)
-        urls.append((chemin, "weekly", "0.9" if chemin in ("simulateur-boursier.html", "fonctionnalites.html") else "0.5"))
+        urls.append((chemin, "daily" if chemin == "journal-ia.html" else "weekly",
+                     "0.9" if chemin in ("simulateur-boursier.html", "fonctionnalites.html") else "0.6" if chemin == "journal-ia.html" else "0.5"))
     return urls

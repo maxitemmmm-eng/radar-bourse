@@ -561,6 +561,17 @@ class Moteur:
             except Exception as ex:
                 self.log(f"(Examen des horizons impossible cette fois : {ex})")
 
+        # version 56 : les IA de risque (agitation, forte chute) cherchent aussi de meilleurs réglages, chaque nuit
+        risque_auto = None
+        if not self.arret.is_set():
+            try:
+                from bourse_bot import autoreglage
+                self.log("🔧 Auto-réglage des IA de risque (agitation à un mois, risque de forte chute)…")
+                budget_r = {"rapide": 900, "normal": 1500, "expert": 2700}.get(args.duree, 900)
+                risque_auto = autoreglage.seance(jeu, horizon, model.VARIABLES_BASE, budget_s=budget_r,
+                                                 log=self.log, arret=self.arret)
+            except Exception as ex:
+                self.log(f"(Auto-réglage des IA de risque impossible cette fois : {ex})")
         entree = {"date": datetime.now().isoformat(timespec="minutes"), "mode": args.duree,
                   "demo": args.demo, "arret_manuel": self.arret.is_set(),
                   "nb_titres": len(affiches) + len(supp_base) + (len(supp_etendu) if garder_etendu else 0),
@@ -575,7 +586,8 @@ class Moteur:
                   "auc_recherche_retenu": retenu["auc_recherche"], "precision_base": ev.precision_base,
                   "niveau_preuve": ev.niveau_preuve(), "connaissances": verdicts, "erreurs": erreurs,
                   "guidage": getattr(self, "guidage", None), "lecons": getattr(self, "lecons", None),
-                  "horizons": horizons, "crises": crises}
+                  "horizons": horizons, "crises": crises,
+                  "risque_auto": {k: {"essayes": v["essayes"], "adopte": v["adopte"]} for k, v in (risque_auto or {}).get("modeles", {}).items()}}
         recette = {"nom": retenu["nom"], "variables": retenu["variables"], "par_marche": retenu["par_marche"],
                    **({"membres": retenu["params"]["membres"]} if "membres" in retenu["params"] else {}),
                    "params": retenu["params"], "date": entree["date"], "auc": retenu.get("auc_final")}
@@ -583,7 +595,7 @@ class Moteur:
         chemin = ecrire_rapport(entree, ev)
         self.resultat = {"entree": entree, "decision": decision, "recette": recette, "ancien": ancien,
                          "apprentissage": apprentissage, "rapport": chemin, "ev": ev, "garder_etendu": garder_etendu,
-                         "change": decision["change"] or garder_etendu}
+                         "change": decision["change"] or garder_etendu or bool((risque_auto or {}).get("change"))}
         self.emettre("final", auc=retenu.get("auc_final"), champion_auc=(ref[0]["auc_final"] if ref else None))
         self.emettre("progres", pct=1.0)
         self.emettre("resultat", resultat=self.resultat)
@@ -1034,7 +1046,8 @@ def _fusion_avec_github():
 
 def publier(res, log) -> bool:
     """Envoie le résultat sur GitHub et lance la mise à jour du site."""
-    fichiers = ("historique/modele.json", "historique/apprentissage.json", FICHIER_ESSAIS.replace(os.sep, "/"))
+    fichiers = ("historique/modele.json", "historique/apprentissage.json", FICHIER_ESSAIS.replace(os.sep, "/"),
+                "historique/reglages_risque.json")
     msg = f"Entraînement du {datetime.now():%d/%m/%Y} : " + (res["recette"]["nom"] if res["decision"]["change"] else "IA confirmée")
     if os.path.isdir(os.path.join(".git", "rebase-merge")) or os.path.isdir(os.path.join(".git", "rebase-apply")):
         commande("git", "rebase", "--abort")
