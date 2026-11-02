@@ -23,7 +23,9 @@ DESCRIPTION = ("Prévisions bourse et crypto par IA, gratuites : agitation à un
                "à 10 000 € virtuels. Résultats vérifiés publiquement.")
 MOTS_CLES = ("radar bourse, prévision bourse IA, prévision action, prévision crypto, prévision bitcoin, simulateur boursier gratuit, "
              "portefeuille virtuel, risque de chute action, volatilité, CAC 40, S&P 500, convertisseur bitcoin euro, "
-             "si j'avais investi, intérêts composés, calcul plus-value flat tax, apprendre la bourse")
+             "si j'avais investi, intérêts composés, calcul plus-value flat tax, apprendre la bourse, krach boursier, "
+             "risque de krach, bulle IA bourse, actu bourse, actu bitcoin, actualité crypto, CAC 40 aujourd'hui, prévision Nvidia, "
+             "prévision LVMH, prévision Tesla, ETF, cryptomonnaie, investir en bourse débutant")
 LIB_SIGNAL = {"ACHAT FORT": "haussier fort", "ACHAT": "haussier", "NEUTRE": "neutre",
               "VENTE": "baissier", "VENTE FORTE": "baissier fort"}
 
@@ -156,7 +158,7 @@ def liens_fr() -> list:
             ("Sélection IA du mois", "portefeuille.html"), (f"Prévisions {datetime.now().year}", "previsions.html"),
             ("Simulateur boursier", "simulateur-boursier.html"), ("Outils gratuits", "outils.html"), ("Guides", "guides.html"), ("Apprendre", "apprendre.html"), ("Glossaire", "glossaire.html"),
             ("Les mini-robots", "robots.html"), ("Ce que sait l'IA", "connaissances.html"),
-            ("Fiche technique", "fiche-technique-ia.html"), ("Journal de l'IA", "journal-ia.html"), ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"),
+            ("Fiche technique", "fiche-technique-ia.html"), ("Journal de l'IA", "journal-ia.html"), ("Krach boursier", "krach-boursier.html"), ("Actu bourse", "actu-bourse.html"), ("Actu bitcoin", "actu-bitcoin.html"), ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"),
             ("Contact", "contact.html"), ("English", "en/index.html", 'hreflang="en" lang="en"')]
 
 
@@ -2012,6 +2014,11 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
         urls += pages_plus.generer(payload, dossier, csp, base)
     except Exception as e:
         print(f"Pages fonctionnalités / à propos / contact non générées : {e}")
+    try:   # version 57 : krach boursier, actu bourse, actu bitcoin (+ mémoire quotidienne du marché)
+        from . import pages_marche
+        urls += pages_marche.generer(payload, dossier, csp, base)
+    except Exception as e:
+        print(f"Pages krach / actu non générées : {e}")
     try:   # version 52 : outils gratuits (simulateur sur les vrais cours, convertisseur, intérêts composés, plus-value)
         from . import outils
         urls += outils.generer(payload, dossier, csp, base)
@@ -2197,6 +2204,9 @@ def _accueil_resume(payload: dict) -> str:
          '<a href="outils/convertisseur.html">convertisseur bitcoin euro et crypto</a>, '
          '<a href="outils/interets-composes.html">calculateur d\'intérêts composés</a> et '
          '<a href="outils/plus-value.html">calcul de plus-value et flat tax</a>.'),
+        ("Actualité et risque de krach", 'L\'<a href="actu-bourse.html">actu bourse</a> et l\'<a href="actu-bitcoin.html">actu bitcoin</a> '
+         'mises à jour chaque heure, et le <a href="krach-boursier.html">radar du risque de krach boursier</a> : peur des marchés, '
+         'risque de forte chute calculé par l\'IA et articles qui parlent de krach ou de bulle.'),
         ("Jouer et apprendre", 'Le <a href="#prono">pronostic du jour</a>, l\'Arène pour remonter le temps face à l\'IA, '
          '<a href="guides.html">des guides pour débuter en Bourse</a> et <a href="apprendre.html">des mini-cours</a>.'),
         ("Une IA honnête, qui progresse", 'Toutes les prévisions sont vérifiées un mois plus tard et publiées dans les '

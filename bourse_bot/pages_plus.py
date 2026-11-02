@@ -158,6 +158,22 @@ def _page_contact(base, csp):
                              "Comment contacter Radar Bourse pour signaler un bug, une erreur ou proposer une idée.", chemin, corps, jl, csp=csp)
 
 
+def _memoire_actus():
+    """Version 57 : l'IA garde chaque jour la tonalité des actualités et le nombre d'articles qui parlent de krach.
+    Elle ne s'en servira pour prévoir que si un test sur assez de jours montre que ça aide vraiment."""
+    try:
+        from . import pages_marche
+        n = len(pages_marche.lire_memoire())
+    except Exception:
+        n = 0
+    return ("<p>Chaque jour, l'IA note la tonalité des actualités qu'elle lit, le nombre d'articles qui parlent de krach ou de bulle, "
+            "la peur des marchés et son risque de chute moyen. Aujourd'hui, les actualités ne servent que de <b>garde-fou</b> "
+            "(elles peuvent rendre un avis plus prudent, jamais plus confiant), car on n'a pas encore d'historique pour prouver "
+            f"qu'elles améliorent les prévisions.</p><p><b>{n} jour{'s' if n > 1 else ''} en mémoire</b> sur les 250 nécessaires "
+            "(environ un an de marché) pour un premier test honnête. Si ce test montre un gain prouvé, les actualités entreront "
+            "dans les prévisions ; sinon, elles resteront un simple éclairage.</p>")
+
+
 def _page_journal_ia(base, csp):
     """Version 56 : ce que l'IA a essayé chaque nuit, ce qu'elle a adopté (seulement si c'est prouvé), et ses scores."""
     from . import autoreglage, model
@@ -203,6 +219,7 @@ def _page_journal_ia(base, csp):
              f"<h2>Où en est l'IA</h2>{cartes}"
              f"<p class='muted'>{j['nb_essais']} réglages essayés au total, tous gardés en mémoire pour guider les nuits suivantes.</p>"
              f"<h2>Les 30 dernières nuits</h2>{tableau}{texte_sens}"
+             f"<h2>La mémoire des actualités</h2>{_memoire_actus()}"
              "<p>Voir aussi : <a href='resultats.html'>les résultats réels, mois par mois</a> · "
              "<a href='connaissances.html'>ce que sait l'IA</a> · <a href='a-propos.html'>à propos</a></p>")
     url = (base + chemin) if base else None
