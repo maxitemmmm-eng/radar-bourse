@@ -159,6 +159,12 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("59", "Nouvelle question posée à l'IA : « le mois prochain, plus ou moins agité que ces dernières semaines ? »", True,
+     "70,9 % de bonnes réponses sur 514 838 cas (marge 69,9 % à 72,0 %), contre 51 % pour la réponse la plus fréquente ; "
+     "au-dessus de 60 % les 13 années sur 13. Affichée sur chaque fiche"),
+    ("59", "« IA juge » : une 2e IA apprend quand la 1re a raison sur le sens du prix, et ne la laisse parler que dans ces cas-là",
+     False, "56,14 % de bonnes réponses contre 56,01 % pour la tendance habituelle, sur 228 443 avis : gain non prouvé (marge −0,3 à +0,5 point), "
+     "5 années gagnées sur 11. Piste à retester quand il y aura plus de données"),
     ("58", "« Mémoire du titre » pour le risque de chute : sa fréquence passée de fortes chutes et son agitation passée",
      True, "note 0,7518 → 0,7554 (marge +0,0016 à +0,0052) sur 514 838 cas, mieux sur les deux moitiés de la période, Brier meilleur dans les 5 marchés"),
     ("58", "« Mémoire du titre » pour l'agitation", False, "erreur un peu plus grande, de façon sûre"),

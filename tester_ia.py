@@ -718,6 +718,15 @@ def lancer(nb_cas: int, demo: bool) -> int:
                    f"  Erreur habituelle (médiane) : IA {pct(float(e_ia.median()))} · méthode simple {pct(float(e_nf.median()))}",
                    "  " + ("Verdict : l'IA fait mieux que la méthode simple, de façon sûre." if lo3 > .5 and e_ia.median() < e_nf.median() else
                            "Verdict : pas de différence sûre avec la méthode simple.")]
+        # version 59 : la question où l'IA dépasse 60 % — plus ou moins agité que ces dernières semaines ?
+        sens_ok = int(((ag["p"] > ag["naif"]) == (ag["y"] > ag["naif"])).sum())
+        plus = float((ag["y"] > ag["naif"]).mean())
+        lo_s, hi_s = model.wilson(sens_ok, k)
+        lignes += [f"➜ « Le mois prochain, plus ou moins agité que ces dernières semaines ? » : l'IA a raison {sens_ok} fois sur {k} "
+                   f"({pct(sens_ok / k)}, marge {pct(lo_s)} à {pct(hi_s)}) · réponse la plus fréquente : {pct(max(plus, 1 - plus))}",
+                   "  " + ("Verdict : au-dessus de 60 % de façon sûre." if lo_s > .6 else
+                           "Verdict : mieux que la réponse la plus fréquente, de façon sûre." if lo_s > max(plus, 1 - plus) else
+                           "Verdict : pas de différence sûre.")]
     print("   + test de l'agitation sur une semaine…", flush=True)
     try:
         lignes += tester_semaine(tous)

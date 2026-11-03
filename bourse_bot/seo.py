@@ -76,6 +76,16 @@ CSS_PAGE = """:root{--bg:#eef1f5;--surface:#fff;--surface-2:#f6f8fb;--ink:#0f1b2
 .brand span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ouvrir{flex:none;text-decoration:none;font-size:13.5px;font-weight:600;color:var(--surface);background:var(--ink);padding:6px 12px;border-radius:8px;white-space:nowrap}
 .theme-btn{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;width:34px;height:30px;display:grid;place-items:center;cursor:pointer}
+.nav-ligne{max-width:1240px;margin:0 auto;display:flex;align-items:flex-start;gap:6px;position:relative}
+.nav-ligne .nav-sec{flex:1;min-width:0;margin:0}
+.plus{flex:none;position:relative;padding-bottom:10px}
+.plus>summary{list-style:none;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink);padding:6px 12px;border-radius:99px;border:1px solid var(--line);white-space:nowrap;background:var(--surface)}
+.plus>summary::-webkit-details-marker{display:none}.plus[open]>summary{background:var(--ink);color:var(--surface)}
+.plus-panneau{position:absolute;right:0;top:calc(100% - 4px);z-index:20;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 14px 34px rgba(5,10,20,.18);padding:10px;width:min(560px,calc(100vw - 32px));display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:2px}
+.plus-panneau a{display:block;padding:8px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:14px}
+.plus-panneau a:hover,.plus-panneau a:focus-visible{background:var(--bg)}
+.plus-panneau a[aria-current]{font-weight:700;background:var(--bg)}
 .nav-sec{max-width:1240px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-bottom:10px}
 .nav-sec::-webkit-scrollbar{display:none}
 .nav-sec a{flex:none;text-decoration:none;color:var(--muted);font-size:13.5px;font-weight:600;padding:6px 11px;border-radius:99px;border:1px solid transparent;white-space:nowrap}
@@ -126,9 +136,16 @@ def entete(prefixe: str, chemin: str, accueil: str, sous_titre: str, liens: list
     hrefs = [l[1] for l in liens]
     # page en cours, sinon sa rubrique (titres/x.html → « Tous les titres », en/guides/x.html → « Guides »…)
     rubrique = next((c for c in (chemin, chemin.rsplit("/", 1)[0] + ".html", chemin.split("/")[0] + "/index.html") if c in hrefs), None)
-    pastilles = "".join(
-        f'<a href="{prefixe}{h}"{(" aria-current=" + chr(34) + ("page" if h == chemin else "true") + chr(34)) if h == rubrique else ""}{extra}>{_e(t)}</a>'
-        for t, h, *r in liens for extra in [(" " + r[0]) if r else ""])
+    # version 60 : menu court (les rubriques principales), le reste dans « Plus ▾ » ; la page en cours reste toujours visible
+    def lien(t, h, r, classe=""):
+        cur = (" aria-current=" + chr(34) + ("page" if h == chemin else "true") + chr(34)) if h == rubrique else ""
+        return f'<a href="{prefixe}{h}"{cur}{(" " + r[0]) if r else ""}{classe}>{_e(t)}</a>'
+    N_MENU = 8
+    principaux, autres = (liens[:N_MENU], liens[N_MENU:]) if len(liens) > N_MENU + 2 else (liens, [])
+    visibles = list(principaux) + [l for l in autres if l[1] == rubrique]
+    pastilles = "".join(lien(t, h, r) for t, h, *r in visibles)
+    plus = (f'<details class="plus"><summary>{"More" if aria_nav == "Site pages" else "Plus"} ▾</summary><div class="plus-panneau">'
+            + "".join(lien(t, h, r) for t, h, *r in autres) + "</div></details>") if autres else ""
     bouton = f'<a class="ouvrir" href="{prefixe}{ouvrir[1]}">{_e(ouvrir[0])}</a>' if ouvrir else ""
     return (f'<a class="skip" href="#contenu">{_e(aller)}</a>'
             f'<header class="top g"><div class="in"><a class="brand" href="{prefixe}{accueil}">{LOGO}<b>{NOM}</b>'
@@ -136,7 +153,10 @@ def entete(prefixe: str, chemin: str, accueil: str, sous_titre: str, liens: list
             f'<button class="theme-btn" id="theme" type="button" aria-label="{_e(aria_theme)}" title="{_e(aria_theme)}">'
             '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" '
             'stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg></button></div>'
-            f'<nav class="nav-sec" aria-label="{_e(aria_nav)}">{pastilles}</nav></header>')
+            f'<div class="nav-ligne"><nav class="nav-sec" aria-label="{_e(aria_nav)}">{pastilles}</nav>{plus}</div></header>'
+            '<script>(()=>{const d=document.querySelector("details.plus");if(!d)return;'
+            'document.addEventListener("click",e=>{if(d.open&&!d.contains(e.target))d.open=false;});'
+            'document.addEventListener("keydown",e=>{if(e.key==="Escape"&&d.open){d.open=false;d.querySelector("summary").focus();}});})();</script>')
 
 
 def barre_partage(base: str, chemin: str, titre: str, libelle: str = "Partager cette page") -> str:
@@ -153,12 +173,16 @@ def barre_partage(base: str, chemin: str, titre: str, libelle: str = "Partager c
 
 
 def liens_fr() -> list:
-    return [("Le point du jour", "point.html"), ("Résultats réels", "resultats.html"),
-            ("Tous les titres", "titres.html"), ("Comparer", "comparer.html"), ("Classements", "classements.html"),
+    # version 60 : les 8 premiers forment le menu (le même que celui de l'appli) ; les autres vont dans « Plus ▾ »
+    return [("Accueil", "index.html"), ("Prévisions", "index.html#previsions"), ("Pronostic du jour", "index.html#prono"),
+            ("Carte des risques", "index.html#nuage"), ("Tous les titres", "titres.html"), ("Résultats réels", "resultats.html"),
+            ("Outils gratuits", "outils.html"), ("Guides", "guides.html"),
+            ("Le point du jour", "point.html"), ("Actu bourse", "actu-bourse.html"), ("Actu bitcoin", "actu-bitcoin.html"),
+            ("Krach boursier", "krach-boursier.html"), ("Comparer", "comparer.html"), ("Classements", "classements.html"),
             ("Sélection IA du mois", "portefeuille.html"), (f"Prévisions {datetime.now().year}", "previsions.html"),
-            ("Simulateur boursier", "simulateur-boursier.html"), ("Outils gratuits", "outils.html"), ("Guides", "guides.html"), ("Apprendre", "apprendre.html"), ("Glossaire", "glossaire.html"),
-            ("Les mini-robots", "robots.html"), ("Ce que sait l'IA", "connaissances.html"),
-            ("Fiche technique", "fiche-technique-ia.html"), ("Journal de l'IA", "journal-ia.html"), ("Krach boursier", "krach-boursier.html"), ("Actu bourse", "actu-bourse.html"), ("Actu bitcoin", "actu-bitcoin.html"), ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"),
+            ("Simulateur boursier", "simulateur-boursier.html"), ("Apprendre", "apprendre.html"), ("Glossaire", "glossaire.html"),
+            ("Les mini-robots", "robots.html"), ("Ce que sait l'IA", "connaissances.html"), ("Fiche technique", "fiche-technique-ia.html"),
+            ("Journal de l'IA", "journal-ia.html"), ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"),
             ("Contact", "contact.html"), ("English", "en/index.html", 'hreflang="en" lang="en"')]
 
 
@@ -415,6 +439,12 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     agitation = (f"<p>Agitation prévue le mois prochain : en général, le prix bougera d'environ <b class='m'>±{round(rq['mouvement'] * 100)} %</b>"
                  + (", plus que d'habitude" if (rq.get("habitude") or 1) > 1.25 else ", moins que d'habitude" if (rq.get("habitude") or 1) < 0.8 else "")
                  + ", dans un sens ou dans l'autre.</p>") if rq.get("mouvement") else ""
+    sr = (((modele or {}).get("risque") or {}).get("sens_recent") or {})
+    if rq.get("recent") is not None and (sr.get("taux") or 0) > 0.6:   # version 59 : la question où l'IA dépasse 60 %
+        agitation += (f"<p>Le mois prochain, {_e(t['nom'])} devrait être <b>{'plus agité' if rq['recent'] > 1 else 'plus calme'}</b> "
+                      f"que ces dernières semaines. Sur des années jamais vues, l'IA a eu raison <b>{round(sr['taux'] * 100)} fois sur 100</b> "
+                      f"sur cette question" + (f" (au-dessus de 60 % {sr['annees_60']} années sur {sr['annees']})" if sr.get("annees") else "")
+                      + ".</p>")
     if rq.get("semaine"):
         agitation += (f"<p>Sur la semaine qui vient (5 séances) : environ <b class='m'>±{rq['semaine'] * 100:.1f} %</b>.".replace(".", ",", 1)
                       + " Cette prévision à une semaine a été testée sur près de 290 000 cas réels : plus proche de la réalité que « comme la semaine dernière » 57 fois sur 100.</p>")

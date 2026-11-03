@@ -183,6 +183,8 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
         fv = ((a.fondamentaux or {}).get("valeurs") or {}) if getattr(a, "fondamentaux", None) else {}
         item["div"] = _arrondi(fv.get("dividendYield")) if fv.get("dividendYield") is not None else None
         item["per"] = _arrondi(fv.get("trailingPE")) if fv.get("trailingPE") is not None else None
+        # version 60 : capitalisation (en milliards) pour dimensionner les cases de la carte du marché
+        item["capi"] = round(float(fv["marketCap"]) / 1e9, 1) if isinstance(fv.get("marketCap"), (int, float)) and fv["marketCap"] > 0 else None
         item["secteur"] = (a.fondamentaux or {}).get("secteur") or None if getattr(a, "fondamentaux", None) else None
         item["perf_an"] = _arrondi(float(d["Close"].iloc[-1] / d["Close"].iloc[-min(len(d), 253)] - 1)) if len(d) > 200 else None
         titres.append(item)
