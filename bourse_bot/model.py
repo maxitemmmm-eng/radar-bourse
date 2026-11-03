@@ -481,6 +481,21 @@ def _ajouter_rangs(jeu: pd.DataFrame) -> pd.DataFrame:
     return ajouter_transversal(jeu, par_date=True)
 
 
+def _ajouter_memoire(m: pd.DataFrame, horizon: int) -> None:
+    """Version 58 : « mémoire du titre » (voir comprendre.MEMOIRE). Un mois ne compte qu'une fois terminé : décalage de
+    `horizon` séances, aucune information du futur."""
+    futur = m["rendement_futur"]
+    chute = (futur < -0.10).astype(float).where(futur.notna()).shift(horizon)
+    lv = m["vol_futur"].where(np.isfinite(m["vol_futur"]))
+    v = lv.shift(horizon)
+    surprise = (lv - np.log(m["vol_20j"].where(m["vol_20j"] > 0))).shift(horizon)
+    m["mem_chute"] = chute.expanding(min_periods=60).mean()
+    m["mem_chute_r"] = chute.ewm(halflife=250, min_periods=60).mean()
+    m["mem_vol"] = v.expanding(min_periods=60).mean()
+    m["mem_vol_r"] = v.ewm(halflife=250, min_periods=60).mean()
+    m["mem_surprise"] = surprise.ewm(halflife=120, min_periods=40).mean()
+
+
 def construire_jeu(donnees: dict[str, pd.DataFrame], marches: dict[str, str], horizon: int) -> pd.DataFrame:
     morceaux = []
     futurs = {t: d["Close"].shift(-horizon) / d["Close"] - 1 for t, d in donnees.items()}
@@ -501,6 +516,7 @@ def construire_jeu(donnees: dict[str, pd.DataFrame], marches: dict[str, str], ho
             m["ecart_futur"] = np.nan
         m["ticker"] = ticker
         m["marche"] = marches.get(ticker, "?")
+        _ajouter_memoire(m, horizon)
         morceaux.append(m.iloc[252:])
     jeu = pd.concat(morceaux).sort_index()
     # rang du rendement futur parmi tous les titres du même jour (cible des IA « classement »)
@@ -1135,6 +1151,9 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
         ligne["ticker"] = ticker
         dernieres.append(ligne)
     actuel = pd.concat(dernieres).reset_index(drop=True)
+    for c in comprendre.MEMOIRE:   # version 58 : la mémoire de chaque titre, à jour au dernier mois terminé
+        if c in jeu.columns:
+            actuel[c] = actuel["ticker"].map(jeu.groupby("ticker")[c].last())
     ajouter_transversal(actuel, par_date=False)
     garde = actuel["ticker"].isin(list(donnees)).to_numpy()
     tks = actuel["ticker"].to_numpy()

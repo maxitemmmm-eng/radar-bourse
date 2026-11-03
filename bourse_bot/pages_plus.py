@@ -158,6 +158,29 @@ def _page_contact(base, csp):
                              "Comment contacter Radar Bourse pour signaler un bug, une erreur ou proposer une idée.", chemin, corps, jl, csp=csp)
 
 
+IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("58", "« Mémoire du titre » pour le risque de chute : sa fréquence passée de fortes chutes et son agitation passée",
+     True, "note 0,7518 → 0,7554 (marge +0,0016 à +0,0052) sur 514 838 cas, mieux sur les deux moitiés de la période, Brier meilleur dans les 5 marchés"),
+    ("58", "« Mémoire du titre » pour l'agitation", False, "erreur un peu plus grande, de façon sûre"),
+    ("58", "Risque de chute « en deux étages » (l'agitation prévue donnée comme indice)", False, "gain non prouvé (marge −0,0005 à +0,0026)"),
+    ("54", "Moyenne de 3 IA entraînées différemment", False, "risque de chute 0,752 contre 0,754, gain négligeable pour l'agitation"),
+    ("54", "Plus de poids aux années récentes", False, "moins bien partout (risque de chute 0,730 à 0,748 contre 0,754)"),
+    ("53", "Recalage du risque de chute par marché", False, "actions sous-estimées : écart moyen par marché 1,35 pt contre 1,12 pt"),
+    ("52", "Fourchettes calées sur l'agitation prévue", False, "plus larges et moins régulières"),
+    ("51", "Risque propre à chaque titre (volatilité hors marché, bêta, à-coups, liquidité)", True,
+     "risque de chute 0,747 → 0,754, agitation 24,2 % → 23,9 % d'erreur, mieux sur les 5 marchés"),
+    ("51", "IA séparées pour les cryptos et les actions", False, "moins bonnes"),
+]
+
+
+def _idees_testees():
+    lignes = "".join(f"<tr><td>v{v}</td><td>{_e(idee)}<br><span class='muted'>{_e(det)}</span></td>"
+                     f"<td>{'✅ adoptée' if ok else '➖ rejetée'}</td></tr>" for v, idee, ok, det in IDEES_TESTEES)
+    return ("<p>Chaque idée est jugée sur des années que l'IA n'avait jamais vues ; elle n'est gardée que si le gain est prouvé "
+            "et régulier. La plupart sont rejetées : c'est ce qui garde l'IA honnête.</p>"
+            f"<table><thead><tr><th>Version</th><th>Idée</th><th>Verdict</th></tr></thead><tbody>{lignes}</tbody></table>")
+
+
 def _memoire_actus():
     """Version 57 : l'IA garde chaque jour la tonalité des actualités et le nombre d'articles qui parlent de krach.
     Elle ne s'en servira pour prévoir que si un test sur assez de jours montre que ça aide vraiment."""
@@ -220,6 +243,7 @@ def _page_journal_ia(base, csp):
              f"<p class='muted'>{j['nb_essais']} réglages essayés au total, tous gardés en mémoire pour guider les nuits suivantes.</p>"
              f"<h2>Les 30 dernières nuits</h2>{tableau}{texte_sens}"
              f"<h2>La mémoire des actualités</h2>{_memoire_actus()}"
+             f"<h2>Les idées testées, adoptées ou rejetées</h2>{_idees_testees()}"
              "<p>Voir aussi : <a href='resultats.html'>les résultats réels, mois par mois</a> · "
              "<a href='connaissances.html'>ce que sait l'IA</a> · <a href='a-propos.html'>à propos</a></p>")
     url = (base + chemin) if base else None

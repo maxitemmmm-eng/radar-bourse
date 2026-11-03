@@ -45,8 +45,16 @@ def _variables_risque(jeu, variables_base):
     return [v for v in vs if jeu[v].nunique(dropna=True) > 1]
 
 
+# Version 58 : « mémoire du titre » — sa fréquence passée de fortes chutes et son agitation passée, calculées seulement avec
+# des mois déjà terminés. Testé sur 514 838 cas jamais vus (2014-2026) : note du risque de chute 0,7518 → 0,7554
+# (marge +0,0016 à +0,0052), mieux sur les deux moitiés de la période, score de Brier meilleur dans les 5 marchés.
+# Pour l'agitation, la même mémoire faisait un peu moins bien : elle n'y est pas utilisée.
+MEMOIRE = ["mem_chute", "mem_chute_r", "mem_vol", "mem_vol_r", "mem_surprise"]
+
+
 def _variables_chute(jeu, variables_base):
-    return _variables_risque(jeu, variables_base)
+    vs = _variables_risque(jeu, variables_base)
+    return vs + [v for v in MEMOIRE if v in jeu.columns and v not in vs and jeu[v].nunique(dropna=True) > 1]
 
 
 def _naif(df):

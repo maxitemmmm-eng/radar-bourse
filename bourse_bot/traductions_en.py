@@ -1274,7 +1274,20 @@ EN = {
 "Radar Bourse : mon pronostic du jour": "Radar Bourse: my daily prediction",
 "🎯 Ton pronostic du jour": "🎯 Your daily prediction",
 "Pronostic du jour fait": "Today's prediction done",
-"Ton pronostic du jour t'attend": "Your daily prediction is waiting"
+"Ton pronostic du jour t'attend": "Your daily prediction is waiting",
+"Badges": "Badges",
+"3 jours de suite": "3 days in a row",
+"Une semaine complète": "A full week",
+"Un mois sans manquer": "A month without missing",
+"100 points": "100 points",
+"500 points": "500 points",
+"Plus de 60 % de bonnes réponses": "Over 60% right answers",
+"📣 Partager mon score": "📣 Share my score",
+"jours de suite au pronostic du jour de Radar Bourse": "days in a row on Radar Bourse's daily prediction",
+"Je joue au pronostic du jour de Radar Bourse": "I play Radar Bourse's daily prediction",
+"bonnes réponses": "right answers",
+"Et toi, plus haut ou plus bas demain ?": "What about you: higher or lower tomorrow?",
+"Copié, tu peux le coller où tu veux": "Copied, paste it anywhere"
 }
 
 # Libellés venant des données (traduits à l'affichage, voir traduction_appli._script_donnees)

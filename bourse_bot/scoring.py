@@ -227,6 +227,15 @@ def analyser(ticker: str, nom: str, marche: str, d: pd.DataFrame) -> Analyse:
     # Stop-loss (2 ATR sous le cours) et objectif (rapport gain/risque 2:1)
     a = x.atr_pct * x.Close
     stop, objectif = x.Close - 2 * a, x.Close + 4 * a
+    # version 58 : un stop placé AU-DESSUS du support (plus bas des 20 séances) prête à confusion et se fait toucher par une
+    # simple baisse vers ce support : quand le support est proche (moins de 3 ATR), le stop passe juste en dessous.
+    try:
+        support = float(d["Low"].iloc[-20:].min())
+        if stop > support >= x.Close - 3 * a and np.isfinite(support):
+            stop = support - 0.25 * a
+            objectif = x.Close + 2 * (x.Close - stop)
+    except Exception:
+        pass
 
     perf = {k: float(x[f"ret_{n}j"]) for k, n in
             (("1 jour", 1), ("1 semaine", 5), ("1 mois", 21), ("3 mois", 63), ("6 mois", 126))}

@@ -437,12 +437,18 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     palmares = (f"<p>Depuis le début du suivi, sur <b>{pt[0]}</b> prévisions vérifiées un mois plus tard pour {_e(nom)}, "
                 f"les IA ont vu juste <b>{pt[1]} fois</b> ({round(pt[1] / pt[0] * 100)} %).</p>") if pt and pt[0] >= 5 else ""
     est_crypto = tk.endswith("-USD")
+    # version 58 : les mots que les gens tapent (« prévision action LVMH »), le mois en cours et un vrai chiffre :
+    # ce sont eux qui font cliquer dans les résultats Google (avant : « Action LVMH (MC.PA) : cours, prévision et analyse IA »)
+    maintenant = datetime.now()
+    mois_an = f"{MOIS[maintenant.month - 1]} {maintenant.year}"
+    mv_t = (t.get("risque_prevu") or {}).get("mouvement")
+    chiffre = f" : fourchette ±{round(mv_t * 100)} % à 1 mois" if isinstance(mv_t, (int, float)) and mv_t > 0 else " : cours et analyse IA"
     if est_crypto:
-        titre = f"{nom} ({aff_tk(tk).replace('-USD', '')}) : cours, prévision et analyse IA | {NOM}"
+        titre = f"Prévision {nom} ({aff_tk(tk).replace('-USD', '')}) {mois_an}{chiffre} | {NOM}"
     elif t.get("marche") in ("fr", "eu", "us") or (t.get("fondamentaux") or {}).get("valeurs"):
-        titre = f"Action {nom} ({aff_tk(tk)}) : cours, prévision et analyse IA | {NOM}"
+        titre = f"Prévision action {nom} {mois_an}{chiffre} | {NOM}"
     else:
-        titre = f"{nom} : cours, prévision et analyse IA | {NOM}"
+        titre = f"Prévision {nom} {mois_an}{chiffre} | {NOM}"
     faq = _faq_titre(t, nom, date, verdict)
     # version 52 : « si j'avais investi 100 il y a un an » (vrais cours) + lien vers le simulateur
     investi_html = ""
@@ -475,11 +481,12 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
         for o, ch in (t.get("_duels") or [])[:10]) + "</ul>") if t.get("_duels") else ""
     similaires = "".join(f"<li><a href='{slug(v['ticker'])}.html'>{_e(v['nom'])}</a></li>" for v in voisins)
     mv = (t.get("risque_prevu") or {}).get("mouvement")
-    desc = (f"{nom} ({aff_tk(tk)}) au {date} : "
-            + (f"agitation prévue ±{round(mv * 100)} %, " if mv else "")
-            + ("pas d'avis net des IA sur la hausse. " if sur10 is not None and t.get("avis_net") is False else
-               f"{sur10} chances sur 10 de hausse à un mois. " if sur10 is not None else "")
-            + "Analyse IA gratuite et vérifiée, pas un conseil.")
+    ch_t = (t.get("risque_prevu") or {}).get("chute")
+    suivant = MOIS[maintenant.month % 12]
+    desc = (f"Jusqu'où peut aller {nom} d'ici {suivant} ? "
+            + (f"Fourchette probable ±{round(mv * 100)} %, " if mv else "")
+            + (f"risque de chute de plus de 10 % : {round(ch_t * 100)} %. " if isinstance(ch_t, (int, float)) else "")
+            + f"Cours du {date} et analyse IA vérifiée, gratuite.")
     chemin = f"titres/{slug(tk)}.html"
     lien_app = f"../index.html#{re.sub(r'[^A-Za-z0-9._-]', '', tk)}"
     perf = t.get("perf", {})
@@ -1261,6 +1268,7 @@ def _profil(fd):
     if not lignes:
         return ""
     secteur = fd.get("secteur")
+    secteur = SECTEURS_FR.get(secteur, secteur) if secteur else secteur   # version 58 : en français (« Consumer Cyclical » → consommation…)
     intro = f"<p>Secteur : <b>{_e(secteur)}</b>.</p>" if secteur else ""
     return (f"<h2>L'entreprise en chiffres</h2>{intro}<div class='carte'><table>{''.join(lignes)}</table></div>"
             "<p class='muted' style='font-size:14px'>Données publiques des derniers comptes. Le PER indique combien le marché paie "

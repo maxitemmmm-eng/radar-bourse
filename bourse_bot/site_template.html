@@ -569,6 +569,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .prono-res ul{margin:0;padding-left:18px;font-size:14px}
 .prono-ok{color:var(--up);font-weight:700}.prono-ko{color:var(--down);font-weight:700}
 .prono-attente{font-size:14px}
+.prono-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.prono-badge{font-size:12.5px;padding:4px 9px;border-radius:99px;border:1px dashed var(--line);color:var(--muted)}
+.prono-badge.ok{border-style:solid;border-color:var(--up);color:var(--ink);background:var(--up-soft);font-weight:600}
 .serie-chip{display:inline-flex;align-items:center;gap:2px;height:34px;padding:0 10px;border-radius:99px;border:1px solid var(--line);
   background:var(--surface);color:var(--ink);text-decoration:none;font-weight:700;font-size:14px;white-space:nowrap}
 .serie-chip.a-faire{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
@@ -1346,6 +1349,8 @@ const RISK = {"Faible":1,"Moyen":2,"Élevé":3,"Très élevé":4};
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pct = (v, d=1) => v==null ? "–" : `<span class="num ${v>0?'up':v<0?'down':''}">${v>0?'+':''}${(v*100).toFixed(d).replace('.',',')} %</span>`;
 const pctPlain = (v, d=1) => v==null ? "–" : `${(v*100).toFixed(d).replace('.',',')} %`;
+// version 58 : secteurs Yahoo en français (l'appli anglaise garde les noms anglais d'origine)
+const SECTEURS_FR = document.documentElement.lang === "fr" ? {"Technology": "technologie", "Financial Services": "finance et banques", "Healthcare": "santé", "Consumer Cyclical": "consommation (luxe, auto, loisirs)", "Consumer Defensive": "consommation de base", "Industrials": "industrie", "Energy": "énergie", "Utilities": "services publics (électricité, eau)", "Communication Services": "communication et médias", "Basic Materials": "matériaux et chimie", "Real Estate": "immobilier"} : {};
 const px = (v, cur) => {
   if(v == null || !isFinite(v)) return "–";
   const a = Math.abs(v);
@@ -2814,7 +2819,7 @@ function blocFondamentaux(t){
   };
   const lignes = Object.entries(L).filter(([k]) => F.valeurs[k] != null).map(([k, l]) =>
     `<tr><td>${esc(l.libelle)}</td><td class="val">${fmt(F.valeurs[k], l.format)}</td><td><span class="aide">${esc(l.aide)}</span><br>${repere(k, F.valeurs[k])}</td></tr>`).join("");
-  return `<div class="panel"><div class="label" style="margin-bottom:8px">La santé de l'entreprise${F.secteur ? " · " + esc(F.secteur) : ""}</div>
+  return `<div class="panel"><div class="label" style="margin-bottom:8px">La santé de l'entreprise${F.secteur ? " · " + esc(SECTEURS_FR[F.secteur] || F.secteur) : ""}</div>
     <div class="tablewrap" style="border:0"><table class="fond"><tbody>${lignes}</tbody></table></div>
     <p class="muted" style="font-size:12.5px;margin:10px 0 0">Les repères sont généraux : un PER « cher » peut être normal dans la technologie, une dette élevée normale dans l'énergie. Ces chiffres sont affichés pour comprendre l'entreprise ; ils n'entrent pas dans la probabilité du modèle.</p></div>`;
 }
@@ -3475,13 +3480,28 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
       h += '<div class="prono-bas"><span class="muted" style="font-size:13px">' + "Le résultat compare le prix d'aujourd'hui à celui de demain. Rien n'est sûr : c'est un jeu pour apprendre." + '</span>'
         + '<button class="btn" id="prono-ok"' + (prets ? "" : " disabled") + '>' + "Valider mon pronostic" + '</button></div>';
     }
-    h += '<div class="prono-bas"><button class="btn ghost" id="prono-rappel" type="button">' + "📅 Me le rappeler chaque jour" + '</button></div>';
+    // version 58 : badges (les séries et les points se gagnent jour après jour)
+    const BADGES = [[E.meilleure >= 3, "🔥", "3 jours de suite"], [E.meilleure >= 7, "🏅", "Une semaine complète"], [E.meilleure >= 30, "🏆", "Un mois sans manquer"],
+      [E.points >= 100, "💯", "100 points"], [E.points >= 500, "💎", "500 points"], [E.total >= 20 && E.justes / E.total >= 0.6, "🎯", "Plus de 60 % de bonnes réponses"]];
+    h += '<div class="prono-badges" aria-label="' + "Badges" + '">' + BADGES.map(([ok, ic, t]) => '<span class="prono-badge' + (ok ? " ok" : "") + '" title="' + t + '">' + ic + ' ' + t + '</span>').join("") + '</div>';
+    h += '<div class="prono-bas"><button class="btn ghost" id="prono-rappel" type="button">' + "📅 Me le rappeler chaque jour" + '</button>'
+      + (E.total || (j && j.picks) ? '<button class="btn ghost" id="prono-partage" type="button">' + "📣 Partager mon score" + '</button>' : "") + '</div>';
     zone.innerHTML = h;
   };
   zone.addEventListener("click", e => {
     const b = e.target.closest("button"); if(!b) return;
     if(b.dataset.tk){ choix[b.dataset.tk] = +b.dataset.sens; rendre(); const n = zone.querySelector(`button[data-tk="${CSS.escape(b.dataset.tk)}"][data-sens="${b.dataset.sens}"]`); n && n.focus(); return; }
     if(b.id === "prono-rappel"){ rappel(); return; }
+    if(b.id === "prono-partage"){
+      const url = location.href.split("#")[0] + "#prono";
+      const texte = (E.serie > 1 ? "🔥 " + E.serie + " " + "jours de suite au pronostic du jour de Radar Bourse" : "🎯 " + "Je joue au pronostic du jour de Radar Bourse")
+        + (E.total ? " : " + E.justes + "/" + E.total + " " + "bonnes réponses" : "") + ". " + "Et toi, plus haut ou plus bas demain ?";
+      (async () => {
+        try{ if(navigator.share){ await navigator.share({title: "Radar Bourse", text: texte, url}); return; } }catch(e){ if(e && e.name === "AbortError") return; }
+        try{ await navigator.clipboard.writeText(texte + " " + url); b.textContent = "✓ " + "Copié, tu peux le coller où tu veux"; }catch(e){ b.textContent = url; }
+      })();
+      return;
+    }
     if(b.id === "prono-ok"){
       const l = choisir();
       E.jours[auj] = {t0: genere, picks: l.map(tk => { const q = prixDe(tk); return {tk, nom: q.nom, devise: q.devise, prix0: q.prix, sens: choix[tk]}; })};
