@@ -7650,6 +7650,468 @@
      "adopte": false
     }
    }
+  },
+  {
+   "date": "2026-11-03T10:29",
+   "mode": "rapide",
+   "demo": false,
+   "arret_manuel": false,
+   "nb_titres": 283,
+   "nb_lignes": 1120485,
+   "series_economiques": [
+    "cuivre",
+    "dollar",
+    "fng",
+    "or",
+    "petrole",
+    "taux",
+    "taux_court",
+    "vix",
+    "vix3m"
+   ],
+   "nb_essais": 15,
+   "coupure": "2023-06-09",
+   "candidats": [
+    {
+     "nom": "🧭 Essai 2 : tous les indicateurs + économie + manuel, profondeur 3, 250 étapes, sans les 20 % de cas les plus plats",
+     "auc_recherche": 0.5416280890082315,
+     "auc_final": 0.52652632030192,
+     "complet": true
+    },
+    {
+     "nom": "Comité des 3 meilleures recettes",
+     "auc_recherche": 0.5318836665813546,
+     "auc_final": 0.5362796715776232,
+     "complet": true
+    },
+    {
+     "nom": "Un modèle par marché (actions / cryptos)",
+     "auc_recherche": 0.5282367125733384,
+     "auc_final": null,
+     "complet": false
+    },
+    {
+     "nom": "Un seul modèle, tous les indicateurs",
+     "auc_recherche": 0.5280993814152499,
+     "auc_final": 0.5232762949504739,
+     "complet": true
+    },
+    {
+     "nom": "Revérifié : Amélioration 8 (variante d'un des meilleurs : c_lin 0.048, demi_vie 10, feuille 150, l2 3.",
+     "auc_recherche": 0.5259235293205821,
+     "auc_final": 0.5424046001821063,
+     "complet": true
+    },
+    {
+     "nom": "Sélection automatique : 28 indicateurs utiles",
+     "auc_recherche": 0.5239786202688614,
+     "auc_final": null,
+     "complet": true
+    },
+    {
+     "nom": "Indicateurs de base + 3 connaissances prouvées",
+     "auc_recherche": 0.5077111130202145,
+     "auc_final": null,
+     "complet": true
+    },
+    {
+     "nom": "Un seul modèle, indicateurs de base",
+     "auc_recherche": 0.5062099639862537,
+     "auc_final": 0.5586971330467889,
+     "complet": true
+    },
+    {
+     "nom": "Indicateurs de base + avis des mini-robots",
+     "auc_recherche": 0.5058885788028071,
+     "auc_final": null,
+     "complet": false
+    },
+    {
+     "nom": "Une IA par ambiance (calme / nerveux), indicateurs de base",
+     "auc_recherche": 0.5057700223202208,
+     "auc_final": null,
+     "complet": false
+    },
+    {
+     "nom": "Indicateurs de base + économie",
+     "auc_recherche": 0.5048180129793332,
+     "auc_final": null,
+     "complet": false
+    },
+    {
+     "nom": "Indicateurs de base comparés entre titres du même jour",
+     "auc_recherche": 0.503073797363951,
+     "auc_final": null,
+     "complet": false
+    },
+    {
+     "nom": "Classement des titres, indicateurs de base",
+     "auc_recherche": 0.49221975975130317,
+     "auc_final": null,
+     "complet": false
+    },
+    {
+     "nom": "Classement des titres, indicateurs de base + nouveaux",
+     "auc_recherche": 0.4885559357405088,
+     "auc_final": null,
+     "complet": false
+    },
+    {
+     "nom": "🧭 Essai 1 : tous les indicateurs + économie + manuel, profondeur 2, 150 étapes, classement, par ambiance, comparé entre titres, sans les 50 % de cas les plus plats",
+     "auc_recherche": 0.4845094736783079,
+     "auc_final": null,
+     "complet": false
+    }
+   ],
+   "importance": {
+    "taux_chg": 0.020209945508766647,
+    "vix": 0.013236626211732827,
+    "cx_volatilite_propre_60j": 0.012951377538709674,
+    "rang_cx_momentum_regulier_12m": 0.008766141835695795,
+    "rangm_ret_126j": 0.0054979311108286355,
+    "cx_retournement_long_3ans": 0.0049815722078045965,
+    "dist_vwap20": 0.004857573805653548,
+    "mom_ajuste_63": 0.004747086244488052,
+    "pente_sma50": 0.004620343542206418,
+    "cx_momentum_6m": 0.003913049127543866,
+    "dist_sma200": 0.0038614455231252842,
+    "aroon": 0.0035385708480834,
+    "cx_croisement_moyennes_50_200": 0.0026749477462999494,
+    "rsi": 0.0024397034242060744,
+    "rang_ret_126j": 0.001822873598249175
+   },
+   "en_place": "Un seul modèle, indicateurs de base",
+   "retenu": "Un seul modèle, indicateurs de base",
+   "change_methode": false,
+   "raison": "L'IA du site reste la meilleure à l'examen final.",
+   "ic_gain_auc": null,
+   "examen_donnees": {},
+   "precision": 0.5545410589088565,
+   "ic_precision": [
+    0.5206608612095028,
+    0.5829738348623569
+   ],
+   "auc": 0.5586971330467889,
+   "auc_recherche_retenu": 0.5062099639862537,
+   "precision_base": 0.5237650092674672,
+   "niveau_preuve": "possible",
+   "connaissances": {
+    "momentum": {
+     "nom": "Le momentum (ce qui monte a tendance à continuer)",
+     "statut": "pas d'effet prouvé",
+     "variante": "6m",
+     "importance": -0.0004610687544167602,
+     "sens_observe": -0.008320763827446245,
+     "dans_le_sens_annonce": false
+    },
+    "retournement": {
+     "nom": "Le retournement à court terme",
+     "statut": "pas d'effet prouvé",
+     "variante": "1m",
+     "importance": -0.00040128949408113623,
+     "sens_observe": -0.03405281936103712,
+     "dans_le_sens_annonce": true
+    },
+    "plus_haut_52s": {
+     "nom": "La proximité du plus haut sur un an",
+     "statut": "pas d'effet prouvé",
+     "variante": "52s",
+     "importance": -0.0002831185794833768,
+     "sens_observe": -0.03370908726421443,
+     "dans_le_sens_annonce": false
+    },
+    "faible_volatilite": {
+     "nom": "L'anomalie de la faible volatilité",
+     "statut": "pas d'effet prouvé",
+     "variante": "60j",
+     "importance": -0.0010300920097925381,
+     "sens_observe": 0.027255745971344593,
+     "dans_le_sens_annonce": false
+    },
+    "beta_faible": {
+     "nom": "Parier contre le bêta",
+     "statut": "pas d'effet prouvé",
+     "variante": "1an",
+     "importance": -0.0005496054172936526,
+     "sens_observe": 0.017509938404939876,
+     "dans_le_sens_annonce": false
+    },
+    "loterie": {
+     "nom": "L'effet « ticket de loterie »",
+     "statut": "pas d'effet prouvé",
+     "variante": "1m",
+     "importance": -0.0007357300351659157,
+     "sens_observe": 0.01811229726664038,
+     "dans_le_sens_annonce": false
+    },
+    "tendance_temporelle": {
+     "nom": "Le suivi de tendance",
+     "statut": "pas d'effet prouvé",
+     "variante": "12m",
+     "importance": -0.0005228621491132346,
+     "sens_observe": -0.017019692113916827,
+     "dans_le_sens_annonce": false
+    },
+    "choc_volume": {
+     "nom": "La prime des volumes élevés",
+     "statut": "pas d'effet prouvé",
+     "variante": "5j",
+     "importance": -0.0006310155449192889,
+     "sens_observe": 0.015816136286172407,
+     "dans_le_sens_annonce": true
+    },
+    "saison": {
+     "nom": "« Sell in May » : les saisons de la Bourse",
+     "statut": "pas d'effet prouvé",
+     "variante": "hiver",
+     "importance": -0.004206807165147763,
+     "sens_observe": 0.03508008815984012,
+     "dans_le_sens_annonce": true
+    },
+    "ecart_moyenne": {
+     "nom": "Le retour vers la moyenne",
+     "statut": "utile",
+     "variante": "60j",
+     "importance": 0.0010391709878309063,
+     "sens_observe": -0.045334311180450976,
+     "dans_le_sens_annonce": true
+    },
+    "momentum_relatif": {
+     "nom": "Le momentum face à son marché",
+     "statut": "pas d'effet prouvé",
+     "variante": "6m",
+     "importance": -0.003108014351405286,
+     "sens_observe": -0.004105542999441683,
+     "dans_le_sens_annonce": false
+    },
+    "cycle_halving": {
+     "nom": "Le cycle du « halving » Bitcoin (idée populaire, peu prouvée)",
+     "statut": "pas d'effet prouvé",
+     "variante": "cycle",
+     "importance": -0.0003017641408096239,
+     "sens_observe": -0.06934109940842803,
+     "dans_le_sens_annonce": false
+    },
+    "volatilite_propre": {
+     "nom": "La volatilité propre au titre",
+     "statut": "utile",
+     "variante": "60j",
+     "importance": 0.007598849138298669,
+     "sens_observe": 0.013177324560615072,
+     "dans_le_sens_annonce": false
+    },
+    "asymetrie": {
+     "nom": "L'asymétrie des rendements",
+     "statut": "pas d'effet prouvé",
+     "variante": "60j",
+     "importance": -0.00018973566744295844,
+     "sens_observe": -0.007620487220324076,
+     "dans_le_sens_annonce": true
+    },
+    "illiquidite": {
+     "nom": "La prime d'illiquidité",
+     "statut": "pas d'effet prouvé",
+     "variante": "60j",
+     "importance": -2.4776553662397838e-05,
+     "sens_observe": 0.033722129725689706,
+     "dans_le_sens_annonce": true
+    },
+    "momentum_regulier": {
+     "nom": "La régularité de la hausse (« frog in the pan »)",
+     "statut": "pas d'effet prouvé",
+     "variante": "12m",
+     "importance": -0.0031952285988213758,
+     "sens_observe": 0.0006769719991230492,
+     "dans_le_sens_annonce": true
+    },
+    "croisement_moyennes": {
+     "nom": "Les croisements de moyennes mobiles",
+     "statut": "pas d'effet prouvé",
+     "variante": "10mois",
+     "importance": -0.00014646800347151157,
+     "sens_observe": -0.01747044601637335,
+     "dans_le_sens_annonce": false
+    },
+    "cassure": {
+     "nom": "La cassure du plus haut",
+     "statut": "pas d'effet prouvé",
+     "variante": "6m",
+     "importance": -0.00024121333401649903,
+     "sens_observe": -0.019925994975198067,
+     "dans_le_sens_annonce": false
+    },
+    "nuit": {
+     "nom": "Le momentum des nuits",
+     "statut": "pas d'effet prouvé",
+     "variante": "12m",
+     "importance": 0.0003884987885905966,
+     "sens_observe": -0.019590591165048632,
+     "dans_le_sens_annonce": false
+    },
+    "retournement_long": {
+     "nom": "Le retournement à long terme",
+     "statut": "utile",
+     "variante": "3ans",
+     "importance": 0.0032940199688580307,
+     "sens_observe": -0.019783159048982892,
+     "dans_le_sens_annonce": true
+    },
+    "effet_janvier": {
+     "nom": "L'effet janvier",
+     "statut": "pas d'effet prouvé",
+     "variante": "dec_jan",
+     "importance": -0.004783144623865865,
+     "sens_observe": 0.009630516538997505,
+     "dans_le_sens_annonce": true
+    },
+    "momentum_crypto": {
+     "nom": "Le momentum des cryptos (court terme)",
+     "statut": "pas d'effet prouvé",
+     "variante": "1s",
+     "importance": -0.00014646571369258954,
+     "sens_observe": 0.006858868315589386,
+     "dans_le_sens_annonce": true
+    },
+    "pression_marche": {
+     "nom": "Le titre face aux journées de panique",
+     "statut": "pas d'effet prouvé",
+     "variante": "1an",
+     "importance": -0.0012141217199005405,
+     "sens_observe": 0.019339647892903353,
+     "dans_le_sens_annonce": true
+    }
+   },
+   "erreurs": {
+    "par_marche": [
+     {
+      "nom": "cryptos",
+      "nb": 66754,
+      "precision": 0.5234442879827426
+     },
+     {
+      "nom": "ETF et indices",
+      "nb": 8355,
+      "precision": 0.6241771394374626
+     },
+     {
+      "nom": "actions européennes",
+      "nb": 22843,
+      "precision": 0.5716412029943527
+     },
+     {
+      "nom": "actions françaises",
+      "nb": 33748,
+      "precision": 0.5283572359843546
+     },
+     {
+      "nom": "actions américaines",
+      "nb": 116480,
+      "precision": 0.5595381181318682
+     }
+    ],
+    "par_confiance": [
+     {
+      "nom": "avis prudents (45–55 %)",
+      "nb": 82749,
+      "precision": 0.5198008435147252
+     },
+     {
+      "nom": "avis nets (55–60 % ou 40–45 %)",
+      "nb": 134079,
+      "precision": 0.5542105773461914
+     },
+     {
+      "nom": "avis très nets (plus de 60 % ou moins de 40 %)",
+      "nb": 31352,
+      "precision": 0.6028323551926512
+     }
+    ]
+   },
+   "guidage": {
+    "guides": 2,
+    "aleatoires": 0,
+    "reverifies": [
+     {
+      "nom": "Revérifié : Amélioration 8 (variante d'un des meilleurs : c_lin 0.048, demi_vie 10, feuille 150, l2 3.",
+      "avant": 0.5170677433054013,
+      "apres": 0.5259235293205821
+     }
+    ]
+   },
+   "lecons": [
+    [
+     "ignorer les petits mouvements",
+     0.00707566078965162,
+     15
+    ],
+    [
+     "avec les règles du manuel de Bourse",
+     0.0035496917854088467,
+     70
+    ],
+    [
+     "un modèle séparé par marché",
+     0.0034378748859752255,
+     51
+    ],
+    [
+     "apprentissage lent (≤ 0,03)",
+     0.0026453880160494945,
+     33
+    ],
+    [
+     "avec les données économiques",
+     0.0025454348929690334,
+     96
+    ],
+    [
+     "donner plus de poids aux années récentes",
+     0.001353130770196377,
+     23
+    ],
+    [
+     "arbres profonds (4 et plus)",
+     0.0011436388024670195,
+     11
+    ],
+    [
+     "apprentissage rapide (≥ 0,05)",
+     0.0004927853926774468,
+     11
+    ],
+    [
+     "arbres peu profonds (2–3)",
+     -0.00012333359634446943,
+     102
+    ],
+    [
+     "toutes les années comptent pareil",
+     -0.00034580008571683717,
+     90
+    ],
+    [
+     "un seul modèle pour tous les marchés",
+     -0.002827929341689277,
+     62
+    ],
+    [
+     "sans les règles du manuel",
+     -0.005778568022758557,
+     43
+    ]
+   ],
+   "horizons": null,
+   "crises": null,
+   "risque_auto": {
+    "agitation": {
+     "essayes": 12,
+     "adopte": false
+    },
+    "chute": {
+     "essayes": 12,
+     "adopte": false
+    }
+   }
   }
  ],
  "date": "2026-11-03T04:17:09",
