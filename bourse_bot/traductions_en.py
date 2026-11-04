@@ -1392,6 +1392,9 @@ EN = {
 "agitation prévue": "expected volatility",
 "moyenne des cryptos": "crypto average",
 # version 63
+"Actions": "Stocks",
+"Risque et agitation": "Risk and movement",
+"L'IA": "The AI",
 "Dans ta langue": "In your language",
 "Le site dans d'autres langues": "The site in other languages",
 "Londres": "London",

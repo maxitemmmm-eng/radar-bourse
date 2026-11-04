@@ -240,6 +240,8 @@ tbody tr:last-child td{border-bottom:0}
 .tuile b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tuile span{font:500 12.5px var(--f-mono)}
 .tuile:hover{outline:2px solid var(--ink);outline-offset:-2px}
+.tuile span{opacity:.92}
+[data-theme="dark"] .tuile{box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
 .tuiles.prop{display:flex;flex-wrap:wrap;gap:4px}
 .tuiles.prop .tuile{flex:1 1 78px;align-content:start}
 .tuiles.prop .tuile b{font-size:clamp(13px,1.2vw,16px)}
@@ -587,12 +589,20 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .serie-chip.a-faire{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 @media (max-width:480px){.serie-chip{display:none}}   /* téléphone : pas la place dans l'en-tête, le bouton de l'accueil suffit */
 /* Version 62 : le mini assistant */
-.assist-questions{display:flex;flex-wrap:wrap;gap:8px}
-.assist-questions .chip{text-align:left}
+/* version 63 : questions rangées par thème (plus lisible qu'un mur de boutons) */
+.assist-questions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px 18px;padding-top:4px;border-top:1px solid var(--line)}
+.assist-groupe{display:flex;flex-direction:column;gap:1px;min-width:0;padding-top:10px}
+.assist-titre{font-size:12px;font-weight:600;color:var(--muted);padding:0 10px 6px}
+.assist-q{display:block;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:7px 10px;color:var(--ink);font:inherit;font-size:14px;line-height:1.35;cursor:pointer}
+.assist-q:hover{background:var(--bg)}
+.assist-q[aria-pressed="true"]{background:var(--accent);color:var(--surface);font-weight:600}
+@media (max-width:1000px){.assist-questions{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:700px){
-  .assist-questions{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin:0 -4px;padding-left:4px;padding-right:4px}
-  .assist-questions::-webkit-scrollbar{display:none}
-  .assist-questions .chip{white-space:nowrap;flex:none}
+  .assist-questions{grid-template-columns:1fr;gap:0}
+  .assist-groupe{flex-direction:row;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;padding:8px 0 2px}
+  .assist-groupe::-webkit-scrollbar{display:none}
+  .assist-titre{flex:none;padding:0 4px 0 0;min-width:62px}
+  .assist-q{width:auto;flex:none;white-space:nowrap;border:1px solid var(--line);border-radius:99px;padding:6px 12px;font-size:13.5px}
 }
 .assist-fil{margin-top:14px;display:grid;gap:10px}
 .assist-form{display:flex;gap:8px;margin-bottom:12px}
@@ -2175,6 +2185,7 @@ function rendreCarte(){
   const surf = css("--surface"), up = css("--up"), down = css("--down");
   const groupes = [["fr","France"],["eu","Europe"],["us","États-Unis"],["monde","Monde"],["crypto","Cryptos"],["etf","ETF et indices"]];
   const echelle = {"1 jour": .03, "1 mois": .12, "3 mois": .25}[PERIODE_CARTE];
+  const sombre = (() => { const m = String(melange(surf, surf, 0)).match(/\d+/g); return m ? (+m[0] + +m[1] + +m[2]) / 3 < 100 : false; })();
   el.innerHTML = groupes.map(([m, nom]) => {
     const L = T.filter(t => t.marche === m && t.perf && t.perf[PERIODE_CARTE] != null)
                .sort((a, b) => b.perf[PERIODE_CARTE] - a.perf[PERIODE_CARTE]);
@@ -2187,7 +2198,7 @@ function rendreCarte(){
     if(proportionnel) L.sort((a, b) => poids(b) - poids(a) || b.perf[PERIODE_CARTE] - a.perf[PERIODE_CARTE]);
     return `<div class="carte-groupe"><span class="label">${nom}</span><div class="tuiles${proportionnel ? " prop" : ""}">${L.map(t => {
       const v = t.perf[PERIODE_CARTE], f = Math.min(1, Math.abs(v) / echelle);
-      const fond = melange(surf, v >= 0 ? up : down, .12 + .6 * f);
+      const fond = melange(surf, v >= 0 ? up : down, sombre ? .1 + .4 * f : .12 + .6 * f);   // version 63 : plus doux en thème sombre
       const p = proportionnel ? poids(t) : 1;
       return `<button class="tuile" data-t="${esc(t.ticker)}" style="background:${fond};color:${texteLisible(fond)}${proportionnel ? `;flex-grow:${p.toFixed(2)};flex-basis:${Math.round(78 * p)}px;min-height:${Math.round(52 + 18 * (p - 1))}px` : ""}" title="${esc(t.nom)}${t.capi ? ` · ${Math.round(t.capi).toLocaleString("fr-FR")} Md de capitalisation` : ""}" aria-label="${esc(t.nom)} : ${(v >= 0 ? "+" : "") + (v * 100).toFixed(1).replace(".", ",")} %"><b>${esc(affTk(t.ticker).replace(/-USD$|\.(PA|DE|AS|MC|MI)$|^\^/, ""))}</b><span>${(v >= 0 ? "+" : "") + (v * 100).toFixed(1).replace(".", ",")} %</span></button>`;
     }).join("")}${proportionnel ? '<span class="tuile-fin" aria-hidden="true"></span>' : ""}</div></div>`;
@@ -3748,7 +3759,13 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
     if(!h) h = `<p class="muted">${"Le premier défi commencera lors de la prochaine mise à jour du soir."}</p>`;
     return h;
   }
-  choix.innerHTML = Q.map(([k, q]) => `<button class="chip" type="button" data-q="${k}">${q}</button>`).join("");
+  const GROUPES = [["Cryptos", ["calme-crypto", "monter-crypto", "bitcoin", "defi"]],
+                   ["Actions", ["calme-fr", "calme-us", "calme-monde", "dividende"]],
+                   ["Risque et agitation", ["surs-calme", "surs-agite", "risque", "nerveux"]],
+                   ["L'IA", ["fiable", "conseil"]]];
+  const libQ = k => (Q.find(x => x[0] === k) || [])[1];
+  choix.innerHTML = GROUPES.map(([titre, cles]) => `<div class="assist-groupe" role="group" aria-label="${titre}"><span class="assist-titre">${titre}</span>`
+    + cles.filter(libQ).map(k => `<button class="assist-q" type="button" data-q="${k}" aria-pressed="false">${libQ(k)}</button>`).join("") + "</div>").join("");
   const afficher = (question, rep, note) => {
     zone.innerHTML = `<div class="bulle-q">${question}</div><div class="bulle-r">${rep}${note ? NOTE : ""}</div>`;
     zone.hidden = false;
