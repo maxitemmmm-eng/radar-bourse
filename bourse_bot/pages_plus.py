@@ -26,7 +26,7 @@ def _jl_faq(faq):
 def fonctionnalites(payload):
     n = len(payload.get("titres", []))
     return [
-        ("Prévisions à un mois pour plus de 200 titres", f"{n} actions, ETF et cryptos analysés chaque heure : de combien le prix peut bouger, "
+        ("Prévisions à un mois pour près de 300 titres", f"{n} actions, ETF et cryptos analysés chaque heure : de combien le prix peut bouger, "
          "le risque d'une forte chute, et les chances de faire mieux que son marché.", "index.html#previsions", "fonction:previsions"),
         ("Simulateur boursier et portefeuille virtuel", "10 000 € fictifs pour acheter et vendre sans risque, suivre tes gains et comparer avec l'IA.",
          "simulateur-boursier.html", "simulateur-boursier.html"),
@@ -66,7 +66,7 @@ def _page_fonctionnalites(base, payload, csp):
              "<p><a class='btn' href='index.html'>Ouvrir l'appli</a></p>")
     jl = seo._jsonld_liste(base, "Les fonctionnalités de Radar Bourse", chemin, [(t, l) for t, _, l, _ in F])
     return chemin, seo._page(base, f"Fonctionnalités : prévisions IA, simulateur boursier, outils | {NOM}",
-                             "Tout ce que fait Radar Bourse : prévisions IA pour 200+ actions et cryptos, simulateur boursier avec "
+                             "Tout ce que fait Radar Bourse : prévisions IA pour près de 300 actions et cryptos, simulateur boursier avec "
                              "portefeuille virtuel, outils gratuits, comparateur, guides. Gratuit et sans compte.", chemin, corps, jl, csp=csp)
 
 
@@ -159,6 +159,14 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("63", "« Avis sûrs » : l'IA ne répond à « plus ou moins agité le mois prochain ? » que quand sa prévision s'écarte nettement des dernières semaines "
+     "(seuil appris chaque année sur les seules années d'avant)", True,
+     "80,8 % de bonnes réponses sur 119 493 avis (marge 79,3 % à 82,4 %), au moins 77 % dix années sur onze, pour environ la moitié des cas. "
+     "Repère honnête : dans les mêmes cas, la règle simple « l'agitation revient vers sa normale » fait environ 78 %"),
+    ("63", "« L'écart à sa normale » : comparer l'agitation récente d'un titre à sa médiane de l'année et de ses 3 derniers mois", True,
+     "« Plus ou moins agité ? » 70,25 % → 70,52 % sur 257 322 cas (marge du gain +0,07 à +0,44 point), erreur plus faible 11 années sur 13 : adopté"),
+    ("63", "Un 2e modèle spécialisé (classifieur) pour « plus ou moins agité ? » à la place du modèle d'agitation", False,
+     "69,7 % contre 70,3 % pour le modèle d'agitation actuel, sur les mêmes 257 322 cas : moins bien, non adopté"),
     ("59", "Nouvelle question posée à l'IA : « le mois prochain, plus ou moins agité que ces dernières semaines ? »", True,
      "70,9 % de bonnes réponses sur 514 838 cas (marge 69,9 % à 72,0 %), contre 51 % pour la réponse la plus fréquente ; "
      "au-dessus de 60 % les 13 années sur 13. Affichée sur chaque fiche"),

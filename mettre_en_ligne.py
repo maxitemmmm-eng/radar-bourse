@@ -318,6 +318,8 @@ def envoyer(complet):
         if any(local.values()):
             ok("Connaissances de l'IA gardées (recette, mémoire des essais) et fusionnées avec la version en ligne.")
 
+    # version 63 : les zips de mise à jour déjà installés ne doivent pas être publiés (ils restent sur le PC)
+    silencieux([GIT, "rm", "-r", "--cached", "-q", "--ignore-unmatch", "--", "*.zip"])
     run([GIT, "add", "-A"], montrer=False)
     code, _ = run([GIT, "commit", "-q", "-m", f"Mise à jour du site ({datetime.now():%d/%m/%Y %H:%M})"],
                   ok_codes=(0, 1), montrer=False)

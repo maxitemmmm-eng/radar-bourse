@@ -43,8 +43,8 @@ PAGES = {
     "suivi-chute.html": ("Le risque de chute, vérifié", "Les titres jugés à risque ont-ils vraiment chuté ?", "courbe_bas"),
     "previsions.html": ("Prévisions bourse et crypto", "Ce que l'IA prévoit pour le mois qui vient", "courbe"),
     "portefeuille.html": ("La sélection IA du mois", "10 actions suivies en public, ratés compris", "barres"),
-    "titres.html": ("Tous les titres suivis", "Plus de 200 actions, ETF et cryptos", "radar"),
-    "fonction:previsions": ("Prévisions à un mois", "Plus de 200 actions, ETF et cryptos, chaque heure", "radar"),
+    "titres.html": ("Tous les titres suivis", "Près de 300 actions, ETF et cryptos", "radar"),
+    "fonction:previsions": ("Prévisions à un mois", "Près de 300 actions, ETF et cryptos, chaque heure", "radar"),
     "fonction:fourchette": ("À combien dans un mois ?", "Une fourchette de prix probable, vérifiée", "cone"),
     "fonction:arene": ("L'Arène : toi contre l'IA", "Remonte le temps et devine la suite", "manette"),
     "fonction:prono": ("Ton pronostic du jour", "Plus haut ou plus bas demain ? Reviens voir", "cible"),
@@ -175,7 +175,8 @@ def dessiner(chemin_png: str, titre: str, sous_titre: str, motif: str, nom: str 
     dr.rectangle((0, 0, W, 10), fill=VERT)
     _motif(dr, motif, 930, 330)
     # nom du site + petit logo
-    dr.ellipse((70, 58, 112, 100), outline=BLEU, width=4); dr.line((91, 79, 108, 66), fill=VERT, width=5)
+    if not coller_logo(img, 66, 54, 50):
+        dr.ellipse((70, 58, 112, 100), outline=BLEU, width=4); dr.line((91, 79, 108, 66), fill=VERT, width=5)
     dr.text((128, 58), nom, font=_police(36, True), fill=TEXTE)
     # titre sur 3 lignes maximum, sous-titre sur 2 ; on réduit le titre si l'ensemble touche le badge du bas
     fs = _police(32)
@@ -214,3 +215,18 @@ def image_pour(chemin: str, images: dict) -> str | None:
         return images[chemin]
     dossier = chemin.rsplit("/", 1)[0] + "/" if "/" in chemin else ""
     return images.get(dossier)
+
+
+def coller_logo(img, x: int, y: int, taille: int) -> bool:
+    """Version 63 : le vrai logo (icône dessinée à l'avance) collé sur une image."""
+    try:
+        from PIL import Image
+        ico = Image.open(os.path.join(os.path.dirname(__file__), "vendor", "icones", "icone-192.png")).convert("RGBA")
+        ico = ico.resize((taille, taille), Image.LANCZOS)
+        masque = Image.new("L", (taille, taille), 0)
+        from PIL import ImageDraw
+        ImageDraw.Draw(masque).rounded_rectangle((0, 0, taille - 1, taille - 1), radius=int(taille * 15 / 64), fill=255)
+        img.paste(ico, (x, y), masque)
+        return True
+    except Exception:
+        return False

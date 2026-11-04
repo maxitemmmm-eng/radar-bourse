@@ -233,6 +233,25 @@ T = {
 }
 
 
+# Version 63 : 14 langues de plus et de nouvelles rubriques (voir langues_plus.py)
+from .langues_plus import AGIT_SEMAINE_PLUS, EXTRA, LANGUES_PLUS, T_PLUS
+LANGUES.update(LANGUES_PLUS)
+T.update(T_PLUS)
+AGIT_SEMAINE.update(AGIT_SEMAINE_PLUS)
+for _lg, _x in EXTRA.items():
+    if _lg in T:
+        T[_lg].setdefault("marches", {}).setdefault("monde", _x["monde"])
+        # l'ordre des marchés : le monde juste après les États-Unis
+        T[_lg]["marches"] = {k: T[_lg]["marches"][k] for k in ["fr", "eu", "us", "monde", "crypto", "etf", "tendances"] if k in T[_lg]["marches"]}
+TOUTES = ["fr", "en"] + list(LANGUES)
+NOMS_LANGUES = {"fr": "Français", "en": "English", **{k: v[0] for k, v in LANGUES.items()}}
+
+
+def _intro(L, n):
+    txt = L["accueil_intro"]
+    return txt.format(n=n) if "{n}" in txt else txt.replace("200", str(n))
+
+
 def _e(s) -> str:
     return html.escape(str(s or ""), quote=True)
 
@@ -293,7 +312,7 @@ def selecteur(prefixe: str, actuel: str, chemins: dict) -> str:
                       for lg in TOUTES)
 
 
-def _page(lg, base, titre, desc, chemin, corps, csp, alternates):
+def _page(lg, base, titre, desc, chemin, corps, csp, alternates, faq=None):
     nom_lg, locale, sens, _ = LANGUES[lg]
     L = T[lg]
     prefixe = "../" * chemin.count("/")
@@ -303,6 +322,9 @@ def _page(lg, base, titre, desc, chemin, corps, csp, alternates):
         {"@type": "WebPage", "name": titre, "description": desc, "inLanguage": lg,
          "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None}},
         seo._jsonld_fil(base, etapes)]}
+    if faq:   # version 63 : foire aux questions balisée (résultats enrichis de Google)
+        jsonld["@graph"].append({"@type": "FAQPage", "inLanguage": lg, "mainEntity": [
+            {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": r}} for q, r in faq]})
     tete = seo.balises_tete(base, titre, desc, chemin, jsonld=jsonld, alternates=alternates, langue=lg)
     csp = seo.csp_avec_stats(csp)
     return f"""<!doctype html>
@@ -335,8 +357,9 @@ def _page(lg, base, titre, desc, chemin, corps, csp, alternates):
 """
 
 
-def _page_titre(lg, base, t, horizon, date, csp=""):
+def _page_titre(lg, base, t, horizon, date, csp="", taux_surs=None):
     L = T[lg]
+    X = EXTRA.get(lg)
     sep = LANGUES[lg][3]
     dev, p = t.get("devise", "$"), t.get("proba_hausse")
     nom, tk = t["nom"], seo.aff_tk(t["ticker"])
@@ -355,7 +378,10 @@ def _page_titre(lg, base, t, horizon, date, csp=""):
     cases.append((L["sur10"].format(n=round(p * 10)) if net else L["sans_avis"], L["sens"].format(h=horizon)))
     corps = (f"<h1>{_e(L['h1'].format(nom=nom, tk=tk))}</h1><p class='muted'>{_e(L['maj'].format(d=date))}</p>"
              "<div class='carte grille'>" + "".join(f"<div class='k'><b><bdi>{v}</bdi></b><span>{_e(lib)}</span></div>" for v, lib in cases) + "</div>"
-             f"<h2>{_e(L['fiable_t'])}</h2><p>{L['fiable']}</p>"
+             + (f"<p class='avis-sur'><span class='badge-sur'>✓</span> {_e(X['fiche_agite' if rp['recent'] > 1 else 'fiche_calme'].format(nom=nom, e=round(abs(rp['recent'] - 1) * 100)))}"
+                f" <span class='muted'>({_e(X['surs_t'])} : {round(taux_surs * 100)} %)</span></p>" if X and rp.get("sur") and rp.get("recent") and taux_surs else "")
+             + seo.courbe_svg(t, {"aria": L["h1"].format(nom=nom, tk=tk)})
+             + f"<h2>{_e(L['fiable_t'])}</h2><p>{L['fiable']}</p>"
              f"<p><a class='btn' href='../../index.html#{_e(re.sub(r'[^A-Za-z0-9._-]', '', t['ticker']))}'>{_e(L['app'])}</a> "
              f"<a class='btn ghost' href='../../en/stocks/{s}.html' hreflang='en'>{_e(L['en'])}</a></p>")
     return chemin, _page(lg, base, L["titre_page"].format(nom=nom, tk=tk) + f" | {NOM}", L["desc"].format(nom=nom, tk=tk),
@@ -367,20 +393,24 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
     date = payload.get("date_donnees", "")
     horizon = payload.get("horizon", 20)
     titres = [t for t in payload.get("titres", []) if t.get("prix")]
+    av = (((payload.get("modele") or {}).get("risque") or {}).get("avis_surs") or {})
+    taux_surs = av.get("taux") if (av.get("taux") or 0) > 0.7 else None
+    n = len([t for t in titres if t.get("marche") != "tendances"])
+    n = max(10, n // 10 * 10) if n >= 250 else n
     urls = []
     for lg in LANGUES:
         L = T[lg]
         sep = LANGUES[lg][3]
         os.makedirs(os.path.join(dossier, lg, "stocks"), exist_ok=True)
         for t in titres:
-            chemin, page = _page_titre(lg, base, t, horizon, date, csp)
+            chemin, page = _page_titre(lg, base, t, horizon, date, csp, taux_surs)
             with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
                 f.write(page)
             urls.append((chemin, "daily", "0.4"))
         lien = lambda t: f"<a href='stocks/{seo.slug(t['ticker'])}.html'>{_e(t['nom'])}</a>"
         rq = sorted([t for t in titres if (t.get("risque_prevu") or {}).get("chute") is not None],
                     key=lambda t: -t["risque_prevu"]["chute"])[:10]
-        calmes = sorted([t for t in titres if t.get("marche") in ("fr", "eu", "us") and (t.get("risque_prevu") or {}).get("mouvement")],
+        calmes = sorted([t for t in titres if t.get("marche") in ("fr", "eu", "us", "monde") and (t.get("risque_prevu") or {}).get("mouvement")],
                         key=lambda t: t["risque_prevu"]["mouvement"])[:10]
         tab = lambda lst, f: "<div class='carte'><table>" + "".join(f"<tr><td>{lien(t)} <span class='muted'>({_e(seo.aff_tk(t['ticker']))})</span></td><td class='m'><bdi>{f(t)}</bdi></td></tr>" for t in lst) + "</table></div>"
         groupes = ""
@@ -388,14 +418,26 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
             items = [t for t in titres if t.get("marche") == cle]
             if items:
                 groupes += f"<h3>{_e(lib)}</h3><ul class='liste'>" + "".join(f"<li>{lien(t)}</li>" for t in items) + "</ul>"
-        corps = (f"<h1>{_e(L['accueil_h1'].format(nom=NOM))}</h1><p class='muted'>{_e(L['accueil_intro'])}</p>"
+        X = EXTRA.get(lg) or {}
+        surs = ""
+        if X and taux_surs:
+            sur_l = lambda sens: sorted([t for t in titres if (t.get("risque_prevu") or {}).get("sur") and (t["risque_prevu"].get("recent") or 1) != 1
+                                         and ((t["risque_prevu"]["recent"] > 1) == (sens > 0))],
+                                        key=lambda t: -abs(t["risque_prevu"]["recent"] - 1))[:8]
+            ecart = lambda t: f"{'+' if t['risque_prevu']['recent'] > 1 else '−'}{round(abs(t['risque_prevu']['recent'] - 1) * 100)} %"
+            lc, la = sur_l(-1), sur_l(1)
+            surs = (f"<h2>{_e(X['surs_t'])}</h2><p>{_e(X['surs_txt'].format(x=round(taux_surs * 100), c=round((av.get('couverture') or .5) * 100)))}</p>"
+                    + (f"<h3>{_e(X['calme'])}</h3>" + tab(lc, ecart) if lc else "") + (f"<h3>{_e(X['agite'])}</h3>" + tab(la, ecart) if la else ""))
+        faq = [(q, r.format(x=round(taux_surs * 100)) if taux_surs else r) for q, r in X.get("faq", []) if taux_surs or "{x}" not in r] if X else []
+        faq_html = (f"<h2>{_e(X['faq_t'])}</h2><dl>" + "".join(f"<dt>{_e(q)}</dt><dd>{_e(r)}</dd>" for q, r in faq) + "</dl>") if faq else ""
+        corps = (f"<h1>{_e(L['accueil_h1'].format(nom=NOM))}</h1><p class='muted'>{_e(_intro(L, n))}</p>"
                  f"<p><a class='btn' href='../index.html'>{_e(L['app'])}</a> <a class='btn ghost' href='../en/index.html' hreflang='en'>{_e(L['en'])}</a></p>"
                  f"<h2>{_e(L['fiable_t'])}</h2><p>{L['fiable']}</p>"
                  + (f"<h2>{_e(L['risque_t'])}</h2>" + tab(rq, lambda t: f"{round(t['risque_prevu']['chute'] * 100)} %") if rq else "")
                  + (f"<h2>{_e(L['calmes_t'])}</h2>" + tab(calmes, lambda t: f"±{_pc(t['risque_prevu']['mouvement'], sep, signe=False)}") if calmes else "")
-                 + f"<h2 id='all'>{_e(L['tous'])}</h2>{groupes}")
+                 + surs + f"<h2 id='all'>{_e(L['tous'])}</h2>{groupes}" + faq_html)
         chemin = f"{lg}/index.html"
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
-            f.write(_page(lg, base, L["accueil_t"].format(nom=NOM), L["accueil_desc"], chemin, corps, csp, alternates_accueil()))
+            f.write(_page(lg, base, L["accueil_t"].format(nom=NOM), L["accueil_desc"], chemin, corps, csp, alternates_accueil(), faq=faq))
         urls.append((chemin, "daily", "0.7"))
     return urls

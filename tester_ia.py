@@ -32,7 +32,7 @@ warnings.filterwarnings("ignore")   # avertissements techniques des librairies :
 from bourse_bot import config, data, main as radar, model
 
 
-NOMS = {"fr": "Actions françaises", "eu": "Actions européennes", "us": "Actions américaines",
+NOMS = {"fr": "Actions françaises", "eu": "Actions européennes", "us": "Actions américaines", "monde": "Actions internationales",
         "crypto": "Cryptos", "etf": "ETF et indices", "tendances": "En tendance"}
 
 
@@ -545,7 +545,7 @@ def lancer(nb_cas: int, demo: bool) -> int:
     if len(tous) < 20:
         print("Trop peu de données reçues (Yahoo bloque peut-être). Réessaie dans une heure.")
         return 1
-    marches = {t: ("crypto" if t.endswith("-USD") else marche_de.get(t, "us")) for t in tous}
+    marches = {t: ("crypto" if t.endswith("-USD") else marche_de.get(t) or radar._marche_de(t)) for t in tous}
 
     print("2/4 Préparation des situations passées…")
     jeu = model.construire_jeu(tous, marches, horizon)
@@ -691,15 +691,17 @@ def lancer(nb_cas: int, demo: bool) -> int:
         from bourse_bot import comprendre as C
         et = jeu.dropna(subset=["vol_futur", "vol_20j"])
         et = et[np.isfinite(et["vol_futur"])]
-        vs = C._variables_risque(et, variables)
+        vs = C._variables_agitation(et, variables)
         morceaux = []
         for train, tst in model._plis(et.assign(cible=0.0), horizon, 5):
             if len(train) < 3000 or tst.empty:
                 continue
             mod = C._modele().fit(train[vs], train["vol_futur"])
             morceaux.append(pd.DataFrame({"y": tst["vol_futur"].to_numpy(), "p": mod.predict(tst[vs]),
-                                          "naif": C._naif(tst).to_numpy()}, index=tst.index))
+                                          "naif": C._naif(tst).to_numpy(), "marche": tst["marche"].to_numpy(),
+                                          "normale": tst["vol_normale"].to_numpy() if "vol_normale" in tst else np.nan}, index=tst.index))
         ag = pd.concat(morceaux) if morceaux else None
+        ag_tous = ag
     except Exception as ex:
         ag = None
         lignes += ["", f"3. L'AGITATION : test impossible cette fois ({ex})"]
@@ -727,6 +729,20 @@ def lancer(nb_cas: int, demo: bool) -> int:
                    "  " + ("Verdict : au-dessus de 60 % de façon sûre." if lo_s > .6 else
                            "Verdict : mieux que la réponse la plus fréquente, de façon sûre." if lo_s > max(plus, 1 - plus) else
                            "Verdict : pas de différence sûre.")]
+        # version 63 : les « avis sûrs » (seuil appris chaque année sur les seules années d'avant)
+        try:
+            av = C._avis_surs(ag_tous[np.isfinite(ag_tous[["y", "p", "naif"]]).all(axis=1)])
+            if av:
+                n_av = int(round(av["taux"] * nb_cas))
+                lignes += [f"➜ AVIS SÛRS (l'IA ne répond que quand elle est nettement sûre, {pct(av['couverture'])} des cas) : "
+                           f"{pct(av['taux'])} de bonnes réponses, soit {n_av} sur {nb_cas} (marge {pct(av['ic'][0])} à {pct(av['ic'][1])}, {av['nb']:,} avis)".replace(",", " "),
+                           f"  Au moins 77 % : {av['annees_77']} années sur {av['annees']} (pire année {pct(av['pire_annee'])})"
+                           + (f" · repère honnête, la règle simple « l'agitation revient vers sa normale » dans les mêmes cas : {pct(av['regle_simple'])}" if av.get("regle_simple") else ""),
+                           "  " + ("Verdict : objectif 77 % atteint de façon sûre (même en bas de la marge)." if av["ic"] and av["ic"][0] >= .77 else
+                                   "Verdict : au-dessus de 77 % en moyenne, mais pas de façon sûre." if av["taux"] >= .77 else
+                                   "Verdict : sous les 77 % cette fois.")]
+        except Exception as e:
+            lignes += [f"  (avis sûrs non testés : {e})"]
     print("   + test de l'agitation sur une semaine…", flush=True)
     try:
         lignes += tester_semaine(tous)

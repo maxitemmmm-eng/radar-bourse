@@ -23,7 +23,13 @@ DESCRIPTION = ("Prévisions bourse et crypto par IA, gratuites : agitation à un
                "à 10 000 € virtuels. Résultats vérifiés publiquement.")
 def description_accueil(payload: dict | None = None) -> str:
     """Version 61 : la description de l'accueil dans Google annonce un vrai chiffre mesuré (s'il est disponible et au-dessus de 60 %)."""
-    sr = ((((payload or {}).get("modele") or {}).get("risque") or {}).get("sens_recent") or {})
+    rq = (((payload or {}).get("modele") or {}).get("risque") or {})
+    av, sr = rq.get("avis_surs") or {}, rq.get("sens_recent") or {}
+    if (av.get("taux") or 0) > 0.75:   # version 63 : le chiffre des avis sûrs
+        d = (f"Prévisions bourse et crypto par IA, gratuites : {round(av['taux'] * 100)} % de réussite sur ses avis sûrs, "
+             "risque de chute, près de 300 titres. Résultats vérifiés.")
+        if len(d) <= 160:
+            return d
     if (sr.get("taux") or 0) > 0.6:
         d = (f"Prévisions bourse et crypto par IA, gratuites : {round(sr['taux'] * 100)} % de réussite sur l'agitation du mois suivant, "
              "risque de chute, simulateur. Résultats publiés.")
@@ -36,7 +42,8 @@ MOTS_CLES = ("radar bourse, prévision bourse IA, prévision action, prévision 
              "portefeuille virtuel, risque de chute action, volatilité, CAC 40, S&P 500, convertisseur bitcoin euro, "
              "si j'avais investi, intérêts composés, calcul plus-value flat tax, apprendre la bourse, krach boursier, "
              "risque de krach, bulle IA bourse, actu bourse, actu bitcoin, actualité crypto, CAC 40 aujourd'hui, prévision Nvidia, "
-             "prévision LVMH, prévision Tesla, ETF, cryptomonnaie, investir en bourse débutant")
+             "prévision LVMH, prévision Tesla, ETF, cryptomonnaie, investir en bourse débutant, actions internationales, "
+             "prévision Toyota, prévision TSMC, prévision Alibaba, action japonaise, action chinoise, avis sûrs IA, volatilité prévue")
 LIB_SIGNAL = {"ACHAT FORT": "haussier fort", "ACHAT": "haussier", "NEUTRE": "neutre",
               "VENTE": "baissier", "VENTE FORTE": "baissier fort"}
 
@@ -121,17 +128,33 @@ dt{font-weight:700;margin-top:16px}dd{margin:4px 0 0}nav.fil{font-size:14px}
 html.contraste{--muted:#2f3b4c;--line:#8795a8}html.contraste[data-theme="dark"]{--muted:#c3cede;--line:#4b5d78}
 html.lisible body{letter-spacing:.02em;word-spacing:.08em;line-height:1.75}
 .partager-page{font-size:14px;margin-top:34px}
-html.texte-115 body{font-size:18px}html.texte-130 body{font-size:20px}"""
+html.texte-115 body{font-size:18px}html.texte-130 body{font-size:20px}
+.courbe{margin:16px 0 6px}.courbe svg{width:100%;height:auto;display:block;overflow:visible}
+.cs-grille{stroke:var(--line);stroke-width:1;stroke-dasharray:2 4}.cs-g1{stop-color:var(--accent);stop-opacity:.28}.cs-g2{stop-color:var(--accent);stop-opacity:0}
+.cs-aire{fill:url(#csg)}.cs-ligne{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round}
+.cs-haut{fill:var(--up);fill-opacity:.2}.cs-bas{fill:var(--down);fill-opacity:.2}
+.cs-med{fill:none;stroke:var(--ink);stroke-width:2;stroke-dasharray:6 5}
+.cs-h50,.cs-b50{fill:none;stroke-width:1.2;stroke-dasharray:1 3}.cs-h50{stroke:var(--up)}.cs-b50{stroke:var(--down)}
+.cs-auj{stroke:var(--muted);stroke-dasharray:3 4}.cs-point{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.cs-t{font:600 12.5px var(--m);fill:var(--ink)}.cs-t-haut{fill:var(--up)}.cs-t-bas{fill:var(--down)}.cs-d{font:11px var(--m);fill:var(--muted)}
+.cs-leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted);margin:6px 0 0}
+.cs-leg span::before{content:"";display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:3px;background:var(--accent)}
+.cs-leg .l-haut::before{background:var(--up)}.cs-leg .l-bas::before{background:var(--down)}.cs-leg .l-med::before{background:var(--ink)}.cs-leg .l-50::before{background:var(--muted);height:1px}
+@media (max-width:560px){.cs-t{font-size:22px}.cs-d{font-size:20px}}
+@media (prefers-reduced-motion:no-preference){@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.22s}}
+.avis-sur{border-left:3px solid var(--up);padding:8px 12px;background:var(--up-soft);border-radius:0 8px 8px 0}
+.badge-sur{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:700;background:var(--up);color:var(--surface)}
+th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:13px;color:var(--muted)}
+@media print{.top,.nav-ligne,.plus,.theme-btn,.ouvrir,.partager-page,footer .muted{display:none!important}body{background:#fff;color:#000}.carte{border-color:#bbb}a{color:#000}}"""
 
-LOGO = ('<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#0f1b2d" stroke="var(--line)" stroke-width="1"/>'
-        '<circle cx="16" cy="16" r="9.5" fill="none" stroke="#7398ff" stroke-width="1.4"/><circle cx="16" cy="16" r="4.8" fill="none" '
-        'stroke="#7398ff" stroke-width="1" opacity=".55"/><path d="M16 16 L26.5 9.5" stroke="#35c27d" stroke-width="2.6" stroke-linecap="round"/>'
-        '<circle cx="16" cy="16" r="2.1" fill="#35c27d"/><circle cx="21.5" cy="21" r="1.5" fill="#35c27d" opacity=".8"/></svg>')
+LOGO = '<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id=\'rbf\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'1\'><stop offset=\'0\' stop-color=\'#1c3576\'/><stop offset=\'1\' stop-color=\'#0a1330\'/></linearGradient><linearGradient id=\'rbl\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#86a8ff\'/><stop offset=\'1\' stop-color=\'#44e09c\'/></linearGradient><linearGradient id=\'rbs\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#44e09c\' stop-opacity=\'0\'/><stop offset=\'1\' stop-color=\'#44e09c\' stop-opacity=\'.85\'/></linearGradient></defs><rect width=\'64\' height=\'64\' rx=\'15\' fill=\'url(#rbf)\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'22.00\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.28\' stroke-width=\'2.00\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'12.50\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.18\' stroke-width=\'2.00\'/><path d=\'M19.67 15.58 A22.00 22.00 0 0 1 42.3 16.76\' fill=\'none\' stroke=\'url(#rbs)\' stroke-width=\'3.20\' stroke-linecap=\'round\'/><polyline points=\'9.0,47.0 18.0,39.5 26.0,42.5 34.5,31.0 40.5,33.5 44.72,18.65\' fill=\'none\' stroke=\'url(#rbl)\' stroke-width=\'5.00\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'8.00\' fill=\'#44e09c\' fill-opacity=\'.2\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'4.50\' fill=\'#44e09c\'/></svg>'
 
 # Lu avant l'affichage : même thème et mêmes réglages de lecture que sur l'appli (pas d'éclair blanc en mode sombre)
 SCRIPT_THEME = ('<script>try{var d=document.documentElement,t=localStorage.getItem("radar-theme");if(t)d.dataset.theme=t;'
                 'var a=JSON.parse(localStorage.getItem("radar-acces")||"{}")||{};if(a.taille==="115"||a.taille==="130")d.classList.add("texte-"+a.taille);'
-                '["contraste","lisible"].forEach(function(k){if(a[k])d.classList.add(k)})}catch(e){}</script>')
+                '["contraste","lisible"].forEach(function(k){if(a[k])d.classList.add(k)})}catch(e){}</script>'
+                # version 63 : la page suivante se prépare dès qu'on pointe un lien (navigation quasi instantanée)
+                '<script type="speculationrules">{"prefetch":[{"where":{"selector_matches":"a[href$=\'.html\']:not([target])"},"eagerness":"moderate"}]}</script>')
 POLICES = ('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
            '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,600;6..72,700'
            '&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">')
@@ -435,6 +458,85 @@ Conditions d'utilisation, méthodologie et aide : voir la <a href="{prefixe}inde
 """
 
 
+def courbe_svg(t: dict, libs: dict | None = None, jours: int = 126) -> str:
+    """Version 63 : le graphique des pages statiques (sans JavaScript) — six mois de cours, puis l'éventail des
+    prévisions du mois suivant : zone verte « si ça va bien », rouge « si ça va mal », pointillés « le plus probable »,
+    et les lignes fines où le prix finit 1 fois sur 2. libs : textes (None = sans texte, pour les autres langues)."""
+    s = t.get("serie") or {}
+    c, dates = (s.get("c") or [])[-jours:], (s.get("t") or [])[-jours:]
+    if len(c) < 30 or any(v is None for v in c[-3:]):
+        return ""
+    k = t.get("cone") or {}
+    haut, bas, med = k.get("haut") or [], k.get("bas") or [], k.get("mediane") or []
+    ok_cone = len(med) > 2 and len(haut) == len(med) == len(bas) and None not in med + haut + bas
+    n_fut = len(med) - 1 if ok_cone else 0
+    W, H, pl, pr, pt, pb = 800, 270, 6, 140, 16, 28
+    total = len(c) - 1 + n_fut
+    vals = [v for v in c if v is not None] + ((haut + bas) if ok_cone else [])
+    lo, hi = min(vals), max(vals)
+    if hi <= lo:
+        return ""
+    marge = (hi - lo) * .07
+    lo, hi = lo - marge, hi + marge
+    X = lambda i: pl + (W - pl - pr) * i / max(1, total)
+    Y = lambda v: pt + (H - pt - pb) * (1 - (v - lo) / (hi - lo))
+    pts = [(X(i), Y(v)) for i, v in enumerate(c) if v is not None]
+    ligne = "M" + " L".join(f"{x:.0f},{y:.0f}" for x, y in pts)
+    aire = ligne + f" L{pts[-1][0]:.0f},{H - pb} L{pts[0][0]:.0f},{H - pb} Z"
+    i0 = len(c) - 1
+    x0 = X(i0)
+    dev = t.get("devise", "")
+    morceaux = []
+    for f in (.25, .5, .75):   # quadrillage discret
+        y = pt + (H - pt - pb) * f
+        morceaux.append(f"<line x1='{pl}' x2='{W - pr}' y1='{y:.1f}' y2='{y:.1f}' class='cs-grille'/>")
+    morceaux.append(f"<path d='{aire}' class='cs-aire'/><path d='{ligne}' class='cs-ligne'/>")
+    if ok_cone:
+        fx = lambda j: X(i0 + j)
+        up = " L".join(f"{fx(j):.0f},{Y(v):.0f}" for j, v in enumerate(haut))
+        mid_r = " L".join(f"{fx(j):.0f},{Y(v):.0f}" for j, v in reversed(list(enumerate(med))))
+        mid = " L".join(f"{fx(j):.0f},{Y(v):.0f}" for j, v in enumerate(med))
+        dn_r = " L".join(f"{fx(j):.0f},{Y(v):.0f}" for j, v in reversed(list(enumerate(bas))))
+        morceaux.append(f"<path d='M{up} L{mid_r} Z' class='cs-haut'/><path d='M{mid} L{dn_r} Z' class='cs-bas'/>")
+        r50 = 0.6745 / 1.2816
+        for serie, cls in ((haut, "cs-h50"), (bas, "cs-b50")):
+            d50 = " L".join(f"{fx(j):.0f},{Y(m * (v / m) ** r50):.0f}" for j, (v, m) in enumerate(zip(serie, med)) if v > 0 and m > 0)
+            morceaux.append(f"<path d='M{d50}' class='{cls}'/>")
+        morceaux.append(f"<path d='M{mid}' class='cs-med'/>")
+        etiq = [[Y(haut[-1]) + 4, haut[-1], "cs-t-haut"], [Y(med[-1]) + 4, med[-1], "cs-t-med"], [Y(bas[-1]) + 4, bas[-1], "cs-t-bas"]]
+        for a_, b_ in ((0, 1), (1, 2)):   # étiquettes jamais les unes sur les autres
+            if etiq[b_][0] - etiq[a_][0] < 26:
+                etiq[b_][0] = etiq[a_][0] + 26
+        for y, v, cls in etiq:
+            morceaux.append(f"<text x='{W - pr + 8}' y='{y:.1f}' class='cs-t {cls}'>{_e(_px(v, dev))}</text>")
+    morceaux.append(f"<line x1='{x0:.1f}' x2='{x0:.1f}' y1='{pt}' y2='{H - pb}' class='cs-auj'/>"
+                    f"<circle cx='{pts[-1][0]:.1f}' cy='{pts[-1][1]:.1f}' r='4.5' class='cs-point'/>")
+    fmt = lambda d: f"{d[8:10]}/{d[5:7]}/{d[:4]}" if d and len(d) >= 10 else ""
+    morceaux.append(f"<text x='{pl}' y='{H - 8}' class='cs-d'>{fmt(dates[0])}</text>"
+                    f"<text x='{x0:.1f}' y='{H - 8}' class='cs-d' text-anchor='middle'>{fmt(dates[-1])}</text>")
+    if libs and ok_cone and libs.get("prevision"):
+        morceaux.append(f"<text x='{x0 + 6:.1f}' y='{pt + 10}' class='cs-d'>{_e(libs['prevision'])}</text>")
+    if not ok_cone:
+        morceaux.append(f"<text x='{W - pr + 6}' y='{pts[-1][1] + 4:.1f}' class='cs-t'>{_e(_px(c[-1], dev))}</text>")
+    titre = (libs or {}).get("aria", "") or f"{t.get('nom', '')}"
+    legende = ""
+    if libs and ok_cone and libs.get("cours"):
+        legende = (f"<p class='cs-leg'><span class='l-prix'>{_e(libs['cours'])}</span><span class='l-haut'>{_e(libs['bien'])}</span>"
+                   f"<span class='l-med'>{_e(libs['probable'])}</span><span class='l-bas'>{_e(libs['mal'])}</span>"
+                   f"<span class='l-50'>{_e(libs['moitie'])}</span></p>")
+    return (f"<figure class='courbe'><svg viewBox='0 0 {W} {H}' role='img' aria-label='{_e(titre)}'>"
+            "<defs><linearGradient id='csg' x1='0' y1='0' x2='0' y2='1'><stop offset='0' class='cs-g1'/><stop offset='1' class='cs-g2'/></linearGradient></defs>"
+            + "".join(morceaux) + f"</svg>{legende}</figure>")
+
+
+LIBS_COURBE_FR = {"prevision": "prévision →", "cours": "cours des 6 derniers mois", "bien": "si ça va bien",
+                  "probable": "le plus probable", "mal": "si ça va mal", "moitie": "lignes fines : le prix finit entre elles 1 fois sur 2",
+                  "aria": "Graphique : cours des six derniers mois et éventail des prévisions pour le mois suivant"}
+LIBS_COURBE_EN = {"prevision": "forecast →", "cours": "price over the last 6 months", "bien": "if things go well",
+                  "probable": "most likely", "mal": "if things go badly", "moitie": "thin lines: the price ends between them 1 time in 2",
+                  "aria": "Chart: price over the last six months and the fan of forecasts for the next month"}
+
+
 def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     dev, prix, p = t["devise"], t["prix"], t.get("proba_hausse")
     cone, f = t.get("cone"), t.get("fourchette") or []
@@ -452,7 +554,17 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     sr = dict((((modele or {}).get("risque") or {}).get("sens_recent") or {}))
     if (sr.get("par_marche") or {}).get(t.get("marche")) is not None:   # version 61 : taux du marché du titre
         sr["taux"] = sr["par_marche"][t.get("marche")]
-    if rq.get("recent") is not None and (sr.get("taux") or 0) > 0.6:   # version 59 : la question où l'IA dépasse 60 %
+    av = dict((((modele or {}).get("risque") or {}).get("avis_surs") or {}))
+    if (av.get("par_marche") or {}).get(t.get("marche")) is not None:
+        av["taux"] = av["par_marche"][t.get("marche")]
+    if rq.get("recent") is not None and rq.get("sur") and (av.get("taux") or 0) > 0.7:   # version 63 : avis sûr
+        ecart = round(abs(rq["recent"] - 1) * 100)
+        agitation += (f"<p class='avis-sur'><span class='badge-sur'>Avis sûr</span> Le mois prochain, {_e(t['nom'])} devrait être nettement "
+                      f"<b>{'plus agité' if rq['recent'] > 1 else 'plus calme'}</b> que ces dernières semaines (environ {ecart} % "
+                      f"{'de plus' if rq['recent'] > 1 else 'de moins'}). Quand l'IA est aussi nette, elle a eu raison "
+                      f"<b>{round(av['taux'] * 100)} fois sur 100</b> sur des années qu'elle n'avait jamais vues"
+                      + (f" (au moins 77 % {av['annees_77']} années sur {av['annees']})" if av.get("annees") else "") + ".</p>")
+    elif rq.get("recent") is not None and (sr.get("taux") or 0) > 0.6:   # version 59 : la question où l'IA dépasse 60 %
         agitation += (f"<p>Le mois prochain, {_e(t['nom'])} devrait être <b>{'plus agité' if rq['recent'] > 1 else 'plus calme'}</b> "
                       f"que ces dernières semaines. Sur des années jamais vues, l'IA a eu raison <b>{round(sr['taux'] * 100)} fois sur 100</b> "
                       f"sur cette question" + (f" (au-dessus de 60 % {sr['annees_60']} années sur {sr['annees']})" if sr.get("annees") else "")
@@ -487,7 +599,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     chiffre = f" : fourchette ±{round(mv_t * 100)} % à 1 mois" if isinstance(mv_t, (int, float)) and mv_t > 0 else " : cours et analyse IA"
     if est_crypto:
         titre = f"Prévision {nom} ({aff_tk(tk).replace('-USD', '')}) {mois_an}{chiffre} | {NOM}"
-    elif t.get("marche") in ("fr", "eu", "us") or (t.get("fondamentaux") or {}).get("valeurs"):
+    elif t.get("marche") in ("fr", "eu", "us", "monde") or (t.get("fondamentaux") or {}).get("valeurs"):
         titre = f"Prévision action {nom} {mois_an}{chiffre} | {NOM}"
     else:
         titre = f"Prévision {nom} {mois_an}{chiffre} | {NOM}"
@@ -549,13 +661,14 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
            + (f" › <a href='../marches/{hub[0]}.html'>{_e(hub[1])}</a>" if hub else "") + f" › {_e(nom)}</p>")
     corps = f"""{fil}
 <h1>{"Action " if titre.startswith("Action ") else ""}{_e(nom)} ({_e(aff_tk(tk))}) : cours, prévision et analyse</h1>
-<p class="muted">Mise à jour automatique · cours au {_e(date)}</p>
+<p class="muted">Mise à jour automatique · cours au {_e(date)}{f" · entreprise d'origine : {_e(config.PAYS_MONDE[tk])}, cotée à New York en dollars" if tk in config.PAYS_MONDE else ""}</p>
 <div class="carte grille">
   <div class="k"><b>{_px(prix, dev)}</b><span>dernier cours</span></div>
   <div class="k"><b>{_pct(perf.get('1 mois'))}</b><span>sur 1 mois</span></div>
   <div class="k"><b>{round(t['score'])} / 100</b><span>score technique ({LIB_SIGNAL.get(t['signal'], '')})</span></div>
   <div class="k"><b>{'pas d’avis net' if sur10 is not None and t.get("avis_net") is False else f'{sur10} sur 10' if sur10 is not None else '–'}</b><span>chances d'être plus haut dans {horizon} séances</span></div>
 </div>
+{courbe_svg(t, LIBS_COURBE_FR)}
 <h2>En résumé</h2>
 <p>Pour le mois qui vient, le radar voit {_e(nom)} <b>{verdict}</b>.
 {f"Scénario central : environ <b class='m'>{_px(med, dev)}</b>. " if med else ""}
@@ -625,7 +738,7 @@ def _duels_dispos(titres):
     vus = {frozenset(p) for p in paires}
     groupes = {}
     for t in titres:
-        if t.get("marche") in ("fr", "eu", "us") and t.get("secteur"):
+        if t.get("marche") in ("fr", "eu", "us", "monde") and t.get("secteur"):
             groupes.setdefault((t["marche"], t["secteur"]), []).append(t["ticker"])
     from .config import CRYPTOS
     cryptos = [tk for tk in list(CRYPTOS)[:CRYPTOS_DUELS] if tk in par]
@@ -929,11 +1042,11 @@ def _page_portefeuille(base, payload, dossier, csp):
 CLASSEMENTS = [
     ("actions-dividende", "Actions à fort dividende : le classement du jour",
      "Les actions suivies qui versent le plus de dividende par rapport à leur prix, avec leur agitation prévue.",
-     lambda t: t.get("marche") in ("fr", "eu", "us") and (t.get("div") or 0) > 0, lambda t: -(t.get("div") or 0),
+     lambda t: t.get("marche") in ("fr", "eu", "us", "monde") and (t.get("div") or 0) > 0, lambda t: -(t.get("div") or 0),
      lambda t: f"{t['div']:.2f} % de dividende".replace(".", ",")),
     ("actions-calmes", "Actions les moins agitées prévues ce mois-ci",
      "Les actions dont les IA prévoient qu'elles bougeront le moins le mois prochain : moins de surprises, dans un sens comme dans l'autre.",
-     lambda t: t.get("marche") in ("fr", "eu", "us") and (t.get("risque_prevu") or {}).get("mouvement"),
+     lambda t: t.get("marche") in ("fr", "eu", "us", "monde") and (t.get("risque_prevu") or {}).get("mouvement"),
      lambda t: t["risque_prevu"]["mouvement"], lambda t: f"±{round(t['risque_prevu']['mouvement'] * 100)} % prévus en un mois"),
     ("cryptos-agitees", "Cryptos les plus volatiles prévues ce mois-ci",
      "Les cryptomonnaies dont les IA prévoient les plus grands mouvements le mois prochain, à la hausse comme à la baisse.",
@@ -941,7 +1054,7 @@ CLASSEMENTS = [
      lambda t: -t["risque_prevu"]["mouvement"], lambda t: f"±{round(t['risque_prevu']['mouvement'] * 100)} % prévus en un mois"),
     ("mieux-que-leur-marche", "Actions qui pourraient faire mieux que leur indice",
      "Les actions auxquelles les IA donnent le plus de chances de faire mieux que le CAC 40, le S&P 500 ou l'Euro Stoxx 50 le mois prochain.",
-     lambda t: t.get("marche") in ("fr", "eu", "us") and t.get("proba_marche") is not None and t.get("marche_net") is not False,
+     lambda t: t.get("marche") in ("fr", "eu", "us", "monde") and t.get("proba_marche") is not None and t.get("marche_net") is not False,
      lambda t: -t["proba_marche"], lambda t: f"{round(t['proba_marche'] * 100)} chances sur 100 de faire mieux que {t.get('indice_nom') or 'son marché'}"),
     ("risque-de-chute", "Actions et cryptos les plus exposées à une forte chute ce mois-ci",
      "Les titres auxquels les IA donnent le plus de risque de perdre plus de 10 % le mois prochain (prévision testée sur des années jamais vues).",
@@ -949,7 +1062,7 @@ CLASSEMENTS = [
      lambda t: f"{round(t['risque_prevu']['chute'] * 100)} chances sur 100 de perdre plus de 10 %"),
     ("per-bas", "Actions au PER le plus bas parmi les grandes valeurs",
      "Les grandes actions suivies dont le prix est le plus bas par rapport à leurs bénéfices (PER). Un PER bas n'est pas forcément une bonne affaire.",
-     lambda t: t.get("marche") in ("fr", "eu", "us") and (t.get("per") or 0) > 0, lambda t: t["per"],
+     lambda t: t.get("marche") in ("fr", "eu", "us", "monde") and (t.get("per") or 0) > 0, lambda t: t["per"],
      lambda t: f"PER {t['per']:.1f}".replace(".", ",")),
 ]
 
@@ -1038,7 +1151,7 @@ def _pages_guides(base, payload, dossier, csp, date):
 
 # Version 39 : les mêmes classements, marché par marché (« actions françaises à fort dividende »…)
 _LIB_M = {"fr": ("francaises", "françaises", "CAC 40"), "eu": ("europeennes", "européennes", "Euro Stoxx 50"),
-          "us": ("americaines", "américaines", "S&P 500")}
+          "us": ("americaines", "américaines", "S&P 500"), "monde": ("internationales", "internationales", "actions mondiales hors USA")}
 
 
 def _variantes():
@@ -1097,7 +1210,7 @@ def _pages_secteurs(base, titres, dossier, csp, date):
     """Une page par secteur : « actions du secteur santé », avec l'agitation et le risque de chute du jour."""
     groupes = {}
     for t in titres:
-        if t.get("marche") in ("fr", "eu", "us") and t.get("secteur"):
+        if t.get("marche") in ("fr", "eu", "us", "monde") and t.get("secteur"):
             groupes.setdefault(t["secteur"], []).append(t)
     faits = []
     for sec, items in sorted(groupes.items()):
@@ -1221,7 +1334,7 @@ def _page_previsions(base, payload, dossier, csp, date):
     an = datetime.now().year
     annees = f"{an}" if datetime.now().month < 9 else f"{an} et {an + 1}"
     groupes = {"fr": "Actions françaises", "eu": "Actions européennes", "us": "Actions américaines",
-               "crypto": "Cryptomonnaies", "etf": "ETF et indices"}
+               "monde": "Actions internationales", "crypto": "Cryptomonnaies", "etf": "ETF et indices"}
     corps = (f"<h1>Prévisions Bourse et crypto {annees} : ce qu'on peut vraiment prévoir</h1>"
              "<p>Beaucoup de sites affichent un prix précis pour le Bitcoin ou Nvidia en fin d'année, voire en 2030. "
              "Ces chiffres prolongent une tendance passée : aucun n'a prouvé qu'il faisait mieux que le hasard. "
@@ -1260,7 +1373,7 @@ def _page_previsions(base, payload, dossier, csp, date):
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": r}} for q, r in faq]}
     corps += "<h2>Questions fréquentes</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{_e(r)}</p>" for q, r in faq)
     titre = f"Prévisions bourse et crypto {annees}, vérifiées | {NOM}"
-    desc = (f"Prévisions {annees} pour plus de 200 actions et cryptos : agitation et chances de hausse à un mois par IA, "
+    desc = (f"Prévisions {annees} pour près de 300 actions et cryptos : agitation et chances de hausse à un mois par IA, "
             "vérifiées publiquement, et écart habituel sur un an.")
     with open(os.path.join(dossier, "previsions.html"), "w", encoding="utf-8") as f:
         f.write(_page(base, titre, desc, "previsions.html", corps, jsonld, csp))
@@ -1273,6 +1386,8 @@ MARCHES = {
            "Les géants européens hors France : SAP, ASML, Siemens, Ferrari… Leur indice de référence est l'Euro Stoxx 50."),
     "us": ("actions-americaines", "Actions américaines", "Prévisions à un mois des actions américaines (Apple, Nvidia…)",
            "Les grandes entreprises de Wall Street : Apple, Microsoft, Nvidia, Amazon… Leur indice de référence est le S&P 500."),
+    "monde": ("actions-internationales", "Actions internationales", "Prévisions à un mois des grandes actions du monde (Toyota, TSMC, Alibaba…)",
+              "Les géants du reste du monde cotés à New York en dollars : TSMC, Toyota, Sony, Novo Nordisk, Alibaba, Shopify… Leur repère est l'ETF Vanguard des actions mondiales hors USA (VEU)."),
     "crypto": ("cryptomonnaies", "Cryptomonnaies", "Prévisions à un mois des cryptomonnaies (Bitcoin, Ethereum…)",
                "Bitcoin, Ethereum, Solana et les autres grandes cryptos, cotées 7 jours sur 7. Elles bougent beaucoup plus que les actions."),
     "etf": ("etf-et-indices", "ETF et indices", "Prévisions à un mois des ETF et grands indices boursiers",
@@ -1529,7 +1644,9 @@ def _image_titre(t: dict, chemin: str, date: str) -> bool:
         nom = str(t.get("nom") or t["ticker"])
         if len(nom) > 26:
             nom = nom[:25] + "…"
-        dr.text((70, 60), NOM, font=_police(30, True), fill=DOUX)
+        from . import visuels as _v
+        decal = 52 if _v.coller_logo(img, 70, 56, 40) else 0
+        dr.text((70 + decal, 60), NOM, font=_police(30, True), fill=DOUX)
         dr.text((70, 110), nom, font=_police(66, True), fill=TEXTE)
         dr.text((72, 195), f"{aff_tk(t['ticker'])} · cours au {date}", font=_police(28), fill=DOUX)
         dr.text((70, 255), _px(t.get("prix"), t.get("devise", "")).replace("\u202f", " ").replace("\xa0", " "), font=_police(72, True), fill=TEXTE)
@@ -1570,15 +1687,7 @@ def _image_titre(t: dict, chemin: str, date: str) -> bool:
         return False
 
 
-ICONE_SVG = ("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
-             "<defs><linearGradient id='b' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#16294a'/>"
-             "<stop offset='1' stop-color='#0b1424'/></linearGradient></defs>"
-             "<rect width='64' height='64' rx='14' fill='url(#b)'/>"
-             "<circle cx='32' cy='32' r='21' fill='none' stroke='#7398ff' stroke-width='2.5' opacity='.9'/>"
-             "<circle cx='32' cy='32' r='12' fill='none' stroke='#7398ff' stroke-width='2' opacity='.55'/>"
-             "<path d='M32 32 L50 21 A21 21 0 0 0 39 12.2 Z' fill='#35c27d' opacity='.35'/>"
-             "<path d='M32 32 L50 21' stroke='#35c27d' stroke-width='4' stroke-linecap='round'/>"
-             "<circle cx='32' cy='32' r='4' fill='#35c27d'/><circle cx='22' cy='41' r='2.6' fill='#ffd166'/></svg>")
+ICONE_SVG = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='rbf' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#1c3576'/><stop offset='1' stop-color='#0a1330'/></linearGradient><linearGradient id='rbl' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='#86a8ff'/><stop offset='1' stop-color='#44e09c'/></linearGradient><linearGradient id='rbs' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='#44e09c' stop-opacity='0'/><stop offset='1' stop-color='#44e09c' stop-opacity='.85'/></linearGradient></defs><rect width='64' height='64' rx='15' fill='url(#rbf)'/><circle cx='30.0' cy='35.0' r='22.00' fill='none' stroke='#86a8ff' stroke-opacity='.28' stroke-width='2.00'/><circle cx='30.0' cy='35.0' r='12.50' fill='none' stroke='#86a8ff' stroke-opacity='.18' stroke-width='2.00'/><path d='M19.67 15.58 A22.00 22.00 0 0 1 42.3 16.76' fill='none' stroke='url(#rbs)' stroke-width='3.20' stroke-linecap='round'/><polyline points='9.0,47.0 18.0,39.5 26.0,42.5 34.5,31.0 40.5,33.5 44.72,18.65' fill='none' stroke='url(#rbl)' stroke-width='5.00' stroke-linecap='round' stroke-linejoin='round'/><circle cx='44.72' cy='18.65' r='8.00' fill='#44e09c' fill-opacity='.2'/><circle cx='44.72' cy='18.65' r='4.50' fill='#44e09c'/></svg>"   # version 63 : nouveau logo (le radar repère le marché)
 
 
 def _icones(dossier: str) -> None:
@@ -1586,6 +1695,14 @@ def _icones(dossier: str) -> None:
     (une icône intégrée en « data: » n'est pas reprise dans les résultats de recherche)."""
     with open(os.path.join(dossier, "favicon.svg"), "w", encoding="utf-8") as f:
         f.write(ICONE_SVG)
+    # version 63 : icônes dessinées à l'avance (rendu exact du logo), copiées telles quelles
+    import shutil
+    pret = os.path.join(os.path.dirname(__file__), "vendor", "icones")
+    fichiers = ["favicon.ico", "icone-48.png", "icone-96.png", "icone-180.png", "icone-192.png", "icone-512.png", "maskable-512.png"]
+    if all(os.path.exists(os.path.join(pret, f)) for f in fichiers):
+        for f in fichiers:
+            shutil.copyfile(os.path.join(pret, f), os.path.join(dossier, f))
+        return
     try:
         from PIL import Image, ImageDraw
     except Exception:
@@ -1940,7 +2057,7 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
 
     # Index des titres
     groupes = {"fr": "Actions françaises", "eu": "Actions européennes", "us": "Actions américaines",
-               "crypto": "Cryptomonnaies", "etf": "ETF et indices", "tendances": "En tendance"}
+               "monde": "Actions internationales", "crypto": "Cryptomonnaies", "etf": "ETF et indices", "tendances": "En tendance"}
     corps = "<h1>Tous les titres analysés</h1><p class='muted'>Analyse et prévision à un mois, mises à jour automatiquement.</p>"
     for cle, lib in groupes.items():
         items = [l for l in liens if l[3] == cle]
@@ -2146,7 +2263,8 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     manifeste = {"name": NOM, "short_name": NOM, "description": SLOGAN, "lang": "fr", "start_url": "./",
                  "display": "standalone", "background_color": "#0f1b2d", "theme_color": "#0f1b2d",
                  "icons": [{"src": "icone-192.png", "sizes": "192x192", "type": "image/png"},
-                           {"src": "icone-512.png", "sizes": "512x512", "type": "image/png"}]}
+                           {"src": "icone-512.png", "sizes": "512x512", "type": "image/png"},
+                           {"src": "maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}]}
     with open(os.path.join(dossier, "manifest.webmanifest"), "w", encoding="utf-8") as f:
         json.dump(manifeste, f, ensure_ascii=False)
     _icones(dossier)
@@ -2608,6 +2726,7 @@ def _page_fiche_ia(base, payload, dossier, csp):
     n = lambda v: "–" if v is None else f"{v:,}".replace(",", " ")
     nb_titres = len([t for t in payload.get("titres", []) if t.get("marche") != "tendances"])
     note_chute = "–" if C.get("auc") is None else f"{C['auc']:.3f}".replace(".", ",")
+    A, SR = R.get("avis_surs") or {}, R.get("sens_recent") or {}
     lignes = [
         ("Sens du prix à un mois", f"{p(M.get('precision'))} de bonnes réponses", f"référence « toujours la réponse la plus fréquente » : {p(M.get('precision_base'))}",
          "Pas mieux que la référence : le site n'affiche un avis que là où il a fait ses preuves." if (M.get("precision") or 0) - (M.get("precision_base") or 0) < 0.005 else "Un peu mieux que la référence."),
@@ -2615,6 +2734,12 @@ def _page_fiche_ia(base, payload, dossier, csp):
          "Petit avantage, mesuré sur des années jamais vues." if (Rel.get("precision") or 0) > (Rel.get("precision_base") or 1) else "Pas d'avantage prouvé."),
         ("Agitation à un mois", f"erreur habituelle {p(R.get('erreur_ia'))}", f"méthode simple : {p(R.get('erreur_naif'))}",
          "Prouvé : nettement mieux que la méthode simple." if R.get("prouve") else "Pas encore prouvé."),
+        ("Plus ou moins agité le mois prochain : avis sûrs", f"{p(A.get('taux'))} de bonnes réponses",
+         f"environ {p(A.get('couverture'), 0)} des cas · règle simple « retour à la normale » dans les mêmes cas : {p(A.get('regle_simple'))}",
+         (f"Au moins 77 % {A.get('annees_77')} années sur {A.get('annees')} ; seuil appris chaque année sur les seules années d'avant."
+          if A.get("annees") else "Pas encore mesuré.")),
+        ("Plus ou moins agité le mois prochain : tous les cas", f"{p(SR.get('taux'))} de bonnes réponses", f"réponse la plus fréquente : {p(SR.get('base'))}",
+         "Prouvé : au-dessus de 60 % chaque année." if SR.get("annees") and SR.get("annees_60") == SR.get("annees") else "Mesuré sur des années jamais vues."),
         ("Risque de chute de plus de 10 %", f"note de tri {note_chute}",
          f"titres jugés les plus à risque : {p(C.get('taux_risque_haut'))} de chutes, contre {p(C.get('base'))} d'habitude",
          "Prouvé : la prévision la plus fiable du radar." if C.get("prouve") else "Pas encore prouvé."),
@@ -2625,7 +2750,7 @@ def _page_fiche_ia(base, payload, dossier, csp):
         ("Agitation sur une semaine", "plus proche de la réalité 57,7 % du temps", "que « comme la semaine dernière »",
          "Prouvé : meilleure 24 années sur 24 (test du 28 octobre 2026 sur 328 000 cas)."),
     ]
-    tableau = ("<div class='carte' style='overflow-x:auto'><table><tr><td><b>Ce que l'IA prévoit</b></td><td><b>Résultat</b></td><td><b>À comparer à</b></td><td><b>Verdict</b></td></tr>"
+    tableau = ("<div class='carte' style='overflow-x:auto' tabindex='0' role='region' aria-label='Résultats mesurés'><table><tr><td><b>Ce que l'IA prévoit</b></td><td><b>Résultat</b></td><td><b>À comparer à</b></td><td><b>Verdict</b></td></tr>"
                + "".join(f"<tr><td>{_e(a)}</td><td class='m'>{_e(b)}</td><td>{_e(c)}</td><td>{_e(d)}</td></tr>" for a, b, c, d in lignes) + "</table></div>")
     direct = (f"<p>En conditions réelles, depuis la mise en ligne : sur {n(S.get('nb'))} prévisions arrivées à échéance, le prix est resté dans la fourchette "
               f"<b>{p(S.get('taux'))}</b> du temps (promis : 80 %).</p>") if S.get("nb") else ""
@@ -2636,7 +2761,7 @@ def _page_fiche_ia(base, payload, dossier, csp):
              "<h2>Résultats mesurés</h2>" + tableau + direct
              + f"<p class='muted'>Prévisions testées : {n(M.get('nb_tests'))} · période : {_e(M.get('periode') or '–')} · recette : {_e(M.get('configuration') or '–')}.</p>"
              "<h2>Données utilisées</h2><ul>"
-             f"<li><b>{nb_titres} titres</b> suivis : actions françaises, européennes et américaines, ETF, indices et cryptomonnaies.</li>"
+             f"<li><b>{nb_titres} titres</b> suivis : actions françaises, européennes, américaines et du monde entier (Japon, Chine, Royaume-Uni, Inde, Canada, Brésil…), ETF, indices et cryptomonnaies.</li>"
              "<li>Cours quotidiens sur tout l'historique disponible (jusqu'à 25 ans) : Yahoo Finance, avec Binance, CryptoCompare et Stooq en secours.</li>"
              "<li>Contexte du marché : VIX (peur sur les marchés), taux d'intérêt, dollar, or, pétrole, sentiment crypto.</li>"
              "<li>Contrôle qualité automatique : cours figés, trous, sauts anormaux et comparaison entre deux sources ; un titre douteux est exclu des signaux.</li></ul>"

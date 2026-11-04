@@ -59,7 +59,7 @@ def choisir(analyses, bruts, enregistrer: bool = True) -> dict | None:
     if mois in d.get("mois", {}):
         return None
     candidats = [a for a in analyses
-                 if a.marche in ("fr", "eu", "us") and a.proba_marche == a.proba_marche and a.proba_marche is not None
+                 if a.marche in ("fr", "eu", "us", "monde") and a.proba_marche == a.proba_marche and a.proba_marche is not None
                  and getattr(a, "qualite_ok", True) is not False and a.indice_ref]
     candidats.sort(key=lambda a: -a.proba_marche)
     # version 40 : on écarte le quart des candidats au plus fort risque de chute (prévision la plus fiable du radar,

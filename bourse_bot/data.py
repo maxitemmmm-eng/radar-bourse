@@ -374,7 +374,7 @@ def tendances_crypto() -> dict[str, str]:
 
 
 def devise(ticker: str) -> str:
-    if ticker.endswith((".PA", ".AS", ".DE", ".MI", ".MC")) or ticker in ("^FCHI", "^STOXX50E"):
+    if ticker.endswith(config.SUFFIXES_EURO) or ticker in ("^FCHI", "^STOXX50E"):
         return "€"
     return "$"
 

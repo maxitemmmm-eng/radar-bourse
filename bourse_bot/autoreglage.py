@@ -100,7 +100,7 @@ def _preparer(jeu: pd.DataFrame, nom: str, variables_base):
         et = jeu.dropna(subset=["vol_futur", "vol_20j"])
         et = et[np.isfinite(et["vol_futur"])].copy()
         et["y"] = et["vol_futur"]
-        vs = comprendre._variables_risque(et, variables_base)
+        vs = comprendre._variables_agitation(et, variables_base)
     else:
         et = jeu.dropna(subset=["rendement_futur"]).copy()
         et["y"] = (et["rendement_futur"] < comprendre.SEUIL_CHUTE).astype(float)

@@ -32,7 +32,7 @@ from . import comprendre, robots, alertes, backtest, config, data, fondamentaux,
 console = Console()
 COULEUR = {"ACHAT FORT": "bold green", "ACHAT": "green", "NEUTRE": "white",
            "VENTE": "red", "VENTE FORTE": "bold red"}
-TOUS_MARCHES = ["fr", "eu", "us", "crypto", "etf", "tendances"]
+TOUS_MARCHES = ["fr", "eu", "us", "monde", "crypto", "etf", "tendances"]
 
 
 def _marche_de(ticker: str) -> str:
@@ -43,7 +43,7 @@ def _marche_de(ticker: str) -> str:
         return "crypto"
     if ticker.endswith(".PA"):
         return "fr"
-    return "eu" if ticker.endswith((".DE", ".AS", ".MC", ".MI")) else "us"
+    return "eu" if ticker.endswith(config.SUFFIXES_EU) else "us"
 
 
 def _univers(marches: list[str]) -> tuple[dict[str, str], dict[str, str]]:

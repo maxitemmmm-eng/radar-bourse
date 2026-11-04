@@ -14,6 +14,10 @@ ACTIONS_FR = {
     "HO.PA": "Thales", "EN.PA": "Bouygues", "STMPA.PA": "STMicroelectronics", "RNO.PA": "Renault",
     "AC.PA": "Accor", "ERF.PA": "Eurofins Scientific", "TEP.PA": "Teleperformance", "URW.PA": "Unibail-Rodamco-Westfield",
     "BVI.PA": "Bureau Veritas", "AM.PA": "Dassault Aviation", "SOI.PA": "Soitec", "UBI.PA": "Ubisoft",
+    # ajoutées en version 63 (SBF 120)
+    "ALO.PA": "Alstom", "CA.PA": "Carrefour", "FR.PA": "Valeo", "SW.PA": "Sodexo", "EDEN.PA": "Edenred",
+    "AF.PA": "Air France-KLM", "VK.PA": "Vallourec", "FGR.PA": "Eiffage", "RXL.PA": "Rexel", "BIM.PA": "bioMérieux",
+    "GET.PA": "Getlink", "AMUN.PA": "Amundi",
 }
 
 # --- Actions américaines (grandes capitalisations)
@@ -33,6 +37,11 @@ ACTIONS_US = {
     "UPS": "UPS", "LMT": "Lockheed Martin", "HON": "Honeywell", "AMAT": "Applied Materials", "MU": "Micron",
     "PYPL": "PayPal", "UBER": "Uber", "MA": "Mastercard", "BRK-B": "Berkshire Hathaway", "COIN": "Coinbase",
     "MSTR": "Strategy (MicroStrategy)",
+    # ajoutées en version 63
+    "ABT": "Abbott", "TMO": "Thermo Fisher", "LIN": "Linde", "ACN": "Accenture", "NOW": "ServiceNow",
+    "INTU": "Intuit", "AMGN": "Amgen", "ISRG": "Intuitive Surgical", "BKNG": "Booking Holdings", "SPGI": "S&P Global",
+    "BLK": "BlackRock", "C": "Citigroup", "AXP": "American Express", "PM": "Philip Morris", "NEE": "NextEra Energy",
+    "LOW": "Lowe's", "RTX": "RTX (Raytheon)", "DE": "Deere & Company", "PANW": "Palo Alto Networks", "ABNB": "Airbnb",
 }
 
 # --- Cryptomonnaies principales (cotées en dollars)
@@ -80,7 +89,33 @@ ACTIONS_EU = {
     "BAS.DE": "BASF", "BAYN.DE": "Bayer", "MUV2.DE": "Munich Re", "PHIA.AS": "Philips", "AD.AS": "Ahold Delhaize",
     "BBVA.MC": "BBVA", "UCG.MI": "UniCredit", "ISP.MI": "Intesa Sanpaolo", "RHM.DE": "Rheinmetall",
     "VOW3.DE": "Volkswagen", "IFX.DE": "Infineon",
+    # ajoutées en version 63
+    "DBK.DE": "Deutsche Bank", "DB1.DE": "Deutsche Börse", "DHL.DE": "DHL Group", "EOAN.DE": "E.ON", "RWE.DE": "RWE",
+    "HEN3.DE": "Henkel", "BEI.DE": "Beiersdorf", "MRK.DE": "Merck KGaA", "ZAL.DE": "Zalando", "ENI.MI": "Eni",
+    "NOKIA.HE": "Nokia", "ABI.BR": "AB InBev", "TEF.MC": "Telefónica", "HEIA.AS": "Heineken", "KBC.BR": "KBC",
 }
+
+# --- Version 63 : grandes entreprises du monde entier (hors Europe de l'euro), cotées à New York en dollars
+# (actions ou certificats ADR) : même devise et mêmes horaires pour toutes, cours fiables sur des années.
+# Pays d'origine : PAYS_MONDE (affiché sur la page du marché).
+ACTIONS_MONDE = {
+    "TSM": "TSMC", "TM": "Toyota", "SONY": "Sony", "NVO": "Novo Nordisk",
+    "NVS": "Novartis", "AZN": "AstraZeneca", "SHEL": "Shell", "BP": "BP",
+    "HSBC": "HSBC", "UL": "Unilever", "RIO": "Rio Tinto", "BHP": "BHP",
+    "TD": "Toronto-Dominion Bank", "RY": "Royal Bank of Canada", "SHOP": "Shopify", "ENB": "Enbridge",
+    "BABA": "Alibaba", "PDD": "PDD Holdings (Temu)", "JD": "JD.com", "BIDU": "Baidu",
+    "TCEHY": "Tencent", "INFY": "Infosys", "HDB": "HDFC Bank", "IBN": "ICICI Bank",
+    "MUFG": "Mitsubishi UFJ", "HMC": "Honda", "DEO": "Diageo", "GSK": "GSK",
+    "BTI": "British American Tobacco", "ARM": "Arm Holdings", "SPOT": "Spotify",
+    "MELI": "MercadoLibre", "NU": "Nubank", "VALE": "Vale", "PBR": "Petrobras",
+    "SE": "Sea Limited",
+}
+PAYS_MONDE = {"TSM": "Taïwan", "TM": "Japon", "SONY": "Japon", "NVO": "Danemark", "NVS": "Suisse", "AZN": "Royaume-Uni", "SHEL": "Royaume-Uni",
+              "BP": "Royaume-Uni", "HSBC": "Royaume-Uni", "UL": "Royaume-Uni", "RIO": "Royaume-Uni", "BHP": "Australie", "TD": "Canada",
+              "RY": "Canada", "SHOP": "Canada", "ENB": "Canada", "BABA": "Chine", "PDD": "Chine", "JD": "Chine", "BIDU": "Chine",
+              "TCEHY": "Chine", "INFY": "Inde", "HDB": "Inde", "IBN": "Inde", "MUFG": "Japon", "HMC": "Japon", "DEO": "Royaume-Uni",
+              "GSK": "Royaume-Uni", "BTI": "Royaume-Uni", "ARM": "Royaume-Uni", "SPOT": "Suède", "MELI": "Amérique latine", "NU": "Brésil",
+              "VALE": "Brésil", "PBR": "Brésil", "SE": "Singapour"}
 
 # --- ETF de référence (indices) : servent aussi de "marché" pour comparer
 ETFS = {
@@ -89,9 +124,18 @@ ETFS = {
     "GLD": "Or (ETF SPDR Gold)", "SMH": "Semi-conducteurs (ETF VanEck)",
     "ICLN": "Énergie propre (ETF iShares)", "BOTZ": "Robotique et IA (ETF Global X)",
     "XLE": "Pétrole et gaz (ETF Energy Select)",
+    # ajoutés en version 63 : le reste du monde, les obligations et les matières premières
+    "VEU": "Monde hors États-Unis (ETF Vanguard)", "EEM": "Pays émergents (ETF iShares)", "EWJ": "Japon (ETF iShares)",
+    "FXI": "Chine grandes valeurs (ETF iShares)", "INDA": "Inde (ETF iShares)", "TLT": "Obligations US 20 ans (ETF iShares)",
+    "IWM": "Petites entreprises US (ETF Russell 2000)", "DIA": "Dow Jones (ETF SPDR)", "SLV": "Argent métal (ETF iShares)",
+    "VNQ": "Immobilier US (ETF Vanguard)",
 }
 
-UNIVERS = {"fr": ACTIONS_FR, "eu": ACTIONS_EU, "us": ACTIONS_US, "crypto": CRYPTOS, "etf": ETFS}
+UNIVERS = {"fr": ACTIONS_FR, "eu": ACTIONS_EU, "us": ACTIONS_US, "monde": ACTIONS_MONDE, "crypto": CRYPTOS, "etf": ETFS}
+
+# suffixes Yahoo des places de la zone euro (cours en euros)
+SUFFIXES_EURO = (".PA", ".AS", ".DE", ".MI", ".MC", ".BR", ".HE", ".LS", ".VI", ".IR")
+SUFFIXES_EU = SUFFIXES_EURO[1:]
 
 # Titres utilisés UNIQUEMENT pour l'apprentissage de l'IA (pas affichés sur le site) :
 # plus l'IA voit de situations différentes, moins elle se fait piéger par le hasard.
@@ -127,8 +171,8 @@ def entrainement_supplementaire() -> dict:
 
 
 # Indice de référence par marché (pour la force relative)
-BENCHMARK = {"fr": "^FCHI", "eu": "^STOXX50E", "us": "SPY", "crypto": "BTC-USD", "etf": "SPY"}
-NOM_BENCHMARK = {"^FCHI": "le CAC 40", "^STOXX50E": "l'Euro Stoxx 50", "SPY": "le S&P 500", "BTC-USD": "le Bitcoin"}
+BENCHMARK = {"fr": "^FCHI", "eu": "^STOXX50E", "us": "SPY", "monde": "VEU", "crypto": "BTC-USD", "etf": "SPY"}
+NOM_BENCHMARK = {"^FCHI": "le CAC 40", "^STOXX50E": "l'Euro Stoxx 50", "SPY": "le S&P 500", "BTC-USD": "le Bitcoin", "VEU": "les actions mondiales hors USA"}
 
 
 def benchmark_de(ticker: str, marche: str = "") -> str:
@@ -137,7 +181,7 @@ def benchmark_de(ticker: str, marche: str = "") -> str:
         return "BTC-USD"
     if ticker.endswith(".PA") or ticker == "^FCHI":
         return "^FCHI"
-    if ticker.endswith((".DE", ".AS", ".MC", ".MI")) or ticker == "^STOXX50E":
+    if ticker.endswith(SUFFIXES_EU) or ticker == "^STOXX50E":
         return "^STOXX50E"
     return BENCHMARK.get(marche, "SPY")
 

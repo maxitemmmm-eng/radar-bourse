@@ -45,6 +45,15 @@ def _variables_risque(jeu, variables_base):
     return [v for v in vs if jeu[v].nunique(dropna=True) > 1]
 
 
+# Version 63 : l'écart à sa normale (model.ajouter_normale), pour l'agitation seulement
+NORMALE = ["vol_normale", "vol_normale_60"]
+
+
+def _variables_agitation(jeu, variables_base):
+    vs = _variables_risque(jeu, variables_base)
+    return vs + [v for v in NORMALE if v in jeu.columns and v not in vs and jeu[v].nunique(dropna=True) > 1]
+
+
 # Version 58 : « mémoire du titre » — sa fréquence passée de fortes chutes et son agitation passée, calculées seulement avec
 # des mois déjà terminés. Testé sur 514 838 cas jamais vus (2014-2026) : note du risque de chute 0,7518 → 0,7554
 # (marge +0,0016 à +0,0052), mieux sur les deux moitiés de la période, score de Brier meilleur dans les 5 marchés.
@@ -105,7 +114,7 @@ def evaluer_risque(jeu, horizon, variables_base, n_plis=5):
     from .model import _plis
     et = jeu.dropna(subset=["vol_futur", "vol_20j"])
     et = et[np.isfinite(et["vol_futur"])]
-    vs = _variables_risque(et, variables_base)
+    vs = _variables_agitation(et, variables_base)
     morceaux = []
     for train, test in _plis(et.assign(cible=0.0), horizon, n_plis):
         if len(train) < 3000 or test.empty:
@@ -113,7 +122,8 @@ def evaluer_risque(jeu, horizon, variables_base, n_plis=5):
         mod = _modele().fit(train[vs], train["vol_futur"])
         t = pd.DataFrame({"y": test["vol_futur"].to_numpy(), "p": mod.predict(test[vs]),
                           "naif": _naif(test).to_numpy(),
-                          "marche": test["marche"].to_numpy() if "marche" in test else "?"}, index=test.index)
+                          "marche": test["marche"].to_numpy() if "marche" in test else "?",
+                          "normale": test["vol_normale"].to_numpy() if "vol_normale" in test else np.nan}, index=test.index)
         morceaux.append(t)
     if not morceaux:
         return {}
@@ -139,11 +149,73 @@ def evaluer_risque(jeu, horizon, variables_base, n_plis=5):
                    "annees_60": int((par_an > 0.6).sum()), "annees": int(len(par_an)),
                    # version 61 : le même taux, marché par marché (chaque fiche affiche celui de son marché)
                    "par_marche": {str(m): float(g.mean()) for m, g in sens_j.groupby(o["marche"].to_numpy()) if len(g) >= 2000}}
+    try:
+        avis_surs = _avis_surs(o)
+    except Exception:
+        avis_surs = {}
     return {"nb": int(len(o)), "periode": f"{o.index.min():%m/%Y} – {o.index.max():%m/%Y}", "sens_recent": sens_recent,
+            "avis_surs": avis_surs,
             "erreur_ia": float(np.expm1(err_ia.median())), "erreur_naif": float(np.expm1(err_naif.median())),
             "r2_ia": r2("p"), "r2_naif": r2("naif"),
             "concordance_ia": _concordance(o, "p", "y"), "concordance_naif": _concordance(o, "naif", "y"),
             "ic_gain": ic, "prouve": bool(ic and ic[0] > 0), "variables": vs}
+
+
+CIBLE_SURS = 0.80   # taux visé SUR LE PASSÉ pour choisir le seuil des « avis sûrs »
+
+
+def _seuil_surs(d: np.ndarray, juste: np.ndarray, cible: float = CIBLE_SURS, mini: int = 2000) -> float:
+    """Plus petit écart |prévision − agitation récente| tel que, sur les cas fournis (le passé), les avis au moins aussi
+    tranchés aient eu raison au moins `cible` du temps. inf si impossible."""
+    q = np.abs(d)
+    ordre = np.argsort(-q)
+    cum = np.cumsum(juste[ordre]) / np.arange(1, len(q) + 1)
+    ok = np.nonzero((cum >= cible) & (np.arange(1, len(q) + 1) >= mini))[0]
+    return float(q[ordre][ok[-1]]) if len(ok) else float("inf")
+
+
+def _avis_surs(o: pd.DataFrame) -> dict:
+    """Version 63 : les « avis sûrs » de l'IA sur « le mois prochain, plus ou moins agité que ces dernières semaines ? ».
+    L'IA ne donne un avis sûr que quand sa prévision s'écarte nettement de l'agitation récente. Le seuil de chaque année
+    est appris UNIQUEMENT sur les années d'avant (purge d'un mois), puis appliqué à l'année suivante : le taux annoncé est
+    celui obtenu sur des années jamais vues. Testé sur les vrais cours (2016-2026, 117 768 avis sûrs) : 80,5 % de bonnes
+    réponses (marge 78,7 % à 82,0 %), au moins 77 % dix années sur onze, pour environ la moitié des cas.
+    Repère honnête dans les mêmes cas : la règle simple « l'agitation revient vers sa normale de l'année » (≈ 78 %)."""
+    from .model import _ic, bootstrap_mois
+    d = (o["p"] - o["naif"]).to_numpy()
+    vrai = (o["y"] > o["naif"]).to_numpy()
+    juste = ((d > 0) == vrai).astype(float)
+    dates = pd.DatetimeIndex(o.index)
+    morceaux = []
+    for a in sorted(set(dates.year)):
+        passe = dates < pd.Timestamp(a, 1, 1) - pd.Timedelta(days=32)
+        if passe.sum() < 20000:
+            continue
+        s = _seuil_surs(d[passe], juste[passe])
+        an = (dates.year == a) & (np.abs(d) >= s)
+        if an.any():
+            morceaux.append(np.nonzero(an)[0])
+    if not morceaux:
+        return {}
+    idx = np.concatenate(morceaux)
+    sous = o.iloc[idx]
+    j = pd.Series(juste[idx], index=sous.index)
+    df = pd.DataFrame({"j": j.to_numpy()}, index=sous.index)
+    bs = bootstrap_mois(df, lambda x: np.array([x["j"].mean()]), graine=17)
+    par_an = j.groupby(pd.DatetimeIndex(sous.index).year).mean()
+    plus = float(vrai[idx].mean())
+    out = {"seuil": _seuil_surs(d, juste), "cible": CIBLE_SURS, "taux": float(j.mean()), "ic": _ic(bs[:, 0]) if len(bs) else None,
+           "nb": int(len(idx)), "couverture": float(len(idx) / max(1, (dates.year >= par_an.index.min()).sum())),
+           "base": max(plus, 1 - plus), "par_an": {str(k): float(v) for k, v in par_an.items()},
+           "pire_annee": float(par_an.min()), "annees_77": int((par_an >= 0.77).sum()), "annees": int(len(par_an)),
+           "par_marche": {str(m): float(g.mean()) for m, g in j.groupby(sous["marche"].to_numpy()) if len(g) >= 1000},
+           "calme": float(j[d[idx] < 0].mean()) if (d[idx] < 0).any() else None,
+           "agite": float(j[d[idx] > 0].mean()) if (d[idx] > 0).any() else None}
+    if "normale" in sous and np.isfinite(sous["normale"].to_numpy(dtype=float)).sum() > 1000:
+        nm = sous["normale"].to_numpy(dtype=float)
+        ok = np.isfinite(nm)
+        out["regle_simple"] = float(((nm[ok] < 0) == vrai[idx][ok]).mean())
+    return out
 
 
 SEUIL_CHUTE = -0.10   # « forte chute » : perdre plus de 10 % en un mois
@@ -241,7 +313,7 @@ def predire_risque(jeu, actuel, tous, horizon, variables_base, utiliser_ia=True,
     elif utiliser_ia and len(jeu) > 3000:
         et = jeu.dropna(subset=["vol_futur", "vol_20j"])
         et = et[np.isfinite(et["vol_futur"])]
-        vs = _variables_risque(et, variables_base)
+        vs = _variables_agitation(et, variables_base)
         modele = _modele().fit(et[vs], et["vol_futur"])
         mod = (modele, vs)
         lp, source = modele.predict(actuel[vs]), "ia"

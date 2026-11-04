@@ -15,7 +15,7 @@ from . import langues, seo
 NOM = seo.NOM
 SIGNAL_EN = {"ACHAT FORT": "strongly bullish", "ACHAT": "bullish", "NEUTRE": "neutral",
              "VENTE": "bearish", "VENTE FORTE": "strongly bearish"}
-MARCHE_EN = {"fr": "French stocks", "eu": "European stocks", "us": "US stocks", "crypto": "Cryptocurrencies",
+MARCHE_EN = {"fr": "French stocks", "eu": "European stocks", "us": "US stocks", "monde": "International stocks", "crypto": "Cryptocurrencies",
              "etf": "ETFs and indices", "tendances": "Trending"}
 
 
@@ -106,7 +106,7 @@ def _page_titre(base, t, horizon, date, csp, modele):
     perf, niv = t.get("perf", {}), t.get("niveaux") or {}
     pm = t.get("proba_marche")
     ind = {"le CAC 40": "the CAC 40", "l'Euro Stoxx 50": "the Euro Stoxx 50", "le S&P 500": "the S&P 500",
-           "le Bitcoin": "Bitcoin"}.get(t.get("indice_nom") or "", "its market")
+           "le Bitcoin": "Bitcoin", "les actions mondiales hors USA": "world stocks outside the US"}.get(t.get("indice_nom") or "", "its market")
     niveaux = "".join(f"<tr><td>{lib}</td><td class='m'>{_px(v, dev)}</td></tr>" for lib, v in (
         ("Resistance (1-year high)", niv.get("resistance")), ("50-day moving average", niv.get("sma50")),
         ("200-day moving average", niv.get("sma200")), ("Support (20-day low)", niv.get("support")),
@@ -115,6 +115,19 @@ def _page_titre(base, t, horizon, date, csp, modele):
     if modele and modele.get("precision") is not None:
         fiab = (f"<p>Measured accuracy of the model on periods it never saw: <b>{round(modele['precision'] * 100)}%</b> "
                 f"correct directions (naive baseline {round(modele['precision_base'] * 100)}%). A forecast is a probability, never a promise.</p>")
+    # version 63 : l'agitation prévue et, quand l'IA est nettement sûre, son « avis sûr »
+    rq = t.get("risque_prevu") or {}
+    av = dict((((modele or {}).get("risque") or {}).get("avis_surs") or {}))
+    if (av.get("par_marche") or {}).get(t.get("marche")) is not None:
+        av["taux"] = av["par_marche"][t.get("marche")]
+    agit = (f"<p>Expected movement next month: about <b class='m'>±{round(rq['mouvement'] * 100)}%</b>, up or down.</p>"
+            if rq.get("mouvement") else "")
+    if rq.get("sur") and rq.get("recent") and (av.get("taux") or 0) > 0.7:
+        plus = rq["recent"] > 1
+        agit += (f"<p class='avis-sur'><span class='badge-sur'>Confident call</span> Next month, {_e(nom)} should be clearly "
+                 f"<b>{'more agitated' if plus else 'calmer'}</b> than in recent weeks (about {round(abs(rq['recent'] - 1) * 100)}% "
+                 f"{'more' if plus else 'less'}). When the AI is this clear-cut, it was right <b>{round(av['taux'] * 100)} times out of 100</b> "
+                 "on years it had never seen.</p>")
     corps = f"""
 <h1>{_e(nom)} ({_e(seo.aff_tk(tk))}): forecast and analysis</h1>
 <p class="muted">Updated automatically · prices as of {_e(date)}</p>
@@ -124,12 +137,14 @@ def _page_titre(base, t, horizon, date, csp, modele):
   <div class="k"><b>{round(t['score'])} / 100</b><span>technical score ({SIGNAL_EN.get(t['signal'], '')})</span></div>
   <div class="k"><b>{'no clear call' if sur10 is not None and t.get("avis_net") is False else f'{sur10} in 10' if sur10 is not None else '–'}</b><span>chance of being higher in {horizon} sessions</span></div>
 </div>
+{seo.courbe_svg(t, seo.LIBS_COURBE_EN)}
 <h2>Summary</h2>
 <p>For the coming month, the radar sees {_e(nom)} <b>{verdict}</b>.
 {f"Central scenario: about <b class='m'>{_px(med, dev)}</b>. " if med else ""}
 {f"In 8 cases out of 10, the price should stay between <b class='m'>{_px(f[0], dev)}</b> and <b class='m'>{_px(f[1], dev)}</b>." if len(f) == 2 else ""}
 {"<b>Strong signal</b>: the model and the technical trend agree." if t.get("signal_fort") else ""}
 {f"Probability of beating {ind} over the same period: <b>{round(pm * 100)}%</b>." if pm is not None else ""}</p>
+{agit}
 <p><a class="btn" href="../../app-en.html#{_e(__import__('re').sub(r'[^A-Za-z0-9._-]', '', tk))}">Open the interactive chart and simulator</a></p>
 <h2>Key indicators</h2>
 <div class="carte"><table>

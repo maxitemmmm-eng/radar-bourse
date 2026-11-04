@@ -297,7 +297,7 @@ def _decouper(payload: dict, dossier: str) -> dict:
 
 
 TITRE_APP_EN = "Radar Bourse: free AI stock and crypto forecasts, checked"
-DESCRIPTION_APP_EN = ("Free one-month AI forecasts for 200+ stocks, ETFs and cryptos: chances of a rise, price ranges, "
+DESCRIPTION_APP_EN = ("Free one-month AI forecasts for nearly 300 stocks, ETFs and cryptos: chances of a rise, price ranges, "
                       "volatility, live prices and measured reliability.")
 
 
@@ -333,6 +333,13 @@ def _ecrire_anglais(gabarit: str, donnees: str, dossier: str, lib: str) -> None:
 
 
 def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: bool = False) -> str:
+    # version 62 : le défi 5 jours de l'IA (avance seulement lors du calcul du soir, ou sur le PC)
+    try:
+        from . import defi
+        avance = os.environ.get("RADAR_SELECTION") == "1" or os.environ.get("GITHUB_ACTIONS") != "true"
+        payload = {**payload, "defi_5j": defi.mettre_a_jour(payload, ecrire=avance and not pour_artifact)}
+    except Exception as e:
+        print(f"Défi 5 jours non mis à jour : {e}")
     gabarit = resources.files(__package__).joinpath("site_template.html").read_text(encoding="utf-8")
     # En ligne (robot GitHub), on découpe ; en local (ouverture du fichier sur le PC), tout reste
     # dans la page car les navigateurs bloquent la lecture de fichiers voisins en « file:// ».
