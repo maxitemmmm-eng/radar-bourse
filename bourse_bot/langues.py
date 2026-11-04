@@ -306,7 +306,7 @@ def _page(lg, base, titre, desc, chemin, corps, csp, alternates):
     tete = seo.balises_tete(base, titre, desc, chemin, jsonld=jsonld, alternates=alternates, langue=lg)
     csp = seo.csp_avec_stats(csp)
     return f"""<!doctype html>
-<html lang="{lg}" dir="{sens}">
+<html lang="{lg}" dir="{sens}" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">

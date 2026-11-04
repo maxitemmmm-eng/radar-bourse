@@ -21,6 +21,17 @@ SLOGAN = "Analyse et prévisions boursières à un mois, expliquées simplement"
 TITRE_ACCUEIL = "Radar Bourse : prévisions bourse et crypto par IA, gratuites"   # le nom en premier : recherches « radar bourse »
 DESCRIPTION = ("Prévisions bourse et crypto par IA, gratuites : agitation à un mois, risque de chute, simulateur boursier "
                "à 10 000 € virtuels. Résultats vérifiés publiquement.")
+def description_accueil(payload: dict | None = None) -> str:
+    """Version 61 : la description de l'accueil dans Google annonce un vrai chiffre mesuré (s'il est disponible et au-dessus de 60 %)."""
+    sr = ((((payload or {}).get("modele") or {}).get("risque") or {}).get("sens_recent") or {})
+    if (sr.get("taux") or 0) > 0.6:
+        d = (f"Prévisions bourse et crypto par IA, gratuites : {round(sr['taux'] * 100)} % de réussite sur l'agitation du mois suivant, "
+             "risque de chute, simulateur. Résultats publiés.")
+        if len(d) <= 160:
+            return d
+    return DESCRIPTION
+
+
 MOTS_CLES = ("radar bourse, prévision bourse IA, prévision action, prévision crypto, prévision bitcoin, simulateur boursier gratuit, "
              "portefeuille virtuel, risque de chute action, volatilité, CAC 40, S&P 500, convertisseur bitcoin euro, "
              "si j'avais investi, intérêts composés, calcul plus-value flat tax, apprendre la bourse, krach boursier, "
@@ -245,9 +256,8 @@ def balises_tete(base: str, titre: str, description: str, chemin: str = "", imag
         f'<meta name="apple-mobile-web-app-title" content="{NOM}">',
         '<meta name="format-detection" content="telephone=no">',   # les prix ne deviennent pas des numéros de téléphone sur iPhone
         # même couleur que l'en-tête du site, en clair comme en sombre ; « color-scheme » évite l'éclair blanc à l'ouverture
-        '<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">',
-        '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111a29">',
-        '<meta name="color-scheme" content="light dark">',
+        '<meta name="theme-color" content="#111a29">',   # version 61 : sombre par défaut
+        '<meta name="color-scheme" content="dark light">',
         f'<meta property="og:site_name" content="{NOM}">',
         f'<meta property="og:locale" content="{_locale(langue)}">',
         '<meta property="og:type" content="website">',
@@ -395,7 +405,7 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
     titre = titre_court(titre)
     description = desc_courte(description)
     return f"""<!doctype html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -439,7 +449,9 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     agitation = (f"<p>Agitation prévue le mois prochain : en général, le prix bougera d'environ <b class='m'>±{round(rq['mouvement'] * 100)} %</b>"
                  + (", plus que d'habitude" if (rq.get("habitude") or 1) > 1.25 else ", moins que d'habitude" if (rq.get("habitude") or 1) < 0.8 else "")
                  + ", dans un sens ou dans l'autre.</p>") if rq.get("mouvement") else ""
-    sr = (((modele or {}).get("risque") or {}).get("sens_recent") or {})
+    sr = dict((((modele or {}).get("risque") or {}).get("sens_recent") or {}))
+    if (sr.get("par_marche") or {}).get(t.get("marche")) is not None:   # version 61 : taux du marché du titre
+        sr["taux"] = sr["par_marche"][t.get("marche")]
     if rq.get("recent") is not None and (sr.get("taux") or 0) > 0.6:   # version 59 : la question où l'IA dépasse 60 %
         agitation += (f"<p>Le mois prochain, {_e(t['nom'])} devrait être <b>{'plus agité' if rq['recent'] > 1 else 'plus calme'}</b> "
                       f"que ces dernières semaines. Sur des années jamais vues, l'IA a eu raison <b>{round(sr['taux'] * 100)} fois sur 100</b> "

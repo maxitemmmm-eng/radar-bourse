@@ -1320,7 +1320,11 @@ EN = {
 "Clique pour ouvrir sa fiche": "Click to open its sheet",
 "Md de capitalisation": "bn market cap",
 "Accueil": "Home",
-"Risque de perdre plus de 10 % ↑": "Risk of losing more than 10% ↑"
+"Risque de perdre plus de 10 % ↑": "Risk of losing more than 10% ↑",
+"de bonnes réponses pour dire si un titre sera plus agité ou plus calme le mois prochain": "right answers on whether an asset will be more or less volatile next month",
+"plus de fortes chutes chez les titres que l'IA juge les plus à risque": "more sharp drops among the assets the AI rates as riskiest",
+"actions, ETF et cryptos analysés chaque heure, résultats publiés": "stocks, ETFs and cryptos analysed every hour, results published",
+"ratés compris": "misses included"
 }
 
 # Libellés venant des données (traduits à l'affichage, voir traduction_appli._script_donnees)

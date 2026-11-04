@@ -112,7 +112,8 @@ def evaluer_risque(jeu, horizon, variables_base, n_plis=5):
             continue
         mod = _modele().fit(train[vs], train["vol_futur"])
         t = pd.DataFrame({"y": test["vol_futur"].to_numpy(), "p": mod.predict(test[vs]),
-                          "naif": _naif(test).to_numpy()}, index=test.index)
+                          "naif": _naif(test).to_numpy(),
+                          "marche": test["marche"].to_numpy() if "marche" in test else "?"}, index=test.index)
         morceaux.append(t)
     if not morceaux:
         return {}
@@ -135,7 +136,9 @@ def evaluer_risque(jeu, horizon, variables_base, n_plis=5):
     plus = float((o["y"] > o["naif"]).mean())
     sens_recent = {"taux": float(sens_j.mean()), "ic": _ic(bs[:, 0]) if len(bs) else None, "base": max(plus, 1 - plus),
                    "pire_annee": float(par_an.min()) if len(par_an) else None,
-                   "annees_60": int((par_an > 0.6).sum()), "annees": int(len(par_an))}
+                   "annees_60": int((par_an > 0.6).sum()), "annees": int(len(par_an)),
+                   # version 61 : le même taux, marché par marché (chaque fiche affiche celui de son marché)
+                   "par_marche": {str(m): float(g.mean()) for m, g in sens_j.groupby(o["marche"].to_numpy()) if len(g) >= 2000}}
     return {"nb": int(len(o)), "periode": f"{o.index.min():%m/%Y} – {o.index.max():%m/%Y}", "sens_recent": sens_recent,
             "erreur_ia": float(np.expm1(err_ia.median())), "erreur_naif": float(np.expm1(err_naif.median())),
             "r2_ia": r2("p"), "r2_naif": r2("naif"),
