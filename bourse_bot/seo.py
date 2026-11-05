@@ -80,10 +80,10 @@ _COULEURS_SOMBRES = ("--bg:#0a111d;--surface:#111a29;--surface-2:#162133;--ink:#
 # Version 51 : toutes les pages ont la même identité que l'appli (en-tête, logo, menu en pastilles, thème clair/sombre partagé)
 CSS_PAGE = """:root{--bg:#eef1f5;--surface:#fff;--surface-2:#f6f8fb;--ink:#0f1b2d;--muted:#5a6a80;--line:#d9e0e8;--accent:#1d4fd8;--accent-soft:#e3eafc;
 --up:#07743f;--up-soft:#dcf2e6;--down:#b42a25;--down-soft:#fbe3e1;
---f:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--d:"Newsreader",Georgia,"Times New Roman",serif;--m:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+--f:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--d:"Newsreader",Georgia,"Times New Roman",serif;--m:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){""" + _COULEURS_SOMBRES + """}}
 :root[data-theme="dark"]{""" + _COULEURS_SOMBRES + """}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--f)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--f)}.m{font-variant-numeric:tabular-nums}
 .g{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .w{max-width:860px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .skip{position:absolute;left:12px;top:-60px;z-index:60;background:var(--ink);color:var(--surface);padding:8px 14px;border-radius:8px;font-weight:600;text-decoration:none}.skip:focus{top:12px}
@@ -421,12 +421,25 @@ def _image_de(chemin, image="partage.png"):
     return image_pour(chemin, IMAGES_PAGES) or image
 
 
+_BLOCS_CODE = re.compile(r"(<script\b.*?</script>|<style\b.*?</style>|<svg\b.*?</svg>|<[^>]+>)", re.S)
+
+
+def typo_fr(h: str) -> str:
+    """Version 63 : typographie française — espace insécable avant ? ! : ; % » et après «, seulement dans le texte visible
+    (jamais dans les balises, les scripts ou les graphiques). Plus de « ? » ou de « % » seul en début de ligne."""
+    morceaux = _BLOCS_CODE.split(h)
+    for k in range(0, len(morceaux), 2):
+        morceaux[k] = re.sub(r" ([?!:;%»])", "\u00a0\\1", morceaux[k]).replace("« ", "«\u00a0")
+    return "".join(morceaux)
+
+
 def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternates=None, image="partage.png"):
     image = _image_de(chemin, image)
     prefixe = "../" * chemin.count("/")
     csp = csp_avec_stats(csp)
     titre = titre_court(titre)
     description = desc_courte(description)
+    corps = typo_fr(corps)
     return f"""<!doctype html>
 <html lang="fr" data-theme="dark">
 <head>

@@ -21,7 +21,8 @@
   --warn:#855c08; --warn-soft:#fbf0d6; --cone:#1d4fd8; --sur-couleur:#ffffff;
   --f-display:"Newsreader",Georgia,"Times New Roman",serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+  --f-mono:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;   /* version 63 : chiffres en police normale (plus lisible), alignés */
+  --f-code:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
   --r:10px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -42,7 +43,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.005em;font-optical-sizing:auto}
 h2{font-size:23px;font-weight:600;line-height:1.2}
 h3{font-weight:600}
-.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
 .label{font-size:13px;color:var(--muted);font-weight:500}
 .up{color:var(--up)}.down{color:var(--down)}
@@ -183,7 +184,7 @@ tbody tr:last-child td{border-bottom:0}
 /* Portefeuille virtuel */
 .pf-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 @media (max-width:760px){.pf-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.pf-kpis .k b{display:block;font-family:var(--f-mono);font-size:22px;font-weight:500}
+.pf-kpis .k b{display:block;font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:22px;font-weight:500}
 .pf-kpis .k > span{font-size:12.5px;color:var(--muted)}
 .pf-table td,.pf-table th{white-space:nowrap}
 .pf-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
@@ -191,7 +192,7 @@ tbody tr:last-child td{border-bottom:0}
 .mini-btn.danger{color:var(--down);border-color:var(--down-soft)}
 .pf-ordre{display:grid;gap:10px;border:2px solid var(--accent);border-radius:var(--r);padding:14px;background:var(--surface)}
 .pf-ordre .ligne{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
-.pf-ordre input{width:140px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:15px var(--f-mono)}
+.pf-ordre input{width:140px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:15px var(--f-mono);font-variant-numeric:tabular-nums}
 
 .hero-liens{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
 .hero-visuel{display:block;width:100%;max-width:560px;height:auto;margin:0 0 18px}
@@ -221,7 +222,7 @@ tbody tr:last-child td{border-bottom:0}
 .plage .zone{position:absolute;top:16px;height:14px;border-radius:7px;background:linear-gradient(90deg,var(--down-soft),var(--accent-soft) 50%,var(--up-soft))}
 .plage .act{position:absolute;top:10px;width:2px;height:26px;background:var(--ink);opacity:.7}
 .plage .ctr{position:absolute;top:15px;width:16px;height:16px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);transform:translateX(-50%)}
-.plage .lab{position:absolute;top:34px;font:500 11.5px var(--f-mono);white-space:nowrap;color:var(--muted)}
+.plage .lab{position:absolute;top:34px;font:500 11.5px var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted)}
 .plage .lab.g{transform:translateX(0)}.plage .lab.d{transform:translateX(-100%)}
 .plage .lab.min{color:var(--down)}.plage .lab.max{color:var(--up)}
 .plage .tete{position:absolute;top:0;font:600 11.5px var(--f-body);white-space:nowrap;color:var(--accent);transform:translateX(-50%)}
@@ -238,12 +239,12 @@ tbody tr:last-child td{border-bottom:0}
 .tuiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:4px}
 .tuile{border:0;border-radius:6px;padding:10px 8px;cursor:pointer;text-align:left;display:grid;gap:2px;min-height:58px;color:var(--ink)}
 .tuile b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tuile span{font:500 12.5px var(--f-mono)}
+.tuile span{font:500 12.5px var(--f-body);font-variant-numeric:tabular-nums}
 .tuile:hover{outline:2px solid var(--ink);outline-offset:-2px}
 .tuile span{opacity:.92}
 [data-theme="dark"] .tuile{box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
 .tuiles.prop{display:flex;flex-wrap:wrap;gap:4px}
-.tuiles.prop .tuile{flex:1 1 78px;align-content:start}
+.tuiles.prop .tuile{flex:1 1 78px;align-content:center;justify-items:center;text-align:center}
 .tuiles.prop .tuile b{font-size:clamp(13px,1.2vw,16px)}
 .tuiles.prop .tuile-fin{flex:1000 1 0;min-width:0;height:0}   /* la dernière ligne ne s'étire pas : les cases gardent leur vraie taille */
 
@@ -251,14 +252,14 @@ tbody tr:last-child td{border-bottom:0}
 .ctx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
 .ctx{display:grid;gap:4px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);min-width:0}
 .ctx .tete{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.ctx .v{font-family:var(--f-mono);font-size:20px}
+.ctx .v{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:20px}
 .ctx p{margin:0;font-size:12.5px;color:var(--muted)}
 
 /* Fondamentaux */
 .fond{width:100%;border-collapse:collapse;font-size:14px}
 .fond td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;white-space:normal}
 .fond td:first-child{font-weight:600;width:34%}
-.fond td.val{font-family:var(--f-mono);white-space:nowrap;width:18%}
+.fond td.val{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;width:18%}
 .fond .aide{color:var(--muted);font-size:13px}
 .rep{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:5px;margin-top:4px}
 .rep.bon{background:var(--up-soft);color:var(--up)}.rep.moy{background:var(--surface-2);color:var(--muted)}.rep.att{background:var(--warn-soft);color:var(--warn)}
@@ -266,7 +267,7 @@ tbody tr:last-child td{border-bottom:0}
 /* Calculateur de risque */
 .calc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 @media (max-width:640px){.calc{grid-template-columns:1fr}}
-.calc input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:15px var(--f-mono)}
+.calc input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:15px var(--f-mono);font-variant-numeric:tabular-nums}
 .regle{padding:10px 12px;border-radius:8px;background:var(--accent-soft);color:var(--ink);font-size:14px}
 
 /* Prévention */
@@ -294,11 +295,11 @@ tbody tr:last-child td{border-bottom:0}
 .chart-wrap{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden}
 .chart-bar{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}
 .per,.opt{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-.per button{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:6px;padding:4px 10px;font:500 12.5px var(--f-mono);cursor:pointer}
+.per button{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:6px;padding:4px 10px;font:500 12.5px var(--f-mono);font-variant-numeric:tabular-nums;cursor:pointer}
 .per button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .opt label{display:inline-flex;gap:5px;align-items:center;font-size:12.5px;color:var(--muted);padding:3px 8px;border-radius:6px;cursor:pointer;user-select:none}
 .opt input{accent-color:var(--accent);margin:0}
-.chart-leg{padding:8px 12px;font:12.5px var(--f-mono);color:var(--muted);min-height:34px;border-bottom:1px solid var(--line);display:flex;gap:4px 10px;flex-wrap:wrap;align-items:center}
+.chart-leg{padding:8px 12px;font:12.5px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--muted);min-height:34px;border-bottom:1px solid var(--line);display:flex;gap:4px 10px;flex-wrap:wrap;align-items:center}
 .chart-leg b{color:var(--ink);font-weight:500}
 .rsi-lab{position:relative}
 .rsi-lab::before{content:"RSI 14";position:absolute;left:10px;top:6px;z-index:2;font:600 11px var(--f-body);letter-spacing:.06em;color:var(--muted)}
@@ -325,7 +326,7 @@ tbody tr:last-child td{border-bottom:0}
 .main-chart{display:grid;gap:14px}
 .main-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:end}
 .main-prix{font-family:var(--f-display);font-size:30px;font-weight:800;line-height:1.1}
-.main-prix .num{font-family:var(--f-mono);font-weight:500}
+.main-prix .num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:500}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
 .legend span::before{content:"";display:inline-block;width:14px;height:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
 .forecast{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
@@ -336,7 +337,7 @@ tbody tr:last-child td{border-bottom:0}
 .reasons li{display:grid;grid-template-columns:20px 1fr;gap:6px}
 .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
 .fact{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px}
-.fact .v{font-family:var(--f-mono);font-size:15px}
+.fact .v{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:15px}
 .disclaimer{font-size:12.5px;color:var(--muted);max-width:75ch}
 footer{margin-top:56px;border-top:2px solid var(--ink);padding-block:28px 48px;display:grid;gap:18px}
 .pied{display:grid;grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));gap:24px 36px}
@@ -366,7 +367,7 @@ footer a{color:var(--accent);text-underline-offset:3px}
 .badges li.gagne span:first-child{background:var(--accent-soft);border-color:var(--accent)}
 .jeu-manche{margin:0;font-size:14px;font-weight:500}
 .jeu-cadre{position:relative}
-.jeu-fin{position:absolute;transform:translate(-100%,-130%);font:600 13px var(--f-mono);white-space:nowrap;padding:2px 7px;border-radius:6px;color:var(--sur-couleur);pointer-events:none}
+.jeu-fin{position:absolute;transform:translate(-100%,-130%);font:600 13px var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;padding:2px 7px;border-radius:6px;color:var(--sur-couleur);pointer-events:none}
 .jeu-fin.h{background:var(--up)}.jeu-fin.b{background:var(--down)}
 .jeu-vide{height:230px;border-radius:8px;background:var(--surface-2);display:grid;place-items:center;text-align:center;padding:16px;color:var(--muted);font-size:14.5px}
 .jeu-tete{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
@@ -382,7 +383,7 @@ footer a{color:var(--accent);text-underline-offset:3px}
 .agenda{margin-top:16px}.agenda h3{font-size:18px;margin-bottom:6px}
 .agenda-liste{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
 .agenda-liste li button{width:100%;text-align:left;display:flex;gap:10px;align-items:center;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}
-.agenda-liste .d{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);white-space:nowrap;flex:none}
+.agenda-liste .d{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--muted);white-space:nowrap;flex:none}
 .robots-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
 .robot{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:10px;align-content:start}
 .robot h3{font-size:19px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
@@ -422,7 +423,7 @@ footer a{color:var(--accent);text-underline-offset:3px}
 .conf-ic i{display:block;width:4px;border-radius:1px;background:var(--line)}
 .conf-ic i:nth-child(1){height:6px}.conf-ic i:nth-child(2){height:10px}.conf-ic i:nth-child(3){height:14px}
 .conf-ic.c-faible i:nth-child(1),.conf-ic.c-moyenne i:nth-child(-n+2),.conf-ic.c-forte i{background:var(--ink)}
-.agit-cell{display:block;font-family:var(--f-mono);font-size:12px;color:var(--muted);font-weight:400}
+.agit-cell{display:block;font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted);font-weight:400}
 .vue-picks{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .ligne-conf{font-size:14px;margin:6px 0}.ligne-conf p{margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.ligne-conf p.muted{font-size:13px;margin-top:2px}
 .sans-avis{display:flex;align-items:center;gap:8px;color:var(--muted)}
@@ -486,13 +487,13 @@ footer a{color:var(--accent);text-underline-offset:3px}
 @media (max-width:560px){.sim-ctrl{grid-template-columns:1fr}}
 .field{display:grid;gap:6px}
 .field label{font-size:13px;font-weight:600}
-.field .val{font-family:var(--f-mono);font-size:20px}
+.field .val{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:20px}
 input[type=range]{width:100%;accent-color:var(--accent)}
 .switch{display:flex;gap:8px;align-items:center;font-size:14px}
 .sim-out{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 @media (max-width:640px){.sim-out{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .hist{width:100%;height:auto;display:block}
-.hist text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+.hist text{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:11px;fill:var(--muted)}
 .range-band{position:relative;height:34px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);margin-top:4px}
 .range-band .zone{position:absolute;top:6px;bottom:6px;border-radius:5px;background:var(--accent-soft)}
 .range-band .mid{position:absolute;top:2px;bottom:2px;width:2px;background:var(--accent)}
@@ -504,7 +505,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .mood .mot{font-family:var(--f-display);font-size:30px;font-weight:800;line-height:1}
 .mood .mot small{display:block;font-family:var(--f-body);font-size:13.5px;font-weight:500;color:var(--muted);margin-bottom:6px}
 .mood .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-.mood .st b{display:block;font-family:var(--f-mono);font-size:18px;font-weight:500}
+.mood .st b{display:block;font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:18px;font-weight:500}
 .mood .st span{font-size:12.5px;color:var(--muted)}
 .breadth{height:6px;border-radius:3px;background:var(--down-soft);overflow:hidden;margin-top:6px}
 .breadth i{display:block;height:100%;background:var(--up)}
@@ -622,6 +623,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .preuve{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface)}
 .preuve b{display:block;font-family:var(--f-num,inherit);font-size:26px;line-height:1.1;color:var(--ink)}
 @media (prefers-reduced-motion:no-preference){@view-transition{navigation:auto}}
+/* une carte seule sur la dernière ligne prend toute la largeur (plus de trou disgracieux) */
+@media (min-width:900px){.cartes-conf>.panel:last-child:nth-child(4n+1){grid-column:1/-1}.cartes-conf>.panel:last-child:nth-child(4n+2){grid-column:span 3}}
 /* version 63 : le radar du logo balaie une fois à l'ouverture ; impression propre d'une fiche */
 @keyframes balayage{from{transform:rotate(-140deg);opacity:0}to{transform:rotate(0);opacity:1}}
 .brand .logo path{transform-box:view-box;transform-origin:30px 35px;animation:balayage 1.5s cubic-bezier(.2,.7,.2,1) .15s both}
@@ -763,7 +766,7 @@ section.repliable.replie .replier{background:var(--ink);color:var(--surface);bor
 .accord.oui{background:var(--up-soft);color:var(--up)}
 .accord.non{background:var(--warn-soft);color:var(--warn)}
 .duo-ia{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}
-.duo-ia .fact b{font-family:var(--f-mono);font-size:18px;font-weight:500}
+.duo-ia .fact b{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:18px;font-weight:500}
 
 /* Statistiques avec marge d'erreur */
 .stat-barres{display:grid;gap:10px;margin-top:6px}
@@ -832,7 +835,7 @@ html.calme *{animation:none!important;transition:none!important}
 .plage .lab.emin{top:48px;color:var(--down);font-weight:600}.plage .lab.emax{top:48px;color:var(--up);font-weight:600}
 .risque-liste{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-bottom:14px}
 .rcarte{border:2px solid var(--down-soft);border-radius:10px;padding:12px;background:var(--surface);display:grid;gap:4px;text-align:left;cursor:pointer;color:var(--ink)}
-.rcarte .deux{display:flex;justify-content:space-between;gap:8px;font-family:var(--f-mono);font-size:17px}
+.rcarte .deux{display:flex;justify-content:space-between;gap:8px;font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:17px}
 .modal-risque{position:fixed;inset:0;z-index:80;background:rgba(5,10,20,.6);display:grid;place-items:center;padding:16px}
 .modal-risque[hidden]{display:none!important}
 .modal-risque .boite{background:var(--surface);color:var(--ink);border:3px solid var(--down);border-radius:14px;max-width:620px;width:100%;max-height:calc(100vh - 32px);overflow-y:auto;padding:20px;display:grid;gap:12px}
@@ -900,7 +903,7 @@ html.calme *{animation:none!important;transition:none!important}
     </svg>
     <h2>Les marchés, lus calmement par les chiffres.</h2>
     <p class="intro">Chaque heure, l'IA analyse près de 300 actions, ETF et cryptos. Elle prévoit surtout <b>de combien un prix peut bouger</b> et <b>le risque de forte chute</b>, et publie tous ses résultats, ratés compris. Gratuit et éducatif, pas un conseil.</p>
-    <div class="hero-liens"><a class="btn" href="#prono">🎯 Ton pronostic du jour</a><a class="btn ghost" href="#simulation">À combien dans un mois ?</a><a class="btn ghost" href="#remonte">Jouer contre l'IA</a><a class="btn ghost" href="#portefeuille">Portefeuille virtuel</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
+    <div class="hero-liens"><a class="btn" href="#prono">🎯 Ton pronostic du jour</a><a class="btn ghost" href="#simulation">À combien dans un mois ?</a><a class="btn ghost" href="#remonte">Jouer contre l'IA</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
     <div class="preuves" id="preuves" hidden></div>
    </div>
    <aside class="bref" id="bref" aria-labelledby="bref-t" hidden><h3 id="bref-t">Aujourd'hui en bref</h3><p id="bref-txt"></p><p class="sig" id="bref-sig"></p></aside>
@@ -2198,7 +2201,8 @@ function rendreCarte(){
     if(proportionnel) L.sort((a, b) => poids(b) - poids(a) || b.perf[PERIODE_CARTE] - a.perf[PERIODE_CARTE]);
     return `<div class="carte-groupe"><span class="label">${nom}</span><div class="tuiles${proportionnel ? " prop" : ""}">${L.map(t => {
       const v = t.perf[PERIODE_CARTE], f = Math.min(1, Math.abs(v) / echelle);
-      const fond = melange(surf, v >= 0 ? up : down, sombre ? .1 + .4 * f : .12 + .6 * f);   // version 63 : plus doux en thème sombre
+      // version 63 : presque neutre pour les petits mouvements, couleur franche seulement pour les grands (comme les pros)
+      const g = Math.max(0, (f - .08) / .92), fond = melange(surf, v >= 0 ? up : down, sombre ? .05 + .42 * Math.pow(g, .85) : .06 + .62 * Math.pow(g, .85));
       const p = proportionnel ? poids(t) : 1;
       return `<button class="tuile" data-t="${esc(t.ticker)}" style="background:${fond};color:${texteLisible(fond)}${proportionnel ? `;flex-grow:${p.toFixed(2)};flex-basis:${Math.round(78 * p)}px;min-height:${Math.round(52 + 18 * (p - 1))}px` : ""}" title="${esc(t.nom)}${t.capi ? ` · ${Math.round(t.capi).toLocaleString("fr-FR")} Md de capitalisation` : ""}" aria-label="${esc(t.nom)} : ${(v >= 0 ? "+" : "") + (v * 100).toFixed(1).replace(".", ",")} %"><b>${esc(affTk(t.ticker).replace(/-USD$|\.(PA|DE|AS|MC|MI)$|^\^/, ""))}</b><span>${(v >= 0 ? "+" : "") + (v * 100).toFixed(1).replace(".", ",")} %</span></button>`;
     }).join("")}${proportionnel ? '<span class="tuile-fin" aria-hidden="true"></span>' : ""}</div></div>`;
@@ -2758,7 +2762,7 @@ function grapheComplet(id, t, opts = {}){
     layout:{background:{type:"solid", color:C.surf}, textColor:C.muted, fontFamily:"IBM Plex Mono, monospace", fontSize:11},
     grid:{vertLines:{color:rgba(C.line, .55)}, horzLines:{color:rgba(C.line, .55)}}};
   const chart = LightweightCharts.createChart(el, {...base, crosshair:{mode:1},
-    watermark:{visible:true, text:affTk(t.ticker).replace(/-USD$/, ""), fontSize:64, fontFamily:"IBM Plex Sans, Arial, sans-serif", fontStyle:"bold", color:rgba(C.muted, .1), horzAlign:"center", vertAlign:"center"},
+    watermark:{visible:true, text:affTk(t.ticker).replace(/-USD$|^\^/g, ""), fontSize:64, fontFamily:"IBM Plex Sans, Arial, sans-serif", fontStyle:"bold", color:rgba(C.muted, .1), horzAlign:"center", vertAlign:"center"},
     rightPriceScale:{borderColor:C.line, minimumWidth:76, scaleMargins:{top:.06, bottom:.2}},
     timeScale:{borderColor:C.line, rightOffset:2}});
   const s = t.serie, series = {sma50:[], sma200:[], bb:[], vol:[], prev:[], bougies:[]};
@@ -3761,9 +3765,9 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
   }
   const GROUPES = [["Cryptos", ["calme-crypto", "monter-crypto", "bitcoin", "defi"]],
                    ["Actions", ["calme-fr", "calme-us", "calme-monde", "dividende"]],
-                   ["Risque et agitation", ["surs-calme", "surs-agite", "risque", "nerveux"]],
-                   ["L'IA", ["fiable", "conseil"]]];
-  const libQ = k => (Q.find(x => x[0] === k) || [])[1];
+                   ["Risque et agitation", ["surs-calme", "surs-agite", "risque"]],
+                   ["Le marché et l'IA", ["nerveux", "fiable", "conseil"]]];
+  const libQ = k => ((Q.find(x => x[0] === k) || [])[1] || "").replace(/ ([?!:;])/g, "\u00a0$1");   // jamais un « ? » seul en début de ligne
   choix.innerHTML = GROUPES.map(([titre, cles]) => `<div class="assist-groupe" role="group" aria-label="${titre}"><span class="assist-titre">${titre}</span>`
     + cles.filter(libQ).map(k => `<button class="assist-q" type="button" data-q="${k}" aria-pressed="false">${libQ(k)}</button>`).join("") + "</div>").join("");
   const afficher = (question, rep, note) => {
@@ -3852,6 +3856,23 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
       if(k < 1) requestAnimationFrame(pas); };
     requestAnimationFrame(pas); }, {threshold: .4});
   io.observe(z);
+})();
+
+/* ---------- Version 63 : typographie française — jamais de « ? », « : », « % » ou « » » seul en début de ligne ---------- */
+(function(){
+  if(document.documentElement.lang !== "fr" || !("MutationObserver" in window)) return;
+  const RE = / ([?!:;%»])/g, RE2 = /« /g, SAUTER = {SCRIPT: 1, STYLE: 1, TEXTAREA: 1, INPUT: 1, CODE: 1, NOSCRIPT: 1};
+  const fixer = racine => {
+    const w = document.createTreeWalker(racine, NodeFilter.SHOW_TEXT, {acceptNode: n => n.parentNode && SAUTER[n.parentNode.nodeName] ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+    for(let n = w.nextNode(); n; n = w.nextNode()){
+      const v = n.nodeValue; if(v.length > 3000 || (v.indexOf(" ") < 0)) continue;
+      const nv = v.replace(RE, "\u00a0$1").replace(RE2, "«\u00a0");
+      if(nv !== v) n.nodeValue = nv;
+    }
+  };
+  fixer(document.body);
+  new MutationObserver(ms => { for(const m of ms) for(const n of m.addedNodes){ if(n.nodeType === 1 && !SAUTER[n.nodeName]) fixer(n); else if(n.nodeType === 3 && n.parentNode) fixer(n.parentNode); } })
+    .observe(document.body, {childList: true, subtree: true});
 })();
 
 /* ---------- Version 60 : menu « Plus ▾ » ---------- */
