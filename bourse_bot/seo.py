@@ -563,7 +563,8 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     rq = t.get("risque_prevu") or {}
     agitation = (f"<p>Agitation prévue le mois prochain : en général, le prix bougera d'environ <b class='m'>±{round(rq['mouvement'] * 100)} %</b>"
                  + (", plus que d'habitude" if (rq.get("habitude") or 1) > 1.25 else ", moins que d'habitude" if (rq.get("habitude") or 1) < 0.8 else "")
-                 + ", dans un sens ou dans l'autre.</p>") if rq.get("mouvement") else ""
+                 + ", dans un sens ou dans l'autre. C'est le mouvement <i>habituel</i> : la fourchette « 8 fois sur 10 » ci-dessus est plus large, "
+                 "car elle couvre aussi les mois plus agités.</p>") if rq.get("mouvement") else ""
     sr = dict((((modele or {}).get("risque") or {}).get("sens_recent") or {}))
     if (sr.get("par_marche") or {}).get(t.get("marche")) is not None:   # version 61 : taux du marché du titre
         sr["taux"] = sr["par_marche"][t.get("marche")]
@@ -2372,11 +2373,11 @@ def _accueil_resume(payload: dict) -> str:
     """Version 56 : un résumé lisible de tout le site, écrit dans la page (Google lit le texte visible et suit les liens ;
     tant qu'il ne connaît que l'accueil, c'est par là qu'il découvre les recherches auxquelles le site répond)."""
     titres = payload.get("titres", [])
-    n = len(titres)
+    n = len([t for t in titres if t.get("marche") != "tendances"])   # version 63 : même compte que le reste du site
     connus = [t for t in titres if t.get("ticker") in ("MC.PA", "AAPL", "NVDA", "TSLA", "AIR.PA", "TTE.PA", "MSFT", "BTC-USD", "ETH-USD", "SOL-USD")]
     exemples = ", ".join(f'<a href="titres/{slug(t["ticker"])}.html">prévision {_e(t["nom"])}</a>' for t in connus)
     blocs = [
-        ("Prévisions bourse et crypto par IA", f"Chaque heure, {n} actions françaises, européennes et américaines, ETF et cryptomonnaies sont analysés : "
+        ("Prévisions bourse et crypto par IA", f"Chaque heure, {n} actions françaises, européennes, américaines et du monde entier, ETF et cryptomonnaies sont analysés : "
          f"de combien le prix peut bouger dans un mois, le risque de forte chute, et les chances de faire mieux que son marché. Par exemple : {exemples}. "
          '<a href="titres.html">Voir tous les titres</a>.'),
         ("Simulateur boursier gratuit", 'Un portefeuille virtuel de 10 000 € pour acheter et vendre sur les vrais cours, sans risque et sans compte. '

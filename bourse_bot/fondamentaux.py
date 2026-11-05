@@ -64,6 +64,10 @@ def recuperer(ticker: str, marche: str) -> dict | None:
         if isinstance(ts, (int, float)) and ts > 0:
             resultats = datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d")
             break
+    # version 63 : comptes publiés dans une autre devise que le cours (ex. Toyota en yens, cotée en dollars) :
+    # les montants seraient faux (« -3 600 Md $ »), on ne garde que les ratios et la capitalisation (dans la devise du cours)
+    if info.get("financialCurrency") and info.get("currency") and info["financialCurrency"] != info["currency"]:
+        valeurs.pop("freeCashflow", None)
     if not valeurs and not resultats:
         return None
     return {"secteur": info.get("sector") or "", "devise": "€" if info.get("currency") == "EUR" else "$",

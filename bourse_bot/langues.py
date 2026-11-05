@@ -247,6 +247,15 @@ TOUTES = ["fr", "en"] + list(LANGUES)
 NOMS_LANGUES = {"fr": "Français", "en": "English", **{k: v[0] for k, v in LANGUES.items()}}
 
 
+def nom_intl(nom: str) -> str:
+    """Version 63 : sur les pages étrangères, les noms d'ETF en anglais plutôt qu'en français."""
+    try:
+        from .traductions_en import EXACT_DONNEES
+        return EXACT_DONNEES.get(nom, nom)
+    except Exception:
+        return nom
+
+
 def _intro(L, n):
     txt = L["accueil_intro"]
     return txt.format(n=n) if "{n}" in txt else txt.replace("200", str(n))
@@ -326,6 +335,7 @@ def _page(lg, base, titre, desc, chemin, corps, csp, alternates, faq=None):
         jsonld["@graph"].append({"@type": "FAQPage", "inLanguage": lg, "mainEntity": [
             {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": r}} for q, r in faq]})
     tete = seo.balises_tete(base, titre, desc, chemin, jsonld=jsonld, alternates=alternates, langue=lg)
+    tete = re.sub(r'<meta name="keywords"[^>]*>\n?', "", tete)   # version 63 : pas de mots-clés français sur les pages étrangères
     csp = seo.csp_avec_stats(csp)
     return f"""<!doctype html>
 <html lang="{lg}" dir="{sens}" data-theme="dark">
@@ -362,7 +372,7 @@ def _page_titre(lg, base, t, horizon, date, csp="", taux_surs=None):
     X = EXTRA.get(lg)
     sep = LANGUES[lg][3]
     dev, p = t.get("devise", "$"), t.get("proba_hausse")
-    nom, tk = t["nom"], seo.aff_tk(t["ticker"])
+    nom, tk = nom_intl(t["nom"]), seo.aff_tk(t["ticker"])
     s = seo.slug(t["ticker"])
     chemin = chemin_titre(lg, s)
     rp = t.get("risque_prevu") or {}
@@ -407,7 +417,7 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
             with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
                 f.write(page)
             urls.append((chemin, "daily", "0.4"))
-        lien = lambda t: f"<a href='stocks/{seo.slug(t['ticker'])}.html'>{_e(t['nom'])}</a>"
+        lien = lambda t: f"<a href='stocks/{seo.slug(t['ticker'])}.html'>{_e(nom_intl(t['nom']))}</a>"
         rq = sorted([t for t in titres if (t.get("risque_prevu") or {}).get("chute") is not None],
                     key=lambda t: -t["risque_prevu"]["chute"])[:10]
         calmes = sorted([t for t in titres if t.get("marche") in ("fr", "eu", "us", "monde") and (t.get("risque_prevu") or {}).get("mouvement")],
@@ -421,10 +431,13 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
         X = EXTRA.get(lg) or {}
         surs = ""
         if X and taux_surs:
-            sur_l = lambda sens: sorted([t for t in titres if (t.get("risque_prevu") or {}).get("sur") and (t["risque_prevu"].get("recent") or 1) != 1
+            sur_l = lambda sens: sorted([t for t in titres if t.get("marche") != "tendances" and (t.get("risque_prevu") or {}).get("sur") and (t["risque_prevu"].get("recent") or 1) != 1
                                          and ((t["risque_prevu"]["recent"] > 1) == (sens > 0))],
                                         key=lambda t: -abs(t["risque_prevu"]["recent"] - 1))[:8]
-            ecart = lambda t: f"{'+' if t['risque_prevu']['recent'] > 1 else '−'}{round(abs(t['risque_prevu']['recent'] - 1) * 100)} %"
+            # version 63 : « ±12 % → ±5 % » (agitation des dernières semaines → agitation prévue) : sans mot, donc clair dans toutes les langues
+            pn = lambda v: f"{v * 100:.1f}".replace(".", sep) + "\u00a0%"
+            ecart = lambda t: (f"±{pn(t['risque_prevu']['mouvement'] / t['risque_prevu']['recent'])} → "
+                               f"<b>±{pn(t['risque_prevu']['mouvement'])}</b>") if t["risque_prevu"].get("mouvement") else ""
             lc, la = sur_l(-1), sur_l(1)
             surs = (f"<h2>{_e(X['surs_t'])}</h2><p>{_e(X['surs_txt'].format(x=round(taux_surs * 100), c=round((av.get('couverture') or .5) * 100)))}</p>"
                     + (f"<h3>{_e(X['calme'])}</h3>" + tab(lc, ecart) if lc else "") + (f"<h3>{_e(X['agite'])}</h3>" + tab(la, ecart) if la else ""))

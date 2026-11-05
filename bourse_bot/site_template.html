@@ -3691,10 +3691,11 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
   if(!zone || !choix || !T) return;
   const RQ = (DATA.modele || {}).risque || {}, SR = RQ.sens_recent || {}, CH = RQ.chute || {}, AS = RQ.avis_surs || {};
   const actifs = T.filter(t => t.marche !== "tendances" && t.risque_prevu);
-  const surs = sens => actifs.filter(t => t.risque_prevu.sur && t.risque_prevu.recent != null && (sens > 0 ? t.risque_prevu.recent > 1 : t.risque_prevu.recent < 1))
+  const surs = sens => actifs.filter(t => t.marche !== "tendances" && t.risque_prevu.sur && t.risque_prevu.recent != null && (sens > 0 ? t.risque_prevu.recent > 1 : t.risque_prevu.recent < 1))
     .sort((a, b) => sens > 0 ? b.risque_prevu.recent - a.risque_prevu.recent : a.risque_prevu.recent - b.risque_prevu.recent);
   const tauxSurs = () => AS.taux ? `<p>${"Ces avis sont des « avis sûrs » : quand l'IA est aussi nette, elle a eu raison"} <b>${pc(AS.taux)}</b> ${"du temps sur des années qu'elle n'avait jamais vues."}</p>` : "";
   const ecartRecent = t => { const r = t.risque_prevu.recent; return r > 1 ? `+${Math.round((r - 1) * 100)} %` : `−${Math.round((1 - r) * 100)} %`; };
+  const deVers = t => { const r = t.risque_prevu; return r.mouvement && r.recent ? ` <span class="muted">(±${pc(r.mouvement / r.recent)} → ±${pc(r.mouvement)})</span>` : ""; };
   const pc = v => Math.round(v * 100) + " %";
   const lien = t => `<button class="lnk" data-assist-t="${esc(t.ticker)}">${esc(t.nom)}</button>`;
   const liste = (L, f) => L.length ? "<ol>" + L.map(t => `<li>${lien(t)} · ${f(t)}</li>`).join("") + "</ol>" : `<p>${"Pas assez de données aujourd'hui pour répondre."}</p>`;
@@ -3720,9 +3721,9 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
     ["calme-monde", "Quelles actions du monde entier sont les plus calmes ?", () =>
       `<p>${"Les grandes entreprises internationales (Japon, Chine, Royaume-Uni, Canada…) qui devraient bouger le moins le mois prochain :"}</p>` + liste(plusCalmes("monde", 5), t => `±${pc(mv(t))} ${"sur un mois"}`)],
     ["surs-calme", "Quels titres vont se calmer le mois prochain ?", () =>
-      `<p>${"Les titres pour lesquels l'IA est nettement sûre qu'ils seront plus calmes que ces dernières semaines :"}</p>` + liste(surs(-1).slice(0, 6), t => `<b>${ecartRecent(t)}</b> ${"d'agitation par rapport aux dernières semaines"}`) + tauxSurs()],
+      `<p>${"Les titres pour lesquels l'IA est nettement sûre qu'ils seront plus calmes que ces dernières semaines :"}</p>` + liste(surs(-1).slice(0, 6), t => `<b>${ecartRecent(t)}</b> ${"d'agitation par rapport aux dernières semaines"}${deVers(t)}`) + tauxSurs()],
     ["surs-agite", "Quels titres vont s'agiter le mois prochain ?", () =>
-      `<p>${"Les titres pour lesquels l'IA est nettement sûre qu'ils seront plus agités que ces dernières semaines (ça peut bouger dans les deux sens) :"}</p>` + liste(surs(1).slice(0, 6), t => `<b>${ecartRecent(t)}</b> ${"d'agitation par rapport aux dernières semaines"}`) + tauxSurs()],
+      `<p>${"Les titres pour lesquels l'IA est nettement sûre qu'ils seront plus agités que ces dernières semaines (ça peut bouger dans les deux sens) :"}</p>` + liste(surs(1).slice(0, 6), t => `<b>${ecartRecent(t)}</b> ${"d'agitation par rapport aux dernières semaines"}${deVers(t)}`) + tauxSurs()],
     ["risque", "Quels titres risquent le plus de chuter ?", () =>
       `<p>${"Les titres auxquels l'IA donne le plus de risque de perdre plus de 10 % ce mois-ci :"}</p>` + liste(plusRisque(actifs, 5), t => `${pc(ch(t))} · ${esc(NOM_MARCHE[t.marche] || "")}`)
       + (CH.taux_risque_haut && CH.base ? `<p>${"Sur les années passées, chez les titres jugés les plus à risque, les fortes chutes ont été"} ${(CH.taux_risque_haut / CH.base).toFixed(1).replace(".", ",")} ${"fois plus fréquentes que d'habitude."}</p>` : "")],
