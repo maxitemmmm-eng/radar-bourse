@@ -615,12 +615,18 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     mois_an = f"{MOIS[maintenant.month - 1]} {maintenant.year}"
     mv_t = (t.get("risque_prevu") or {}).get("mouvement")
     chiffre = f" : fourchette ±{round(mv_t * 100)} % à 1 mois" if isinstance(mv_t, (int, float)) and mv_t > 0 else " : cours et analyse IA"
+    # version 63.6 : d'après les vraies recherches de la Search Console (« prévision pg », « cours action sap », « prévision xom »,
+    # « cours conocophillips ») : le nom, le symbole court et les deux mots « cours » et « prévision », puis le mois
+    tkc = re.sub(r"-USD$|\.[A-Z]{1,3}$|^\^", "", aff_tk(tk))
+    nom_c = re.sub(r"\s*\((?:ETF|indice)[^)]*\)", "", nom).strip() or nom
+    base_t = nom_c if tkc.lower() == nom_c.lower().replace(" ", "") else f"{nom_c} ({tkc})"
     if est_crypto:
-        titre = f"Prévision {nom} ({aff_tk(tk).replace('-USD', '')}) {mois_an}{chiffre} | {NOM}"
+        titre = f"{base_t} : cours et prévision {mois_an} | {NOM}"
     elif t.get("marche") in ("fr", "eu", "us", "monde") or (t.get("fondamentaux") or {}).get("valeurs"):
-        titre = f"Prévision action {nom} {mois_an}{chiffre} | {NOM}"
+        titre = f"Action {base_t} : cours et prévision {mois_an}"
+        titre = (titre if len(titre) <= 62 else f"{base_t} : cours et prévision {mois_an}") + f" | {NOM}"
     else:
-        titre = f"Prévision {nom} {mois_an}{chiffre} | {NOM}"
+        titre = f"{base_t} : cours et prévision {mois_an} | {NOM}"
     faq = _faq_titre(t, nom, date, verdict)
     # version 52 : « si j'avais investi 100 il y a un an » (vrais cours) + lien vers le simulateur
     investi_html = ""
@@ -655,10 +661,16 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     mv = (t.get("risque_prevu") or {}).get("mouvement")
     ch_t = (t.get("risque_prevu") or {}).get("chute")
     suivant = MOIS[maintenant.month % 12]
-    desc = (f"Jusqu'où peut aller {nom} d'ici {suivant} ? "
-            + (f"Fourchette probable ±{round(mv * 100)} %, " if mv else "")
-            + (f"risque de chute de plus de 10 % : {round(ch_t * 100)} %. " if isinstance(ch_t, (int, float)) else "")
-            + f"Cours du {date} et analyse IA vérifiée, gratuite.")
+    # version 63.6 : la description donne tout de suite les vrais chiffres du jour (ce qui fait cliquer)
+    fr_ = t.get("fourchette") or []
+    de_ = "Cours du " if est_crypto else ("Cours d'" if nom_c[:1].upper() in "AEIOUYÉÈH" else "Cours de ")
+    desc = (f"{de_}{base_t} : {_px(t.get('prix'), t.get('devise', ''))} le {date}. "
+            + (f"Dans un mois, entre {_px(fr_[0], t.get('devise', ''))} et {_px(fr_[1], t.get('devise', ''))} 8 fois sur 10" if len(fr_) == 2
+               else f"Agitation prévue ±{round(mv * 100)} %" if mv else "Prévision à un mois")
+            + (f", risque de chute {round(ch_t * 100)} %." if isinstance(ch_t, (int, float)) else ".")
+            + " Gratuit, vérifié.")
+    if len(desc) > 160:
+        desc = desc.replace(" Gratuit, vérifié.", "")
     chemin = f"titres/{slug(tk)}.html"
     lien_app = f"../index.html#{re.sub(r'[^A-Za-z0-9._-]', '', tk)}"
     perf = t.get("perf", {})
