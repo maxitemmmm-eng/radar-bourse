@@ -106,7 +106,7 @@ jobs:
       url: ${{ steps.deploiement.outputs.page_url }}
     steps:
       - id: deploiement
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
         with:
           timeout: 1800000   # version 63 : près de 10 000 pages, la publication peut dépasser les 10 minutes par défaut
 
