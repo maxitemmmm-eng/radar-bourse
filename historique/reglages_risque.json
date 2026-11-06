@@ -1536,11 +1536,395 @@
     0.006791594968115593
    ],
    "date": "2026-11-05"
+  },
+  {
+   "modele": "agitation",
+   "params": {
+    "max_depth": 3,
+    "learning_rate": 0.05,
+    "max_iter": 300,
+    "min_samples_leaf": 300,
+    "l2_regularization": 0.3
+   },
+   "gain": -0.00018878144799306927,
+   "ic": [
+    -0.0007366465008604213,
+    0.00042870493584806877
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "agitation",
+   "params": {
+    "max_depth": 3,
+    "learning_rate": 0.02,
+    "max_iter": 600,
+    "min_samples_leaf": 2000,
+    "l2_regularization": 1.0
+   },
+   "gain": -0.0002827650276245101,
+   "ic": [
+    -0.0023495483772036866,
+    0.0017676066341883669
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "agitation",
+   "params": {
+    "max_depth": 2,
+    "learning_rate": 0.05,
+    "max_iter": 600,
+    "min_samples_leaf": 200,
+    "l2_regularization": 0.3
+   },
+   "gain": -0.0003567343002268305,
+   "ic": [
+    -0.001929291057947386,
+    0.0014849144804839518
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "agitation",
+   "params": {
+    "max_depth": 4,
+    "learning_rate": 0.03,
+    "max_iter": 200,
+    "min_samples_leaf": 300,
+    "l2_regularization": 10.0
+   },
+   "gain": 0.0013622261472547718,
+   "ic": [
+    -4.895756789511101e-05,
+    0.0028891502331033453
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "agitation",
+   "params": {
+    "max_depth": 6,
+    "learning_rate": 0.02,
+    "max_iter": 300,
+    "min_samples_leaf": 300,
+    "l2_regularization": 1.0
+   },
+   "gain": -0.0005107401952128713,
+   "ic": [
+    -0.0019837751555009044,
+    0.000912541054275563
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "agitation",
+   "params": {
+    "max_depth": 2,
+    "learning_rate": 0.12,
+    "max_iter": 600,
+    "min_samples_leaf": 2000,
+    "l2_regularization": 3.0
+   },
+   "gain": -0.004960967367585654,
+   "ic": [
+    -0.007221093641241907,
+    -0.0021417841017298093
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "agitation",
+   "params": {
+    "max_depth": 3,
+    "learning_rate": 0.02,
+    "max_iter": 200,
+    "min_samples_leaf": 200,
+    "l2_regularization": 1.0
+   },
+   "gain": -0.0017470326071191737,
+   "ic": [
+    -0.004689510473991004,
+    0.0008133770740307594
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "agitation",
+   "params": {
+    "max_depth": 4,
+    "learning_rate": 0.08,
+    "max_iter": 600,
+    "min_samples_leaf": 500,
+    "l2_regularization": 0.0
+   },
+   "gain": -0.0073199997919203156,
+   "ic": [
+    -0.011550108089257625,
+    -0.0036027852348265604
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "agitation",
+   "params": {
+    "max_depth": 3,
+    "learning_rate": 0.08,
+    "max_iter": 450,
+    "min_samples_leaf": 300,
+    "l2_regularization": 1.0
+   },
+   "gain": -0.003928421020226219,
+   "ic": [
+    -0.006562286162748504,
+    -0.0018226374912953302
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "agitation",
+   "params": {
+    "max_depth": 5,
+    "learning_rate": 0.03,
+    "max_iter": 450,
+    "min_samples_leaf": 200,
+    "l2_regularization": 1.0
+   },
+   "gain": -0.0036061853717041536,
+   "ic": [
+    -0.006135175272906328,
+    -0.001379307615235793
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "agitation",
+   "params": {
+    "max_depth": 5,
+    "learning_rate": 0.05,
+    "max_iter": 300,
+    "min_samples_leaf": 300,
+    "l2_regularization": 1.0
+   },
+   "gain": -0.003932250431696302,
+   "ic": [
+    -0.006502839262972004,
+    -0.0012627454466966545
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "agitation",
+   "params": {
+    "max_depth": 6,
+    "learning_rate": 0.12,
+    "max_iter": 150,
+    "min_samples_leaf": 1200,
+    "l2_regularization": 0.3
+   },
+   "gain": -0.004590133426409699,
+   "ic": [
+    -0.00771046480605388,
+    -0.001359803688898004
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "chute",
+   "params": {
+    "max_depth": 4,
+    "learning_rate": 0.02,
+    "max_iter": 600,
+    "min_samples_leaf": 500,
+    "l2_regularization": 1.0
+   },
+   "gain": -0.0013916186118161367,
+   "ic": [
+    -0.007125721299314711,
+    0.004555293325367736
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "chute",
+   "params": {
+    "max_depth": 3,
+    "learning_rate": 0.12,
+    "max_iter": 150,
+    "min_samples_leaf": 500,
+    "l2_regularization": 0.0
+   },
+   "gain": -0.003434044893556587,
+   "ic": [
+    -0.009338668102340505,
+    0.0033235579789883535
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "chute",
+   "params": {
+    "max_depth": 2,
+    "learning_rate": 0.05,
+    "max_iter": 200,
+    "min_samples_leaf": 200,
+    "l2_regularization": 0.0
+   },
+   "gain": 0.008761655572638083,
+   "ic": [
+    0.002723191239043898,
+    0.014449119577519546
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "chute",
+   "params": {
+    "max_depth": 6,
+    "learning_rate": 0.08,
+    "max_iter": 200,
+    "min_samples_leaf": 300,
+    "l2_regularization": 0.0
+   },
+   "gain": -0.008470026257845431,
+   "ic": [
+    -0.02147500186264866,
+    0.00493162808641743
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "chute",
+   "params": {
+    "max_depth": 3,
+    "learning_rate": 0.05,
+    "max_iter": 300,
+    "min_samples_leaf": 500,
+    "l2_regularization": 1.0
+   },
+   "gain": -0.0004428914796932304,
+   "ic": [
+    -0.003947375007515933,
+    0.003926115672305077
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "chute",
+   "params": {
+    "max_depth": 6,
+    "learning_rate": 0.02,
+    "max_iter": 450,
+    "min_samples_leaf": 500,
+    "l2_regularization": 0.3
+   },
+   "gain": -0.0016420083865393842,
+   "ic": [
+    -0.010647354636390785,
+    0.0072087173075792935
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "chute",
+   "params": {
+    "max_depth": 3,
+    "learning_rate": 0.05,
+    "max_iter": 300,
+    "min_samples_leaf": 1200,
+    "l2_regularization": 0.0
+   },
+   "gain": -5.543236879446134e-05,
+   "ic": [
+    -0.007133078081703181,
+    0.00495184655121344
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "chute",
+   "params": {
+    "max_depth": 5,
+    "learning_rate": 0.05,
+    "max_iter": 150,
+    "min_samples_leaf": 800,
+    "l2_regularization": 3.0
+   },
+   "gain": 0.0010499024333430196,
+   "ic": [
+    -0.008429599658991965,
+    0.009054854891121601
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "chute",
+   "params": {
+    "max_depth": 3,
+    "learning_rate": 0.05,
+    "max_iter": 300,
+    "min_samples_leaf": 500,
+    "l2_regularization": 0.0
+   },
+   "gain": -0.0015470697275957734,
+   "ic": [
+    -0.004905571771321546,
+    0.001418153859105055
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "chute",
+   "params": {
+    "max_depth": 2,
+    "learning_rate": 0.02,
+    "max_iter": 300,
+    "min_samples_leaf": 300,
+    "l2_regularization": 3.0
+   },
+   "gain": 0.013564741494654253,
+   "ic": [
+    0.004477648133157134,
+    0.02252018740612706
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "chute",
+   "params": {
+    "max_depth": 3,
+    "learning_rate": 0.05,
+    "max_iter": 150,
+    "min_samples_leaf": 1200,
+    "l2_regularization": 3.0
+   },
+   "gain": 0.00607925206082538,
+   "ic": [
+    0.0021481673328444307,
+    0.010532817072741703
+   ],
+   "date": "2026-11-06"
+  },
+  {
+   "modele": "chute",
+   "params": {
+    "max_depth": 5,
+    "learning_rate": 0.08,
+    "max_iter": 200,
+    "min_samples_leaf": 200,
+    "l2_regularization": 10.0
+   },
+   "gain": 0.0028160074024363713,
+   "ic": [
+    -0.0063778935838315455,
+    0.01422119086037586
+   ],
+   "date": "2026-11-06"
   }
  ],
  "nb_examens": {
   "agitation": 1,
-  "chute": 1
+  "chute": 2
  },
  "journal": [
   {
@@ -1613,6 +1997,24 @@
     "gain": 0.000390241776642819,
     "score_avant": 0.7705837940757042,
     "score_apres": 0.770974035852347
+   }
+  },
+  {
+   "date": "2026-11-06T10:11",
+   "duree_s": 629,
+   "agitation": {
+    "essayes": 12,
+    "adopte": false,
+    "gain": null,
+    "score_avant": null,
+    "score_apres": null
+   },
+   "chute": {
+    "essayes": 12,
+    "adopte": false,
+    "gain": 0.0006743413858975034,
+    "score_avant": 0.7705837940757042,
+    "score_apres": 0.7712581354616017
    }
   }
  ]
