@@ -318,7 +318,7 @@ def _ecrire_anglais(gabarit: str, donnees: str, dossier: str, lib: str) -> None:
     tete = tete.replace("<title>Radar Bourse</title>", f"<title>{TITRE_APP_EN}</title>", 1)
     corps = corps.replace("<!--__FAQ__-->", "", 1).replace(
         "<!--__LIENS_SEO__-->", '<p><a class="lien-site" href="en/index.html">All stocks and cryptos (English pages)</a> · '
-        '<a class="lien-site" href="en/guides.html">Beginner guides</a> · <a class="lien-site" href="index.html" hreflang="fr" lang="fr">Version française</a></p>', 1)
+        '<a class="lien-site" href="en/guides.html">Beginner guides</a> · <a class="lien-site" href="en/themes.html">Stocks by theme</a> · <a class="lien-site" href="en/verified-calls.html">AI calls checked in public</a> · <a class="lien-site" href="index.html" hreflang="fr" lang="fr">Version française</a></p>', 1)
     securite = (f'<meta http-equiv="Content-Security-Policy" content="{seo.csp_avec_stats(CSP)}">\n'
                 '<meta name="referrer" content="strict-origin-when-cross-origin">\n' + seo.script_stats() + "\n")
     html = ("<!doctype html>\n<html lang=\"en\" data-theme=\"dark\">\n<head>\n<meta charset=\"utf-8\">\n"
@@ -326,6 +326,8 @@ def _ecrire_anglais(gabarit: str, donnees: str, dossier: str, lib: str) -> None:
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
             + securite + tete.replace("<!--__LIB__-->", lib) + "\n</head>\n<body>\n" + corps + "\n</body>\n</html>\n")
     html = traduction_appli.traduire_page(html, traductions_en.EN)
+    for _fr, _en in (("avis-surs-verifies.html", "en/verified-calls.html"), ('"themes.html"', '"en/themes.html"')):
+        html = html.replace(_fr, _en)   # version 65 : les liens de l'appli anglaise vont vers les pages anglaises
     html = html.replace("/*__DATA__*/null", donnees, 1)
     html = html.replace("</body>", traduction_appli.SCRIPT_DONNEES_EN + "\n</body>", 1)
     with open(os.path.join(dossier, "app-en.html"), "w", encoding="utf-8") as f:

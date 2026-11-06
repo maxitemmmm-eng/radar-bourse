@@ -159,6 +159,13 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("65", "Un seuil d'« avis sûr » propre à chaque marché (ou à chaque sens : plus agité / plus calme), pour donner plus d'avis sûrs", False,
+     "Par marché : 80,9 % juste pour 50,4 % des cas, contre 80,8 % pour 52,3 % avec un seuil commun (moins d'avis, pas plus justes). "
+     "Par sens : 80,3 % pour 52,4 %. En avis très sûrs, la pire année tombe de 83,6 % à 80,0 %. Aucun gain, non adopté"),
+    ("65", "Les avis sûrs enregistrés chaque soir et vérifiés en public 20 séances plus tard", True,
+     "Même règle que le test sur les années passées ; rien n'est effacé (page « Avis de l'IA vérifiés »)"),
+    ("64", "« L'écart à sa normale » ajouté aussi au modèle du risque de forte chute", False,
+     "Note de tri 0,7451 → 0,7444, score de Brier inchangé (marge −0,0002 à +0,0002), mieux 7 années sur 13 seulement : aucun gain, non adopté"),
     ("63.4", "Un 2e niveau d'avis : « avis très sûr », quand l'écart avec les dernières semaines est encore plus net", True,
      "89,0 % de bonnes réponses (marge 87,4 % à 90,5 %) sur environ 1 cas sur 5 ; pire année 83,6 %. Affiché sur les fiches concernées"),
     ("63", "« Avis sûrs » : l'IA ne répond à « plus ou moins agité le mois prochain ? » que quand sa prévision s'écarte nettement des dernières semaines "

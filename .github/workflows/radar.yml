@@ -127,6 +127,12 @@ jobs:
           cle = hashlib.sha256(("radar-" + os.environ["DEPOT"]).encode()).hexdigest()[:32]
           with urllib.request.urlopen(u + "sitemap.xml", timeout=30) as r:
               toutes = re.findall(r"<loc>([^<]+)</loc>", r.read().decode("utf-8"))
+          if any(x.endswith(".xml") for x in toutes):   # version 65 : sitemap.xml est un index de petits fichiers
+              pages = []
+              for x in toutes:
+                  with urllib.request.urlopen(x, timeout=30) as r:
+                      pages += re.findall(r"<loc>([^<]+)</loc>", r.read().decode("utf-8"))
+              toutes = pages
           # version 63 : plus de 10 000 pages (28 langues) → envoi par paquets de 10 000 (limite d'IndexNow)
           for i in range(0, len(toutes), 10000):
               adresses = toutes[i:i + 10000]

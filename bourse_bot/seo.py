@@ -15,6 +15,7 @@ import re
 from datetime import datetime
 
 from . import config
+from .hebdo import CSS as _CSS_HEBDO
 
 NOM = "Radar Bourse"
 SLOGAN = "Analyse et prévisions boursières à un mois, expliquées simplement"
@@ -142,9 +143,11 @@ html.texte-115 body{font-size:18px}html.texte-130 body{font-size:20px}
 .cs-leg .l-haut::before{background:var(--up)}.cs-leg .l-bas::before{background:var(--down)}.cs-leg .l-med::before{background:var(--ink)}.cs-leg .l-50::before{background:var(--muted);height:1px}
 @media (max-width:560px){.cs-t{font-size:22px}.cs-d{font-size:20px}}
 @media (prefers-reduced-motion:no-preference){@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.22s}}
+.marque-sur{display:inline-grid;place-items:center;width:17px;height:17px;margin-left:6px;vertical-align:-3px;border-radius:50%;color:var(--up);background:var(--up-soft)}
+.marque-sur svg{width:13px;height:13px}.marque-sur.tres{color:var(--surface);background:var(--up)}
 .avis-sur{border-left:3px solid var(--up);padding:8px 12px;background:var(--up-soft);border-radius:0 8px 8px 0}
 .badge-sur{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:700;background:var(--up);color:var(--surface)}
-th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:13px;color:var(--muted)}
+""" + _CSS_HEBDO.replace("\n", "") + """th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:13px;color:var(--muted)}
 @media print{.top,.nav-ligne,.plus,.theme-btn,.ouvrir,.partager-page,footer .muted{display:none!important}body{background:#fff;color:#000}.carte{border-color:#bbb}a{color:#000}}"""
 
 LOGO = '<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id=\'rbf\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'1\'><stop offset=\'0\' stop-color=\'#1c3576\'/><stop offset=\'1\' stop-color=\'#0a1330\'/></linearGradient><linearGradient id=\'rbl\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#86a8ff\'/><stop offset=\'1\' stop-color=\'#44e09c\'/></linearGradient><linearGradient id=\'rbs\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#44e09c\' stop-opacity=\'0\'/><stop offset=\'1\' stop-color=\'#44e09c\' stop-opacity=\'.85\'/></linearGradient></defs><rect width=\'64\' height=\'64\' rx=\'15\' fill=\'url(#rbf)\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'22.00\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.28\' stroke-width=\'2.00\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'12.50\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.18\' stroke-width=\'2.00\'/><path d=\'M19.67 15.58 A22.00 22.00 0 0 1 42.3 16.76\' fill=\'none\' stroke=\'url(#rbs)\' stroke-width=\'3.20\' stroke-linecap=\'round\'/><polyline points=\'9.0,47.0 18.0,39.5 26.0,42.5 34.5,31.0 40.5,33.5 44.72,18.65\' fill=\'none\' stroke=\'url(#rbl)\' stroke-width=\'5.00\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'8.00\' fill=\'#44e09c\' fill-opacity=\'.2\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'4.50\' fill=\'#44e09c\'/></svg>'
@@ -211,7 +214,7 @@ def liens_fr() -> list:
     return [("Accueil", "index.html"), ("Prévisions", "index.html#previsions"), ("Pronostic du jour", "index.html#prono"),
             ("Carte des risques", "index.html#nuage"), ("Tous les titres", "titres.html"), ("Résultats réels", "resultats.html"),
             ("Outils gratuits", "outils.html"), ("Guides", "guides.html"),
-            ("Le point du jour", "point.html"), ("Actu bourse", "actu-bourse.html"), ("Actu bitcoin", "actu-bitcoin.html"),
+            ("Le point du jour", "point.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actions par thème", "themes.html"), ("Avis de l'IA vérifiés", "avis-surs-verifies.html"), ("Actu bourse", "actu-bourse.html"), ("Actu bitcoin", "actu-bitcoin.html"),
             ("Krach boursier", "krach-boursier.html"), ("Comparer", "comparer.html"), ("Classements", "classements.html"),
             ("Sélection IA du mois", "portefeuille.html"), (f"Prévisions {datetime.now().year}", "previsions.html"),
             ("Simulateur boursier", "simulateur-boursier.html"), ("Apprendre", "apprendre.html"), ("Glossaire", "glossaire.html"),
@@ -471,6 +474,17 @@ Conditions d'utilisation, méthodologie et aide : voir la <a href="{prefixe}inde
 """
 
 
+def marque_sur(t: dict) -> str:
+    """Version 64 : le petit logo « avis sûr » de l'IA à côté du nom d'un titre (pages statiques)."""
+    r = t.get("risque_prevu") or {}
+    if not r.get("sur") or not r.get("recent") or t.get("marche") == "tendances":
+        return ""
+    lib = f"{'Avis très sûr' if r.get('tres_sur') else 'Avis sûr'} de l'IA : {'plus agité' if r['recent'] > 1 else 'plus calme'} le mois prochain"
+    return (f"<span class='marque-sur{' tres' if r.get('tres_sur') else ''}' title=\"{lib}\" role='img' aria-label=\"{lib}\">"
+            "<svg viewBox='0 0 16 16' aria-hidden='true'><circle cx='8' cy='8' r='6.3' fill='none' stroke='currentColor' stroke-width='1.7'/>"
+            "<circle cx='8' cy='8' r='2.7' fill='currentColor'/></svg></span>")
+
+
 def courbe_svg(t: dict, libs: dict | None = None, jours: int = 126) -> str:
     """Version 63 : le graphique des pages statiques (sans JavaScript) — six mois de cours, puis l'éventail des
     prévisions du mois suivant : zone verte « si ça va bien », rouge « si ça va mal », pointillés « le plus probable »,
@@ -658,6 +672,12 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
         f"<li><a href='../{ch}'>{_e(nom)} ou {_e(o['nom'])}</a></li>"
         for o, ch in (t.get("_duels") or [])[:10]) + "</ul>") if t.get("_duels") else ""
     similaires = "".join(f"<li><a href='{slug(v['ticker'])}.html'>{_e(v['nom'])}</a></li>" for v in voisins)
+    try:
+        from .hebdo import themes_de
+        _th = themes_de(t["ticker"])
+    except Exception:
+        _th = []
+    themes_html = ("<p>Thème : " + ", ".join(f"<a href='../themes/{c}.html'>{_e(h)}</a>" for c, h in _th) + "</p>") if _th else ""
     mv = (t.get("risque_prevu") or {}).get("mouvement")
     ch_t = (t.get("risque_prevu") or {}).get("chute")
     suivant = MOIS[maintenant.month % 12]
@@ -718,7 +738,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
 {profil}
 <h2>Fiabilité</h2>{palmares}{fiab or "<p>Prévision statistique : elle se trompe souvent.</p>"}
 {f"<h2>Questions fréquentes sur {_e(nom)}</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{r}</p>" for q, r in faq) if faq else ""}
-{f"<h2>Autres titres du même marché</h2><ul class='liste'>{similaires}</ul>" if similaires else ""}
+{themes_html}{f"<h2>Titres proches</h2><ul class='liste'>{similaires}</ul>" if similaires else ""}
 {duels_html}
 <h2>Afficher {_e(nom)} sur ton site</h2>
 <p>Un petit encadré gratuit, mis à jour automatiquement (cours, agitation prévue, avis des IA). Copie ce code dans ta page :</p>
@@ -1144,7 +1164,10 @@ def _pages_guides(base, payload, dossier, csp, date):
         if g.get("q"):
             corps += "<h2>Questions fréquentes</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{_md(a)}</p>" for q, a in g["q"])
         liens = [(n, c) for n, c in g.get("l", []) if not c.startswith("classements/") or os.path.exists(os.path.join(dossier, c))]
-        liens += [("Ce que valent vraiment les prévisions du radar", "resultats.html")]
+        from .hebdo import THEMES as _TH
+        liens = [(h + " : les cours du jour", f"themes/{c}.html") for c, h, _c, _i, _t, gd in _TH if gd == g["i"]] + liens
+        liens += [("Ce que valent vraiment les prévisions du radar", "resultats.html"),
+                  ("Les avis de l'IA vérifiés en public", "avis-surs-verifies.html")]
         corps += ("<h2>Pour aller plus loin</h2><ul class='liste'>" + "".join(f"<li><a href='../{_e(c)}'>{_e(n)}</a></li>" for n, c in liens)
                   + "".join(f"<li><a href='{v['i']}.html'>{_e(v['h'])}</a></li>" for v in voisins) + "</ul>")
         chemin = f"guides/{g['i']}.html"
@@ -1249,7 +1272,7 @@ def _pages_secteurs(base, titres, dossier, csp, date):
         lib = SECTEURS_FR.get(sec, sec)
         items.sort(key=lambda t: ((t.get("risque_prevu") or {}).get("chute") or 1))
         lignes = "".join(
-            f"<tr><td><a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a> <span class='muted'>{_e(aff_tk(t['ticker']))}</span></td>"
+            f"<tr><td><a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a>{marque_sur(t)} <span class='muted'>{_e(aff_tk(t['ticker']))}</span></td>"
             f"<td class='m'>{_px(t['prix'], t['devise'])}</td>"
             f"<td class='m'>{('±' + str(round(t['risque_prevu']['mouvement'] * 100)) + ' %') if (t.get('risque_prevu') or {}).get('mouvement') else '—'}</td>"
             f"<td class='m'>{(str(round(t['risque_prevu']['chute'] * 100)) + ' %') if (t.get('risque_prevu') or {}).get('chute') is not None else '—'}</td></tr>"
@@ -1303,7 +1326,10 @@ def _pages_classements(base, payload, dossier, csp, date):
         an = datetime.now().year
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             jl = _jsonld_liste(base, titre_h1, chemin, [(t["nom"], f"titres/{slug(t['ticker'])}.html") for t in sel], ("Classements", "classements.html"))
-            f.write(_page(base, f"{titre_h1} ({an}) | {NOM}", intro[:155], chemin, corps, jl, csp=csp))
+            _t = f"{titre_h1} ({an}) | {NOM}"   # version 65 : pas de titre coupé par Google
+            if len(_t) > 65:
+                _t = f"{titre_h1} ({an})" if len(titre_h1) + 7 <= 65 else titre_h1
+            f.write(_page(base, _t, intro[:155], chemin, corps, jl, csp=csp))
         faits.append(chemin)
         liens.append((titre_h1, chemin))
     try:
@@ -1385,7 +1411,7 @@ def _page_previsions(base, payload, dossier, csp, date):
             vol = (t.get("perf") or {}).get("volatilité annuelle")
             avis = "–" if p is None else ("pas d'avis net" if t.get("avis_net") is False else f"{round(p * 100)} sur 100")
             an_txt = (f"{_px(t['prix'] * math.exp(-vol), t['devise'])} à {_px(t['prix'] * math.exp(vol), t['devise'])}" if vol else "–")
-            lignes.append(f"<tr><td><a href='titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a></td><td class='m'>{_px(t['prix'], t['devise'])}</td>"
+            lignes.append(f"<tr><td><a href='titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a>{marque_sur(t)}</td><td class='m'>{_px(t['prix'], t['devise'])}</td>"
                           f"<td class='m'>{'±' + str(round(rq['mouvement'] * 100)) + ' %' if rq.get('mouvement') else '–'}</td>"
                           f"<td class='m'>{avis}</td><td class='m'>{an_txt}</td></tr>")
         corps += (f"<h2>{lib}</h2><div class='carte' style='overflow-x:auto'><table><tr><td><b>Titre</b></td><td><b>Cours</b></td>"
@@ -1541,7 +1567,7 @@ def _page_marche(base, cle, titres, date, csp):
     nets = [t for t in avec if t.get("avis_net") is not False]
     moy = sum(t["proba_hausse"] for t in avec) / len(avec) if avec else None
     lignes = "".join(
-        f"<tr><td><a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a></td><td class='m'>{_px(t['prix'], t['devise'])}</td>"
+        f"<tr><td><a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a>{marque_sur(t)}</td><td class='m'>{_px(t['prix'], t['devise'])}</td>"
         f"<td class='m'>{_pct((t.get('perf') or {}).get('1 mois'))}</td>"
         f"<td class='m'>{'pas d’avis net' if t.get('avis_net') is False else (str(round(t['proba_hausse'] * 100)) + ' %') if t.get('proba_hausse') is not None else '–'}</td>"
         f"<td class='m'>{('±' + str(round(t['risque_prevu']['mouvement'] * 100)) + ' %') if (t.get('risque_prevu') or {}).get('mouvement') else '–'}</td></tr>"
@@ -1782,6 +1808,14 @@ def date_longue(iso: str) -> str:
     return f"{'1er' if d.day == 1 else d.day} {MOIS[d.month - 1]} {d.year}"
 
 
+def _avis_du_jour(payload):
+    try:
+        from .hebdo import avis_du_jour
+        return avis_du_jour(payload)
+    except Exception:
+        return []
+
+
 def resume_du_jour(payload: dict) -> dict:
     """Ce qu'il faut retenir de la journée (archivé chaque soir dans historique/points/)."""
     titres = [t for t in payload.get("titres", []) if t.get("marche") != "tendances"]
@@ -1801,6 +1835,8 @@ def resume_du_jour(payload: dict) -> dict:
         "contexte": [{"nom": c["nom"], "valeur": c["valeur"], "unite": c["unite"]} for c in payload.get("contexte", [])],
         "actus": list({a["titre"]: {"titre": a["titre"], "url": a["url"], "source": a.get("source", "")}
                        for a in payload.get("actus_marche", [])}.values())[:5],
+        # version 65 : les avis sûrs du soir, vérifiés en public 20 séances plus tard (avis-surs-verifies.html)
+        "surs": _avis_du_jour(payload),
     }
 
 
@@ -1837,14 +1873,20 @@ def archiver_semaine(payload: dict) -> None:
     r = {"semaine": _semaine_id(now), "date": now.strftime("%Y-%m-%d"),
          "indices": indices, "hausses": [garde(t) for t in tri[:5]], "baisses": [garde(t) for t in tri[-5:][::-1]],
          "agites": [{"ticker": t["ticker"], "nom": t["nom"], "mouvement": t["risque_prevu"]["mouvement"]} for t in agites[:5]],
-         "part_hausse": sum(t["perf"]["1 semaine"] > 0 for t in titres) / len(titres), "nb": len(titres)}
+         "part_hausse": sum(t["perf"]["1 semaine"] > 0 for t in titres) / len(titres), "nb": len(titres),
+         "tres_surs": [{"ticker": t["ticker"], "nom": t["nom"], "sens": 1 if t["risque_prevu"]["recent"] > 1 else -1}
+                       for t in sorted((t for t in titres if (t.get("risque_prevu") or {}).get("tres_sur") and t["risque_prevu"].get("recent")),
+                                       key=lambda t: -abs(math.log(t["risque_prevu"]["recent"])))][:12]}
     dossier = os.path.join(config.DOSSIER_HISTORIQUE, "semaines")
     os.makedirs(dossier, exist_ok=True)
     with open(os.path.join(dossier, f"{r['semaine']}.json"), "w", encoding="utf-8") as f:
         json.dump(r, f, ensure_ascii=False, separators=(",", ":"), default=lambda v: None)
 
 
-def _pages_semaines(base, dossier, csp):
+def _pages_semaines(base, dossier, csp, titres=None, verif=None):
+    """La semaine en Bourse (version 65 : résumé rédigé, graphiques, avis très sûrs, verdicts de la semaine,
+    et une adresse fixe « bourse-cette-semaine.html » qui montre toujours la dernière semaine)."""
+    from .hebdo import barres
     src = os.path.join(config.DOSSIER_HISTORIQUE, "semaines")
     if not os.path.isdir(src):
         return []
@@ -1861,41 +1903,96 @@ def _pages_semaines(base, dossier, csp):
     os.makedirs(os.path.join(dossier, "semaine"), exist_ok=True)
     ids = sorted(semaines)
     faits = []
-    li = lambda t: (f"<li><a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a> {_pct(t['var'])} "
-                    f"<span class='muted'>({_px(t['prix'], t['devise'])})</span></li>")
-    for n, sid in enumerate(ids):
-        r = semaines[sid]
-        a, s = sid.split("-S")
-        titre_h1 = f"La semaine en Bourse : semaine {int(s)} de {a}"
+    verdicts = (verif or {}).get("faits") or []
+
+    def lundi_dimanche(sid):
+        a, s_ = sid.split("-S")
+        lu = datetime.fromisocalendar(int(a), int(s_), 1)
+        di = datetime.fromisocalendar(int(a), int(s_), 7)
+        return f"du {lu.day}{'er' if lu.day == 1 else ''} {MOIS[lu.month - 1]} au {di.day}{'er' if di.day == 1 else ''} {MOIS[di.month - 1]} {di.year}"
+
+    def phrase_indices(ind):
+        if not ind:
+            return ""
+        mot = lambda v: "gagné" if v > 0 else "perdu"
+        bouts = [f"le {i['nom']} a {mot(i['var'])} {abs(i['var']) * 100:.1f} %".replace(".", ",") for i in ind[:4] if i.get("var") is not None]
+        if not bouts:
+            return ""
+        txt = ", ".join(bouts[:-1]) + (" et " if len(bouts) > 1 else "") + bouts[-1]
+        return txt[:1].upper() + txt[1:] + "."
+
+    def corps_semaine(sid, r, prefixe, n):
+        h1 = f"La Bourse cette semaine : semaine {int(sid.split('-S')[1])}, {lundi_dimanche(sid)}"
         ph = r.get("part_hausse") or 0
-        corps = (f"<p class='muted'>La semaine en Bourse</p><h1>{_e(titre_h1)}</h1>"
-                 f"<p>Sur les {r.get('nb', 0)} titres suivis, <b>{round(ph * 100)} %</b> ont fini la semaine en hausse : "
-                 f"une semaine {'plutôt favorable' if ph >= .6 else 'plutôt difficile' if ph < .4 else 'mitigée'}. "
-                 f"Résumé établi le {_e(date_longue(r['date']))}.</p>")
+        lien = lambda t: f"<a href='{prefixe}titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a>"
+        h = (r.get("hausses") or [None])[0]
+        b = (r.get("baisses") or [None])[0]
+        texte = (f"<p>{_e(phrase_indices(r.get('indices')))} Sur les {r.get('nb', 0)} titres suivis, <b>{round(ph * 100)} %</b> "
+                 f"ont fini la semaine en hausse : une semaine {'plutôt favorable' if ph >= .6 else 'plutôt difficile' if ph < .4 else 'mitigée'}."
+                 + (f" La plus forte hausse est pour {lien(h)} ({_pct(h['var'])})" if h else "")
+                 + (f", la plus forte baisse pour {lien(b)} ({_pct(b['var'])})." if b else ".") + "</p>")
+        corps = (f"<p class='muted'><a href='{prefixe}semaines.html'>Toutes les semaines</a></p><h1>{_e(h1)}</h1>"
+                 f"<p class='muted'>Résumé établi le {_e(date_longue(r['date']))}, automatiquement.</p>{texte}")
         if r.get("indices"):
-            corps += ("<h2>Les grands indices sur la semaine</h2><div class='carte grille'>"
-                      + "".join(f"<div class='k'><b>{_pct(i['var'])}</b><span>{_e(i['nom'])}</span></div>" for i in r["indices"]) + "</div>")
-        corps += ("<h2>Plus fortes hausses de la semaine</h2><ul>" + "".join(li(t) for t in r.get("hausses", [])) + "</ul>"
-                  "<h2>Plus fortes baisses de la semaine</h2><ul>" + "".join(li(t) for t in r.get("baisses", [])) + "</ul>")
+            corps += barres([(_e(i["nom"]), i.get("var")) for i in r["indices"]], titre="Les grands indices sur la semaine")
+        mouv = [(lien(t), t["var"]) for t in (r.get("hausses") or [])] + [(lien(t), t["var"]) for t in reversed(r.get("baisses") or [])]
+        corps += barres(mouv, titre="Plus fortes hausses et baisses de la semaine",
+                        note="Parmi les actions, ETF et cryptos suivis par le radar.")
+        if r.get("tres_surs"):
+            corps += ("<h2>Les avis très sûrs de l'IA en fin de semaine</h2><p>Les titres pour lesquels l'IA voit, avec une "
+                      "grande marge, un mois prochain différent des dernières semaines. Ils seront "
+                      f"<a href='{prefixe}avis-surs-verifies.html'>vérifiés en public</a> dans 20 séances.</p><ul>"
+                      + "".join(f"<li>{lien(t)} : {'plus agité' if t['sens'] > 0 else 'plus calme'} que ces dernières semaines</li>"
+                                for t in r["tres_surs"]) + "</ul>")
         if r.get("agites"):
-            corps += ("<h2>Les plus agités prévus pour le mois qui vient</h2><p>C'est ce que les IA du radar prévoient le mieux : "
-                      "de combien un prix risque de bouger, dans un sens ou dans l'autre.</p><ul>"
-                      + "".join(f"<li><a href='../titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a> : ±{round(t['mouvement'] * 100)} % prévus</li>"
-                                for t in r["agites"]) + "</ul>")
+            corps += barres([(lien(t), t["mouvement"]) for t in r["agites"]],
+                            fmt=lambda v: f"±{round(v * 100)} %", titre="Les plus agités prévus pour le mois qui vient",
+                            note="L'ampleur de mouvement typique prévue par l'IA, dans un sens ou dans l'autre.", neutre=True)
+        # verdicts arrivés à leur terme pendant cette semaine
+        a_, s_ = sid.split("-S")
+        lu = datetime.fromisocalendar(int(a_), int(s_), 1).strftime("%Y-%m-%d")
+        di = datetime.fromisocalendar(int(a_), int(s_), 7).strftime("%Y-%m-%d")
+        vs = [v for v in verdicts if lu <= v["fin"] <= di]
+        if vs:
+            k = sum(v["juste"] for v in vs)
+            corps += (f"<h2>Les avis de l'IA vérifiés cette semaine</h2><p><b>{k} avis justes sur {len(vs)}</b> "
+                      f"({round(k / len(vs) * 100)} %), pour des avis donnés il y a environ un mois. "
+                      f"<a href='{prefixe}avis-surs-verifies.html'>Le détail, avis par avis</a>.</p>")
         prec, suiv = (ids[n - 1] if n else None), (ids[n + 1] if n + 1 < len(ids) else None)
         corps += ("<p style='display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap'>"
-                  + (f"<a href='{prec}.html'>← Semaine précédente</a>" if prec else "<span></span>")
-                  + (f"<a href='{suiv}.html'>Semaine suivante →</a>" if suiv else "<a href='../point.html'>Le point du jour →</a>") + "</p>"
+                  + (f"<a href='{prefixe}semaine/{prec}.html'>← Semaine précédente</a>" if prec else "<span></span>")
+                  + (f"<a href='{prefixe}semaine/{suiv}.html'>Semaine suivante →</a>" if suiv else f"<a href='{prefixe}point.html'>Le point du jour →</a>") + "</p>"
+                  f"<p>Pour aller plus loin : <a href='{prefixe}themes.html'>les actions par thème</a>, "
+                  f"<a href='{prefixe}classements.html'>les classements du jour</a>.</p>"
                   "<p class='muted'>Résumé automatique, projet éducatif : pas un conseil en investissement.</p>")
+        return h1, corps
+
+    for n, sid in enumerate(ids):
+        r = semaines[sid]
+        h1, corps = corps_semaine(sid, r, "../", n)
         chemin = f"semaine/{sid}.html"
-        desc = f"{titre_h1} : indices, plus fortes hausses et baisses, et les titres les plus agités prévus par l'IA."
-        jsonld = {"@context": "https://schema.org", "@type": "NewsArticle", "headline": titre_h1, "datePublished": r["date"],
-                  "inLanguage": "fr-FR", "isAccessibleForFree": True, "author": {"@type": "Organization", "name": NOM}}
+        desc = desc_courte(f"{h1}. {phrase_indices(r.get('indices'))} Hausses, baisses et avis de l'IA.")
+        jsonld = {"@context": "https://schema.org", "@type": "NewsArticle", "headline": h1[:110], "datePublished": r["date"],
+                  "dateModified": r["date"], "inLanguage": "fr-FR", "isAccessibleForFree": True,
+                  "author": {"@type": "Organization", "name": NOM}, "publisher": {"@type": "Organization", "name": NOM}}
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
-            f.write(_page(base, f"{titre_h1} | {NOM}", desc, chemin, corps, jsonld, csp))
+            f.write(_page(base, f"Bourse semaine {int(sid.split('-S')[1])} ({sid.split('-S')[0]}) : le résumé | {NOM}", desc, chemin, corps, jsonld, csp))
         faits.append(chemin)
-    corps = ("<h1>La semaine en Bourse</h1><p class='muted'>Chaque semaine, le résumé des marchés suivis par le radar.</p><ul class='liste'>"
-             + "".join(f"<li><a href='semaine/{sid}.html'>Semaine {int(sid.split('-S')[1])} de {sid.split('-S')[0]}</a></li>" for sid in reversed(ids)) + "</ul>")
+    # l'adresse fixe : toujours la dernière semaine (c'est elle qui peut monter sur « bourse cette semaine »)
+    sid = ids[-1]
+    r = semaines[sid]
+    h1, corps = corps_semaine(sid, r, "", len(ids) - 1)
+    corps = corps.replace(f"<a href='semaine/{sid}.html'>", "<a href='semaines.html'>")
+    with open(os.path.join(dossier, "bourse-cette-semaine.html"), "w", encoding="utf-8") as f:
+        f.write(_page(base, f"La Bourse cette semaine : résumé et prévisions | {NOM}",
+                      desc_courte(f"Ce qu'il faut retenir de la semaine en Bourse ({lundi_dimanche(sid)}) : "
+                                  f"{phrase_indices(r.get('indices'))}"), "bourse-cette-semaine.html", corps,
+                      {"@context": "https://schema.org", "@type": "NewsArticle", "headline": h1[:110], "datePublished": r["date"],
+                       "dateModified": r["date"], "inLanguage": "fr-FR", "author": {"@type": "Organization", "name": NOM}}, csp))
+    faits.append("bourse-cette-semaine.html")
+    corps = ("<h1>La semaine en Bourse</h1><p class='muted'>Chaque semaine, le résumé des marchés suivis par le radar.</p>"
+             "<p><a class='btn' href='bourse-cette-semaine.html'>La semaine en cours</a></p><ul class='liste'>"
+             + "".join(f"<li><a href='semaine/{s_}.html'>Semaine {int(s_.split('-S')[1])} : {lundi_dimanche(s_)}</a></li>" for s_ in reversed(ids)) + "</ul>")
     with open(os.path.join(dossier, "semaines.html"), "w", encoding="utf-8") as f:
         f.write(_page(base, f"La semaine en Bourse : résumés hebdomadaires | {NOM}",
                       "Chaque semaine : indices, plus fortes hausses et baisses, et les titres les plus agités prévus par l'IA.",
@@ -2002,7 +2099,11 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     liens = []
     for t in payload.get("titres", []):
         voisins = [x for x in payload.get("titres", []) if x.get("marche") == t.get("marche") and x["ticker"] != t["ticker"]]
-        voisins = sorted(voisins, key=lambda x: -(x.get("score") or 0))[:6]
+        # version 65 : d'abord les titres du même secteur (tous marchés d'actions), puis ceux du même marché
+        meme = [x for x in payload.get("titres", []) if t.get("secteur") and x.get("secteur") == t.get("secteur")
+                and x["ticker"] != t["ticker"] and x.get("marche") in ("fr", "eu", "us", "monde")]
+        meme = sorted(meme, key=lambda x: (x.get("marche") != t.get("marche"), -(x.get("score") or 0)))[:6]
+        voisins = meme + [x for x in sorted(voisins, key=lambda x: -(x.get("score") or 0)) if x not in meme][:max(0, 8 - len(meme))]
         t = dict(t, _duels=[((y if x["ticker"] == t["ticker"] else x), _chemin_duel(x, y)) for x, y in duels if t["ticker"] in (x["ticker"], y["ticker"])])
         t = dict(t, _image_ok=_image_titre(t, os.path.join(dossier, "partage", f"{slug(t['ticker'])}.png"), date))
         chemin, page = _page_titre(base, t, horizon, date, csp, payload.get("modele"), payload.get("suivi"), voisins)
@@ -2190,7 +2291,7 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
              "TikTok, X ou WhatsApp (format portrait).</p><a class='btn' href='image-du-jour.png' download>Télécharger l'image du jour</a></div>")
     _sem = os.path.join(config.DOSSIER_HISTORIQUE, "semaines")
     if os.path.isdir(_sem) and os.listdir(_sem):
-        corps += "<p><a class='btn' href='semaines.html'>La semaine en Bourse</a></p>"
+        corps += "<p><a class='btn' href='bourse-cette-semaine.html'>La semaine en Bourse</a></p>"
     corps += ("<ul>" + "".join(f"<li><a href='point/{dte}.html'>Bourse du {date_longue(dte)}</a></li>" for dte in reversed(dates)) + "</ul>"
               if dates else "<p>Le premier point du jour sera publié ce soir.</p>")
     with open(os.path.join(dossier, "point.html"), "w", encoding="utf-8") as f:
@@ -2199,10 +2300,25 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
                       "point.html", corps, csp=csp))
     urls.append(("point.html", "daily", "0.8"))
 
+    # version 65 : les avis sûrs vérifiés en public, et les pages par thème
+    verif = None
+    try:
+        from . import hebdo
+        verif = hebdo.page_verifies(__import__(__name__, fromlist=["x"]), base, payload, dossier, csp)
+        urls.append(("avis-surs-verifies.html", "daily", "0.8"))
+    except Exception as e:
+        print(f"Avis vérifiés non générés : {e}")
+    try:
+        from . import hebdo
+        for chemin in hebdo.pages_themes(__import__(__name__, fromlist=["x"]), base, payload, dossier, csp, date):
+            urls.append((chemin, "daily", "0.7"))
+    except Exception as e:
+        print(f"Thèmes non générés : {e}")
+
     # La semaine en Bourse
     try:
-        for chemin in _pages_semaines(base, dossier, csp):
-            urls.append((chemin, "weekly", "0.6"))
+        for chemin in _pages_semaines(base, dossier, csp, payload.get("titres", []), verif):
+            urls.append((chemin, "daily" if chemin == "bourse-cette-semaine.html" else "weekly", "0.7" if chemin == "bourse-cette-semaine.html" else "0.6"))
     except Exception as e:
         print(f"Semaines non générées : {e}")
 
@@ -2248,6 +2364,11 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
                 shutil.copyfile(os.path.join(dossier, "image-du-jour.png"), os.path.join(dossier, "point", f"{dates[-1]}.png"))
     except Exception as e:
         print(f"Image du jour non générée : {e}")
+    try:   # version 65 : thèmes et avis vérifiés en anglais
+        from . import hebdo, anglais as _ang, langues as _lgs
+        urls += [(c, "daily", "0.6") for c in hebdo.pages_en(__import__(__name__, fromlist=["x"]), _ang, _lgs, base, payload, dossier, csp, date, verif)]
+    except Exception as e:
+        print(f"Pages anglaises v65 non générées : {e}")
     try:
         from . import anglais
         urls += anglais.generer(payload, dossier, csp, base)
@@ -2270,16 +2391,33 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     # sitemap.xml et robots.txt (adresse absolue requise : uniquement si l'adresse du site est connue)
     maintenant = datetime.now().strftime("%Y-%m-%d")
     if base:
-        xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+        # version 65 : un index + des petits fichiers de 2 000 adresses (au lieu d'un seul gros fichier de 1,6 Mo
+        # que la Search Console n'arrivait pas à lire) ; changefreq et priority retirés (ignorés par Google)
         dates = _dates_modif(dossier, [c for c, _, _ in urls], maintenant)
-        xml += [f"<url><loc>{html.escape(base + c)}</loc><lastmod>{dates.get(c, maintenant)}</lastmod><changefreq>{fq}</changefreq><priority>{pr}</priority></url>"
-                for c, fq, pr in urls]
-        xml.append("</urlset>")
+        vus, uniques = set(), []
+        for c, _fq, _pr in urls:
+            if c not in vus:
+                vus.add(c)
+                uniques.append(c)
+        for vieux in os.listdir(dossier):
+            if vieux.startswith("sitemap-") and vieux.endswith(".xml"):
+                os.remove(os.path.join(dossier, vieux))
+        parts = [uniques[i:i + 2000] for i in range(0, len(uniques), 2000)]
+        for n, morceau in enumerate(parts, 1):
+            xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+            xml += [f"<url><loc>{html.escape(base + c)}</loc><lastmod>{dates.get(c, maintenant)}</lastmod></url>" for c in morceau]
+            xml.append("</urlset>")
+            with open(os.path.join(dossier, f"sitemap-{n}.xml"), "w", encoding="utf-8") as f:
+                f.write("\n".join(xml))
+        idx = ['<?xml version="1.0" encoding="UTF-8"?>', '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+        idx += [f"<sitemap><loc>{html.escape(base)}sitemap-{n}.xml</loc><lastmod>{maintenant}</lastmod></sitemap>" for n in range(1, len(parts) + 1)]
+        idx.append("</sitemapindex>")
         with open(os.path.join(dossier, "sitemap.xml"), "w", encoding="utf-8") as f:
-            f.write("\n".join(xml))
+            f.write("\n".join(idx))
     # Flux RSS : le point du jour et les bilans du mois, repris par les lecteurs de flux et les agrégateurs
     try:
-        _flux_rss(base, dossier, points, [c for c, *_ in urls if c.startswith("bilan/")])
+        _flux_rss(base, dossier, points, [c for c, *_ in urls if c.startswith("bilan/")],
+                  [c for c, *_ in urls if c.startswith("semaine/")])
     except Exception as e:
         print(f"Flux RSS non généré : {e}")
     with open(os.path.join(dossier, "robots.txt"), "w", encoding="utf-8") as f:
@@ -2301,9 +2439,18 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     _image_partage(payload, os.path.join(dossier, "partage.png"))
 
 
-def _flux_rss(base, dossier, points, bilans):
+def _flux_rss(base, dossier, points, bilans, semaines=()):
     from email.utils import format_datetime
     items = []
+    for c in sorted(semaines)[-8:]:   # version 65 : la semaine en Bourse
+        sid = c.split("/")[-1].replace(".html", "")
+        try:
+            a, n = sid.split("-S")
+            dt = datetime.fromisocalendar(int(a), int(n), 5).replace(hour=23, minute=30)
+        except Exception:
+            continue
+        items.append((dt, f"La Bourse cette semaine (semaine {int(n)}) : le résumé", base + c,
+                      "Indices, plus fortes hausses et baisses, avis très sûrs de l'IA et avis vérifiés de la semaine."))
     for d in sorted(points)[-30:][::-1]:
         dt = datetime.strptime(d, "%Y-%m-%d").replace(hour=23)
         lien = f"{base}point/{d}.html"
@@ -2420,6 +2567,8 @@ def liens_accueil(payload: dict) -> str:
     items = "".join(f'<a href="titres/{slug(t["ticker"])}.html">{_e(t["nom"])}</a>' for t in payload.get("titres", []))
     return _accueil_resume(payload) + (f'<nav class="seo-liens" aria-label="Pages des titres"><b>Analyses détaillées :</b> {items} '
             f'· <a href="titres.html">tous les titres</a> · <a href="outils.html">outils gratuits</a> · <a href="outils/si-javais-investi.html">si j\'avais investi…</a> · <a href="outils/convertisseur.html">convertisseur crypto</a> · <a href="apprendre.html">apprendre la Bourse</a> · <a href="glossaire.html">glossaire</a>'
+            + ' · <a href="bourse-cette-semaine.html">la Bourse cette semaine</a> · <a href="avis-surs-verifies.html">avis de l\'IA vérifiés</a>'
+            + "".join(f' · <a href="themes/{c}.html">{_e(h[:1].lower() + h[1:])}</a>' for c, h in __import__("bourse_bot.hebdo", fromlist=["x"]).themes_noms())
             + "".join(f' · <a href="marches/{m[0]}.html">{_e(m[1].lower())}</a>' for k, m in MARCHES.items()
                       if any(t.get("marche") == k for t in payload.get("titres", []))) + '</nav>')
 

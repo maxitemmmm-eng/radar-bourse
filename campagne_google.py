@@ -243,6 +243,8 @@ def main() -> int:
     try:
         plan_site = lire(base + "sitemap.xml")
         toutes = re.findall(r"<loc>([^<]+)</loc>", plan_site)
+        if any(x.endswith(".xml") for x in toutes):   # version 65 : index de petits plans du site
+            toutes = [p for x in toutes for p in re.findall(r"<loc>([^<]+)</loc>", lire(x))]
         print(f"   ✅ Plan du site lu : {len(toutes)} pages déclarées à Google.")
     except Exception as ex:
         toutes = []

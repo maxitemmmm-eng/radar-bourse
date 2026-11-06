@@ -69,7 +69,8 @@ def _page(base, titre, description, chemin, corps, csp, alternates):
 {seo.entete(prefixe, chemin, "en/index.html", "Checked forecasts, no promises",
             [("All stocks and cryptos", "en/index.html"), ("If I had invested…", "en/tools/if-i-had-invested.html"),
              ("Crypto converter", "en/tools/crypto-converter.html"), ("Compound interest", "en/tools/compound-interest.html"),
-             ("Capital gains", "en/tools/capital-gains.html"), ("Guides", "en/guides.html"), ("Version française", "index.html", 'hreflang="fr" lang="fr"')],
+             ("Capital gains", "en/tools/capital-gains.html"), ("Guides", "en/guides.html"),
+             ("Stocks by theme", "en/themes.html"), ("AI calls checked in public", "en/verified-calls.html"), ("Version française", "index.html", 'hreflang="fr" lang="fr"')],
             ("Open the app", "app-en.html"), aria_nav="Site pages", aria_theme="Light / dark theme", aller="Skip to content")}
 <div class="w">
 <main id="contenu" tabindex="-1">
@@ -204,6 +205,7 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
 <p>{", ".join(lien(t) for t in forts[:12]) if forts else "None today: the radar does not invent signals when conditions are not met."}</p>
 <h2>How reliable is it?</h2>{fiab or "<p>Statistical forecasts are often wrong.</p>"}
 <p>Every published forecast is recorded and checked {horizon} sessions later: see the <a href="../resultats.html">real results page</a> (French).</p>
+<p><a class="btn ghost" href="verified-calls.html">AI calls checked in public</a> <a class="btn ghost" href="themes.html">Stocks by theme</a></p>
 <h2 id="all">All stocks and cryptos</h2>{groupes}
 """
     titre = f"{NOM}: free one-month stock and crypto forecasts"

@@ -339,10 +339,10 @@ tbody tr:last-child td{border-bottom:0}
 .fact{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px}
 .fact .v{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:15px}
 .disclaimer{font-size:12.5px;color:var(--muted);max-width:75ch}
-footer{margin-top:56px;border-top:2px solid var(--ink);padding-block:28px 48px;display:grid;gap:18px}
-.pied{display:grid;grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));gap:24px 36px}
+footer{margin-top:56px;border-top:2px solid var(--ink);padding-block:28px 48px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.pied{min-width:0;display:grid;grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));gap:24px 36px}
 @media (max-width:1000px){.pied{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:760px){.pied{grid-template-columns:1fr}}
+@media (max-width:760px){.pied{grid-template-columns:minmax(0,1fr)}.pied a{overflow-wrap:anywhere}}
 .pied nav.langues-pied{flex-direction:row;flex-wrap:wrap;gap:6px 14px}
 .pied .marque{font-family:var(--f-display);font-size:22px;font-weight:700;margin:0 0 6px}
 .pied h3{font-family:var(--f-body);font-size:14px;font-weight:600;margin:0 0 8px}
@@ -416,6 +416,11 @@ footer a{color:var(--accent);text-underline-offset:3px}
 .tp .tp-l{font-size:13px;color:var(--muted)}.tp b{font-family:var(--f-display);font-size:21px;font-weight:600;line-height:1.2}
 .tp > span:nth-of-type(2){font-size:13.5px}.tp .tp-f{font-size:12px;color:var(--muted);margin-top:4px;border-top:1px solid var(--line);padding-top:6px}
 .tp-sur{border-color:color-mix(in srgb,var(--up) 55%,var(--line));box-shadow:inset 3px 0 0 var(--up)}
+.marque-sur{display:inline-grid;place-items:center;width:17px;height:17px;margin-left:6px;vertical-align:-3px;border-radius:50%;color:var(--up);background:color-mix(in srgb,var(--up) 14%,transparent);flex:none}
+.marque-sur svg{width:13px;height:13px}
+.marque-sur.tres{color:var(--surface);background:var(--up)}
+.legende-sur{font-size:12.5px;color:var(--muted);margin:10px 0 0;line-height:1.7}
+.legende-sur .marque-sur{margin:0 2px 0 0}
 .badge-sur{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:99px;font-size:10.5px;font-weight:700;letter-spacing:.02em;background:color-mix(in srgb,var(--up) 18%,transparent);color:var(--up);vertical-align:1px}
 .retour-haut{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));z-index:15;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;cursor:pointer;box-shadow:0 6px 18px rgba(5,10,20,.18)}
 /* Version 22 : avis net, raisons, agitation */
@@ -440,10 +445,18 @@ footer a{color:var(--accent);text-underline-offset:3px}
 @media (max-width:860px){.hero{grid-template-columns:1fr;padding-block:24px 4px}}
 .hero h2{font-size:clamp(32px,4.6vw,50px);font-weight:600;letter-spacing:-.015em;line-height:1.06}
 .hero .intro{margin:14px 0 0;color:var(--muted);font-size:16.5px;line-height:1.6;max-width:58ch}
-.bref{border-left:3px solid var(--accent);padding:4px 0 4px 20px;margin-top:6px}
-.bref h3{font-size:15px;font-family:var(--f-body);font-weight:600;color:var(--muted);margin-bottom:8px}
-.bref p{font-family:var(--f-display);font-size:clamp(18px,1.8vw,21px);line-height:1.5;margin:0;max-width:44ch}
-.bref .sig{font-family:var(--f-body);font-size:13px;color:var(--muted);margin-top:10px}
+.bref{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px 24px 18px;margin-top:6px;box-shadow:inset 0 3px 0 var(--accent)}
+.bref h3{font-size:13.5px;font-family:var(--f-body);font-weight:600;color:var(--muted);margin:0 0 10px}
+.bref p{font-family:var(--f-display);font-size:clamp(17px,1.6vw,19.5px);line-height:1.55;margin:0}
+.bref .sig{font-family:var(--f-body);font-size:12.5px;color:var(--muted);margin-top:14px}
+/* version 64 : les avis très sûrs du jour, directement dans l'encadré de l'accueil */
+.bref-surs{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:grid;gap:2px}
+.bref-surs h4{margin:0 0 6px;font:600 13.5px var(--f-body);color:var(--ink);display:flex;align-items:center;gap:6px}
+.bref-surs h4 .marque-sur{margin-left:0}
+.bref-surs button{display:flex;justify-content:space-between;align-items:baseline;gap:12px;width:100%;background:none;border:0;border-radius:8px;padding:7px 8px;margin:0 -8px;color:var(--ink);font:inherit;font-size:14.5px;cursor:pointer;text-align:left;width:calc(100% + 16px)}
+.bref-surs button:hover,.bref-surs button:focus-visible{background:var(--bg)}
+.bref-lien{font-size:13.5px;margin-top:8px;color:var(--accent)}
+.bref-surs .v{font-size:13.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .engag{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px 32px;margin:0;padding:0;list-style:none}
 .engag li{border-top:2px solid var(--ink);padding-top:12px}
 .engag b{display:block;font-family:var(--f-display);font-size:19px;font-weight:600;margin-bottom:4px}
@@ -621,6 +634,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .preuves{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));gap:10px;margin-top:18px;max-width:640px;min-width:0}
 .hero>div{min-width:0}
 .preuve{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface)}
+.jeu-futur{stroke-dasharray:1;stroke-dashoffset:1;animation:trace .9s cubic-bezier(.3,.7,.3,1) forwards}
+@keyframes trace{to{stroke-dashoffset:0}}
+.jeu-pop{animation:pop .35s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:none;opacity:1}}
+.jeu-record{margin:0 0 6px;font-weight:700;color:var(--warn)}
+@media (prefers-reduced-motion:reduce){.jeu-futur{animation:none;stroke-dashoffset:0}.jeu-pop{animation:none}}
 .preuve b{display:block;font-family:var(--f-num,inherit);font-size:26px;line-height:1.1;color:var(--ink)}
 @media (prefers-reduced-motion:no-preference){@view-transition{navigation:auto}}
 /* une carte seule sur la dernière ligne prend toute la largeur (plus de trou disgracieux) */
@@ -880,6 +899,7 @@ html.calme *{animation:none!important;transition:none!important}
   <a href="#signaux">Signaux forts</a><a href="#robots">Les mini-robots</a><a href="#carte-sec">Carte du marché</a><a href="#confiance">Fiabilité de l'IA</a>
   <span class="plus-titre">Autres pages</span>
   <a href="resultats.html" class="lien-site">Résultats réels</a><a href="journal-ia.html" class="lien-site">Journal de l'IA</a><a href="connaissances.html" class="lien-site">Ce que sait l'IA</a>
+  <a href="bourse-cette-semaine.html" class="lien-site">La semaine en Bourse</a><a href="themes.html" class="lien-site">Actions par thème</a><a href="avis-surs-verifies.html" class="lien-site">Avis de l'IA vérifiés</a>
   <a href="point.html" class="lien-site">Le point du jour</a><a href="actu-bourse.html" class="lien-site">Actu bourse</a><a href="krach-boursier.html" class="lien-site">Krach boursier</a>
   <a href="comparer.html" class="lien-site">Comparer deux titres</a><a href="portefeuille.html" class="lien-site">Sélection IA du mois</a><a href="outils.html" class="lien-site">Outils gratuits</a>
   <a href="apprendre.html" class="lien-site">Apprendre la Bourse</a><a href="guides.html" class="lien-site">Guides</a><a href="fonctionnalites.html" class="lien-site">Toutes les fonctionnalités</a>
@@ -890,23 +910,13 @@ html.calme *{animation:none!important;transition:none!important}
 <main class="gutter" id="contenu" tabindex="-1"><div class="wrap">
   <div class="hero">
    <div>
-    <svg class="hero-visuel" viewBox="0 0 640 150" role="img" aria-label="Illustration : le radar analyse une courbe de prix et prévoit une fourchette pour le mois suivant">
-      <rect x="0" y="0" width="640" height="150" rx="14" fill="var(--surface)" stroke="var(--line)"/>
-      <g transform="translate(78 75)"><circle r="58" fill="none" stroke="var(--accent-soft)" stroke-width="3"/><circle r="38" fill="none" stroke="var(--accent-soft)" stroke-width="3"/>
-        <circle r="18" fill="none" stroke="var(--accent-soft)" stroke-width="3"/><line x1="0" y1="0" x2="46" y2="-36" stroke="var(--up)" stroke-width="5" stroke-linecap="round"/>
-        <circle r="6" fill="var(--up)"/><circle cx="22" cy="24" r="4" fill="var(--up)" opacity=".8"/><circle cx="-30" cy="-12" r="3.5" fill="var(--accent)" opacity=".8"/></g>
-      <polyline points="160,108 190,96 214,102 240,82 268,88 292,70 318,76 344,58 372,64 400,50" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
-      <polygon points="400,50 600,14 600,92" fill="var(--accent-soft)"/><polygon points="400,50 600,30 600,72" fill="var(--accent)" opacity=".22"/>
-      <line x1="400" y1="50" x2="600" y2="50" stroke="var(--up)" stroke-width="3" stroke-dasharray="7 6"/><circle cx="400" cy="50" r="6" fill="var(--accent)"/>
-      <text x="160" y="134" font-size="13" fill="var(--muted)" font-family="var(--f-body)">les cours passés</text>
-      <text x="600" y="134" font-size="13" fill="var(--muted)" font-family="var(--f-body)" text-anchor="end">la fourchette prévue dans un mois</text>
-    </svg>
     <h2>Les marchés, lus calmement par les chiffres.</h2>
     <p class="intro">Chaque heure, l'IA analyse près de 300 actions, ETF et cryptos. Elle prévoit surtout <b>de combien un prix peut bouger</b> et <b>le risque de forte chute</b>, et publie tous ses résultats, ratés compris. Gratuit et éducatif, pas un conseil.</p>
     <div class="hero-liens"><a class="btn" href="#prono">🎯 Ton pronostic du jour</a><a class="btn ghost" href="#simulation">À combien dans un mois ?</a><a class="btn ghost" href="#remonte">Jouer contre l'IA</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
     <div class="preuves" id="preuves" hidden></div>
    </div>
-   <aside class="bref" id="bref" aria-labelledby="bref-t" hidden><h3 id="bref-t">Aujourd'hui en bref</h3><p id="bref-txt"></p><p class="sig" id="bref-sig"></p></aside>
+   <aside class="bref" id="bref" aria-labelledby="bref-t" hidden><h3 id="bref-t">Aujourd'hui en bref</h3><p id="bref-txt"></p>
+     <div class="bref-surs" id="bref-surs" hidden></div><p class="sig" id="bref-sig"></p></aside>
   </div>
   <div class="alerte-fav" id="alerte-fav" hidden role="status"></div>
   <div class="depart" id="depart" hidden>
@@ -949,7 +959,8 @@ html.calme *{animation:none!important;transition:none!important}
     <div class="duo" id="duo-pred">
       <div class="panel"><div class="vue-picks" role="group" aria-label="Classer les titres par">
         <button class="chip" data-vp="hausse" aria-pressed="true">Chances de hausse</button><button class="chip" data-vp="marche" aria-pressed="false">Mieux que leur marché</button><button class="chip" data-vp="calme" aria-pressed="false">Les plus calmes</button><button class="chip" data-vp="chute" aria-pressed="false" hidden>Risque de forte chute</button><button class="chip" data-vp="semaine" aria-pressed="false" hidden>Agités cette semaine</button></div>
-        <p class="muted" id="vp-note" style="font-size:13px;margin:0 0 10px"></p><div class="picks" id="picks"></div></div>
+        <p class="muted" id="vp-note" style="font-size:13px;margin:0 0 10px"></p><div class="picks" id="picks"></div>
+        <p class="legende-sur" id="legende-sur" hidden><span class="marque-sur" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="8" cy="8" r="2.7" fill="currentColor"/></svg></span> Avis sûr de l'IA (<b id="ls-1"></b> de bonnes réponses sur le passé) · <span class="marque-sur tres" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="8" cy="8" r="2.7" fill="currentColor"/></svg></span> avis très sûr (<b id="ls-2"></b>) : plus calme ou plus agité le mois prochain. Passe la souris ou appuie dessus pour le détail.</p></div>
       <div class="panel expert"><div class="label" style="margin-bottom:10px">Configurations de décollage</div><div class="rocket-list" id="rockets"></div></div>
     </div>
     <div class="panel nuage" id="nuage" hidden>
@@ -1455,6 +1466,15 @@ const DATA = /*__DATA__*/null;
 const $ = s => document.querySelector(s);
 const H = DATA.horizon;
 const NOM_MARCHE = {fr:"France",eu:"Europe",us:"États-Unis",monde:"Monde",crypto:"Crypto",etf:"ETF / indice",tendances:"En tendance"};
+/* version 64 : le petit logo « avis sûr » (une cible de radar), partout où un titre est cité */
+const ICONE_SUR = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="8" cy="8" r="2.7" fill="currentColor"/></svg>';
+const LIB_SUR = {tp: "Avis très sûr de l'IA : plus agité le mois prochain", tc: "Avis très sûr de l'IA : plus calme le mois prochain",
+                 sp: "Avis sûr de l'IA : plus agité le mois prochain", sc: "Avis sûr de l'IA : plus calme le mois prochain"};
+function marqueSur(t){
+  const r = t && t.risque_prevu; if(!r || !r.sur || r.recent == null || t.marche === "tendances") return "";
+  const lib = LIB_SUR[(r.tres_sur ? "t" : "s") + (r.recent > 1 ? "p" : "c")];
+  return `<span class="marque-sur${r.tres_sur ? " tres" : ""}" title="${lib}" role="img" aria-label="${lib}">${ICONE_SUR}</span>`;
+}
 const SIG = {"ACHAT FORT":"s-af","ACHAT":"s-a","NEUTRE":"s-n","VENTE":"s-v","VENTE FORTE":"s-vf"};
 const LIB = {"ACHAT FORT":"Haussier fort","ACHAT":"Haussier","NEUTRE":"Neutre","VENTE":"Baissier","VENTE FORTE":"Baissier fort"};
 const RISK = {"Faible":1,"Moyen":2,"Élevé":3,"Très élevé":4};
@@ -1605,7 +1625,7 @@ function rendrePicks(vue){
   document.querySelectorAll("[data-vp]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.vp === vue)));
   $("#vp-note").textContent = V.note;
   $("#picks").innerHTML = V.liste().slice(0,7).map(t => `<button class="pick" data-t="${esc(t.ticker)}">
-  <span style="min-width:0"><span class="t">${esc(t.nom)}</span><span class="s">${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche]||""}</span></span>
+  <span style="min-width:0"><span class="t">${esc(t.nom)}${marqueSur(t)}</span><span class="s">${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche]||""}</span></span>
   <span class="pick-mid">${spark(t.spark,64,22)}${V.droite(t)}</span>
   <span class="pill ${SIG[t.signal]}" title="Tendance technique (moyennes, RSI, MACD…), indépendante de l'avis des IA">${esc(LIB[t.signal] || t.signal)}</span></button>`).join("") || `<div class="empty">Pas encore de données pour ce classement.</div>`;
 }
@@ -1653,7 +1673,7 @@ $("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t
     const pts = (arr, d0 = 0) => arr.map((v, i) => `${x(i + d0).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
     const aire = `<polygon points="${x(0)},${H} ${pts(s.slice(0, a + 1))} ${x(a)},${H}" fill="var(--accent-soft)" opacity=".6"/>`;
     const passe = `<polyline points="${pts(s.slice(0, a + 1))}" fill="none" stroke="var(--ink)" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
-    const futur = revele ? `<polyline points="${pts(s.slice(a), a)}" fill="none" stroke="${it.r > 0 ? "var(--up)" : "var(--down)"}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>` : "";
+    const futur = revele ? `<polyline class="jeu-futur" pathLength="1" points="${pts(s.slice(a), a)}" fill="none" stroke="${it.r > 0 ? "var(--up)" : "var(--down)"}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>` : "";
     const ligne = `<line x1="${x(a)}" x2="${x(a)}" y1="0" y2="${H}" stroke="var(--accent)" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>`
       + `<line x1="${x(0)}" x2="${x(s.length - 1)}" y1="${y(100)}" y2="${y(100)}" stroke="var(--muted)" stroke-dasharray="2 4" opacity=".6" vector-effect="non-scaling-stroke"/>`;
     const fin = $("#jeu-fin");
@@ -1679,13 +1699,17 @@ $("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t
     const marge = (((DATA.modele || {}).avis_net) || {}).marge, hesite = marge != null && Math.abs(it.p - .5) < marge;
     S.n++; if(juste) S.toi++; if(iaJuste) S.ia++;
     const gain = (juste ? 10 : 0) + (juste && !iaJuste ? 5 : 0) - (indice ? 3 : 0);
+    const ancienRecord = S.meilleure;
     S.points = Math.max(0, S.points + gain); S.serie = juste ? S.serie + 1 : 0; S.meilleure = Math.max(S.meilleure, S.serie);
+    const record = juste && S.serie > ancienRecord && S.serie >= 3;
     if(juste && !iaJuste) S.battu++;
+    try{ if(navigator.vibrate) navigator.vibrate(juste ? 25 : [15, 60, 15]); }catch(e){}   // version 64 : petit retour au toucher
     if(mode === "jour"){ const j = S.jours[auj]; j.k++; if(juste) j.toi++; if(iaJuste) j.ia++; if(j.k >= 5) j.fini = true; }
     sauver(); dessiner(it, true); tableau();
     const t = T.find(x => x.ticker === it.t), nom = t ? t.nom : it.t;
     res.innerHTML = `<div class="jeu-res">
-      <p class="jeu-verdict ${juste ? "up" : "down"}">${juste ? (iaJuste ? "Bien vu !" : "Bien vu, et mieux que l'IA !") : "Raté !"} <span class="muted" style="font-size:15px;font-family:var(--f-body)">${gain >= 0 ? "+" : ""}${gain} points</span></p>
+      ${record ? `<p class="jeu-record">Nouveau record : ${S.serie} bonnes réponses d'affilée !</p>` : ""}
+      <p class="jeu-verdict ${juste ? "up" : "down"} jeu-pop">${juste ? (iaJuste ? "Bien vu !" : "Bien vu, et mieux que l'IA !") : "Raté !"} <span class="muted" style="font-size:15px;font-family:var(--f-body)">${gain >= 0 ? "+" : ""}${gain} points</span></p>
       <p>C'était <b>${esc(nom)}</b>, le ${fmtDate(it.d)}. Un mois plus tard : <b class="${it.r > 0 ? "up" : "down"}">${it.r > 0 ? "+" : ""}${(it.r * 100).toFixed(1).replace(".", ",")} %</b>.</p>
       <p>L'IA donnait <b>${Math.round(it.p * 100)} % de chances de hausse</b> : elle penchait pour ${iaDit ? "la hausse" : "la baisse"}${hesite ? ", mais sans avis net" : ""}. Elle ${iaJuste ? "a vu juste" : "s'est trompée"}.</p></div>`;
     const fini = mode === "jour" && S.jours[auj].fini;
@@ -1712,6 +1736,12 @@ $("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t
     zone.innerHTML = `<button class="btn" id="jeu-debut">${m === "jour" ? "Commencer le défi du jour" : "Commencer une partie"}</button>`;
   }
   document.querySelectorAll("[data-mode-jeu]").forEach(b => b.addEventListener("click", () => changerMode(b.dataset.modeJeu)));
+  // version 64 : flèches du clavier ↑ / ↓ pour répondre, Entrée pour la manche suivante
+  sec.addEventListener("keydown", e => {
+    if(["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) return;
+    const b = e.key === "ArrowUp" ? zone.querySelector('[data-pari="1"]') : e.key === "ArrowDown" ? zone.querySelector('[data-pari="0"]') : null;
+    if(b){ e.preventDefault(); b.click(); }
+  });
   zone.addEventListener("click", async e => {
     const b = e.target.closest("button"); if(!b) return;
     if(b.id === "jeu-debut" || b.id === "jeu-suivant"){ if(await charger()) manche(); }
@@ -2465,7 +2495,7 @@ function rendre(){
   L.sort((a,b) => { const x=val(a,tri.k), y=val(b,tri.k);
     return (typeof x==="string" ? x.localeCompare(y) : (x??-9)-(y??-9)) * (tri.asc?1:-1); });
   $("#rows").innerHTML = L.map(t => `<tr data-t="${esc(t.ticker)}" tabindex="0">
-    <td><div class="tk">${FAV.has(t.ticker) ? '<span class="etoile" title="Dans tes favoris">★</span>' : ""}${esc(affTk(t.ticker))}${t.qualite_ok === false ? ' <span title="Données à vérifier : exclu des signaux" style="color:var(--warn)">⚠</span>' : ""}</div><div class="nm">${esc(t.nom)}</div></td>
+    <td><div class="tk">${FAV.has(t.ticker) ? '<span class="etoile" title="Dans tes favoris">★</span>' : ""}${esc(affTk(t.ticker))}${t.qualite_ok === false ? ' <span title="Données à vérifier : exclu des signaux" style="color:var(--warn)">⚠</span>' : ""}</div><div class="nm">${esc(t.nom)}${marqueSur(t)}</div></td>
     <td class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}${t.live?'<span class="src">direct</span>':''}</td><td data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</td><td>${pct(t.perf["1 mois"])}</td>
     <td class="spk"><span>${spark(t.spark,72,24)}</span><span>${pct(t.perf["3 mois"],0)}</span></td>
     <td class="expert"><span class="score"><span class="num">${Math.round(t.score)}</span><span class="mini"><i style="width:${t.score}%"></i></span></span></td>
@@ -3243,10 +3273,10 @@ new MutationObserver(redessinerTout).observe(document.documentElement, {attribut
   if(largeur != null){ if(largeur >= 0.6 && achats > ventes) mot = "Optimiste"; else if(largeur < 0.4 || ventes > achats * 1.5) mot = "Prudent"; }
   $("#mood").innerHTML = `<div class="mot"><small>Météo du marché</small>${mot}</div>
    <div class="stats">
-    <div class="st"><b>${largeur==null?'–':Math.round(largeur*100)+' %'}</b><span>des titres au-dessus de leur moyenne 200 jours</span>${largeur==null?'':`<div class="breadth"><i style="width:${Math.round(largeur*100)}%"></i></div>`}</div>
-    <div class="st"><b>${moyP==null?'–':Math.round(moyP*100)+' %'}</b><span>probabilité de hausse moyenne à ${H} séances</span></div>
-    <div class="st"><b><span class="up">${achats}</span> / <span class="down">${ventes}</span></b><span>titres haussiers / baissiers</span></div>
-    <div class="st"><b>${T.filter(t=>t.potentiel_hausse).length}</b><span>configurations de décollage</span></div>
+    <div class="st"><b>${largeur==null?'–':Math.round(largeur*100)+' %'}</b><span>des titres sont dans une tendance de fond positive (au-dessus de leur moyenne sur 200 jours)</span>${largeur==null?'':`<div class="breadth"><i style="width:${Math.round(largeur*100)}%"></i></div>`}</div>
+    <div class="st"><b>${moyP==null?'–':Math.round(moyP*100)+' %'}</b><span>de chances de hausse en moyenne d'ici un mois, selon l'IA</span></div>
+    <div class="st"><b><span class="up">${achats}</span> / <span class="down">${ventes}</span></b><span>titres en tendance haussière / baissière (analyse technique)</span></div>
+    <div class="st"><b>${T.filter(t=>t.potentiel_hausse).length}</b><span>titres qui commencent peut-être à monter (signal technique, souvent trompeur)</span></div>
    </div>`;
 })();
 
@@ -3538,12 +3568,16 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
   const pts = document.createElement("div"); pts.className = "tape-points"; pts.setAttribute("aria-hidden", "true"); tape.after(pts);
   let touche = 0;
   const cartes = () => [...tape.querySelectorAll(".tick")];
-  const index = () => { const c = cartes(); if(!c.length) return 0; const w = c[0].offsetWidth + 1; return Math.round(tape.scrollLeft / w); };
-  const majPoints = () => { const c = cartes(), i = index(); if(pts.children.length !== c.length) pts.innerHTML = c.map(() => "<i></i>").join("");
-    [...pts.children].forEach((x, k) => x.classList.toggle("on", k === i)); };
-  tape.addEventListener("scroll", () => requestAnimationFrame(majPoints), {passive: true});
+  // version 64 : largeur d'une carte mémorisée (plus de recalcul de la page à chaque image du défilement)
+  let largeur = 0, dernier = -1, prevu = false;
+  const index = () => { if(!largeur){ const c = tape.querySelector(".tick"); if(!c) return 0; largeur = c.offsetWidth + 1; } return Math.round(tape.scrollLeft / largeur); };
+  addEventListener("resize", () => { largeur = 0; }, {passive: true});
+  const majPoints = () => { prevu = false; const n = tape.children.length, i = index();
+    if(pts.children.length !== n){ pts.innerHTML = "<i></i>".repeat(n); dernier = -1; }
+    if(i === dernier) return; dernier = i; [...pts.children].forEach((x, k) => x.classList.toggle("on", k === i)); };
+  tape.addEventListener("scroll", () => { if(!prevu){ prevu = true; requestAnimationFrame(majPoints); } }, {passive: true});
   ["touchstart", "pointerdown", "wheel"].forEach(ev => tape.addEventListener(ev, () => { touche = Date.now(); }, {passive: true}));
-  new MutationObserver(majPoints).observe(tape, {childList: true});
+  new MutationObserver(() => { if(pts.children.length !== tape.children.length) majPoints(); }).observe(tape, {childList: true});
   const calme = () => document.documentElement.classList.contains("calme") || matchMedia("(prefers-reduced-motion: reduce)").matches;
   setInterval(() => {
     if(document.hidden || calme() || Date.now() - touche < 10000 || tape.scrollWidth <= tape.clientWidth + 4) return;
@@ -3698,7 +3732,7 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
   const ecartRecent = t => { const r = t.risque_prevu.recent; return r > 1 ? `+${Math.round((r - 1) * 100)} %` : `−${Math.round((1 - r) * 100)} %`; };
   const deVers = t => { const r = t.risque_prevu; return r.mouvement && r.recent ? ` <span class="muted">(±${pc(r.mouvement / r.recent)} → ±${pc(r.mouvement)})</span>` : ""; };
   const pc = v => Math.round(v * 100) + " %";
-  const lien = t => `<button class="lnk" data-assist-t="${esc(t.ticker)}">${esc(t.nom)}</button>`;
+  const lien = t => `<button class="lnk" data-assist-t="${esc(t.ticker)}">${esc(t.nom)}</button>${marqueSur(t)}`;
   const liste = (L, f) => L.length ? "<ol>" + L.map(t => `<li>${lien(t)} · ${f(t)}</li>`).join("") + "</ol>" : `<p>${"Pas assez de données aujourd'hui pour répondre."}</p>`;
   const mv = t => (t.risque_prevu || {}).mouvement, ch = t => (t.risque_prevu || {}).chute;
   const parMarche = m => actifs.filter(t => t.marche === m);
@@ -3835,6 +3869,33 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
   zone.addEventListener("click", e => { const b = e.target.closest("[data-assist-t]"); if(b) ouvrir(b.dataset.assistT); });
 })();
 
+/* ---------- Version 64 : les avis très sûrs du jour dans « Aujourd'hui en bref » ---------- */
+(function(){
+  const z = document.getElementById("bref-surs"), A = ((DATA.modele || {}).risque || {}).avis_surs || {};
+  if(!z || !(A.taux > 0.7) || !T) return;
+  const ok = t => t.marche !== "tendances" && t.risque_prevu && t.risque_prevu.sur && t.risque_prevu.recent != null;
+  const ecart = t => Math.abs(Math.log(t.risque_prevu.recent));
+  let L = T.filter(t => ok(t) && t.risque_prevu.tres_sur).sort((a, b) => ecart(b) - ecart(a)), tres = true;
+  if(L.length < 3){ L = T.filter(ok).sort((a, b) => ecart(b) - ecart(a)); tres = false; }
+  L = L.slice(0, 4); if(!L.length) return;
+  const taux = tres && A.tres && A.tres.taux ? A.tres.taux : A.taux;
+  z.innerHTML = `<h4>${marqueSur(L[0]).replace("marque-sur", "marque-sur" + (tres ? " tres" : "")).replace(/ title="[^"]*"/, "")}${tres ? "Les avis très sûrs du jour" : "Les avis sûrs du jour"} <span class="v">· justes ${Math.round(taux * 100)} % du temps</span></h4>`
+    + L.map(t => { const r = t.risque_prevu.recent, pc = Math.round(Math.abs(r - 1) * 100);
+      return `<button type="button" data-t="${esc(t.ticker)}"><span>${esc(t.nom)}</span><span class="v">${r > 1 ? "plus agité" : "plus calme"} · ${r > 1 ? "+" : "−"}${pc} %</span></button>`; }).join("")
+    + `<a class="lien-site bref-lien" href="avis-surs-verifies.html">Les avis passés, vérifiés en public</a>`;
+  z.hidden = false;
+  z.addEventListener("click", e => { const b = e.target.closest("[data-t]"); if(b) ouvrir(b.dataset.t); });
+})();
+
+/* ---------- Version 64 : légende du petit logo « avis sûr » (chiffres du jour) ---------- */
+(function(){
+  const L = document.getElementById("legende-sur"), A = ((DATA.modele || {}).risque || {}).avis_surs || {};
+  if(!L || !(A.taux > 0.7)) return;
+  document.getElementById("ls-1").textContent = Math.round(A.taux * 100) + " %";
+  const tr = A.tres || {}; document.getElementById("ls-2").textContent = tr.taux ? Math.round(tr.taux * 100) + " %" : "–";
+  L.hidden = false;
+})();
+
 /* ---------- Version 61 : les chiffres-preuves de l'accueil (seulement des chiffres mesurés sur des années jamais vues) ---------- */
 (function(){
   const z = document.getElementById("preuves"); if(!z) return;
@@ -3872,8 +3933,9 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
       if(nv !== v) n.nodeValue = nv;
     }
   };
-  fixer(document.body);
-  new MutationObserver(ms => { for(const m of ms) for(const n of m.addedNodes){ if(n.nodeType === 1 && !SAUTER[n.nodeName]) fixer(n); else if(n.nodeType === 3 && n.parentNode) fixer(n.parentNode); } })
+  (window.requestIdleCallback || (f => setTimeout(f, 300)))(() => fixer(document.body));   // version 64 : après l'affichage
+  const vif = n => n && n.closest && n.closest("[data-px],[data-j1],.tape,.tick");   // cours en direct : mis à jour sans arrêt, rien à corriger
+  new MutationObserver(ms => { for(const m of ms){ if(vif(m.target)) continue; for(const n of m.addedNodes){ if(n.nodeType === 1 && !SAUTER[n.nodeName]) fixer(n); else if(n.nodeType === 3 && n.parentNode) fixer(n.parentNode); } } })
     .observe(document.body, {childList: true, subtree: true});
 })();
 
@@ -3903,13 +3965,7 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
   g.addEventListener("click", () => { touche = Date.now(); nav.scrollTo({left: auDebut() ? nav.scrollWidth : nav.scrollLeft - pas()}); });
   ["touchstart", "pointerdown", "wheel", "focusin", "mouseenter"].forEach(ev => nav.addEventListener(ev, () => { touche = Date.now(); }, {passive: true}));
   const calme = () => document.documentElement.classList.contains("calme") || matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // tourne tout seul, un onglet à la fois, seulement en haut de la page (plus bas, la barre suit la section lue)
-  setInterval(() => {
-    if(document.hidden || calme() || !deborde() || Date.now() - touche < 12000 || window.scrollY > 300) return;
-    if(aLaFin()){ nav.scrollTo({left: 0}); return; }
-    const suivant = liens().find(a => a.offsetLeft + a.offsetWidth > nav.scrollLeft + nav.clientWidth - 34);
-    nav.scrollTo({left: suivant ? suivant.offsetLeft + suivant.offsetWidth - nav.clientWidth + 40 : nav.scrollLeft + 120});
-  }, 3500);
+  // version 64 : la barre ne tourne plus toute seule (plus calme, plus pro, et moins de calculs) : flèches et glisser suffisent
   addEventListener("resize", maj, {passive: true}); maj(); setTimeout(maj, 1500);
 })();
 
@@ -3984,7 +4040,7 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
       const rang = k2 === q || k === q ? 0 : n.startsWith(q) || k.startsWith(q) ? 1 : n.includes(" " + q) ? 2 : n.includes(q) || k.includes(q) ? 3 : 9;
       return [rang, t];
     }).filter(([r]) => r < 9).sort((a, b) => a[0] - b[0] || a[1].nom.localeCompare(b[1].nom)).slice(0, 8).map(([, t]) => t);
-    liste.innerHTML = trouves.length ? trouves.map((t, i) => `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}</b><span class="num">${px(t.prix, t.devise)}</span><span>${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche] || ""}</span><span>${t.proba_hausse != null ? Math.round(t.proba_hausse * 100) + " % de hausse" : ""}</span></li>`).join("")
+    liste.innerHTML = trouves.length ? trouves.map((t, i) => `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}${marqueSur(t)}</b><span class="num">${px(t.prix, t.devise)}</span><span>${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche] || ""}</span><span>${t.proba_hausse != null ? Math.round(t.proba_hausse * 100) + " % de hausse" : ""}</span></li>`).join("")
       : `<li role="option" aria-disabled="true" aria-selected="false"><span>Aucun titre suivi ne correspond. Le radar suit ${T.length} titres.</span></li>`;
     liste.hidden = false; champ.setAttribute("aria-expanded", "true"); choisi = trouves.length ? 0 : -1; marquer();
   };
