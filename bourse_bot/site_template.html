@@ -1830,9 +1830,9 @@ function votesRobots(t){
     const nommes = new Set([...vis].sort((a, b) => b.risque_prevu.chute - a.risque_prevu.chute).slice(0, W > 520 ? 5 : 3).map(t => t.ticker)
       .concat([...vis].sort((a, b) => a.risque_prevu.mouvement - b.risque_prevu.mouvement).slice(0, W > 520 ? 2 : 1).map(t => t.ticker)));
     const places = [];
-    const libre = (x, y) => { if(places.some(([a, b]) => Math.abs(a - x) < 46 && Math.abs(b - y) < 14)) return false; places.push([x, y]); return true; };
+    const libre = (x, y) => { if(places.some(([a, b]) => Math.abs(a - x) < 72 && Math.abs(b - y) < 17)) return false; places.push([x, y]); return true; };
     h += vis.map(t => { const cx = X(t.risque_prevu.mouvement), cy = Y(t.risque_prevu.chute * 100), col = COUL[t.marche] || "var(--accent)";
-      const etiq = nommes.has(t.ticker) && libre(cx, cy) ? `<text x="${cx + (cx > W - 120 ? -9 : 9)}" y="${cy + 4}" text-anchor="${cx > W - 120 ? "end" : "start"}" font-size="11.5" font-weight="600" fill="var(--ink)">${esc(affTk(t.ticker).replace(/-USD$/, "").replace(/\.[A-Z]+$/, ""))}</text>` : "";
+      const etiq = nommes.has(t.ticker) && libre(cx, cy) ? `<text x="${cx + (cx > W - 120 ? -9 : 9)}" y="${cy + 4}" text-anchor="${cx > W - 120 ? "end" : "start"}" font-size="11.5" font-weight="600" fill="var(--ink)" stroke="var(--surface)" stroke-width="3" paint-order="stroke">${esc(affTk(t.ticker).replace(/-USD$/, "").replace(/\.[A-Z]+$/, ""))}</text>` : "";
       return `<g class="pt" tabindex="0" role="button" data-t="${esc(t.ticker)}" aria-label="${esc(t.nom)} : agitation ±${Math.round(t.risque_prevu.mouvement * 100)} %, risque de chute ${Math.round(t.risque_prevu.chute * 100)} %">
         <circle cx="${cx}" cy="${cy}" r="11" fill="transparent"/>
         <circle cx="${cx}" cy="${cy}" r="5.5" fill="${col}" fill-opacity=".85" stroke="var(--surface)" stroke-width="1.5"/>${etiq}</g>`; }).join("");
@@ -2600,11 +2600,12 @@ function troisPoints(t){
       <span class="tp-f">${RQ.prouve && RQ.concordance_ia ? `La prévision la plus fiable des IA : entre deux titres, elle désigne le plus agité ${Math.round(RQ.concordance_ia * 100)} fois sur 100` : RQ.prouve ? "La prévision la plus fiable des IA" : "Estimation tirée des dernières semaines"}</span></div>`);
   }
   const SR0 = RQ.sens_recent || {}, tauxM = (SR0.par_marche || {})[t.marche] ?? SR0.taux;   // version 61 : taux du marché du titre
-  const AS0 = RQ.avis_surs || {}, tauxS = (AS0.par_marche || {})[t.marche] ?? AS0.taux;   // version 63 : avis sûrs
+  const AS1 = RQ.avis_surs || {}, TR = AS1.tres || {}, tres = !!(rq && rq.tres_sur && TR.taux > 0.8);   // version 63.4 : 2 niveaux
+  const AS0 = tres ? TR : AS1, tauxS = (AS0.par_marche || {})[t.marche] ?? AS0.taux;   // version 63 : avis sûrs
   if(rq && rq.recent != null && rq.sur && tauxS > 0.7){
     const plus = rq.recent > 1;
-    cases.push(`<div class="tp tp-sur"><span class="tp-l">Le mois prochain <span class="badge-sur">Avis sûr</span></span><b>${plus ? "Plus agité" : "Plus calme"}</b><span>que ces dernières semaines</span>
-      <span class="tp-f">Quand l'IA est aussi nette, elle a eu raison ${Math.round(tauxS * 100)} fois sur 100 sur des années jamais vues${AS0.annees ? ` (au moins 77 % ${AS0.annees_77} années sur ${AS0.annees})` : ""}</span></div>`);
+    cases.push(`<div class="tp tp-sur"><span class="tp-l">Le mois prochain <span class="badge-sur">${tres ? "Avis très sûr" : "Avis sûr"}</span></span><b>${plus ? "Plus agité" : "Plus calme"}</b><span>que ces dernières semaines</span>
+      <span class="tp-f">Quand l'IA est aussi nette, elle a eu raison ${Math.round(tauxS * 100)} fois sur 100 sur des années jamais vues${AS0.annees_77 != null ? ` (au moins 77 % ${AS0.annees_77} années sur ${AS0.annees})` : AS0.pire_annee ? ` (pire année : ${Math.round(AS0.pire_annee * 100)} %)` : ""}</span></div>`);
   } else if(rq && rq.recent != null && tauxM > 0.6){   // version 59 : la question où l'IA dépasse 60 %
     const SR = {...SR0, taux: tauxM}, plus = rq.recent > 1;
     cases.push(`<div class="tp"><span class="tp-l">Le mois prochain</span><b>${plus ? "Plus agité" : "Plus calme"}</b><span>que ces dernières semaines</span>
@@ -2811,9 +2812,9 @@ function grapheComplet(id, t, opts = {}){
     // puis la couleur du fond sous le bas. Résultat : une zone verte « si ça va bien » au-dessus
     // de la trajectoire probable et une zone rouge « si ça va mal » en dessous.
     const zone = {priceLineVisible:false, crosshairMarkerVisible:false};
-    const vert = chart.addAreaSeries({...zone, lineColor:C.up, lineWidth:2, topColor:melange(C.surf, C.up, .34), bottomColor:melange(C.surf, C.up, .12), lastValueVisible:true, title:"si ça va bien"});
+    const vert = chart.addAreaSeries({...zone, lineColor:C.up, lineWidth:2, topColor:melange(C.surf, C.up, .24), bottomColor:melange(C.surf, C.up, .07), lastValueVisible:true, title:"si ça va bien"});
     vert.setData(k.t.map((d,i) => ({time:d, value:k.haut[i]})));
-    const rouge = chart.addAreaSeries({...zone, lineColor:"rgba(0,0,0,0)", lineWidth:1, topColor:melange(C.surf, C.down, .12), bottomColor:melange(C.surf, C.down, .34), lastValueVisible:false});
+    const rouge = chart.addAreaSeries({...zone, lineColor:"rgba(0,0,0,0)", lineWidth:1, topColor:melange(C.surf, C.down, .07), bottomColor:melange(C.surf, C.down, .24), lastValueVisible:false});
     rouge.setData(k.t.map((d,i) => ({time:d, value:k.mediane[i]})));
     const fond = chart.addAreaSeries({...zone, lineColor:C.down, lineWidth:2, topColor:C.surf, bottomColor:C.surf, lastValueVisible:true, title:"si ça va mal"});
     fond.setData(k.t.map((d,i) => ({time:d, value:k.bas[i]})));

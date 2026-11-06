@@ -569,15 +569,19 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     if (sr.get("par_marche") or {}).get(t.get("marche")) is not None:   # version 61 : taux du marché du titre
         sr["taux"] = sr["par_marche"][t.get("marche")]
     av = dict((((modele or {}).get("risque") or {}).get("avis_surs") or {}))
+    tres = bool(rq.get("tres_sur") and ((av.get("tres") or {}).get("taux") or 0) > 0.8)
+    if tres:   # version 63.4 : avis très sûr
+        av = dict(av["tres"])
     if (av.get("par_marche") or {}).get(t.get("marche")) is not None:
         av["taux"] = av["par_marche"][t.get("marche")]
     if rq.get("recent") is not None and rq.get("sur") and (av.get("taux") or 0) > 0.7:   # version 63 : avis sûr
         ecart = round(abs(rq["recent"] - 1) * 100)
-        agitation += (f"<p class='avis-sur'><span class='badge-sur'>Avis sûr</span> Le mois prochain, {_e(t['nom'])} devrait être nettement "
+        agitation += (f"<p class='avis-sur'><span class='badge-sur'>{'Avis très sûr' if tres else 'Avis sûr'}</span> Le mois prochain, {_e(t['nom'])} devrait être nettement "
                       f"<b>{'plus agité' if rq['recent'] > 1 else 'plus calme'}</b> que ces dernières semaines (environ {ecart} % "
                       f"{'de plus' if rq['recent'] > 1 else 'de moins'}). Quand l'IA est aussi nette, elle a eu raison "
                       f"<b>{round(av['taux'] * 100)} fois sur 100</b> sur des années qu'elle n'avait jamais vues"
-                      + (f" (au moins 77 % {av['annees_77']} années sur {av['annees']})" if av.get("annees") else "") + ".</p>")
+                      + (f" (au moins 77 % {av['annees_77']} années sur {av['annees']})" if av.get("annees_77") is not None else
+                         f" (pire année : {round(av['pire_annee'] * 100)} %)" if av.get("pire_annee") else "") + ".</p>")
     elif rq.get("recent") is not None and (sr.get("taux") or 0) > 0.6:   # version 59 : la question où l'IA dépasse 60 %
         agitation += (f"<p>Le mois prochain, {_e(t['nom'])} devrait être <b>{'plus agité' if rq['recent'] > 1 else 'plus calme'}</b> "
                       f"que ces dernières semaines. Sur des années jamais vues, l'IA a eu raison <b>{round(sr['taux'] * 100)} fois sur 100</b> "
@@ -2752,6 +2756,9 @@ def _page_fiche_ia(base, payload, dossier, csp):
          f"environ {p(A.get('couverture'), 0)} des cas · règle simple « retour à la normale » dans les mêmes cas : {p(A.get('regle_simple'))}",
          (f"Au moins 77 % {A.get('annees_77')} années sur {A.get('annees')} ; seuil appris chaque année sur les seules années d'avant."
           if A.get("annees") else "Pas encore mesuré.")),
+        ("Plus ou moins agité le mois prochain : avis très sûrs", f"{p((A.get('tres') or {}).get('taux'))} de bonnes réponses",
+         f"environ {p((A.get('tres') or {}).get('couverture'), 0)} des cas",
+         f"Pire année : {p((A.get('tres') or {}).get('pire_annee'))} ; même méthode, seuil plus exigeant." if A.get("tres") else "Pas encore mesuré."),
         ("Plus ou moins agité le mois prochain : tous les cas", f"{p(SR.get('taux'))} de bonnes réponses", f"réponse la plus fréquente : {p(SR.get('base'))}",
          "Prouvé : au-dessus de 60 % chaque année." if SR.get("annees") and SR.get("annees_60") == SR.get("annees") else "Mesuré sur des années jamais vues."),
         ("Risque de chute de plus de 10 %", f"note de tri {note_chute}",

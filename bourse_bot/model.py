@@ -1199,11 +1199,14 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
     except Exception:
         evaluation.risque_titres, mod_risque = {}, None
     try:   # version 63 : avis sûrs (écart net entre l'agitation prévue et l'agitation récente)
-        seuil = ((evaluation.risque or {}).get("avis_surs") or {}).get("seuil")
+        av = (evaluation.risque or {}).get("avis_surs") or {}
+        seuil, seuil_t = av.get("seuil"), (av.get("tres") or {}).get("seuil")
         if seuil and np.isfinite(seuil):
             for r in evaluation.risque_titres.values():
                 if r.get("recent"):
                     r["sur"] = bool(abs(np.log(r["recent"])) >= seuil)
+                    if seuil_t and np.isfinite(seuil_t):
+                        r["tres_sur"] = bool(abs(np.log(r["recent"])) >= seuil_t)
     except Exception:
         pass
     try:   # version 48 : l'agitation sur une semaine (modèle simple, testé sur les vrais cours)

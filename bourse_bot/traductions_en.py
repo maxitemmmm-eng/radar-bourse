@@ -1392,6 +1392,9 @@ EN = {
 "agitation prévue": "expected volatility",
 "moyenne des cryptos": "crypto average",
 # version 63
+"(pire année :": "(worst year:",
+"Avis très sûr": "Very confident call",
+"pire année :": "worst year:",
 "Le marché et l'IA": "The market and the AI",
 "Actions": "Stocks",
 "Risque et agitation": "Risk and movement",

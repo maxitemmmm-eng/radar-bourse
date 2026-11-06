@@ -159,6 +159,8 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("63.4", "Un 2e niveau d'avis : « avis très sûr », quand l'écart avec les dernières semaines est encore plus net", True,
+     "89,0 % de bonnes réponses (marge 87,4 % à 90,5 %) sur environ 1 cas sur 5 ; pire année 83,6 %. Affiché sur les fiches concernées"),
     ("63", "« Avis sûrs » : l'IA ne répond à « plus ou moins agité le mois prochain ? » que quand sa prévision s'écarte nettement des dernières semaines "
      "(seuil appris chaque année sur les seules années d'avant)", True,
      "80,8 % de bonnes réponses sur 119 493 avis (marge 79,3 % à 82,4 %), au moins 77 % dix années sur onze, pour environ la moitié des cas. "

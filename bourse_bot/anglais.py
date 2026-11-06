@@ -118,13 +118,16 @@ def _page_titre(base, t, horizon, date, csp, modele):
     # version 63 : l'agitation prévue et, quand l'IA est nettement sûre, son « avis sûr »
     rq = t.get("risque_prevu") or {}
     av = dict((((modele or {}).get("risque") or {}).get("avis_surs") or {}))
+    tres = bool(rq.get("tres_sur") and ((av.get("tres") or {}).get("taux") or 0) > 0.8)
+    if tres:
+        av = dict(av["tres"])
     if (av.get("par_marche") or {}).get(t.get("marche")) is not None:
         av["taux"] = av["par_marche"][t.get("marche")]
     agit = (f"<p>Expected movement next month: about <b class='m'>±{round(rq['mouvement'] * 100)}%</b>, up or down.</p>"
             if rq.get("mouvement") else "")
     if rq.get("sur") and rq.get("recent") and (av.get("taux") or 0) > 0.7:
         plus = rq["recent"] > 1
-        agit += (f"<p class='avis-sur'><span class='badge-sur'>Confident call</span> Next month, {_e(nom)} should be clearly "
+        agit += (f"<p class='avis-sur'><span class='badge-sur'>{'Very confident call' if tres else 'Confident call'}</span> Next month, {_e(nom)} should be clearly "
                  f"<b>{'more agitated' if plus else 'calmer'}</b> than in recent weeks (about {round(abs(rq['recent'] - 1) * 100)}% "
                  f"{'more' if plus else 'less'}). When the AI is this clear-cut, it was right <b>{round(av['taux'] * 100)} times out of 100</b> "
                  "on years it had never seen.</p>")

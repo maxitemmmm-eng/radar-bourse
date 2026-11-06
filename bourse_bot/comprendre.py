@@ -151,6 +151,11 @@ def evaluer_risque(jeu, horizon, variables_base, n_plis=5):
                    "par_marche": {str(m): float(g.mean()) for m, g in sens_j.groupby(o["marche"].to_numpy()) if len(g) >= 2000}}
     try:
         avis_surs = _avis_surs(o)
+        # version 63.4 : un 2e niveau, « avis très sûr » (seuil visé : 88 % sur le passé). Vrais cours : 89,0 % de bonnes
+        # réponses (marge 87,4 % à 90,5 %) sur environ 1 cas sur 5, pire année 83,6 %.
+        tres = _avis_surs(o, 0.88)
+        if tres:
+            avis_surs["tres"] = {k: tres.get(k) for k in ("seuil", "cible", "taux", "ic", "nb", "couverture", "pire_annee", "annees", "par_marche")}
     except Exception:
         avis_surs = {}
     return {"nb": int(len(o)), "periode": f"{o.index.min():%m/%Y} – {o.index.max():%m/%Y}", "sens_recent": sens_recent,
@@ -174,7 +179,7 @@ def _seuil_surs(d: np.ndarray, juste: np.ndarray, cible: float = CIBLE_SURS, min
     return float(q[ordre][ok[-1]]) if len(ok) else float("inf")
 
 
-def _avis_surs(o: pd.DataFrame) -> dict:
+def _avis_surs(o: pd.DataFrame, cible: float = CIBLE_SURS) -> dict:
     """Version 63 : les « avis sûrs » de l'IA sur « le mois prochain, plus ou moins agité que ces dernières semaines ? ».
     L'IA ne donne un avis sûr que quand sa prévision s'écarte nettement de l'agitation récente. Le seuil de chaque année
     est appris UNIQUEMENT sur les années d'avant (purge d'un mois), puis appliqué à l'année suivante : le taux annoncé est
@@ -191,7 +196,7 @@ def _avis_surs(o: pd.DataFrame) -> dict:
         passe = dates < pd.Timestamp(a, 1, 1) - pd.Timedelta(days=32)
         if passe.sum() < 20000:
             continue
-        s = _seuil_surs(d[passe], juste[passe])
+        s = _seuil_surs(d[passe], juste[passe], cible)
         an = (dates.year == a) & (np.abs(d) >= s)
         if an.any():
             morceaux.append(np.nonzero(an)[0])
@@ -204,7 +209,7 @@ def _avis_surs(o: pd.DataFrame) -> dict:
     bs = bootstrap_mois(df, lambda x: np.array([x["j"].mean()]), graine=17)
     par_an = j.groupby(pd.DatetimeIndex(sous.index).year).mean()
     plus = float(vrai[idx].mean())
-    out = {"seuil": _seuil_surs(d, juste), "cible": CIBLE_SURS, "taux": float(j.mean()), "ic": _ic(bs[:, 0]) if len(bs) else None,
+    out = {"seuil": _seuil_surs(d, juste, cible), "cible": cible, "taux": float(j.mean()), "ic": _ic(bs[:, 0]) if len(bs) else None,
            "nb": int(len(idx)), "couverture": float(len(idx) / max(1, (dates.year >= par_an.index.min()).sum())),
            "base": max(plus, 1 - plus), "par_an": {str(k): float(v) for k, v in par_an.items()},
            "pire_annee": float(par_an.min()), "annees_77": int((par_an >= 0.77).sum()), "annees": int(len(par_an)),
