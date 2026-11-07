@@ -58,6 +58,21 @@ CSS = """
 .bar-t i.b-up{background:var(--up)}.bar-t i.b-down{background:var(--down)}
 .bar-v{text-align:right;font-weight:600}
 td.m{white-space:nowrap}
+@media (prefers-reduced-motion:no-preference){
+.bar-t i{animation:barre-pousse .9s cubic-bezier(.2,.8,.2,1) both;transform-origin:left center}
+.bar-t i.b-down{transform-origin:right center}
+.bar-l:nth-child(2) i{animation-delay:.05s}.bar-l:nth-child(3) i{animation-delay:.1s}.bar-l:nth-child(4) i{animation-delay:.15s}
+.bar-l:nth-child(5) i{animation-delay:.2s}.bar-l:nth-child(6) i{animation-delay:.25s}.bar-l:nth-child(n+7) i{animation-delay:.3s}
+@keyframes barre-pousse{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.courbe .cs-ligne{stroke-dasharray:1;stroke-dashoffset:1;animation:trace 1.6s ease-out .1s forwards}
+@keyframes trace{to{stroke-dashoffset:0}}
+.courbe .ag-pred,.courbe .cs-med{animation:apparait .5s ease-out 1.5s both}
+@keyframes apparait{from{opacity:0}to{opacity:1}}
+.compteurs div{animation:monte .5s ease-out both}.compteurs div:nth-child(2){animation-delay:.08s}.compteurs div:nth-child(3){animation-delay:.16s}
+@keyframes monte{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.verdict{animation:apparait .4s ease-out both}}
+@media print{.bar-t i,.courbe .cs-ligne,.courbe .ag-pred,.courbe .cs-med,.compteurs div{animation:none!important;stroke-dashoffset:0!important;opacity:1!important}}
+.ag-norm{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:5 5}.ag-pred{fill:var(--ink);stroke:var(--surface);stroke-width:2}
 .verdict{display:inline-block;min-width:1.6em;text-align:center;font-weight:700;border-radius:6px;padding:0 6px}
 .verdict.ok{color:var(--up);background:var(--up-soft)}.verdict.ko{color:var(--down);background:var(--down-soft)}
 .compteurs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}
@@ -115,7 +130,7 @@ def verifier(titres: list) -> dict:
     """Vérifie chaque avis archivé dont les 20 séances sont passées. Les cours viennent des séries du site."""
     series = {t["ticker"]: t.get("serie") or {} for t in titres if t.get("serie")}
     noms = {t["ticker"]: t.get("nom", t["ticker"]) for t in titres}
-    faits, attente, prochains = [], 0, []
+    faits, attente, prochains, en_cours = [], 0, [], []
     for p in _points():
         for tk, sens, v20, tres in p["surs"]:
             s = series.get(tk) or {}
@@ -128,6 +143,7 @@ def verifier(titres: list) -> dict:
             if idx + HORIZON >= len(c):
                 attente += 1
                 prochains.append(p["date"])
+                en_cours.append({"date": p["date"], "ticker": tk, "nom": noms.get(tk, tk), "sens": sens, "tres": bool(tres), "avant": v20})
                 continue
             vr = _vol_realisee(c, idx, HORIZON)
             if vr is None:
@@ -136,7 +152,7 @@ def verifier(titres: list) -> dict:
             faits.append({"date": p["date"], "fin": dates[idx + HORIZON], "ticker": tk, "nom": noms.get(tk, tk),
                           "sens": sens, "tres": bool(tres), "avant": v20, "apres": vr, "juste": juste})
     faits.sort(key=lambda f: (f["fin"], f["date"]), reverse=True)
-    return {"faits": faits, "attente": attente, "premier_attente": min(prochains) if prochains else None}
+    return {"faits": faits, "attente": attente, "premier_attente": min(prochains) if prochains else None, "en_cours": en_cours}
 
 
 def _wilson(k, n, z=1.96):
@@ -162,8 +178,8 @@ def _pc(v):
 # ----------------------------------------------------------------------------
 # Page publique : les avis sûrs vérifiés
 # ----------------------------------------------------------------------------
-def page_verifies(seo, base, payload, dossier, csp):
-    V = verifier(payload.get("titres", []))
+def page_verifies(seo, base, payload, dossier, csp, V=None):
+    V = V or verifier(payload.get("titres", []))
     faits = V["faits"]
     av = ((payload.get("modele") or {}).get("risque") or {}).get("avis_surs") or {}
     taux_test = av.get("taux")
@@ -212,7 +228,8 @@ def page_verifies(seo, base, payload, dossier, csp):
             quand = f" Les premiers avis enregistrés datent du {e(dl(V['premier_attente']))} : leur verdict tombe environ 4 semaines plus tard."
         corps += (f"<div class='carte'><b>Premiers verdicts bientôt.</b><p style='margin:6px 0 0'>{V['attente']} avis sont "
                   f"enregistrés et attendent la fin de leurs 20 séances.{quand} Cette page se remplit toute seule, chaque soir.</p></div>")
-    corps += ("<h2>Comment c'est vérifié</h2><ul>"
+    corps += ("<p><a class='btn' href='donnees-ouvertes.html'>Toutes les données en CSV et JSON</a></p>"
+              "<h2>Comment c'est vérifié</h2><ul>"
               "<li>L'agitation, c'est l'ampleur des mouvements de prix (à la hausse comme à la baisse), ramenée à une année.</li>"
               "<li>« Avant » : l'agitation des 20 séances qui précèdent l'avis. « Après » : celle des 20 séances qui le suivent.</li>"
               "<li>L'avis est juste si « après » est plus grand que « avant » quand l'IA disait « plus agité », et plus petit quand elle disait « plus calme ».</li>"
@@ -221,7 +238,8 @@ def page_verifies(seo, base, payload, dossier, csp):
               "Projet éducatif, pas un conseil en investissement.</p>")
     jsonld = {"@context": "https://schema.org", "@type": "Dataset", "name": h1, "isAccessibleForFree": True,
               "description": "Avis de l'IA sur l'agitation du mois suivant, enregistrés à l'avance et vérifiés 20 séances plus tard.",
-              "creator": {"@type": "Organization", "name": seo.NOM}, "license": "https://opensource.org/licenses/MIT"}
+              "creator": {"@type": "Organization", "name": seo.NOM}, "license": (base + "credits.html") if base else "credits.html",
+              "copyrightHolder": {"@type": "Organization", "name": seo.NOM}}
     desc = ("Les avis sûrs de l'IA sont enregistrés avant de connaître la suite, puis vérifiés en public 20 séances plus tard : "
             + (f"{_pc(b_tous['taux'])} justes sur {b_tous['n']} à ce jour." if b_tous["n"] else "premiers verdicts en cours."))
     with open(os.path.join(dossier, "avis-surs-verifies.html"), "w", encoding="utf-8") as f:
@@ -453,3 +471,165 @@ def pages_en(seo, anglais, langues, base, payload, dossier, csp, date, V=None):
 
 def themes_noms() -> list:
     return [(cle, "actions " + court) for cle, _h, court, *_ in THEMES]
+
+
+# ----------------------------------------------------------------------------
+# Version 66 : données ouvertes (CSV + JSON) — tous les avis enregistrés, vérifiés ou en cours
+# ----------------------------------------------------------------------------
+def donnees_ouvertes(seo, base, dossier, csp, V):
+    import csv
+    import io
+    os.makedirs(os.path.join(dossier, "donnees-ouvertes"), exist_ok=True)
+    lignes = []
+    for f in V.get("faits", []):
+        lignes.append({"date_avis": f["date"], "ticker": f["ticker"], "nom": f["nom"], "avis": "plus_agite" if f["sens"] > 0 else "plus_calme",
+                       "niveau": "tres_sur" if f["tres"] else "sur", "agitation_avant": round(f["avant"], 5),
+                       "agitation_apres": round(f["apres"], 5), "fin_verification": f["fin"], "resultat": "juste" if f["juste"] else "faux"})
+    for f in V.get("en_cours", []):
+        lignes.append({"date_avis": f["date"], "ticker": f["ticker"], "nom": f["nom"], "avis": "plus_agite" if f["sens"] > 0 else "plus_calme",
+                       "niveau": "tres_sur" if f["tres"] else "sur", "agitation_avant": round(f["avant"], 5),
+                       "agitation_apres": "", "fin_verification": "", "resultat": "en_cours"})
+    lignes.sort(key=lambda r: (r["date_avis"], r["ticker"]))
+    champs = ["date_avis", "ticker", "nom", "avis", "niveau", "agitation_avant", "agitation_apres", "fin_verification", "resultat"]
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=champs, lineterminator="\n")
+    w.writeheader()
+    w.writerows(lignes)
+    with open(os.path.join(dossier, "donnees-ouvertes", "avis-ia.csv"), "w", encoding="utf-8") as fh:
+        fh.write(buf.getvalue())
+    meta = {"source": seo.NOM, "page": (base or "") + "avis-surs-verifies.html", "licence": (base or "") + "credits.html",
+            "description": "Avis sûrs de l'IA sur l'agitation du mois suivant (20 séances), enregistrés avant de connaître la suite. "
+                           "agitation = écart-type annualisé des rendements quotidiens (log), sur les 20 séances avant / après l'avis.",
+            "mis_a_jour": datetime.now().strftime("%Y-%m-%d"), "avis": lignes}
+    with open(os.path.join(dossier, "donnees-ouvertes", "avis-ia.json"), "w", encoding="utf-8") as fh:
+        json.dump(meta, fh, ensure_ascii=False, separators=(",", ":"))
+    nb_v = len(V.get("faits", []))
+    nb_c = len(V.get("en_cours", []))
+    e = seo._e
+    corps = ("<h1>Données ouvertes</h1>"
+             "<p>Tous les avis sûrs de l'IA, enregistrés chaque soir avant de connaître la suite, avec leur résultat une fois vérifiés. "
+             "Les fichiers se mettent à jour automatiquement : tu peux refaire les calculs toi-même.</p>"
+             "<div class='compteurs'>"
+             f"<div><b>{nb_v + nb_c}</b><span>avis enregistrés</span></div>"
+             f"<div><b>{nb_v}</b><span>avis vérifiés</span></div>"
+             f"<div><b>{nb_c}</b><span>avis en cours</span></div></div>"
+             "<p><a class='btn' href='donnees-ouvertes/avis-ia.csv' download>Télécharger le CSV</a> "
+             "<a class='btn' href='donnees-ouvertes/avis-ia.json' download>Télécharger le JSON</a></p>"
+             "<h2>Les colonnes</h2><ul>"
+             "<li><b>date_avis</b> : le soir où l'avis a été enregistré.</li>"
+             "<li><b>ticker</b>, <b>nom</b> : le titre concerné.</li>"
+             "<li><b>avis</b> : <code>plus_agite</code> ou <code>plus_calme</code> que les 20 dernières séances, sur les 20 séances suivantes.</li>"
+             "<li><b>niveau</b> : <code>sur</code> ou <code>tres_sur</code>.</li>"
+             "<li><b>agitation_avant</b>, <b>agitation_apres</b> : écart-type annualisé des rendements quotidiens (0,25 = 25 %).</li>"
+             "<li><b>resultat</b> : <code>juste</code>, <code>faux</code> ou <code>en_cours</code>.</li></ul>"
+             "<h2>Conditions</h2><p>Usage personnel, scolaire ou de recherche libre, en citant « Radar Bourse » et l'adresse du site. "
+             "Voir <a href='credits.html'>droits d'auteur et crédits</a>. Les cours qui servent à la vérification viennent de Yahoo Finance "
+             "et Binance ; ils ne sont pas redistribués ici.</p>"
+             "<p class='muted'>Projet éducatif, pas un conseil en investissement.</p>")
+    jsonld = {"@context": "https://schema.org", "@type": "Dataset", "name": "Avis de l'IA de Radar Bourse, vérifiés en public",
+              "description": meta["description"], "isAccessibleForFree": True, "dateModified": meta["mis_a_jour"],
+              "creator": {"@type": "Organization", "name": seo.NOM}, "license": meta["licence"],
+              "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": (base or "") + "donnees-ouvertes/avis-ia.csv"},
+                               {"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": (base or "") + "donnees-ouvertes/avis-ia.json"}]}
+    with open(os.path.join(dossier, "donnees-ouvertes.html"), "w", encoding="utf-8") as fh:
+        fh.write(seo._page(base, f"Données ouvertes : les avis de l'IA en CSV et JSON | {seo.NOM}",
+                           "Téléchargez tous les avis de l'IA de Radar Bourse, enregistrés à l'avance et vérifiés 20 séances plus tard : CSV et JSON mis à jour chaque jour.",
+                           "donnees-ouvertes.html", corps, jsonld, csp))
+    return ["donnees-ouvertes.html"]
+
+
+# ----------------------------------------------------------------------------
+# Version 66 : graphique « agitation sur un an + agitation prévue » des fiches
+# ----------------------------------------------------------------------------
+def agitation_svg(t: dict, fr: bool = True) -> str:
+    s = t.get("serie") or {}
+    c = [v for v in (s.get("c") or [])]
+    rq = t.get("risque_prevu") or {}
+    pred = rq.get("vol")
+    if len(c) < 120 or not pred or any(v is None or v <= 0 for v in c[-60:]):
+        return ""
+    r = [math.log(c[i] / c[i - 1]) if c[i] and c[i - 1] and c[i] > 0 and c[i - 1] > 0 else None for i in range(1, len(c))]
+    vols = []
+    for i in range(20, len(r) + 1):
+        seg = [x for x in r[i - 20:i] if x is not None]
+        if len(seg) < 15:
+            vols.append(None)
+            continue
+        m = sum(seg) / len(seg)
+        vols.append(math.sqrt(sum((x - m) ** 2 for x in seg) / (len(seg) - 1)) * math.sqrt(252))
+    vols = vols[-250:]
+    if sum(v is not None for v in vols) < 60 or vols[-1] is None:
+        return ""
+    ok = sorted(v for v in vols if v is not None)
+    normale = ok[len(ok) // 2]
+    W, H, pl, pr, pt, pb = 800, 250, 6, 190, 16, 24
+    n = len(vols) - 1 + 20
+    vmax = max(max(ok), pred, normale) * 1.12
+    X = lambda i: pl + i / n * (W - pl - pr)
+    Y = lambda v: pt + (1 - v / vmax) * (H - pt - pb)
+    pts = " ".join(f"{X(i):.0f},{Y(v):.0f}" for i, v in enumerate(vols) if v is not None)
+    i0 = len(vols) - 1
+    x0, y0, x1, y1 = X(i0), Y(vols[-1]), X(n), Y(pred)
+    pc = lambda v: f"{round(v * 100)} %" if fr else f"{round(v * 100)}%"
+    grille = "".join(f"<line class='cs-grille' x1='{pl}' x2='{W - pr}' y1='{Y(g):.0f}' y2='{Y(g):.0f}'/>"
+                     for g in (vmax * .25, vmax * .5, vmax * .75))
+    lib_p = "Prévu" if fr else "Forecast"
+    lib_a = "Actuel" if fr else "Now"
+    lib_n = "Sa normale" if fr else "Its normal"
+    ya, yp = y0, y1
+    if abs(ya - yp) < 30:   # étiquettes sans chevauchement
+        ya, yp = (ya - 15, yp + 15) if ya <= yp else (ya + 15, yp - 15)
+    titre = (f"Agitation de {t.get('nom', '')} sur un an et agitation prévue le mois prochain" if fr
+             else f"{t.get('nom', '')}: volatility over one year and forecast for next month")
+    svg = (f"<svg viewBox='0 0 {W} {H}' role='img' aria-label=\"{titre.replace(chr(34), '')}\">{grille}"
+           f"<line class='cs-auj' x1='{x0:.0f}' x2='{x0:.0f}' y1='{pt}' y2='{H - pb}'/>"
+           f"<line class='ag-norm' x1='{pl}' x2='{W - pr}' y1='{Y(normale):.0f}' y2='{Y(normale):.0f}'/>"
+           f"<polyline class='cs-ligne' pathLength='1' points='{pts}'/>"
+           f"<line class='cs-med' x1='{x0:.0f}' y1='{y0:.0f}' x2='{x1:.0f}' y2='{y1:.0f}'/>"
+           f"<circle class='cs-point' cx='{x0:.0f}' cy='{y0:.0f}' r='5'/><circle class='ag-pred' cx='{x1:.0f}' cy='{y1:.0f}' r='6'/>"
+           f"<text class='cs-t' x='{x1 + 12:.0f}' y='{yp + 5:.0f}'>{lib_p} {pc(pred)}</text>"
+           f"<text class='cs-d' x='{x1 + 12:.0f}' y='{ya + 5:.0f}'>{lib_a} {pc(vols[-1])}</text>"
+           f"<text class='cs-d' x='{pl + 4}' y='{Y(normale) - 6:.0f}'>{lib_n} {pc(normale)}</text></svg>")
+    leg = ("<p class='cs-leg'><span>Agitation des 20 dernières séances</span><span class='l-med'>Prévision de l'IA (mois prochain)</span>"
+           "<span class='l-50'>Sa normale sur un an</span></p>" if fr else
+           "<p class='cs-leg'><span>Volatility over the last 20 sessions</span><span class='l-med'>AI forecast (next month)</span>"
+           "<span class='l-50'>Its one-year normal</span></p>")
+    return f"<figure class='courbe'><figcaption class='muted' style='font-size:14px;margin-bottom:6px'>{titre}</figcaption>{svg}{leg}</figure>"
+
+
+def avis_passes_html(ticker: str, V: dict, fr: bool = True, prefixe: str = "../") -> str:
+    """Version 66.1 : sur chaque fiche, les avis passés de l'IA pour ce titre (justes, faux, en cours)."""
+    if not V:
+        return ""
+    faits = [f for f in V.get("faits", []) if f["ticker"] == ticker]
+    cours = [f for f in V.get("en_cours", []) if f["ticker"] == ticker]
+    if not faits and not cours:
+        return ""
+    vus, uniques = set(), []
+    for f in faits:   # un avis par date suffit à l'affichage
+        if f["date"] not in vus:
+            vus.add(f["date"])
+            uniques.append(f)
+    k = sum(f["juste"] for f in faits)
+    if fr:
+        tete = ("<h2>Les avis passés de l'IA sur ce titre</h2>"
+                + (f"<p><b>{k} juste{'s' if k > 1 else ''} sur {len(faits)}</b> avis vérifié{'s' if len(faits) > 1 else ''}"
+                   f"{f', et {len(cours)} en cours de vérification' if cours else ''}. "
+                   if faits else f"<p>{len(cours)} avis enregistré{'s' if len(cours) > 1 else ''}, en cours de vérification (20 séances). ")
+                + f"<a href='{prefixe}avis-surs-verifies.html'>Tous les avis vérifiés</a></p>")
+        lignes = "".join(
+            f"<li>{f['date'][8:10]}/{f['date'][5:7]} : {'plus agité' if f['sens'] > 0 else 'plus calme'} "
+            f"({round(f['avant'] * 100)} % → {round(f['apres'] * 100)} %) "
+            f"{'<span class="verdict ok">✓ juste</span>' if f['juste'] else '<span class="verdict ko">✗ faux</span>'}</li>"
+            for f in uniques[:6])
+    else:
+        tete = ("<h2>The AI's past calls on this asset</h2>"
+                + (f"<p><b>{k} right out of {len(faits)}</b> checked call{'s' if len(faits) > 1 else ''}{f', {len(cours)} still running' if cours else ''}. "
+                   if faits else f"<p>{len(cours)} call{'s' if len(cours) > 1 else ''} recorded, being checked (20 sessions). ")
+                + f"<a href='{prefixe}verified-calls.html'>All checked calls</a></p>")
+        lignes = "".join(
+            f"<li>{f['date']}: {'more volatile' if f['sens'] > 0 else 'calmer'} "
+            f"({round(f['avant'] * 100)}% → {round(f['apres'] * 100)}%) "
+            f"{'<span class="verdict ok">✓ right</span>' if f['juste'] else '<span class="verdict ko">✗ wrong</span>'}</li>"
+            for f in uniques[:6])
+    return tete + (f"<ul>{lignes}</ul>" if lignes else "")

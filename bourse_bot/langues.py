@@ -360,7 +360,8 @@ def _page(lg, base, titre, desc, chemin, corps, csp, alternates, faq=None):
 {corps}
 </main>
 <footer><p class="avert">{L['avert'].format(nom=NOM)}</p>
-<p class="muted">{_e(L['langues'])}: {selecteur(prefixe, lg, alternates)}</p></footer>
+<p class="muted">{_e(L['langues'])}: {selecteur(prefixe, lg, alternates)}</p>
+<p class="muted">© {__import__("bourse_bot.credits", fromlist=["x"]).annees()} {NOM} · <a href="{prefixe}en/credits.html">Copyright / credits</a></p></footer>
 </div>
 {seo.SCRIPT_BOUTON}
 </body></html>

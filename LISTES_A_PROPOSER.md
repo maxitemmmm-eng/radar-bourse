@@ -15,11 +15,11 @@ Les « topics » font apparaître le dépôt dans les recherches de GitHub et su
 
 ## 2. La liste « awesome-quant »
 
-C'est une liste très connue de projets libres sur la finance quantitative (dépôt `wilsonfreitas/awesome-quant` sur GitHub).
+C'est une liste très connue de projets libres sur la finance quantitative (dépôt `wilsonfreitas/awesome-quant` sur GitHub). ⚠️ Elle attend des projets open source : voir `VISIBILITE_V65.md`, partie 1, sur la question de licence.
 On y propose un projet par une « pull request » qui ajoute une ligne. Texte proposé (en anglais, comme la liste) :
 
 ```
-- [Radar Bourse](https://github.com/<ton-pseudo>/radar-bourse) - Free, open-source stock & crypto forecasts (1-month volatility and direction) with public walk-forward validation, published as a static site.
+- [Radar Bourse](https://github.com/<ton-pseudo>/radar-bourse) - Free stock & crypto forecasts (1-month volatility and direction) with public walk-forward validation, published as a static site.
 ```
 
 Mets la ligne dans la section Python la plus proche (prévision ou outils de trading), en respectant l'ordre de la liste.
@@ -31,7 +31,7 @@ Sur alternativeto.net, crée une fiche (compte gratuit, pseudo) :
 - **Nom** : Radar Bourse
 - **Alternative à** : Danelfin, Zonebourse, TradingView
 - **Description** : `Prévisions gratuites par IA pour plus de 200 actions et cryptos : agitation prévue, chances à un mois, comparaisons, classements. Chaque prévision est vérifiée publiquement, ratés compris. Sans inscription ni publicité.`
-- **Mots-clés** : stock market, stock prediction, crypto, free, open source
+- **Mots-clés** : stock market, stock prediction, crypto, free
 
 ## 4. Product Hunt (une seule fois)
 

@@ -1,4 +1,4 @@
-# Visibilité : les textes prêts (version 65)
+# Visibilité : les textes prêts (version 65, corrigés en version 66)
 
 Le meilleur argument du site, c'est désormais **la page des avis vérifiés en public**. Peu de sites osent montrer leurs ratés. C'est ce qui donne envie de partager et de faire un lien.
 Les pages à montrer :
@@ -11,22 +11,12 @@ Règles : publier sous pseudo seulement, une fois par endroit, sans spam. Toujou
 
 ---
 
-## 1. awesome-quant (lien très fort pour Google)
+## 1. awesome-quant (en attente : question de licence)
 
-**Section** : *Time Series Analysis*. La liste range les projets par ordre d'arrivée, donc la ligne va à la fin de la section.
+Cette liste recense surtout des projets **open source**, c'est-à-dire que tout le monde a le droit de réutiliser le code. Ton dépôt est sous licence **« Tous droits réservés »** : le code se lit, mais personne n'a le droit de le réutiliser. Avec cette licence, la demande risque d'être refusée. Deux choix :
 
-```
-- [Radar Bourse](https://github.com/maxitemmmm-eng/radar-bourse) - `Python` - Open-source 1-month volatility and drawdown-risk forecasts for ~300 stocks, ETFs and cryptos, with walk-forward validation and every confident call checked in public on a static site.
-```
-
-**Titre de la demande** : `Add Radar Bourse (volatility forecasts with public out-of-sample tracking)`
-
-**Message** :
-```
-Adds Radar Bourse, an MIT-licensed Python project that forecasts next-month volatility and the risk of a >10% drawdown for ~300 stocks, ETFs and cryptos. Models are evaluated walk-forward on years never seen in training, and every "confident call" is recorded in advance and verified in public 20 sessions later (misses included).
-```
-
-Je peux l'envoyer depuis ton PC quand tu me dis « ok awesome-quant ».
+- **Garder « Tous droits réservés »** (ton travail reste protégé) : on oublie awesome-quant et on vise les annuaires d'outils (Product Hunt, AlternativeTo), qui acceptent les projets non libres.
+- **Passer le code en licence libre** (MIT ou AGPL, par exemple) : awesome-quant devient possible, mais n'importe qui pourra réutiliser ton code. C'est à toi de décider ; je ne change rien sans ton accord.
 
 ---
 
@@ -42,7 +32,7 @@ Je n'ai pas voulu faire un énième site de « signaux » : l'IA ne dit pas si �
 Ce qui change :
 - les avis sont enregistrés à l'avance, puis vérifiés en public 20 séances plus tard. Rien n'est effacé, les ratés restent affichés ;
 - sur les années passées, que l'IA n'avait jamais vues, ses « avis sûrs » étaient justes environ 80 % du temps. On verra si ça tient en vrai ;
-- c'est gratuit, sans inscription, sans pub, et le code est ouvert.
+- c'est gratuit, sans inscription, sans pub, et le code est public (on peut le lire sur GitHub).
 
 La page des avis vérifiés : https://maxitemmmm-eng.github.io/radar-bourse/avis-surs-verifies.html
 
@@ -61,7 +51,7 @@ Side project: ~300 stocks, ETFs and cryptos, updated hourly on GitHub Pages (Pyt
 Instead of predicting direction (close to a coin flip), it forecasts next-month volatility and drawdown risk. Every "confident call" is logged before the outcome and verified 20 sessions later, on a public page with misses included. Out of sample (walk-forward, 2016-2026), the confident calls were right ~80% of the time vs ~78% for a simple mean-reversion rule, so the edge is real but small.
 
 Verified calls: https://maxitemmmm-eng.github.io/radar-bourse/en/verified-calls.html
-Code (MIT): https://github.com/maxitemmmm-eng/radar-bourse
+Source code (public, all rights reserved): https://github.com/maxitemmmm-eng/radar-bourse
 
 Feedback on the methodology very welcome.
 ```
@@ -78,7 +68,7 @@ Lien : la page anglaise des avis vérifiés. En premier commentaire, mets le par
 ## 5. Product Hunt et AlternativeTo
 
 - **Phrase courte** : `Free AI stock & crypto forecasts that check their own calls in public, misses included.`
-- **Description** : `~300 stocks, ETFs and cryptos. Forecasts what can actually be forecast (next-month volatility, risk of a >10% fall), records every confident call in advance and verifies it 20 sessions later. Free, no sign-up, no ads, open source.`
+- **Description** : `~300 stocks, ETFs and cryptos. Forecasts what can actually be forecast (next-month volatility, risk of a >10% fall), records every confident call in advance and verifies it 20 sessions later. Free, no sign-up, no ads, public source code.`
 - **Alternative à** : Danelfin, Zonebourse, TradingView, Investing.com
 - **Images** : `partage.png` et une capture de la page des avis vérifiés.
 

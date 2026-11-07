@@ -214,7 +214,7 @@ def liens_fr() -> list:
     return [("Accueil", "index.html"), ("Prévisions", "index.html#previsions"), ("Pronostic du jour", "index.html#prono"),
             ("Carte des risques", "index.html#nuage"), ("Tous les titres", "titres.html"), ("Résultats réels", "resultats.html"),
             ("Outils gratuits", "outils.html"), ("Guides", "guides.html"),
-            ("Le point du jour", "point.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actions par thème", "themes.html"), ("Avis de l'IA vérifiés", "avis-surs-verifies.html"), ("Actu bourse", "actu-bourse.html"), ("Actu bitcoin", "actu-bitcoin.html"),
+            ("Le point du jour", "point.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actions par thème", "themes.html"), ("Avis de l'IA vérifiés", "avis-surs-verifies.html"), ("Données ouvertes", "donnees-ouvertes.html"), ("Actu bourse", "actu-bourse.html"), ("Actu bitcoin", "actu-bitcoin.html"),
             ("Krach boursier", "krach-boursier.html"), ("Comparer", "comparer.html"), ("Classements", "classements.html"),
             ("Sélection IA du mois", "portefeuille.html"), (f"Prévisions {datetime.now().year}", "previsions.html"),
             ("Simulateur boursier", "simulateur-boursier.html"), ("Apprendre", "apprendre.html"), ("Glossaire", "glossaire.html"),
@@ -467,11 +467,20 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 <footer><p class="avert"><b>Rien n'est sûr en Bourse.</b> {NOM} est un projet éducatif : ces informations sont générées automatiquement,
 peuvent contenir des erreurs et ne constituent pas un conseil en investissement. Tu peux perdre tout l'argent investi.
 Conditions d'utilisation, méthodologie et aide : voir la <a href="{prefixe}index.html#conditions">page d'accueil</a>.</p>
-<p class="muted"><a href="{prefixe}fonctionnalites.html">Fonctionnalités</a> · <a href="{prefixe}journal-ia.html">Journal de l'IA</a> · <a href="{prefixe}simulateur-boursier.html">Simulateur boursier</a> · <a href="{prefixe}outils.html">Outils gratuits</a> · <a href="{prefixe}a-propos.html">À propos</a> · <a href="{prefixe}contact.html">Contact</a></p></footer>
+<p class="muted"><a href="{prefixe}fonctionnalites.html">Fonctionnalités</a> · <a href="{prefixe}journal-ia.html">Journal de l'IA</a> · <a href="{prefixe}simulateur-boursier.html">Simulateur boursier</a> · <a href="{prefixe}outils.html">Outils gratuits</a> · <a href="{prefixe}a-propos.html">À propos</a> · <a href="{prefixe}contact.html">Contact</a> · <a href="{prefixe}donnees-ouvertes.html">Données ouvertes</a></p>
+<p class="muted">© {__import__("bourse_bot.credits", fromlist=["x"]).annees()} {NOM} · <a href="{prefixe}credits.html">Droits d'auteur et crédits</a> · Marques et noms de sociétés cités à des fins d'identification uniquement.</p></footer>
 </div>
 {SCRIPT_BOUTON}
 </body></html>
 """
+
+
+def _avis_passes(t: dict) -> str:
+    try:   # version 66.1 : les avis passés de l'IA sur ce titre
+        from .hebdo import avis_passes_html
+        return avis_passes_html(t["ticker"], t.get("_verif"))
+    except Exception:
+        return ""
 
 
 def marque_sur(t: dict) -> str:
@@ -517,7 +526,7 @@ def courbe_svg(t: dict, libs: dict | None = None, jours: int = 126) -> str:
     for f in (.25, .5, .75):   # quadrillage discret
         y = pt + (H - pt - pb) * f
         morceaux.append(f"<line x1='{pl}' x2='{W - pr}' y1='{y:.1f}' y2='{y:.1f}' class='cs-grille'/>")
-    morceaux.append(f"<path d='{aire}' class='cs-aire'/><path d='{ligne}' class='cs-ligne'/>")
+    morceaux.append(f"<path d='{aire}' class='cs-aire'/><path d='{ligne}' class='cs-ligne' pathLength='1'/>")
     if ok_cone:
         fx = lambda j: X(i0 + j)
         up = " L".join(f"{fx(j):.0f},{Y(v):.0f}" for j, v in enumerate(haut))
@@ -579,6 +588,11 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
                  + (", plus que d'habitude" if (rq.get("habitude") or 1) > 1.25 else ", moins que d'habitude" if (rq.get("habitude") or 1) < 0.8 else "")
                  + ", dans un sens ou dans l'autre. C'est le mouvement <i>habituel</i> : la fourchette « 8 fois sur 10 » ci-dessus est plus large, "
                  "car elle couvre aussi les mois plus agités.</p>") if rq.get("mouvement") else ""
+    try:   # version 66 : le graphique de l'agitation (un an + la prévision du mois prochain), puis les avis passés (66.1)
+        from .hebdo import agitation_svg, avis_passes_html
+        agitation += agitation_svg(t) if agitation else ""
+    except Exception:
+        pass
     sr = dict((((modele or {}).get("risque") or {}).get("sens_recent") or {}))
     if (sr.get("par_marche") or {}).get(t.get("marche")) is not None:   # version 61 : taux du marché du titre
         sr["taux"] = sr["par_marche"][t.get("marche")]
@@ -594,12 +608,12 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
                       f"<b>{'plus agité' if rq['recent'] > 1 else 'plus calme'}</b> que ces dernières semaines (environ {ecart} % "
                       f"{'de plus' if rq['recent'] > 1 else 'de moins'}). Quand l'IA est aussi nette, elle a eu raison "
                       f"<b>{round(av['taux'] * 100)} fois sur 100</b> sur des années qu'elle n'avait jamais vues"
-                      + (f" (au moins 77 % {av['annees_77']} années sur {av['annees']})" if av.get("annees_77") is not None else
+                      + (f" (au moins 77 % {av['annees_77']} années sur {av['annees']})" if av.get("annees_77") is not None and (av.get("annees") or 0) > 1 else
                          f" (pire année : {round(av['pire_annee'] * 100)} %)" if av.get("pire_annee") else "") + ".</p>")
     elif rq.get("recent") is not None and (sr.get("taux") or 0) > 0.6:   # version 59 : la question où l'IA dépasse 60 %
         agitation += (f"<p>Le mois prochain, {_e(t['nom'])} devrait être <b>{'plus agité' if rq['recent'] > 1 else 'plus calme'}</b> "
                       f"que ces dernières semaines. Sur des années jamais vues, l'IA a eu raison <b>{round(sr['taux'] * 100)} fois sur 100</b> "
-                      f"sur cette question" + (f" (au-dessus de 60 % {sr['annees_60']} années sur {sr['annees']})" if sr.get("annees") else "")
+                      f"sur cette question" + (f" (au-dessus de 60 % {sr['annees_60']} années sur {sr['annees']})" if (sr.get("annees") or 0) > 1 else "")
                       + ".</p>")
     if rq.get("semaine"):
         agitation += (f"<p>Sur la semaine qui vient (5 séances) : environ <b class='m'>±{rq['semaine'] * 100:.1f} %</b>.".replace(".", ",", 1)
@@ -727,7 +741,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
 {"<b>Signal fort</b> : le modèle et la tendance technique vont dans le même sens." if t.get("signal_fort") else ""}
 {f"Probabilité de faire mieux que {_e(t.get('indice_nom') or 'son marché')} sur la même période : <b>{round(t['proba_marche'] * 100)} %</b>." if t.get("proba_marche") is not None else ""}
 {"Fourchette élargie par prudence : l'entreprise publie ses résultats avant l'échéance." if t.get("fourchette_elargie") else ""}</p>
-{agitation}
+{agitation}{_avis_passes(t)}
 {f"<h2>Pourquoi cet avis ?</h2><p class='muted'>Ce qui a le plus pesé dans le calcul des deux IA.</p><ul>{pourquoi}</ul>" if pourquoi else ""}
 <p><a class="btn" href="{lien_app}">Voir le graphique interactif et le simulateur</a></p>
 {f"<h2>Ce que montrent les indicateurs</h2><ul>{raisons}</ul>" if raisons else ""}
@@ -2094,6 +2108,13 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     os.makedirs(os.path.join(dossier, "titres"), exist_ok=True)
     urls = [("", "hourly", "1.0"), ("app-en.html", "hourly", "0.9"), ("titres.html", "daily", "0.8"), ("glossaire.html", "monthly", "0.6")]
 
+    # version 66.1 : les avis vérifiés sont calculés d'abord (chaque fiche montre ses avis passés)
+    verif = None
+    try:
+        from . import hebdo
+        verif = hebdo.verifier(payload.get("titres", []))
+    except Exception as e:
+        print(f"Vérification des avis impossible : {e}")
     # Une page par titre
     duels = _duels_dispos(payload.get("titres", []))
     liens = []
@@ -2105,7 +2126,7 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
         meme = sorted(meme, key=lambda x: (x.get("marche") != t.get("marche"), -(x.get("score") or 0)))[:6]
         voisins = meme + [x for x in sorted(voisins, key=lambda x: -(x.get("score") or 0)) if x not in meme][:max(0, 8 - len(meme))]
         t = dict(t, _duels=[((y if x["ticker"] == t["ticker"] else x), _chemin_duel(x, y)) for x, y in duels if t["ticker"] in (x["ticker"], y["ticker"])])
-        t = dict(t, _image_ok=_image_titre(t, os.path.join(dossier, "partage", f"{slug(t['ticker'])}.png"), date))
+        t = dict(t, _image_ok=_image_titre(t, os.path.join(dossier, "partage", f"{slug(t['ticker'])}.png"), date), _verif=verif)
         chemin, page = _page_titre(base, t, horizon, date, csp, payload.get("modele"), payload.get("suivi"), voisins)
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(page)
@@ -2300,12 +2321,17 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
                       "point.html", corps, csp=csp))
     urls.append(("point.html", "daily", "0.8"))
 
+    try:   # version 66 : droits d'auteur et crédits
+        from . import credits as _cr, anglais as _ang2
+        urls += [(c, "monthly", "0.4") for c in _cr.generer(__import__(__name__, fromlist=["x"]), _ang2, base, dossier, csp)]
+    except Exception as e:
+        print(f"Crédits non générés : {e}")
     # version 65 : les avis sûrs vérifiés en public, et les pages par thème
-    verif = None
     try:
         from . import hebdo
-        verif = hebdo.page_verifies(__import__(__name__, fromlist=["x"]), base, payload, dossier, csp)
+        verif = hebdo.page_verifies(__import__(__name__, fromlist=["x"]), base, payload, dossier, csp, verif)
         urls.append(("avis-surs-verifies.html", "daily", "0.8"))
+        urls += [(c, "daily", "0.6") for c in hebdo.donnees_ouvertes(__import__(__name__, fromlist=["x"]), base, dossier, csp, verif)]
     except Exception as e:
         print(f"Avis vérifiés non générés : {e}")
     try:
@@ -2578,14 +2604,20 @@ def jsonld_accueil() -> dict:
     base = url_site()
     depot = os.environ.get("GITHUB_REPOSITORY", "")
     org = {"@type": "Organization", "@id": (base or "") + "#org", "name": NOM, "url": base or None,
-           "logo": (base + "icone-512.png") if base else None}
+           "logo": {"@type": "ImageObject", "url": (base + "icone-512.png") if base else None, "width": 512, "height": 512},
+           # version 66 : le dépôt public du projet, et les pages de droits d'auteur / données ouvertes
+           "sameAs": [f"https://github.com/{depot}"] if depot else None}
     site = {"@type": "WebSite", "@id": (base or "") + "#site", "name": NOM,
             "alternateName": ["Radar-Bourse", "RadarBourse", "Bourse Radar", "Radar Bourse IA"],
-            "url": base or None, "description": DESCRIPTION, "inLanguage": "fr-FR", "publisher": {"@id": (base or "") + "#org"}}
+            "url": base or None, "description": DESCRIPTION, "inLanguage": "fr-FR", "publisher": {"@id": (base or "") + "#org"},
+            "copyrightHolder": {"@id": (base or "") + "#org"}, "copyrightYear": 2026,
+            "license": (base + "credits.html") if base else None}
     rubriques = [("Prévisions par titre", "titres.html"), ("Simulateur boursier", "simulateur-boursier.html"),
                  ("Outils gratuits", "outils.html"), ("Si j'avais investi", "outils/si-javais-investi.html"),
                  ("Convertisseur crypto", "outils/convertisseur.html"), ("Résultats réels", "resultats.html"),
-                 ("Guides", "guides.html"), ("Journal de l'IA", "journal-ia.html")]
+                 ("Guides", "guides.html"), ("Journal de l'IA", "journal-ia.html"),
+                 ("Avis de l'IA vérifiés en public", "avis-surs-verifies.html"), ("La Bourse cette semaine", "bourse-cette-semaine.html"),
+                 ("Actions par thème", "themes.html"), ("Données ouvertes", "donnees-ouvertes.html")]
     nav = {"@type": "ItemList", "@id": (base or "") + "#rubriques", "name": "Rubriques de Radar Bourse",
            "itemListElement": [{"@type": "SiteNavigationElement", "position": i + 1, "name": n, "url": (base + c) if base else c}
                                for i, (n, c) in enumerate(rubriques)]}

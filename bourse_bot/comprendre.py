@@ -154,8 +154,14 @@ def evaluer_risque(jeu, horizon, variables_base, n_plis=5):
         # version 63.4 : un 2e niveau, « avis très sûr » (seuil visé : 88 % sur le passé). Vrais cours : 89,0 % de bonnes
         # réponses (marge 87,4 % à 90,5 %) sur environ 1 cas sur 5, pire année 83,6 %.
         tres = _avis_surs(o, 0.88)
+        # version 66 : l'avis très sûr exige en plus l'accord avec la règle simple « retour vers sa normale ». Vrais cours,
+        # 2017-2026 : 9,7 % d'avis très sûrs en plus (44 390 contre 40 473) pour la même justesse (89,0 % contre 89,0 % ;
+        # écart −0,7 à +0,9 point), plus d'avis 9 années sur 10. Adopté seulement si c'est encore vrai sur les données du jour.
+        tres_acc = _avis_surs(o, 0.88, accord=True) if "normale" in o else {}
+        if tres_acc and tres and tres_acc.get("nb", 0) > tres.get("nb", 0) and (tres_acc.get("taux") or 0) >= (tres.get("taux") or 0) - 0.005:
+            tres = tres_acc
         if tres:
-            avis_surs["tres"] = {k: tres.get(k) for k in ("seuil", "cible", "taux", "ic", "nb", "couverture", "pire_annee", "annees", "par_marche")}
+            avis_surs["tres"] = {k: tres.get(k) for k in ("seuil", "cible", "taux", "ic", "nb", "couverture", "pire_annee", "annees", "par_marche", "accord")}
     except Exception:
         avis_surs = {}
     return {"nb": int(len(o)), "periode": f"{o.index.min():%m/%Y} – {o.index.max():%m/%Y}", "sens_recent": sens_recent,
@@ -179,7 +185,7 @@ def _seuil_surs(d: np.ndarray, juste: np.ndarray, cible: float = CIBLE_SURS, min
     return float(q[ordre][ok[-1]]) if len(ok) else float("inf")
 
 
-def _avis_surs(o: pd.DataFrame, cible: float = CIBLE_SURS) -> dict:
+def _avis_surs(o: pd.DataFrame, cible: float = CIBLE_SURS, accord: bool = False) -> dict:
     """Version 63 : les « avis sûrs » de l'IA sur « le mois prochain, plus ou moins agité que ces dernières semaines ? ».
     L'IA ne donne un avis sûr que quand sa prévision s'écarte nettement de l'agitation récente. Le seuil de chaque année
     est appris UNIQUEMENT sur les années d'avant (purge d'un mois), puis appliqué à l'année suivante : le taux annoncé est
@@ -191,13 +197,18 @@ def _avis_surs(o: pd.DataFrame, cible: float = CIBLE_SURS) -> dict:
     vrai = (o["y"] > o["naif"]).to_numpy()
     juste = ((d > 0) == vrai).astype(float)
     dates = pd.DatetimeIndex(o.index)
+    # version 66 : « accord » = l'IA et la règle simple (retour vers sa normale de l'année) disent la même chose
+    filtre = np.ones(len(o), bool)
+    if accord:
+        nm = o["normale"].to_numpy(dtype=float) if "normale" in o else np.full(len(o), np.nan)
+        filtre = np.isfinite(nm) & ((nm < 0) == (d > 0))
     morceaux = []
     for a in sorted(set(dates.year)):
         passe = dates < pd.Timestamp(a, 1, 1) - pd.Timedelta(days=32)
         if passe.sum() < 20000:
             continue
-        s = _seuil_surs(d[passe], juste[passe], cible)
-        an = (dates.year == a) & (np.abs(d) >= s)
+        s = _seuil_surs(d[passe & filtre], juste[passe & filtre], cible)
+        an = (dates.year == a) & (np.abs(d) >= s) & filtre
         if an.any():
             morceaux.append(np.nonzero(an)[0])
     if not morceaux:
@@ -209,7 +220,7 @@ def _avis_surs(o: pd.DataFrame, cible: float = CIBLE_SURS) -> dict:
     bs = bootstrap_mois(df, lambda x: np.array([x["j"].mean()]), graine=17)
     par_an = j.groupby(pd.DatetimeIndex(sous.index).year).mean()
     plus = float(vrai[idx].mean())
-    out = {"seuil": _seuil_surs(d, juste, cible), "cible": cible, "taux": float(j.mean()), "ic": _ic(bs[:, 0]) if len(bs) else None,
+    out = {"seuil": _seuil_surs(d[filtre], juste[filtre], cible), "cible": cible, "accord": bool(accord), "taux": float(j.mean()), "ic": _ic(bs[:, 0]) if len(bs) else None,
            "nb": int(len(idx)), "couverture": float(len(idx) / max(1, (dates.year >= par_an.index.min()).sum())),
            "base": max(plus, 1 - plus), "par_an": {str(k): float(v) for k, v in par_an.items()},
            "pire_annee": float(par_an.min()), "annees_77": int((par_an >= 0.77).sum()), "annees": int(len(par_an)),
@@ -329,7 +340,8 @@ def predire_risque(jeu, actuel, tous, horizon, variables_base, utiliser_ia=True,
     except Exception:
         recent = np.full(len(actuel), np.nan)
     out = {}
-    for t, l, r in zip(actuel["ticker"], lp, recent):
+    nms = actuel["vol_normale"].to_numpy(dtype=float) if "vol_normale" in actuel else np.full(len(actuel), np.nan)
+    for t, l, r, nm in zip(actuel["ticker"], lp, recent, nms):
         if not np.isfinite(l) or t not in tous:
             continue
         c = tous[t]["Close"]
@@ -339,7 +351,7 @@ def predire_risque(jeu, actuel, tous, horizon, variables_base, utiliser_ia=True,
                   "habitude": float(vol / hist.median()) if len(hist) > 60 and hist.median() > 0 else None,
                   # version 59 : plus (> 1) ou moins (< 1) agité que ces dernières semaines, selon l'IA
                   "recent": float(np.exp(l - r)) if source == "ia" and np.isfinite(r) else None,
-                  "source": source}
+                  "source": source, "normale": float(nm) if np.isfinite(nm) else None}
     return out, mod
 
 

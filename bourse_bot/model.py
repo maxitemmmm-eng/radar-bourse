@@ -1207,6 +1207,9 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
                     r["sur"] = bool(abs(np.log(r["recent"])) >= seuil)
                     if seuil_t and np.isfinite(seuil_t):
                         r["tres_sur"] = bool(abs(np.log(r["recent"])) >= seuil_t)
+                        if (av.get("tres") or {}).get("accord"):   # version 66 : accord avec la règle « retour vers sa normale »
+                            nm = r.get("normale")
+                            r["tres_sur"] = bool(r["tres_sur"] and nm is not None and (nm < 0) == (r["recent"] > 1))
     except Exception:
         pass
     try:   # version 48 : l'agitation sur une semaine (modèle simple, testé sur les vrais cours)

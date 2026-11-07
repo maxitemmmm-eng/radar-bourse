@@ -450,6 +450,17 @@ footer a{color:var(--accent);text-underline-offset:3px}
 .bref p{font-family:var(--f-display);font-size:clamp(17px,1.6vw,19.5px);line-height:1.55;margin:0}
 .bref .sig{font-family:var(--f-body);font-size:12.5px;color:var(--muted);margin-top:14px}
 /* version 64 : les avis très sûrs du jour, directement dans l'encadré de l'accueil */
+/* version 66.1 : les sections loin sous l'écran ne sont mises en page qu'à l'approche (accueil plus rapide sur téléphone) */
+main section:nth-of-type(n+4){content-visibility:auto;contain-intrinsic-size:auto 900px}
+@media print{main section{content-visibility:visible}}
+.decouvrir{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 6px}
+.decouvrir a{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.decouvrir a:hover,.decouvrir a:focus-visible{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 8px 22px rgba(5,10,20,.12)}
+.decouvrir b{font-size:15px}.decouvrir span{font-size:13.5px;color:var(--muted);line-height:1.45}
+@media (max-width:1000px){.decouvrir{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.decouvrir{grid-template-columns:minmax(0,1fr)}}
+@media (prefers-reduced-motion:no-preference){.decouvrir a{animation:dec-monte .5s ease-out both}.decouvrir a:nth-child(2){animation-delay:.07s}.decouvrir a:nth-child(3){animation-delay:.14s}.decouvrir a:nth-child(4){animation-delay:.21s}
+@keyframes dec-monte{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}}
 .bref-surs{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:grid;gap:2px}
 .bref-surs h4{margin:0 0 6px;font:600 13.5px var(--f-body);color:var(--ink);display:flex;align-items:center;gap:6px}
 .bref-surs h4 .marque-sur{margin-left:0}
@@ -932,6 +943,12 @@ html.calme *{animation:none!important;transition:none!important}
   <p class="etat-marches" id="etat-marches" aria-live="polite"></p>
   <div class="tape" id="tape" role="region" aria-label="Marchés en ce moment" tabindex="0"></div>
   <div class="mood panel" id="mood" aria-label="Météo du marché"></div>
+  <nav class="decouvrir" aria-label="À découvrir sur le radar">
+    <a class="lien-site" href="avis-surs-verifies.html"><b>Avis de l'IA vérifiés</b><span>Chaque avis noté juste ou faux, 20 séances plus tard. Rien n'est effacé.</span></a>
+    <a class="lien-site" href="bourse-cette-semaine.html"><b>La Bourse cette semaine</b><span>Le résumé de la semaine en graphiques, chaque jour à jour.</span></a>
+    <a class="lien-site" href="themes.html"><b>Actions par thème</b><span>Luxe, IA et puces, défense, banques, énergie…</span></a>
+    <a class="lien-site" href="donnees-ouvertes.html"><b>Données ouvertes</b><span>Tous les avis de l'IA en CSV et JSON, pour vérifier toi-même.</span></a>
+  </nav>
 
   <section aria-labelledby="h-assist" id="assistant">
     <div class="sec-head"><h2 id="h-assist">Ton assistant</h2>
@@ -1235,6 +1252,7 @@ html.calme *{animation:none!important;transition:none!important}
     <!--__LIENS_SEO__-->
     <p class="disclaimer" id="sources-txt"></p>
     <p class="disclaimer">Graphiques réalisés avec <a href="https://www.tradingview.com/lightweight-charts/" target="_blank" rel="noopener noreferrer">TradingView Lightweight Charts™</a>, hébergé sur ce site (licence Apache 2.0).</p>
+    <p class="disclaimer"><span>© 2026 Radar Bourse. Tous droits réservés.</span> <span>Marques et noms de sociétés cités à des fins d'identification uniquement.</span> <a class="lien-site" href="credits.html">Droits d'auteur et crédits</a> · <a class="lien-site" href="donnees-ouvertes.html">Données ouvertes</a></p>
   </footer>
 </div></main>
 
@@ -1346,6 +1364,7 @@ html.calme *{animation:none!important;transition:none!important}
 
         <h4>Article 12 – Propriété intellectuelle</h4>
         <p>La structure du Site, ses textes et son code sont protégés. Toute reproduction ou réutilisation substantielle sans autorisation est interdite, sauf usage strictement personnel et non commercial. Les marques, noms de sociétés et dénominations de titres cités appartiennent à leurs propriétaires et ne sont utilisés qu'à des fins d'identification. Les graphiques utilisent la bibliothèque TradingView Lightweight Charts™, sous licence Apache 2.0.</p>
+        <p>Le détail des sources, licences et crédits : <a class="lien-site" href="credits.html">Droits d'auteur et crédits</a>.</p>
 
         <h4>Article 13 – Utilisations interdites</h4>
         <p>Il est interdit : d'extraire massivement ou automatiquement les Contenus ; de les revendre, de les intégrer dans un service payant ou de les présenter comme des conseils professionnels ; de porter atteinte à la sécurité ou au fonctionnement du Site ; d'afficher le Site dans un autre site en le faisant passer pour le sien (l'encadré officiel proposé sur chaque fiche, qui affiche le nom du Site et renvoie vers lui, peut en revanche être intégré librement) ; d'utiliser le Site dans un but illicite, notamment de manipulation de cours ou de diffusion d'informations trompeuses.</p>
@@ -2635,11 +2654,11 @@ function troisPoints(t){
   if(rq && rq.recent != null && rq.sur && tauxS > 0.7){
     const plus = rq.recent > 1;
     cases.push(`<div class="tp tp-sur"><span class="tp-l">Le mois prochain <span class="badge-sur">${tres ? "Avis très sûr" : "Avis sûr"}</span></span><b>${plus ? "Plus agité" : "Plus calme"}</b><span>que ces dernières semaines</span>
-      <span class="tp-f">Quand l'IA est aussi nette, elle a eu raison ${Math.round(tauxS * 100)} fois sur 100 sur des années jamais vues${AS0.annees_77 != null ? ` (au moins 77 % ${AS0.annees_77} années sur ${AS0.annees})` : AS0.pire_annee ? ` (pire année : ${Math.round(AS0.pire_annee * 100)} %)` : ""}</span></div>`);
+      <span class="tp-f">Quand l'IA est aussi nette, elle a eu raison ${Math.round(tauxS * 100)} fois sur 100 sur des années jamais vues${AS0.annees_77 != null && AS0.annees > 1 ? ` (au moins 77 % ${AS0.annees_77} années sur ${AS0.annees})` : AS0.pire_annee ? ` (pire année : ${Math.round(AS0.pire_annee * 100)} %)` : ""}</span></div>`);
   } else if(rq && rq.recent != null && tauxM > 0.6){   // version 59 : la question où l'IA dépasse 60 %
     const SR = {...SR0, taux: tauxM}, plus = rq.recent > 1;
     cases.push(`<div class="tp"><span class="tp-l">Le mois prochain</span><b>${plus ? "Plus agité" : "Plus calme"}</b><span>que ces dernières semaines</span>
-      <span class="tp-f">Avis moins tranché : sur des années jamais vues, l'IA a eu raison ${Math.round(SR.taux * 100)} fois sur 100 sur cette question, tous cas confondus${SR.annees ? ` (au-dessus de 60 % ${SR.annees_60} années sur ${SR.annees})` : ""}</span></div>`);
+      <span class="tp-f">Avis moins tranché : sur des années jamais vues, l'IA a eu raison ${Math.round(SR.taux * 100)} fois sur 100 sur cette question, tous cas confondus${SR.annees > 1 ? ` (au-dessus de 60 % ${SR.annees_60} années sur ${SR.annees})` : ""}</span></div>`);
   }
   if(rq && rq.semaine != null){   // version 48 : agitation sur 5 séances
     cases.push(`<div class="tp"><span class="tp-l">Agitation sur une semaine</span><b>±${(rq.semaine * 100).toFixed(1).replace(".", ",")} %</b><span>sur les 5 prochaines séances</span>

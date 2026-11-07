@@ -80,7 +80,8 @@ def _page(base, titre, description, chemin, corps, csp, alternates):
 <footer><p class="avert"><b>Nothing is certain in the markets.</b> {NOM} is a free educational project. These figures are generated
 automatically, may contain errors and are not investment advice or a recommendation to buy or sell. You can lose all the
 money you invest. Full terms of use (in French): <a href="{prefixe}index.html#conditions">conditions d'utilisation</a>.</p>
-{f'<p class="muted">Languages: {langues.selecteur(prefixe, "en", alternates)}</p>' if alternates and "es" in alternates else ""}</footer>
+{f'<p class="muted">Languages: {langues.selecteur(prefixe, "en", alternates)}</p>' if alternates and "es" in alternates else ""}
+<p class="muted">© {__import__("bourse_bot.credits", fromlist=["x"]).annees()} {NOM} · <a href="{prefixe}en/credits.html">Copyright and credits</a> · <a href="{prefixe}donnees-ouvertes.html">Open data</a> · Trademarks are used for identification only.</p></footer>
 </div>
 {seo.SCRIPT_BOUTON}
 </body></html>
@@ -148,7 +149,7 @@ def _page_titre(base, t, horizon, date, csp, modele):
 {f"In 8 cases out of 10, the price should stay between <b class='m'>{_px(f[0], dev)}</b> and <b class='m'>{_px(f[1], dev)}</b>." if len(f) == 2 else ""}
 {"<b>Strong signal</b>: the model and the technical trend agree." if t.get("signal_fort") else ""}
 {f"Probability of beating {ind} over the same period: <b>{round(pm * 100)}%</b>." if pm is not None else ""}</p>
-{agit}
+{agit}{__import__("bourse_bot.hebdo", fromlist=["x"]).agitation_svg(t, fr=False) if agit else ""}{__import__("bourse_bot.hebdo", fromlist=["x"]).avis_passes_html(t["ticker"], t.get("_verif"), fr=False)}
 <p><a class="btn" href="../../app-en.html#{_e(__import__('re').sub(r'[^A-Za-z0-9._-]', '', tk))}">Open the interactive chart and simulator</a></p>
 <h2>Key indicators</h2>
 <div class="carte"><table>
@@ -174,8 +175,13 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
     titres = payload.get("titres", [])
     os.makedirs(os.path.join(dossier, "en", "stocks"), exist_ok=True)
     urls = [("en/index.html", "daily", "0.8")]
+    try:   # version 66.1 : les avis passés de chaque titre
+        from .hebdo import verifier
+        _V = verifier(titres)
+    except Exception:
+        _V = None
     for t in titres:
-        chemin, page = _page_titre(base, t, horizon, date, csp, modele)
+        chemin, page = _page_titre(base, dict(t, _verif=_V), horizon, date, csp, modele)
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(page)
         urls.append((chemin, "daily", "0.5"))

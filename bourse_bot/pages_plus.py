@@ -159,6 +159,11 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("66.1", "La même règle d'accord avec « retour vers sa normale », appliquée aussi au niveau « avis sûr »", False,
+     "80,8 % de justes pour 51,7 % des cas, contre 80,8 % pour 52,3 % sans la règle : un peu moins d'avis, pas plus justes. Non adopté"),
+    ("66", "« Avis très sûr » seulement quand l'IA et la règle simple « retour vers sa normale de l'année » sont d'accord (seuil réappris dans ces cas-là)", True,
+     "Vrais cours 2017-2026 : 44 390 avis très sûrs au lieu de 40 473 (+9,7 %) pour la même justesse (89,0 % contre 89,0 % ; écart −0,7 à +0,9 point), "
+     "plus d'avis 9 années sur 10. Pire année 83,0 % contre 83,6 %. Adopté : plus d'avis très sûrs sans perdre en justesse"),
     ("65", "Un seuil d'« avis sûr » propre à chaque marché (ou à chaque sens : plus agité / plus calme), pour donner plus d'avis sûrs", False,
      "Par marché : 80,9 % juste pour 50,4 % des cas, contre 80,8 % pour 52,3 % avec un seuil commun (moins d'avis, pas plus justes). "
      "Par sens : 80,3 % pour 52,4 %. En avis très sûrs, la pire année tombe de 83,6 % à 80,0 %. Aucun gain, non adopté"),
