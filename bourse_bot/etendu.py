@@ -102,6 +102,8 @@ def _telecharger(tickers: list) -> dict:
             df = data.cours_synthetiques(t, 520)
             out[t] = (list(df["Close"]), [d.strftime("%Y-%m-%d") for d in df.index])
         return out
+    import contextlib
+    import io
     import yfinance as yf
     debut = time.time()
     for i in range(0, len(tickers), 150):
@@ -111,7 +113,8 @@ def _telecharger(tickers: list) -> dict:
         paquet = tickers[i:i + 150]
         for essai in range(2):
             try:
-                with data._silencieux():
+                data._silencieux()   # coupe les messages de yfinance (ce n'est pas un « with » : correction v67.3)
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                     brut = yf.download(paquet, period="2y", interval="1d", auto_adjust=True, group_by="ticker",
                                        threads=True, progress=False, timeout=30)
                 break
