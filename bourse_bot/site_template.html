@@ -469,6 +469,8 @@ main section:nth-of-type(n+4){content-visibility:auto;contain-intrinsic-size:aut
 @media (prefers-reduced-motion:no-preference){.rc-jauge i{animation:rc-glisse .9s cubic-bezier(.2,.8,.2,1) both}@keyframes rc-glisse{from{left:50%;opacity:0}to{left:var(--p);opacity:1}}}
 .fleche{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-weight:700;font-size:13px;flex:none;margin-right:2px}
 .fleche.up{background:var(--up-soft);color:var(--up)}.fleche.down{background:var(--down-soft);color:var(--down)}.fleche.nul{background:var(--bg);color:var(--muted)}
+.pastille-sens{display:inline-block;margin-left:6px;padding:2px 9px;border-radius:99px;font-size:12.5px;font-weight:700;white-space:nowrap;vertical-align:1px}
+.pastille-sens.up{background:var(--up-soft);color:var(--up)}.pastille-sens.down{background:var(--down-soft);color:var(--down)}.pastille-sens.nul{background:var(--bg);color:var(--muted)}
 .decouvrir{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 6px}
 .decouvrir a{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 .decouvrir a:hover,.decouvrir a:focus-visible{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 8px 22px rgba(5,10,20,.12)}
@@ -2637,6 +2639,12 @@ function compteur(p){
     <text x="14" y="126">baisse</text><text x="206" y="126" text-anchor="end">hausse</text>
   </svg>`;
 }
+/* version 67 : la pastille du sens, à côté du nom du titre */
+function pastilleSens(t){
+  if(t.proba_hausse == null) return "";
+  const sn = sensDe(t);
+  return `<span class="pastille-sens ${sn > 0 ? "up" : sn < 0 ? "down" : "nul"}">${sn > 0 ? "↑ Plutôt à la hausse" : sn < 0 ? "↓ Plutôt à la baisse" : "↔ Impossible à dire"}</span>`;
+}
 /* version 67 : le sens retenu pour un titre (1 : plutôt à la hausse, -1 : plutôt à la baisse, 0 : impossible à dire) */
 function sensDe(t){
   const p = t.proba_hausse; if(p == null) return 0;
@@ -3217,7 +3225,7 @@ function ouvrir(tk, pousser=true){
   courant = t;
   try{ if(window.goatcounter && window.goatcounter.count) window.goatcounter.count({path: "fiche/" + token(t.ticker), title: t.nom}); }catch(e){}
   $("#d-title").textContent = t.nom;
-  $("#d-sub").innerHTML = `${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche]||""} · <span class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}</span> <span data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</span>`;
+  $("#d-sub").innerHTML = `${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche]||""} · <span class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}</span> <span data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</span> ${pastilleSens(t)}`;
   const p = t.proba_hausse, f = t.fourchette;
   const phrase = p==null ? `Pas de probabilité disponible pour ce titre.` :
     `Le modèle estime à <b>${Math.round(p*100)} %</b> la probabilité que ${esc(t.nom)} soit plus haut dans ${H} séances. ` +
@@ -4127,7 +4135,7 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
     }
     liste.innerHTML = trouves.length ? trouves.map((t, i) => t.ext
       ? `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}</b><span class="muted">Fiche simple</span><span>${esc(t.ticker)} · ${esc(t.pays)}</span><span></span></li>`
-      : `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}${marqueSur(t)}</b><span class="num">${px(t.prix, t.devise)}</span><span>${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche] || ""}</span><span>${t.proba_hausse != null ? Math.round(t.proba_hausse * 100) + " % de hausse" : ""}</span></li>`).join("")
+      : `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}${marqueSur(t)}</b><span class="num">${px(t.prix, t.devise)}</span><span>${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche] || ""}</span><span>${pastilleSens(t)}</span></li>`).join("")
       : `<li role="option" aria-disabled="true" aria-selected="false"><span>Aucun titre suivi ne correspond. Le radar suit ${T.length} titres.</span></li>`;
     liste.hidden = false; champ.setAttribute("aria-expanded", "true"); choisi = trouves.length ? 0 : -1; marquer();
   };

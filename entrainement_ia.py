@@ -67,6 +67,33 @@ UNIVERS_ETENDU = {
     "crypto": ["AAVE-USD", "XMR-USD", "VET-USD", "ICP-USD", "EOS-USD", "XTZ-USD", "MANA-USD", "SAND-USD",
                "THETA-USD", "NEO-USD", "ZEC-USD", "DASH-USD", "KSM-USD"],
 }
+
+
+def _ajouter_actions_connues(univers: dict, n_us: int = 150, n_eu: int = 100, n_monde: int = 50) -> dict:
+    """Version 67 : l'examen n°1 (« étudier plus de titres aide-t-il vraiment ? ») porte aussi sur une partie des
+    2 000+ actions des fiches simples. Elles ne sont gardées pour l'apprentissage que si le gain est prouvé sur les titres
+    du site, et régulier (sinon rien ne change). Nombre limité pour tenir dans la mémoire du robot GitHub."""
+    try:
+        with open(os.path.join(ICI, "bourse_bot", "etendu_liste.json"), encoding="utf-8") as f:
+            liste = list(json.load(f))
+    except Exception:
+        return univers
+    deja = {t for v in univers.values() for t in v}
+    eu_suf = (".DE", ".PA", ".AS", ".MC", ".MI", ".SW", ".L", ".ST", ".BR", ".HE", ".CO", ".OL", ".VI", ".LS", ".IR")
+    pris = {"us": 0, "eu": 0, "monde": 0}
+    maxi = {"us": n_us, "eu": n_eu, "monde": n_monde}
+    out = {k: list(v) for k, v in univers.items()}
+    for t in liste:
+        if t in deja:
+            continue
+        m = "us" if "." not in t else "eu" if t.endswith(eu_suf) else "monde"
+        if pris[m] < maxi[m]:
+            out.setdefault(m, []).append(t)
+            pris[m] += 1
+    return out
+
+
+UNIVERS_ETENDU = _ajouter_actions_connues(UNIVERS_ETENDU)
 MACRO = {"vix", "vix_chg", "taux_chg", "dollar_chg", "fng", "courbe_taux", "petrole_chg", "cuivre_chg",
          "spread_credit", "spread_credit_chg", "conditions_fin", "chomage_tendance", "vix_structure",
          "marche_largeur", "marche_dispersion"}
