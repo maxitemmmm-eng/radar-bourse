@@ -99,7 +99,11 @@ def _page_titre(base, t, horizon, date, csp, modele):
     nom, tk = langues.nom_intl(t["nom"]), t["ticker"]
     s = seo.slug(tk)
     chemin = f"en/stocks/{s}.html"
-    titre = f"{nom} ({seo.aff_tk(tk)}) forecast: one-month outlook and analysis | {NOM}"
+    if tk.endswith("-USD"):   # version 68 : « bitcoin price prediction », « will bitcoin go up »
+        from datetime import datetime as _dt
+        titre = f"{nom} price prediction {_dt.now().strftime('%B %Y')}: up or down? | {NOM}"
+    else:
+        titre = f"{nom} ({seo.aff_tk(tk)}) forecast: one-month outlook and analysis | {NOM}"
     desc = (f"{nom} ({seo.aff_tk(tk)}) on {date}: {SIGNAL_EN.get(t['signal'], 'neutral')} technical trend"
             + (f", {sur10} in 10 chance of trading higher in a month according to the model" if sur10 is not None else "")
             + (f", central scenario {_px(med, dev)}" if med else "") + ". Free educational project, not advice.")

@@ -1,6 +1,6 @@
 # Donner une vraie adresse au site (ex : radarbourse.fr)
 
-Ton site est déjà en ligne, gratuitement, à l'adresse `https://maxitemmmm-eng.github.io/radar-bourse/`.
+Ton site est déjà en ligne, gratuitement, à l'adresse `https://radarbourse.fr/`.
 Avec ton propre nom de domaine, il aura une adresse courte et pro. L'hébergement reste gratuit chez GitHub ; seul le nom coûte environ **7 à 12 € par an**.
 
 ## Le plus simple : double-clic sur `nom_de_domaine.bat`

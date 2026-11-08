@@ -294,6 +294,16 @@ THEMES = [
 ]
 
 
+def _cellule_avis(t: dict) -> str:
+    """Version 68 : l'avis de l'IA (toujours ↑ ou ↓, avec ses chances) dans les tableaux des thèmes."""
+    p, sens, conf = avis_ia(t)
+    if p is None:
+        return "<td class='m'>—</td>"
+    ch = round((p if sens > 0 else 1 - p) * 100)
+    return (f"<td class='m {'up' if sens > 0 else 'down'}' title='{LIB_CONF[conf][0]}'><b>{'↑ hausse' if sens > 0 else '↓ baisse'}</b> "
+            f"<span class='muted'>{ch}/100</span></td>")
+
+
 def pages_themes(seo, base, payload, dossier, csp, date):
     """Une page par thème, triée par avis de l'IA, avec un graphique de la performance sur un mois."""
     par_tk = {t["ticker"]: t for t in payload.get("titres", []) if t.get("prix")}
@@ -312,7 +322,7 @@ def pages_themes(seo, base, payload, dossier, csp, date):
         lignes = "".join(
             f"<tr><td><a href='../titres/{slug(t['ticker'])}.html'>{e(t['nom'])}</a>{seo.marque_sur(t)} "
             f"<span class='muted'>{e(aff(t['ticker']))}</span></td><td class='m'>{px(t['prix'], t['devise'])}</td>"
-            f"<td class='m'>{pct(perf_m(t))}</td>"
+            f"<td class='m'>{pct(perf_m(t))}</td>{_cellule_avis(t)}"
             f"<td class='m'>{('±' + str(round(rp(t)['mouvement'] * 100)) + ' %') if rp(t).get('mouvement') else '—'}</td>"
             f"<td class='m'>{(str(round(rp(t)['chute'] * 100)) + ' %') if rp(t).get('chute') is not None else '—'}</td></tr>"
             for t in sorted(items, key=lambda t: -(perf_m(t) or -9)))
@@ -329,7 +339,7 @@ def pages_themes(seo, base, payload, dossier, csp, date):
         corps = (f"<p class='muted'><a href='../themes.html'>Tous les thèmes</a></p><h1>{e(h1)} : cours et prévisions</h1>"
                  f"<p class='muted'>Mis à jour automatiquement · cours au {e(date)}</p><p>{e(intro)}</p>{resume}{graph}"
                  "<div class='carte' style='overflow-x:auto' tabindex='0' role='region' aria-label='Tableau du thème'><table>"
-                 "<tr><th>Titre</th><th>Cours</th><th>Sur 1 mois</th><th>Agitation prévue</th><th title='Risque de chute de plus de 10 % le mois prochain'>Risque de chute*</th></tr>"
+                 "<tr><th>Titre</th><th>Cours</th><th>Sur 1 mois</th><th>Avis de l'IA</th><th>Agitation prévue</th><th title='Risque de chute de plus de 10 % le mois prochain'>Risque de chute*</th></tr>"
                  + lignes + "</table></div>"
                  "<p class='muted'>* Risque de chute de plus de 10 % sur le mois prochain. L'agitation et le risque de chute sont ce que l'IA prévoit le mieux "
                  "(<a href='../resultats.html'>résultats réels</a>, <a href='../avis-surs-verifies.html'>avis vérifiés en public</a>). "

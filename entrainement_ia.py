@@ -159,6 +159,12 @@ def adresse_site() -> str:
             return f"https://{dom}/"
     except Exception:
         pass
+    try:   # version 68 : le nom de domaine réglé sur GitHub (variable RADAR_DOMAINE) passe avant l'adresse github.io
+        from bourse_bot import config as _cfg
+        if _cfg.DOMAINE:
+            return f"https://{_cfg.DOMAINE}/"
+    except Exception:
+        pass
     code, url = commande("git", "remote", "get-url", "origin")
     m = re.search(r"github\.com[:/]([^/]+)/([^/.]+)", url or "")
     if code != 0 or not m:

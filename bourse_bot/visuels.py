@@ -164,6 +164,27 @@ def _motif(dr, motif, cx, cy):
             _symbole(dr, s, x + 85, y + 80, 96)
 
 
+def adresse() -> str:
+    """Version 68 : l'adresse du site (radarbourse.fr) écrite sur les images de partage, pour qu'on la retienne."""
+    try:
+        from . import config
+        return config.DOMAINE or ""
+    except Exception:
+        return ""
+
+
+def signer(dr, W: int, H: int, police, y: int | None = None) -> None:
+    """Écrit l'adresse du site en bas à droite d'une image (rien si le site n'a pas encore de nom de domaine)."""
+    a = adresse()
+    if not a:
+        return
+    f = police(28, True)
+    w = dr.textlength(a, font=f)
+    y = H - 104 if y is None else y
+    dr.rounded_rectangle((W - 70 - w - 40, y, W - 70, y + 50), radius=25, fill="#35c27d")
+    dr.text((W - 70 - w - 20, y + 9), a, font=f, fill="#0f1b2d")
+
+
 def dessiner(chemin_png: str, titre: str, sous_titre: str, motif: str, nom: str = "Radar Bourse") -> bool:
     try:
         from PIL import Image, ImageDraw
@@ -194,6 +215,7 @@ def dessiner(chemin_png: str, titre: str, sous_titre: str, motif: str, nom: str 
     dr.rounded_rectangle((70, H - 112, 70 + dr.textlength("Gratuit · sans compte · résultats vérifiés", font=_police(26)) + 40, H - 62),
                          radius=25, fill=FOND2)
     dr.text((90, H - 102), "Gratuit · sans compte · résultats vérifiés", font=_police(26), fill=TEXTE)
+    signer(dr, W, H, _police, H - 112)
     os.makedirs(os.path.dirname(chemin_png), exist_ok=True)
     img.save(chemin_png, optimize=True)
     return True

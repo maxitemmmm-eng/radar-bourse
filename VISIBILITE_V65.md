@@ -3,9 +3,11 @@
 Le meilleur argument du site, c'est désormais **la page des avis vérifiés en public**. Peu de sites osent montrer leurs ratés. C'est ce qui donne envie de partager et de faire un lien.
 Les pages à montrer :
 
-- Les avis vérifiés en public : `https://maxitemmmm-eng.github.io/radar-bourse/avis-surs-verifies.html`
-- La Bourse cette semaine : `https://maxitemmmm-eng.github.io/radar-bourse/bourse-cette-semaine.html`
-- Les actions par thème : `https://maxitemmmm-eng.github.io/radar-bourse/themes.html`
+- Les avis vérifiés en public : `https://radarbourse.fr/avis-surs-verifies.html`
+- La Bourse cette semaine : `https://radarbourse.fr/bourse-cette-semaine.html`
+- Les actions par thème : `https://radarbourse.fr/themes.html`
+- Prédiction crypto (Bitcoin, Ethereum…) : `https://radarbourse.fr/prediction-crypto.html`
+- Prédiction bourse : `https://radarbourse.fr/prediction-bourse.html`
 
 Règles : publier sous pseudo seulement, une fois par endroit, sans spam. Toujours répondre aux commentaires, même aux critiques.
 
@@ -25,16 +27,16 @@ Cette liste recense surtout des projets **open source**, c'est-à-dire que tout 
 **Titre** : `J'ai fait un site d'IA bourse qui publie ses propres ratés (gratuit, sans pub)`
 
 ```
-Salut ! Projet perso d'étudiante : un radar gratuit qui suit ~300 actions, ETF et cryptos.
+Salut ! Projet perso d'étudiante : un radar gratuit qui suit ~300 actions, ETF et cryptos suivis de près (et 2 000+ fiches simples).
 
-Je n'ai pas voulu faire un énième site de « signaux » : l'IA ne dit pas si ça va monter (personne ne sait le faire de façon fiable). Elle prévoit ce qu'on peut vraiment prévoir : si le mois prochain sera plus agité ou plus calme, et le risque d'une chute de plus de 10 %.
+Pour chaque titre, l'IA donne son avis (hausse ou baisse) avec ses chances et son niveau de confiance, sans cacher qu'elle se trompe souvent sur le sens du prix. Ce qu'elle prévoit le mieux : si le mois prochain sera plus agité ou plus calme, et le risque d'une chute de plus de 10 %.
 
 Ce qui change :
 - les avis sont enregistrés à l'avance, puis vérifiés en public 20 séances plus tard. Rien n'est effacé, les ratés restent affichés ;
 - sur les années passées, que l'IA n'avait jamais vues, ses « avis sûrs » étaient justes environ 80 % du temps. On verra si ça tient en vrai ;
 - c'est gratuit, sans inscription, sans pub, et le code est public (on peut le lire sur GitHub).
 
-La page des avis vérifiés : https://maxitemmmm-eng.github.io/radar-bourse/avis-surs-verifies.html
+La page des avis vérifiés : https://radarbourse.fr/avis-surs-verifies.html
 
 Je prends toutes les critiques, surtout sur la méthode. (Ce n'est pas un conseil en investissement.)
 ```
@@ -50,7 +52,7 @@ Side project: ~300 stocks, ETFs and cryptos, updated hourly on GitHub Pages (Pyt
 
 Instead of predicting direction (close to a coin flip), it forecasts next-month volatility and drawdown risk. Every "confident call" is logged before the outcome and verified 20 sessions later, on a public page with misses included. Out of sample (walk-forward, 2016-2026), the confident calls were right ~80% of the time vs ~78% for a simple mean-reversion rule, so the edge is real but small.
 
-Verified calls: https://maxitemmmm-eng.github.io/radar-bourse/en/verified-calls.html
+Verified calls: https://radarbourse.fr/en/verified-calls.html
 Source code (public, all rights reserved): https://github.com/maxitemmmm-eng/radar-bourse
 
 Feedback on the methodology very welcome.
@@ -79,7 +81,7 @@ Lien : la page anglaise des avis vérifiés. En premier commentaire, mets le par
 Ne poste pas d'annonce. Réponds à une vraie question, puis ajoute le lien s'il aide vraiment. Exemple, sous « L'IA peut-elle prédire la Bourse ? » :
 
 ```
-Pour le sens du prix, honnêtement non : les meilleurs modèles font à peine mieux que le hasard. Par contre l'agitation (de combien ça va bouger) se prévoit assez bien. J'ai un petit projet qui vérifie ça en public, avis par avis : https://maxitemmmm-eng.github.io/radar-bourse/avis-surs-verifies.html
+Pour le sens du prix, honnêtement non : les meilleurs modèles font à peine mieux que le hasard. Par contre l'agitation (de combien ça va bouger) se prévoit assez bien. J'ai un petit projet qui vérifie ça en public, avis par avis : https://radarbourse.fr/avis-surs-verifies.html
 ```
 
 ---

@@ -39,7 +39,7 @@ def description_accueil(payload: dict | None = None) -> str:
     return DESCRIPTION
 
 
-MOTS_CLES = ("radar bourse, prévision bourse IA, prévision action, prévision crypto, prévision bitcoin, simulateur boursier gratuit, "
+MOTS_CLES = ("radar bourse, prédiction bourse, prédiction bitcoin, prédiction crypto, prévision bourse IA, prévision action, prévision crypto, prévision bitcoin, simulateur boursier gratuit, "
              "portefeuille virtuel, risque de chute action, volatilité, CAC 40, S&P 500, convertisseur bitcoin euro, "
              "si j'avais investi, intérêts composés, calcul plus-value flat tax, apprendre la bourse, krach boursier, "
              "risque de krach, bulle IA bourse, actu bourse, actu bitcoin, actualité crypto, CAC 40 aujourd'hui, prévision Nvidia, "
@@ -220,7 +220,7 @@ def liens_fr() -> list:
     return [("Accueil", "index.html"), ("Prévisions", "index.html#previsions"), ("Pronostic du jour", "index.html#prono"),
             ("Carte des risques", "index.html#nuage"), ("Tous les titres", "titres.html"), ("Résultats réels", "resultats.html"),
             ("Outils gratuits", "outils.html"), ("Guides", "guides.html"),
-            ("Le point du jour", "point.html"), ("Toutes les actions (2 000+)", "toutes-les-actions.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actions par thème", "themes.html"), ("Avis de l'IA vérifiés", "avis-surs-verifies.html"), ("Données ouvertes", "donnees-ouvertes.html"), ("Actu bourse", "actu-bourse.html"), ("Actu bitcoin", "actu-bitcoin.html"),
+            ("Le point du jour", "point.html"), ("Prédiction crypto", "prediction-crypto.html"), ("Prédiction bourse", "prediction-bourse.html"), ("Toutes les actions (2 000+)", "toutes-les-actions.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actions par thème", "themes.html"), ("Avis de l'IA vérifiés", "avis-surs-verifies.html"), ("Données ouvertes", "donnees-ouvertes.html"), ("Actu bourse", "actu-bourse.html"), ("Actu bitcoin", "actu-bitcoin.html"),
             ("Krach boursier", "krach-boursier.html"), ("Comparer", "comparer.html"), ("Classements", "classements.html"),
             ("Sélection IA du mois", "portefeuille.html"), (f"Prévisions {datetime.now().year}", "previsions.html"),
             ("Simulateur boursier", "simulateur-boursier.html"), ("Apprendre", "apprendre.html"), ("Glossaire", "glossaire.html"),
@@ -315,8 +315,7 @@ def balises_tete(base: str, titre: str, description: str, chemin: str = "", imag
         for lg in alternates:   # partages sur les réseaux : les autres langues disponibles
             if lg not in ("x-default", langue):
                 lignes.append(f'<meta property="og:locale:alternate" content="{_locale(lg)}">')
-    verif = os.environ.get("GOOGLE_SITE_VERIFICATION", "").strip()
-    if verif and re.fullmatch(r"[A-Za-z0-9_\-]{10,100}", verif):
+    for verif in codes_google():   # version 68 : plusieurs codes possibles (ancienne adresse + radarbourse.fr)
         lignes.append(f'<meta name="google-site-verification" content="{verif}">')
     if not jsonld and chemin and base and not chemin.startswith("widget/") and chemin != "404.html":
         # Version 55 : toute page indexée décrit au moins ce qu'elle est et où elle se trouve dans le site
@@ -407,6 +406,21 @@ def _locale(langue: str) -> str:
         return "en_US"
     from .langues import LANGUES
     return LANGUES.get(langue, ("", "fr_FR"))[1]
+
+
+# Version 68 : codes de vérification Google Search Console. La variable GitHub GOOGLE_SITE_VERIFICATION peut en
+# contenir plusieurs, séparés par des virgules ; le code de radarbourse.fr est ajouté d'office.
+CODES_GOOGLE = ["KBSmEZ31-VoVMX6hWGUyf0PDxBkk0ZlvvZ7ngzbVBqo"]
+FICHIERS_GOOGLE = ["google8f6129c3af3e0660.html"]   # même vérification, sous forme de fichier (plus robuste)
+
+
+def codes_google() -> list:
+    vus = []
+    for c in re.split(r"[,;\s]+", os.environ.get("GOOGLE_SITE_VERIFICATION", "")) + CODES_GOOGLE:
+        c = c.strip()
+        if c and re.fullmatch(r"[A-Za-z0-9_\-]{10,100}", c) and c not in vus:
+            vus.append(c)
+    return vus
 
 
 def titre_court(titre: str, maxi: int = 65) -> str:
@@ -696,8 +710,9 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     tkc = re.sub(r"-USD$|\.[A-Z]{1,3}$|^\^", "", aff_tk(tk))
     nom_c = re.sub(r"\s*\((?:ETF|indice)[^)]*\)", "", nom).strip() or nom
     base_t = nom_c if tkc.lower() == nom_c.lower().replace(" ", "") else f"{nom_c} ({tkc})"
-    if est_crypto:
-        titre = f"{base_t} : cours et prévision {mois_an} | {NOM}"
+    if est_crypto:   # version 68 : « prédiction bitcoin », « bitcoin va-t-il monter » : les mots tapés pour les cryptos
+        titre = f"Prédiction {base_t} {mois_an} : hausse ou baisse ?"
+        titre = titre + f" | {NOM}" if len(titre) <= 58 else titre
     elif t.get("marche") in ("fr", "eu", "us", "monde") or (t.get("fondamentaux") or {}).get("valeurs"):
         titre = f"Action {base_t} : cours et prévision {mois_an}"
         titre = (titre if len(titre) <= 62 else f"{base_t} : cours et prévision {mois_an}") + f" | {NOM}"
@@ -1552,6 +1567,9 @@ def _profil(fd):
             "chaque euro de bénéfice ; une dette au-dessus de 200 % des capitaux propres est élevée.</p>")
 
 
+LIB_CONF_FAQ = {"faible": "confiance faible", "moyenne": "confiance moyenne", "forte": "confiance forte"}
+
+
 def _faq_titre(t, nom, date, verdict):
     """Questions que les gens tapent vraiment sur Google, avec des réponses honnêtes tirées des chiffres du jour."""
     dev, p, pf = t["devise"], t.get("proba_hausse"), t.get("perf") or {}
@@ -1559,18 +1577,21 @@ def _faq_titre(t, nom, date, verdict):
     faq = [(f"Quel est le cours de {nom} aujourd'hui ?",
             f"Au {_e(date)}, {_e(nom)} cote <b>{_px(t['prix'], dev)}</b>"
             + (f", soit {_pct(pf['1 mois'])} sur un mois" if pf.get("1 mois") is not None else "") + ". Cours mis à jour automatiquement plusieurs fois par jour.")]
-    if p is not None:
-        faq.append((f"{nom} va-t-il monter le mois prochain ?",
-                    (f"Personne ne peut le savoir avec certitude. Sur ce marché, les IA de {NOM} n'ont pas fait mieux que sa tendance habituelle : "
-                     f"historiquement, il a fini plus haut environ {round(p * 100)} mois sur 100. Ce n'est pas une prévision."
-                     if t.get("source_proba") == "marche" else
-                     f"Personne ne peut le savoir avec certitude. Aujourd'hui, les deux IA de {NOM} voient {_e(nom)} <b>{verdict}</b> "
-                     f"({round(p * 100)} chances sur 100 d'être plus haut dans un mois). Leur confiance est faible : dans ce genre de cas, "
-                     "elles se sont souvent trompées par le passé."
-                     if t.get("avis_net") is False else
-                     f"Personne ne peut le savoir avec certitude. Pour les 20 prochaines séances, les deux IA de {NOM} voient {_e(nom)} "
-                     f"<b>{verdict}</b>, avec {round(p * 100)} chances sur 100 d'être plus haut dans un mois. "
-                     "Ces chances sont mesurées sur des années que les IA n'avaient jamais vues, et elles se trompent souvent.")))
+    if p is not None:   # version 68 : toujours un avis (hausse ou baisse) et sa confiance, jamais « impossible à dire »
+        from .hebdo import avis_ia
+        pa, sens, conf = avis_ia(t)
+        ch = round((pa if sens > 0 else 1 - pa) * 100)
+        sens_txt = "à la hausse" if sens > 0 else "à la baisse"
+        maintenant = datetime.now()
+        mois_an = f"{MOIS[maintenant.month - 1]} {maintenant.year}"
+        rep = (f"Aujourd'hui, l'IA de {NOM} voit {_e(nom)} <b>{sens_txt}</b> sur un mois ({ch} chances sur 100, {LIB_CONF_FAQ[conf]}). "
+               "Personne ne peut le savoir avec certitude : c'est une probabilité, mesurée sur des années que l'IA n'avait jamais vues, "
+               "et elle se trompe souvent sur le sens du prix.")
+        faq.append((f"{nom} va-t-il monter le mois prochain ?", rep))
+        faq.append((f"Quelle est la prédiction {nom} pour {mois_an} ?",
+                    f"Prédiction de l'IA pour {_e(nom)} en {mois_an} : <b>{sens_txt}</b> ({ch} chances sur 100, {LIB_CONF_FAQ[conf]})"
+                    + (f", avec une agitation prévue d'environ ±{round(rq['mouvement'] * 100)} % sur un mois" if rq.get("mouvement") else "")
+                    + ". La prévision est recalculée automatiquement plusieurs fois par jour."))
     if t.get("proba_marche") is not None:
         pm, ind = t["proba_marche"], t.get("indice_nom") or "son marché"
         faq.append((f"{nom} va-t-il faire mieux que {ind} ?",
@@ -1792,14 +1813,30 @@ def _image_titre(t: dict, chemin: str, date: str) -> bool:
         lignes = []
         if rq.get("mouvement"):
             lignes.append(f"Agitation prévue : ±{round(rq['mouvement'] * 100)} % sur un mois")
-        if p is not None:
-            lignes.append(f"Avis des IA : {round(p * 100)} chances sur 100 de hausse" + (" (confiance faible)" if t.get("avis_net") is False else ""))
-        y = 440
-        for l in lignes[:2]:
+        # version 68 : l'avis de l'IA en premier, toujours un sens (hausse ou baisse) et sa couleur
+        avis = None
+        try:
+            from .hebdo import avis_ia
+            pa, sens, conf = avis_ia(t)
+            if pa is not None:
+                chances = round((pa if sens > 0 else 1 - pa) * 100)
+                avis = (f"Avis de l'IA : {'hausse ↑' if sens > 0 else 'baisse ↓'}", HAUT if sens > 0 else BAS,
+                        f"{chances} chances sur 100 · confiance {conf}")
+        except Exception:
+            if p is not None:
+                avis = (f"Avis de l'IA : {round(p * 100)}/100 hausse", "#e4ebf5")
+        y = 425
+        if avis:
+            dr.text((72, y), avis[0], font=_police(40, True), fill=avis[1])
+            if len(avis) > 2:
+                dr.text((72 + dr.textlength(avis[0], font=_police(40, True)) + 24, y + 10), avis[2], font=_police(28), fill=DOUX)
+            y += 62
+        for l in lignes[:1]:
             dr.ellipse((72, y + 12, 88, y + 28), fill="#7398ff")
-            dr.text((104, y), l, font=_police(32), fill="#e4ebf5")
+            dr.text((104, y), l, font=_police(30), fill="#e4ebf5")
             y += 56
         dr.text((72, H - 52), "Projet éducatif · pas un conseil en investissement", font=_police(22), fill="#8c9bb0")
+        _v.signer(dr, W, H, _police, H - 78)
         os.makedirs(os.path.dirname(chemin), exist_ok=True)
         img.save(chemin)
         return True
@@ -2095,6 +2132,8 @@ def _image_point(r: dict, chemin: str) -> bool:
             dr.text((60, y + 20), f"Plus forte hausse : {h['nom'][:24]} {'+' if h['var'] >= 0 else '−'}{abs(h['var']) * 100:.1f} %".replace(".", ","),
                     font=_police(30), fill="#e4ebf5")
         dr.text((60, H - 56), "Projet éducatif · pas un conseil en investissement", font=_police(22), fill="#8c9bb0")
+        from . import visuels as _v
+        _v.signer(dr, W, H, _police, H - 80)
         img.save(chemin)
         return True
     except Exception:
@@ -2402,6 +2441,13 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     except Exception as e:
         print(f"Thèmes non générés : {e}")
 
+    try:   # version 68 : pages « prédiction crypto / prédiction bourse » (recherches « prédiction bitcoin », « bitcoin va-t-il monter »)
+        from . import prediction
+        for chemin in prediction.generer(__import__(__name__, fromlist=["x"]), base, payload, dossier, csp, date):
+            urls.append((chemin, "daily", "0.9"))
+    except Exception as e:
+        print(f"Pages prédiction non générées : {e}")
+
     # La semaine en Bourse
     try:
         for chemin in _pages_semaines(base, dossier, csp, payload.get("titres", []), verif):
@@ -2507,6 +2553,10 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
                   [c for c, *_ in urls if c.startswith("semaine/")])
     except Exception as e:
         print(f"Flux RSS non généré : {e}")
+    for nom in FICHIERS_GOOGLE:   # version 68 : fichier de vérification Google (à garder pour rester vérifié)
+        if re.fullmatch(r"google[0-9a-f]{8,32}\.html", nom):
+            with open(os.path.join(dossier, nom), "w", encoding="utf-8") as f:
+                f.write(f"google-site-verification: {nom}")
     with open(os.path.join(dossier, "robots.txt"), "w", encoding="utf-8") as f:
         f.write("User-agent: *\nAllow: /\n" + (f"Sitemap: {base}sitemap.xml\n" if base else ""))
 

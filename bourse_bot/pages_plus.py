@@ -159,9 +159,16 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("68", "Recalibrer les « chances sur 100 » de l'avis hausse/baisse (régression isotonique apprise sur les années d'avant, globale ou par marché)", False,
+     "Vrais cours 2018-2026, 195 124 avis : justesse 53,8 % (globale) et 54,8 % (par marché) contre 54,5 % aujourd'hui, et chances moins bien "
+     "calibrées (Brier 0,2519 et 0,2509 contre 0,2480). Non adopté"),
+    ("68", "Rapprocher les « chances sur 100 » de 50 (facteur appris chaque année sur les années d'avant), le sens restant le même", False,
+     "Même justesse (54,5 %) mais chances un peu moins bien calibrées (Brier 0,2486 contre 0,2480). Non adopté. Constat honnête : quand l'IA "
+     "affiche environ 62 chances sur 100, elle a raison environ 58 fois sur 100 ; les niveaux de confiance restent bien rangés "
+     "(faible 50,7 %, moyenne 55,3 %, forte 58,2 %)"),
     ("67", "« Avis sûrs » aussi pour le sens du prix (monte / baisse), comme pour l'agitation : seuil appris sur les années d'avant", False,
      "Vrais cours 2018-2026 : visé 58 %, obtenu 54,3 % alors que « toujours la hausse » faisait 54,8 % dans les mêmes cas ; visé 60 %, obtenu 52,0 %. "
-     "Les avis les plus tranchés ne tiennent pas sur les années suivantes. Non adopté : le site continue de dire « impossible à dire » quand c'est le cas"),
+     "Les avis les plus tranchés ne tiennent pas sur les années suivantes. Non adopté : l'avis reste toujours donné (hausse ou baisse), avec sa confiance"),
     ("67", "Moyenne de deux IA d'agitation (avec et sans « l'écart à sa normale ») au lieu d'une seule", False,
      "Avis sûrs 80,6 % contre 80,8 %, tous les cas 70,5 % contre 70,5 %, erreur médiane un peu moins bonne : pas de gain. Non adopté"),
     ("66.1", "La même règle d'accord avec « retour vers sa normale », appliquée aussi au niveau « avis sûr »", False,
