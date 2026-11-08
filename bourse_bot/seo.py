@@ -571,9 +571,8 @@ def courbe_svg(t: dict, libs: dict | None = None, jours: int = 126) -> str:
     morceaux.append(f"<path d='{aire}' class='cs-aire'/><path d='{ligne}' class='cs-ligne' pathLength='1'/>")
     sens = 0
     if ok_cone:   # version 67 : un éventail d'une seule couleur, celle du verdict (vert hausse, rouge baisse, gris)
-        p_ = t.get("proba_hausse")
-        if p_ is not None and not (t.get("avis_net") is False or t.get("source_proba") == "marche" or .48 < p_ < .52):
-            sens = 1 if p_ >= .5 else -1
+        from .hebdo import avis_ia
+        _p, sens, _c = avis_ia(t)
         fx = lambda j: X(i0 + j)
         r50 = 0.6745 / 1.2816
         h50 = [m * (v / m) ** r50 if v > 0 and m > 0 else m for v, m in zip(haut, med)]
@@ -591,7 +590,7 @@ def courbe_svg(t: dict, libs: dict | None = None, jours: int = 126) -> str:
         for y, v, cls in etiq:
             morceaux.append(f"<text x='{W - pr + 8}' y='{y:.1f}' class='cs-t {cls}'>{_e(_px(v, dev))}</text>")
         if libs and libs.get("hausse"):
-            lib = libs["hausse"] if sens > 0 else libs["baisse"] if sens < 0 else libs["nul"]
+            lib = libs["hausse"] if sens > 0 else libs["baisse"] if sens < 0 else ""
             morceaux.append(f"<text x='{fx(len(med) - 1):.0f}' y='{pt + 12}' class='cs-verdict' text-anchor='end'>{_e(lib)}</text>")
     morceaux.append(f"<line x1='{x0:.1f}' x2='{x0:.1f}' y1='{pt}' y2='{H - pb}' class='cs-auj'/>"
                     f"<circle cx='{pts[-1][0]:.1f}' cy='{pts[-1][1]:.1f}' r='4.5' class='cs-point'/>")
@@ -630,8 +629,8 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     verdict = ("plutôt à la hausse" if p >= .58 else "légèrement à la hausse" if p >= .52 else
                "sans direction claire" if p > .48 else "légèrement à la baisse" if p > .42 else
                "plutôt à la baisse") if p is not None else "sans prévision de direction aujourd'hui"
-    if p is not None and t.get("avis_net") is False:
-        verdict = "sans avis net (les IA hésitent : dans ces cas-là, elles n'ont pas fait mieux que le hasard)"
+    if p is not None and t.get("avis_net") is False:   # version 67.5 : toujours un avis, avec sa confiance
+        verdict = ("légèrement à la hausse" if p >= .5 else "légèrement à la baisse") + " (confiance faible : l'IA se trompe souvent dans ce genre de cas)"
     rq = t.get("risque_prevu") or {}
     agitation = (f"<p>Agitation prévue le mois prochain : en général, le prix bougera d'environ <b class='m'>±{round(rq['mouvement'] * 100)} %</b>"
                  + (", plus que d'habitude" if (rq.get("habitude") or 1) > 1.25 else ", moins que d'habitude" if (rq.get("habitude") or 1) < 0.8 else "")
@@ -881,12 +880,12 @@ def _page_duel(base, a, b, date, csp):
         p = t.get("proba_hausse")
         if p is None:
             return "–"
-        return "pas d'avis net" if t.get("avis_net") is False else f"{round(p * 100)} chances sur 100 de hausse"
+        return f"{round(p * 100)} chances sur 100 de hausse" + (" (confiance faible)" if t.get("avis_net") is False else "")
     def face(t):
         pm = t.get("proba_marche")
         if pm is None:
             return "–"
-        return ("pas d'avis net" if t.get("marche_net") is False else f"{round(pm * 100)} sur 100") + f" (vs {_e(t.get('indice_nom') or 'son marché')})"
+        return f"{round(pm * 100)} sur 100" + (" (confiance faible)" if t.get("marche_net") is False else "") + f" (vs {_e(t.get('indice_nom') or 'son marché')})"
     agit = lambda t: f"±{round((t.get('risque_prevu') or {})['mouvement'] * 100)} %" if (t.get("risque_prevu") or {}).get("mouvement") else "–"
     chu = lambda t: f"{round((t.get('risque_prevu') or {})['chute'] * 100)} sur 100" if (t.get("risque_prevu") or {}).get("chute") is not None else "–"
     perf = lambda t, k: _pct((t.get("perf") or {}).get(k)) if (t.get("perf") or {}).get(k) is not None else "–"
@@ -1426,7 +1425,7 @@ def _widgets(base, payload, dossier, date):
             continue
         rq, p = t.get("risque_prevu") or {}, t.get("proba_hausse")
         m1 = (t.get("perf") or {}).get("1 mois")
-        avis = "–" if p is None else ("pas d'avis net" if t.get("avis_net") is False else f"{round(p * 100)} chances sur 100 de hausse")
+        avis = "–" if p is None else f"{round(p * 100)} chances sur 100 de hausse" + (" (confiance faible)" if t.get("avis_net") is False else "")
         fiche = f"{base}titres/{slug(t['ticker'])}.html" if base else f"../titres/{slug(t['ticker'])}.html"
         page = f"""<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1474,7 +1473,7 @@ def _page_previsions(base, payload, dossier, csp, date):
         for t in sel:
             rq, p = t.get("risque_prevu") or {}, t.get("proba_hausse")
             vol = (t.get("perf") or {}).get("volatilité annuelle")
-            avis = "–" if p is None else ("pas d'avis net" if t.get("avis_net") is False else f"{round(p * 100)} sur 100")
+            avis = "–" if p is None else f"{round(p * 100)} sur 100" + (" (confiance faible)" if t.get("avis_net") is False else "")
             an_txt = (f"{_px(t['prix'] * math.exp(-vol), t['devise'])} à {_px(t['prix'] * math.exp(vol), t['devise'])}" if vol else "–")
             lignes.append(f"<tr><td><a href='titres/{slug(t['ticker'])}.html'>{_e(t['nom'])}</a>{marque_sur(t)}</td><td class='m'>{_px(t['prix'], t['devise'])}</td>"
                           f"<td class='m'>{'±' + str(round(rq['mouvement'] * 100)) + ' %' if rq.get('mouvement') else '–'}</td>"
@@ -1565,8 +1564,9 @@ def _faq_titre(t, nom, date, verdict):
                     (f"Personne ne peut le savoir avec certitude. Sur ce marché, les IA de {NOM} n'ont pas fait mieux que sa tendance habituelle : "
                      f"historiquement, il a fini plus haut environ {round(p * 100)} mois sur 100. Ce n'est pas une prévision."
                      if t.get("source_proba") == "marche" else
-                     f"Personne ne peut le savoir avec certitude. Aujourd'hui, les deux IA de {NOM} n'ont <b>pas d'avis net</b> sur {_e(nom)} : "
-                     f"leur chiffre brut ({round(p * 100)} sur 100) est dans une zone où, par le passé, elles n'ont pas fait mieux que le hasard."
+                     f"Personne ne peut le savoir avec certitude. Aujourd'hui, les deux IA de {NOM} voient {_e(nom)} <b>{verdict}</b> "
+                     f"({round(p * 100)} chances sur 100 d'être plus haut dans un mois). Leur confiance est faible : dans ce genre de cas, "
+                     "elles se sont souvent trompées par le passé."
                      if t.get("avis_net") is False else
                      f"Personne ne peut le savoir avec certitude. Pour les 20 prochaines séances, les deux IA de {NOM} voient {_e(nom)} "
                      f"<b>{verdict}</b>, avec {round(p * 100)} chances sur 100 d'être plus haut dans un mois. "
@@ -1644,7 +1644,7 @@ def _page_marche(base, cle, titres, date, csp):
              + "<div class='carte' style='overflow-x:auto'><table><tr><td><b>Titre</b></td><td><b>Cours</b></td><td><b>1 mois</b></td>"
              "<td><b>Chances de hausse</b></td><td><b>Agitation prévue</b></td></tr>" + lignes + "</table></div>"
              "<p class='muted' style='font-size:14px'>« Chances de hausse » : probabilité d'être plus haut dans 20 séances. "
-             "« Pas d'avis net » : les IA hésitent, et dans ces cas-là elles n'ont pas fait mieux que le hasard. "
+             "« Confiance faible » : les IA hésitent, et dans ces cas-là elles se trompent souvent. "
              "« Agitation prévue » : de combien le prix bouge en général sur un mois, dans un sens ou dans l'autre.</p>"
              f"<h2>Les autres marchés</h2><ul class='liste'>" + "".join(
                  f"<li><a href='{m[0]}.html'>{_e(m[1])}</a></li>" for k, m in MARCHES.items() if k != cle) + "</ul>")
@@ -1793,8 +1793,7 @@ def _image_titre(t: dict, chemin: str, date: str) -> bool:
         if rq.get("mouvement"):
             lignes.append(f"Agitation prévue : ±{round(rq['mouvement'] * 100)} % sur un mois")
         if p is not None:
-            lignes.append("Avis des IA : pas d'avis net" if t.get("avis_net") is False else
-                          f"Avis des IA : {round(p * 100)} chances sur 100 de hausse")
+            lignes.append(f"Avis des IA : {round(p * 100)} chances sur 100 de hausse" + (" (confiance faible)" if t.get("avis_net") is False else ""))
         y = 440
         for l in lignes[:2]:
             dr.ellipse((72, y + 12, 88, y + 28), fill="#7398ff")

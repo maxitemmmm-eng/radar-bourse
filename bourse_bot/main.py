@@ -295,6 +295,13 @@ def cmd_site(args):
     payload = site.construire(analyses, donnees, evaluation, suivi, bruts, demo=args.demo,
                               actus_marche=actus_marche, qualite=controle)
     payload["correction_erreurs"] = getattr(args, "_correction", None)
+    try:   # version 67.4 : préparer les fiches simples dès maintenant (téléchargement une fois par jour) et les compter
+        from . import etendu
+        marge = ((getattr(evaluation, "avis_net", None) or {}).get("marge") or 0.02) if evaluation else 0.02
+        etendu.predire(bruts, max(0.02, float(marge)), payload.get("modele"))   # version 67.5 : l'avis de l'IA pour chaque fiche simple
+        payload["nb_etendu"] = len(etendu.charger())
+    except Exception:
+        payload["nb_etendu"] = 0
     try:   # le portefeuille public « mieux que le marché » : choisi au calcul complet du soir, suivi ensuite chaque heure
         if args.demo or os.environ.get("RADAR_SELECTION") == "1":
             portefeuille_public.choisir(analyses, bruts)

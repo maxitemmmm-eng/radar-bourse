@@ -95,14 +95,13 @@ def _page_titre(base, t, horizon, date, csp, modele):
     verdict = ("leaning higher" if p >= .58 else "slightly higher" if p >= .52 else "no clear direction" if p > .48
                else "slightly lower" if p > .42 else "leaning lower") if p is not None else "not available"
     if p is not None and t.get("avis_net") is False:
-        verdict = "without a clear call (the AIs hesitate: in such cases they did no better than chance)"
+        verdict = ("slightly higher" if p >= .5 else "slightly lower") + " (low confidence: the AIs are often wrong in such cases)"
     nom, tk = langues.nom_intl(t["nom"]), t["ticker"]
     s = seo.slug(tk)
     chemin = f"en/stocks/{s}.html"
     titre = f"{nom} ({seo.aff_tk(tk)}) forecast: one-month outlook and analysis | {NOM}"
     desc = (f"{nom} ({seo.aff_tk(tk)}) on {date}: {SIGNAL_EN.get(t['signal'], 'neutral')} technical trend"
-            + (", no clear call from the AIs for the coming month" if sur10 is not None and t.get("avis_net") is False else
-               f", {sur10} in 10 chance of trading higher in a month according to the model" if sur10 is not None else "")
+            + (f", {sur10} in 10 chance of trading higher in a month according to the model" if sur10 is not None else "")
             + (f", central scenario {_px(med, dev)}" if med else "") + ". Free educational project, not advice.")
     perf, niv = t.get("perf", {}), t.get("niveaux") or {}
     pm = t.get("proba_marche")
@@ -139,7 +138,7 @@ def _page_titre(base, t, horizon, date, csp, modele):
   <div class="k"><b>{_px(t['prix'], dev)}</b><span>last price</span></div>
   <div class="k"><b>{_pct(perf.get('1 mois'))}</b><span>over 1 month</span></div>
   <div class="k"><b>{round(t['score'])} / 100</b><span>technical score ({SIGNAL_EN.get(t['signal'], '')})</span></div>
-  <div class="k"><b>{'no clear call' if sur10 is not None and t.get("avis_net") is False else f'{sur10} in 10' if sur10 is not None else '–'}</b><span>chance of being higher in {horizon} sessions</span></div>
+  <div class="k"><b>{f'{sur10} in 10' if sur10 is not None else '–'}</b><span>chance of being higher in {horizon} sessions</span></div>
 </div>
 {seo.courbe_svg(t, seo.LIBS_COURBE_EN)}
 {__import__("bourse_bot.hebdo", fromlist=["x"]).reponse_courte_html(t, modele, False, _px)}

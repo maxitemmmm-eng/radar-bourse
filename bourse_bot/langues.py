@@ -386,13 +386,14 @@ def _page_titre(lg, base, t, horizon, date, csp="", taux_surs=None):
         cases.append((f"±{_pc(rp['semaine'], sep, signe=False)}", AGIT_SEMAINE[lg]))
     if ch is not None:
         cases.append((f"{round(ch * 100)} %", L["chute"]))
-    cases.append((L["sur10"].format(n=round(p * 10)) if net else L["sans_avis"], L["sens"].format(h=horizon)))
+    if p is not None:   # version 67.5 : l'avis de l'IA est toujours donné
+        cases.append((L["sur10"].format(n=round(p * 10)), L["sens"].format(h=horizon)))
     corps = (f"<h1>{_e(L['h1'].format(nom=nom, tk=tk))}</h1><p class='muted'>{_e(L['maj'].format(d=date))}</p>"
              "<div class='carte grille'>" + "".join(f"<div class='k'><b><bdi>{v}</bdi></b><span>{_e(lib)}</span></div>" for v, lib in cases) + "</div>"
              + (f"<p class='avis-sur'><span class='badge-sur'>✓</span> {_e(X['fiche_agite' if rp['recent'] > 1 else 'fiche_calme'].format(nom=nom, e=round(abs(rp['recent'] - 1) * 100)))}"
                 f" <span class='muted'>({_e(X['surs_t'])} : {round(taux_surs * 100)} %)</span></p>" if X and rp.get("sur") and rp.get("recent") and taux_surs else "")
              + __import__("bourse_bot.hebdo", fromlist=["x"]).reponse_mini(
-                 t, _e(L["sens"].format(h=horizon)), _e(L["sur10"].format(n=round(p * 10)) if net else L["sans_avis"]),
+                 t, _e(L["sens"].format(h=horizon)), _e(L["sur10"].format(n=round(p * 10))) if p is not None else "",
                  f"±{_pc(mv, sep, signe=False)}" if mv else "", _e(L["agit"]))
              + seo.courbe_svg(t, {"aria": L["h1"].format(nom=nom, tk=tk)})
              + f"<h2>{_e(L['fiable_t'])}</h2><p>{L['fiable']}</p>"

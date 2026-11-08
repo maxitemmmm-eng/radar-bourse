@@ -19,6 +19,9 @@ from . import config, data
 
 DOSSIER = ".cache_etendu"
 FICHIER = os.path.join(DOSSIER, "etendu.json")
+FICHIER_OHLC = os.path.join(DOSSIER, "cours.pkl")
+FICHIER_PRED = os.path.join(DOSSIER, "avis_ia.json")
+_OHLC: dict = {}
 LISTE = os.path.join(os.path.dirname(__file__), "etendu_liste.json")
 
 PAYS = {  # suffixe Yahoo -> (pays FR, pays EN, devise)
@@ -97,10 +100,13 @@ def _stats(close, dates) -> dict | None:
 def _telecharger(tickers: list) -> dict:
     """{ticker: (closes, dates)} sur deux ans, par paquets (Yahoo), sans planter si un titre manque."""
     out = {}
+    global _OHLC
+    _OHLC = {}
     if data.DEMO:
         for t in tickers:
             df = data.cours_synthetiques(t, 520)
             out[t] = (list(df["Close"]), [d.strftime("%Y-%m-%d") for d in df.index])
+            _OHLC[t] = df
         return out
     import contextlib
     import io
@@ -125,18 +131,32 @@ def _telecharger(tickers: list) -> dict:
             continue
         for t in paquet:
             try:
-                s = (brut[t]["Close"] if len(paquet) > 1 else brut["Close"]).dropna()
+                df = (brut[t] if len(paquet) > 1 else brut)[["Open", "High", "Low", "Close", "Volume"]].dropna(subset=["Close"])
             except Exception:
                 continue
-            if len(s) >= 260:
+            if len(df) >= 260:
                 if suffixe(t) == "L":   # Londres : cours en pence -> livres
-                    s = s / 100.0
+                    df = df.copy()
+                    df[["Open", "High", "Low", "Close"]] = df[["Open", "High", "Low", "Close"]] / 100.0
+                s = df["Close"]
                 out[t] = (list(s.to_numpy()), [d.strftime("%Y-%m-%d") for d in s.index])
+                _OHLC[t] = df.astype("float32")
     return out
 
 
+_MEMO: dict | None = None
+
+
 def charger(forcer: bool = False) -> dict:
-    """Les fiches simples : relues du cache (moins de 20 h), sinon recalculées."""
+    """Les fiches simples : relues du cache (moins de 20 h), sinon recalculées (une seule fois par lancement)."""
+    global _MEMO
+    if _MEMO is not None and not forcer:
+        return _MEMO
+    _MEMO = _charger(forcer)
+    return _MEMO
+
+
+def _charger(forcer: bool = False) -> dict:
     if os.environ.get("RADAR_ETENDU", "1") == "0":
         return {}
     L = liste()
@@ -169,6 +189,12 @@ def charger(forcer: bool = False) -> dict:
         os.makedirs(DOSSIER, exist_ok=True)
         with open(FICHIER, "w", encoding="utf-8") as f:
             json.dump(res, f, ensure_ascii=False, separators=(",", ":"))
+        try:   # les cours complets (pour l'avis de l'IA), gardés jusqu'au prochain téléchargement
+            import pickle
+            with open(FICHIER_OHLC, "wb") as f:
+                pickle.dump(_OHLC, f, protocol=pickle.HIGHEST_PROTOCOL)
+        except Exception:
+            pass
     elif not res and os.path.exists(FICHIER):   # Yahoo muet : on garde l'ancien calcul plutôt que rien
         try:
             with open(FICHIER, encoding="utf-8") as f:
@@ -181,8 +207,35 @@ def charger(forcer: bool = False) -> dict:
 # ----------------------------------------------------------------------------
 # Pages
 # ----------------------------------------------------------------------------
+_MODELE: dict = {}
+
+
+def _rc_ia(t, fr, px):
+    """L'avis de l'IA du site (calculé une fois par jour) en haut de la fiche simple."""
+    ia = t.get("ia")
+    if not ia or ia.get("p") is None:
+        return ""
+    from .hebdo import reponse_courte_html
+    mv = ia["v"] / math.sqrt(252) * math.sqrt(20) if ia.get("v") else t["vol"] / math.sqrt(252) * math.sqrt(20)
+    t2 = {"proba_hausse": ia["p"], "avis_net": False if ia.get("c") == "faible" else True, "confiance": "moyenne",
+          "risque_prevu": {"mouvement": mv}, "devise": _devise(t)}
+    note = ("<p class='muted' style='font-size:14px;margin-top:-4px'>Avis calculé une fois par jour par l'IA du radar, "
+            "à partir des mêmes indicateurs que pour les titres qu'elle suit en continu.</p>" if fr else
+            "<p class='muted' style='font-size:14px;margin-top:-4px'>Call computed once a day by the radar's AI, from the same "
+            "indicators as for the assets it follows continuously.</p>")
+    return reponse_courte_html(t2, _MODELE, fr, px) + note
+
+
 def _devise(t):
     return PAYS.get(suffixe(t["ticker"]), PAYS[""])[2]
+
+
+def _fleche(t):
+    p = (t.get("ia") or {}).get("p")
+    if p is None:
+        return ""
+    return (f" <span class='{'up' if p >= .5 else 'down'}' title='{round(p * 100)} / 100' aria-label='{round(p * 100)} / 100'>"
+            f"{'↑' if p >= .5 else '↓'}</span>")
 
 
 def _sym(tk):
@@ -241,8 +294,11 @@ def _page_fr(seo, base, t, csp, voisins, date, rangs=(None, None, 0)):
             f"Le dernier cours de {nom} ({sym}) est de {px(t['prix'], dev)} ({seo.date_longue(t['date'])}), "
             f"soit {('+' if (P.get('1a') or 0) >= 0 else '')}{round((P.get('1a') or 0) * 100)} % sur un an."),
            (f"L'action {nom} va-t-elle monter ?",
-            f"Personne ne peut le prévoir de façon fiable. Sa tendance de fond est {tend}, et sur deux ans elle a bougé "
-            f"8 mois sur 10 entre {round(t['f10'] * 100)} % et +{round(t['f90'] * 100)} % en un mois. Ce n'est pas un conseil d'achat."),
+            ((f"Selon l'IA du radar, {nom} est {'plutôt' if t['ia'].get('c') != 'faible' else 'légèrement'} "
+              f"{'à la hausse' if t['ia']['p'] >= .5 else 'à la baisse'} pour le mois qui vient : {round(t['ia']['p'] * 100)} chances sur 100 "
+              f"de finir plus haut (confiance {t['ia'].get('c', 'faible')}). ") if (t.get("ia") or {}).get("p") is not None else "")
+            + f"Sa tendance de fond est {tend}, et sur deux ans elle a bougé "
+            f"8 mois sur 10 entre {round(t['f10'] * 100)} % et +{round(t['f90'] * 100)} % en un mois. Rien n'est sûr : ce n'est pas un conseil d'achat."),
            (f"L'action {nom} est-elle risquée ?",
             f"Son agitation récente est de {round(t['vol'] * 100)} % par an ({agi_txt}), et sa pire baisse depuis un sommet sur un an "
             f"est de {round(t['dd'] * 100)} %. Toute action peut perdre beaucoup de valeur.")]
@@ -259,10 +315,10 @@ def _page_fr(seo, base, t, csp, voisins, date, rangs=(None, None, 0)):
     corps = (f"<p class='muted'><a href='../toutes-les-actions.html'>Toutes les actions</a> · {e(pays_fr)}</p>"
              f"<h1>{e(nom)} ({e(sym)}) : cours de l'action et analyse</h1>"
              f"<p class='muted'>Cours au {e(seo.date_longue(t['date']))}, mis à jour chaque jour · fiche simple</p>"
-             f"{rc}{courbe}{graph}<h2>Les chiffres clés</h2><div class='carte' style='overflow-x:auto' tabindex='0' role='region' "
+             f"{_rc_ia(t, True, px) or rc}{courbe}{graph}<h2>Les chiffres clés</h2><div class='carte' style='overflow-x:auto' tabindex='0' role='region' "
              f"aria-label='Chiffres clés'><table class='kv'>{table}</table></div>{faq_html}{voisins_html}"
              "<p class='muted'>Fiche simple calculée automatiquement à partir des cours publics (Yahoo Finance). "
-             "Ce sont des faits passés, pas une prévision ; projet éducatif, pas un conseil en investissement. "
+             "Les chiffres clés sont des faits passés ; l'avis de l'IA est une prévision, pas une certitude. Projet éducatif, pas un conseil en investissement. "
              "<a href='../credits.html'>Sources et crédits</a>.</p>")
     mois = seo.MOIS[datetime.now().month - 1]
     titre = f"Action {nom} ({sym}) : cours et analyse {mois} {datetime.now().year}"
@@ -319,9 +375,9 @@ def _page_en(seo, anglais, base, t, csp, voisins):
                     + "".join(f"<li><a href='{seo.slug(v['ticker'])}.html'>{e(v['nom'])}</a></li>" for v in voisins) + "</ul>") if voisins else ""
     corps = (f"<p class='muted'><a href='../all-stocks.html'>All stocks</a> · {e(pays(tk, False))}</p>"
              f"<h1>{e(nom)} ({e(sym)}): stock price and analysis</h1><p class='muted'>Price as of {e(t['date'])}, updated daily · simple page</p>"
-             f"{rc}{courbe}{graph}<h2>Key figures</h2><div class='carte' style='overflow-x:auto' tabindex='0' role='region' aria-label='Key figures'>"
+             f"{_rc_ia(t, False, px) or rc}{courbe}{graph}<h2>Key figures</h2><div class='carte' style='overflow-x:auto' tabindex='0' role='region' aria-label='Key figures'>"
              f"<table class='kv'>{table}</table></div>{voisins_html}<p class='muted'>Simple page computed from public prices (Yahoo Finance). "
-             "Past facts, not a forecast; educational project, not investment advice.</p>")
+             "Key figures are past facts; the AI's call is a forecast, not a certainty. Educational project, not investment advice.</p>")
     chemin = f"en/stocks/{seo.slug(tk)}.html"
     desc = (f"{nom} ({sym}) stock price: {px(t['prix'], dev)} on {t['date']}. 1 year {round((P.get('1a') or 0) * 100):+d}%, "
             f"trend {tend}, usual move ±{round(mvt * 100)}% a month.")
@@ -376,9 +432,9 @@ def generer(seo, anglais, base, dossier, csp, date) -> list:
                 "<p>" + " · ".join(f"<a href='#p-{s or 'us'}'>{e(PAYS[s][1])} ({len(par_pays[s])})</a>" for s in ordre) + "</p>")
     for s in ordre:
         corps += (f"<h2 id='p-{s or 'us'}'>{e(PAYS[s][0])}</h2><ul class='liste'>"
-                  + "".join(f"<li><a href='titres/{seo.slug(t['ticker'])}.html'>{e(t['nom'])}</a></li>" for t in par_pays[s]) + "</ul>")
+                  + "".join(f"<li><a href='titres/{seo.slug(t['ticker'])}.html'>{e(t['nom'])}</a>{_fleche(t)}</li>" for t in par_pays[s]) + "</ul>")
         corps_en += (f"<h2 id='p-{s or 'us'}'>{e(PAYS[s][1])}</h2><ul class='liste'>"
-                     + "".join(f"<li><a href='stocks/{seo.slug(t['ticker'])}.html'>{e(t['nom'])}</a></li>" for t in par_pays[s]) + "</ul>")
+                     + "".join(f"<li><a href='stocks/{seo.slug(t['ticker'])}.html'>{e(t['nom'])}</a>{_fleche(t)}</li>" for t in par_pays[s]) + "</ul>")
     alt = {"fr": "toutes-les-actions.html", "en": "en/all-stocks.html", "x-default": "toutes-les-actions.html"}
     with open(os.path.join(dossier, "toutes-les-actions.html"), "w", encoding="utf-8") as f:
         f.write(seo._page(base, f"Toutes les actions du monde : cours et analyse | {seo.NOM}",
@@ -391,6 +447,118 @@ def generer(seo, anglais, base, dossier, csp, date) -> list:
     urls += [("toutes-les-actions.html", "daily", "0.7"), ("en/all-stocks.html", "daily", "0.5")]
     # Recherche : la liste légère, chargée seulement quand on tape dans la barre de recherche
     with open(os.path.join(dossier, "recherche-etendue.json"), "w", encoding="utf-8") as f:
-        json.dump([[t["nom"], t["ticker"], seo.slug(t["ticker"]), pays(t["ticker"])] for t in sorted(E.values(), key=lambda t: t["nom"].lower())],
+        json.dump([[t["nom"], t["ticker"], seo.slug(t["ticker"]), pays(t["ticker"]),
+                    (1 if t["ia"]["p"] >= .5 else -1) if (t.get("ia") or {}).get("p") is not None else 0,
+                    (t.get("ia") or {}).get("c", "")] for t in sorted(E.values(), key=lambda t: t["nom"].lower())],
                   f, ensure_ascii=False, separators=(",", ":"))
     return urls
+
+
+def nombre() -> int:
+    """Nombre de fiches simples réellement disponibles (lu dans le cache, sans rien télécharger)."""
+    try:
+        with open(FICHIER, encoding="utf-8") as f:
+            return len(json.load(f))
+    except Exception:
+        return 0
+
+
+# ----------------------------------------------------------------------------
+# Version 67.5 : l'avis de l'IA du site pour chaque fiche simple (calculé une fois par jour)
+# ----------------------------------------------------------------------------
+REFERENCE = {"us": "SPY", "eu": "^STOXX50E", "monde": "VEU"}
+EU_SUF = ("DE", "PA", "AS", "MC", "MI", "SW", "L", "ST", "BR", "HE", "CO", "OL", "VI", "LS", "IR")
+
+
+def _marche(tk):
+    sx = suffixe(tk)
+    return "us" if not sx else "eu" if sx in EU_SUF else "monde"
+
+
+def _ligne(t, brut, bench, ctx):
+    """Indicateurs du dernier jour d'une fiche simple (fonction de haut niveau : calcul en parallèle)."""
+    try:
+        return _ligne_calc(t, brut, bench, ctx)
+    except Exception:
+        return None
+
+
+def _ligne_calc(t, brut, bench, ctx):
+    from . import indicators, model
+    d = indicators.calculer(brut.astype("float64"), bench, ctx)
+    cols = [c for c in model.FEATURES if c in d.columns]
+    ligne = d[cols].iloc[[-1]].copy()
+    n = d[["vol_20j"]].iloc[-260:].copy()
+    model.ajouter_normale(n)
+    ligne["vol_normale"] = float(n["vol_normale"].iloc[-1])
+    ligne["vol_normale_60"] = float(n["vol_normale_60"].iloc[-1])
+    ligne["ticker"] = t
+    return ligne
+
+
+def predire(bruts_site: dict, marge: float = 0.02, modele: dict | None = None) -> dict:
+    """Ajoute à chaque fiche simple l'avis de l'IA du site (proba de hausse à un mois, agitation prévue).
+    Une fois par jour : le résultat est gardé dans .cache_etendu/avis_ia.json pour les mises à jour horaires."""
+    global _MODELE
+    _MODELE = dict(modele or {})
+    _MODELE.setdefault("avis_net", {"marge": marge})
+    E = charger()
+    if not E:
+        return {}
+    jour = datetime.now().strftime("%Y-%m-%d")
+    preds = None
+    if not data.DEMO:
+        try:
+            with open(FICHIER_PRED, encoding="utf-8") as f:
+                c = json.load(f)
+            if c.get("jour") == jour:
+                preds = c.get("avis") or {}
+        except Exception:
+            preds = None
+    if preds is None:
+        global _OHLC
+        if not _OHLC:
+            try:
+                import pickle
+                with open(FICHIER_OHLC, "rb") as f:
+                    _OHLC = pickle.load(f)
+            except Exception:
+                _OHLC = {}
+        ctx = {k: v for k, v in (bruts_site.get("__macro__") or {}).items() if k != "fng"}
+        travaux = [(t, df, bruts_site.get(REFERENCE[_marche(t)]), ctx) for t, df in _OHLC.items() if t in E]
+        lignes = []
+        n = min(4, os.cpu_count() or 1)
+        try:
+            if n > 1 and os.environ.get("RADAR_PARALLELE", "1") != "0":
+                from concurrent.futures import ProcessPoolExecutor
+                with ProcessPoolExecutor(n) as ex:
+                    for r in ex.map(_ligne, *zip(*travaux), chunksize=16):
+                        if r is not None:
+                            lignes.append(r)
+            else:
+                raise RuntimeError
+        except Exception:
+            lignes = []
+            for tr in travaux:
+                r = _ligne(*tr)
+                if r is not None:
+                    lignes.append(r)
+        from . import model
+        brut = model.predire_autres(lignes) if lignes else {}
+        preds = {}
+        for t, r in brut.items():
+            p = r["proba"]
+            preds[t] = {"p": round(p, 4), "c": "moyenne" if abs(p - .5) >= marge else "faible"}
+            if r.get("vol"):
+                preds[t]["v"] = round(r["vol"], 4)
+        if preds and not data.DEMO:
+            try:
+                os.makedirs(DOSSIER, exist_ok=True)
+                with open(FICHIER_PRED, "w", encoding="utf-8") as f:
+                    json.dump({"jour": jour, "avis": preds}, f, separators=(",", ":"))
+            except Exception:
+                pass
+    for t, r in preds.items():
+        if t in E:
+            E[t]["ia"] = r
+    return preds

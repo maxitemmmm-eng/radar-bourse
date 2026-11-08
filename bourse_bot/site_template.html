@@ -471,6 +471,9 @@ main section:nth-of-type(n+4){content-visibility:auto;contain-intrinsic-size:aut
 .fleche.up{background:var(--up-soft);color:var(--up)}.fleche.down{background:var(--down-soft);color:var(--down)}.fleche.nul{background:var(--bg);color:var(--muted)}
 .pastille-sens{display:inline-block;margin-left:6px;padding:2px 9px;border-radius:99px;font-size:12.5px;font-weight:700;white-space:nowrap;vertical-align:1px}
 .pastille-sens.up{background:var(--up-soft);color:var(--up)}.pastille-sens.down{background:var(--down-soft);color:var(--down)}.pastille-sens.nul{background:var(--bg);color:var(--muted)}
+.conf{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:99px;font-size:11.5px;font-weight:600;vertical-align:1px;background:var(--bg);color:var(--muted)}
+.conf-forte{background:var(--accent-soft);color:var(--accent)}.conf-moyenne{background:var(--bg);color:var(--ink)}
+.pastille-sens.faible{opacity:.8;font-weight:600}.rc-faible .rc-q1 b{opacity:.85}
 .decouvrir{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 6px}
 .decouvrir a{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 .decouvrir a:hover,.decouvrir a:focus-visible{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 8px 22px rgba(5,10,20,.12)}
@@ -1556,7 +1559,7 @@ const LIB_CONF = {faible: "Confiance faible", moyenne: "Confiance moyenne", fort
 const barresConf = c => !LIB_CONF[c] ? "" : `<span class="conf-ic c-${c}" role="img" aria-label="${LIB_CONF[c]}" title="${LIB_CONF[c]}"><i></i><i></i><i></i></span>`;
 function gauge(p, accord, net, conf){
   if(p==null) return `<span class="muted">–</span>`;
-  if(net === false) return `<div class="sans-avis" title="Pas d'avis net : dans ces cas-là, les IA n'ont pas fait mieux que le hasard"><span class="fleche nul" aria-hidden="true">↔</span><div class="gauge" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span><span class="num">${Math.round(p*100)} %</span> · pas d'avis net</span></div>`;
+  if(net === false) return `<div class="sans-avis" title="Pas d'avis net : dans ces cas-là, les IA n'ont pas fait mieux que le hasard"><span class="fleche ${p>=.5?'up':'down'}" aria-hidden="true" style="opacity:.7">${p>=.5?'↑':'↓'}</span><div class="gauge" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span><span class="num">${Math.round(p*100)} %</span> · pas d'avis net</span></div>`;
   const desaccord = accord === false ? ` <span title="Les deux IA ne sont pas d'accord : avis peu fiable" role="img" aria-label="Les deux IA ne sont pas d'accord" style="color:var(--warn);font-weight:700">⚠</span>` : "";
   return `<div style="display:flex;align-items:center;gap:8px"><span class="fleche ${p>=.5?'up':'down'}" aria-hidden="true">${p>=.5?'↑':'↓'}</span><div class="gauge ${p<0.5?'lo':''}" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span class="num" style="white-space:nowrap">${Math.round(p*100)} %</span>${barresConf(conf)}${desaccord}</div>`;
 }
@@ -2608,7 +2611,7 @@ function bulles(g){
   }
   poser(s.t[i], Math.max(s.h[i], s.c[i]), "", `Aujourd'hui · ${px(t.prix, t.devise)}`);
   if(k && calques.prev !== false){   // version 67 : le verdict, écrit au bout de la prévision
-    const sn = sensDe(t), lib = sn > 0 ? "↑ Plutôt à la hausse" : sn < 0 ? "↓ Plutôt à la baisse" : "↔ Impossible à dire";
+    const sn = sensDe(t), lib = libSens(t, true);
     const ix = Math.max(1, Math.round(k.t.length * .6)), r50 = 0.6745 / 1.2816;
     const sous = k.bas[ix] > 0 && k.mediane[ix] > 0 ? k.mediane[ix] * Math.pow(k.bas[ix] / k.mediane[ix], r50) : k.bas[ix];
     poser(k.t[ix], sous, sn > 0 ? "up" : sn < 0 ? "down" : "", `${lib}<small>dans 1 mois, le plus probable : ${px(k.mediane.at(-1), t.devise)} (${k.mediane.at(-1) >= t.prix ? "+" : ""}${pctPlain(k.mediane.at(-1) / t.prix - 1, 1)})</small>`, false, true);
@@ -2639,37 +2642,43 @@ function compteur(p){
     <text x="14" y="126">baisse</text><text x="206" y="126" text-anchor="end">hausse</text>
   </svg>`;
 }
-/* version 67 : la pastille du sens, à côté du nom du titre */
+/* version 67.5 : l'IA donne TOUJOURS un avis (↑ ou ↓), avec son niveau de confiance — jamais « impossible à dire » */
+function probaIA(t){   // l'avis propre de l'IA (même quand le site affiche aussi la tendance du marché)
+  return t.source_proba === "marche" && t.proba_ia != null ? t.proba_ia : t.proba_hausse;
+}
+function confianceDe(t){
+  const p = probaIA(t); if(p == null) return "faible";
+  const AN = (DATA.modele || {}).avis_net || {}, marge = Math.max(AN.marge || 0, .02);
+  if(t.avis_net === false || t.source_proba === "marche" || Math.abs(p - .5) < marge) return "faible";
+  return t.confiance === "forte" ? "forte" : "moyenne";
+}
+function sensDe(t){ const p = probaIA(t); return p == null ? 0 : p >= .5 ? 1 : -1; }
+function libSens(t, court){
+  const sn = sensDe(t), c = confianceDe(t);
+  if(!sn) return "";
+  return sn > 0 ? (c === "faible" ? (court ? "↑ Légère hausse" : "Légèrement à la hausse") : (court ? "↑ Hausse probable" : "Plutôt à la hausse"))
+                : (c === "faible" ? (court ? "↓ Légère baisse" : "Légèrement à la baisse") : (court ? "↓ Baisse probable" : "Plutôt à la baisse"));
+}
+const LIB_CONF2 = {faible: "confiance faible", moyenne: "confiance moyenne", forte: "confiance forte"};
 function pastilleSens(t){
-  if(t.proba_hausse == null) return "";
-  const sn = sensDe(t);
-  return `<span class="pastille-sens ${sn > 0 ? "up" : sn < 0 ? "down" : "nul"}">${sn > 0 ? "↑ Plutôt à la hausse" : sn < 0 ? "↓ Plutôt à la baisse" : "↔ Impossible à dire"}</span>`;
+  if(probaIA(t) == null) return "";
+  const sn = sensDe(t), c = confianceDe(t);
+  return `<span class="pastille-sens ${sn > 0 ? "up" : "down"}${c === "faible" ? " faible" : ""}" title="${LIB_CONF2[c]}">${libSens(t, true)}</span>`;
 }
-/* version 67 : le sens retenu pour un titre (1 : plutôt à la hausse, -1 : plutôt à la baisse, 0 : impossible à dire) */
-function sensDe(t){
-  const p = t.proba_hausse; if(p == null) return 0;
-  return (t.avis_net === false || t.source_proba === "marche" || (p > .48 && p < .52)) ? 0 : p >= .5 ? 1 : -1;
-}
-/* version 67 : la réponse courte, en haut de chaque fiche — « ça monte ou pas ? » et « de combien ? », sans jargon */
+/* la réponse courte, en haut de chaque fiche — « ça monte ou ça baisse ? » et « de combien ? » */
 function reponseCourte(t){
-  const p = t.proba_hausse; if(p == null) return "";
+  const p = probaIA(t); if(p == null) return "";
   const AN = (DATA.modele || {}).avis_net || {}, M_ = DATA.modele || {};
-  const sens = sensDe(t), sansAvis = sens === 0;
-  const titre = sens > 0 ? "Plutôt à la hausse" : sens < 0 ? "Plutôt à la baisse" : "Impossible à dire";
-  const fleche = sens > 0 ? "↑" : sens < 0 ? "↓" : "↔";
+  const sens = sensDe(t), conf = confianceDe(t);
+  const fleche = sens > 0 ? "↑" : "↓";
   const chances = Math.round(p * 100);
-  const prec = !sansAvis && AN.precision ? AN.precision : M_.precision, base = !sansAvis && AN.precision ? AN.base : M_.precision_base;
+  const prec = conf !== "faible" && AN.precision ? AN.precision : M_.precision, base = conf !== "faible" && AN.precision ? AN.base : M_.precision_base;
   const f = t.fourchette, rq = t.risque_prevu || {};
-  const proche = Math.abs(p - .5) < Math.max(AN.marge || 0, .02);
-  const expl = sens === 0
-    ? (t.source_proba === "marche" ? `Sur ce marché, l'IA n'a pas fait mieux que la tendance habituelle : le radar ne devine pas.`
-       : proche ? `Les chances sont trop proches de 50/50 pour que l'IA tranche (${chances} sur 100 de finir plus haut). Le radar préfère le dire que deviner.`
-       : t.accord_ia === false ? `Les deux IA du radar ne sont pas d'accord entre elles sur ce titre : le radar ne tranche pas.`
-       : `Dans ce genre de cas, l'IA n'a pas fait mieux que le hasard sur les années testées : le radar ne tranche pas.`)
-    : `<b>${chances} chances sur 100</b> de finir plus haut dans un mois${sens < 0 ? ` (donc ${100 - chances} sur 100 de finir plus bas)` : ""}.`;
-  return `<div class="panel rc rc-${sens > 0 ? "up" : sens < 0 ? "down" : "nul"}" aria-label="Réponse courte">
-    <div class="rc-l">La réponse courte</div>
-    <div class="rc-q rc-q1"><span class="rc-ic" aria-hidden="true">${fleche}</span><div><span class="rc-k">Ça monte ou ça baisse ?</span><b>${titre}</b></div></div>
+  const expl = `<b>${sens > 0 ? chances : 100 - chances} chances sur 100</b> ${sens > 0 ? "de finir plus haut dans un mois, selon l'IA." : "de finir plus bas dans un mois, selon l'IA."}`
+    + (conf === "faible" ? ` <span class="muted">Confiance faible : dans ce genre de cas, l'IA se trompe souvent. Regarde surtout l'agitation prévue, juste en dessous.</span>` : "");
+  return `<div class="panel rc rc-${sens > 0 ? "up" : "down"}${conf === "faible" ? " rc-faible" : ""}" aria-label="Réponse courte">
+    <div class="rc-l">L'avis de l'IA <span class="conf conf-${conf}">${LIB_CONF2[conf]}</span></div>
+    <div class="rc-q rc-q1"><span class="rc-ic" aria-hidden="true">${fleche}</span><div><span class="rc-k">Ça monte ou ça baisse ?</span><b>${libSens(t)}</b></div></div>
     <div class="rc-jauge" role="img" aria-label="${chances} chances sur 100 de hausse"><i style="--p:${chances}%"></i><span>baisse</span><span>50/50</span><span>hausse</span></div>
     <p class="rc-t">${expl}${prec ? ` <span class="muted">Fiabilité réelle : sur des années jamais vues, l'IA a trouvé le bon sens ${Math.round(prec * 100)} fois sur 100 (en répondant toujours pareil : ${Math.round(base * 100)}).</span>` : ""}</p>
     ${f && f.length || rq.mouvement ? `<div class="rc-q rc-q2"><span class="rc-ic" aria-hidden="true">↕</span><div><span class="rc-k">De combien ça peut bouger ?</span><b>${rq.mouvement ? `±${Math.round(rq.mouvement * 100)} % en un mois` : ""}</b>${f && f.length ? `<span class="rc-s">8 fois sur 10, entre <span class="num">${px(f[0], t.devise)}</span> et <span class="num">${px(f[1], t.devise)}</span></span>` : ""}</div></div>` : ""}
@@ -2679,7 +2688,7 @@ function resumeSimple(t){
   const p = t.proba_hausse;
   if(p == null) return "";
   const sansAvis = t.avis_net === false;
-  const titre = sansAvis ? "Pas d'avis net" : p >= .58 ? "Plutôt à la hausse" : p >= .52 ? "Légèrement à la hausse" : p > .48 ? "Pile ou face" : p > .42 ? "Légèrement à la baisse" : "Plutôt à la baisse";
+  const titre = libSens(t);   // version 67.5 : toujours un avis
   const AN = (DATA.modele || {}).avis_net || {};
   const med = t.cone ? t.cone.mediane.at(-1) : null;
   const accordTxt = t.accord_ia === true ? `<span class="accord oui">✓ Les deux IA sont d'accord</span>`
@@ -2687,7 +2696,7 @@ function resumeSimple(t){
   const SA = ((AN.marches_sans_avis) || {})[t.ticker.endsWith("-USD") ? "crypto" : t.marche];
   return `${reponseCourte(t)}${troisPoints(t)}<div class="panel resume"><div class="freq">${points100(p)}<p class="phrase muted" style="font-size:13px;max-width:260px">${t.source_proba === "marche" ? `Tendance habituelle de ce marché : il a fini plus haut <b>${Math.round(p*100)}</b> mois sur 100.` : sansAvis ? `Chiffre brut des IA : <b>${Math.round(p*100)}</b> sur 100. Ici, il n'est pas assez fiable pour compter.` : `Sur 100 situations passées comme celle-ci, <b class="up">${Math.round(p*100)}</b> ont fini plus haut un mois après.`}</p><span class="expert">${compteur(p)}</span></div>
     <div><div class="label">En résumé, pour le mois qui vient ${aide("proba")}</div>
-      <div class="verdict-grand ${sansAvis ? "" : p >= .52 ? "up" : p <= .48 ? "down" : ""}">${titre}${sansAvis ? ` ${aide("avis_net")}` : ""}</div>
+      <div class="verdict-grand ${sensDe(t) > 0 ? "up" : "down"}">${titre}${sansAvis ? ` <span class="conf conf-faible">confiance faible</span> ${aide("avis_net")}` : ""}</div>
       ${sansAvis && SA ? `<p class="muted" style="font-size:14px">Sur ce marché, même les avis tranchés des IA n'ont pas fait mieux que « toujours la même réponse » (${Math.round(SA.precision * 100)} % de bonnes directions contre ${Math.round(SA.base * 100)} %). Le radar ne donne donc pas d'avis de direction ici. Regarde plutôt l'agitation prévue et la comparaison avec son marché.</p>` : ""}
       ${sansAvis && !SA && AN.marge ? `<p class="muted" style="font-size:14px">Les IA hésitent : leur avis est trop proche de 50 % pour compter. Quand elles sont plus tranchées (sous ${Math.round((.5 - AN.marge) * 100)} % ou au-dessus de ${Math.round((.5 + AN.marge) * 100)} %), elles ont vu juste ${Math.round(AN.precision * 100)} fois sur 100 ; sinon, pas mieux que le hasard.</p>` : ""}
       <p>${t.source_proba === "marche" ? `Sur ce marché, l'avis des IA n'a pas fait mieux que sa tendance habituelle sur les années testées. Le radar affiche donc cette tendance (${Math.round(p * 100)} mois sur 100 en hausse) plutôt que l'avis des IA${t.proba_ia != null ? ` (pour info : ${Math.round(t.proba_ia * 100)} sur 100)` : ""}.` : sansAvis ? `Pour info, le chiffre brut des IA est de ${Math.round(p * 100)} sur 100, à ne pas prendre comme un avis.` : `Le radar donne <b>${Math.round(p * 100)} chances sur 100</b> que ${esc(t.nom)} soit plus haut dans un mois.`}${med ? ` Le scénario le plus probable : environ <b class="num">${px(med, t.devise)}</b> (${pct(med / t.prix - 1)}).` : ""}${t.signal_fort ? " <b>Signal fort</b> : la tendance technique va dans le même sens." : ""}</p>
@@ -2726,12 +2735,12 @@ function troisPoints(t){
   }
   if(t.proba_marche != null){
     const net = t.marche_net !== false, p = t.proba_marche;
-    cases.push(`<div class="tp"><span class="tp-l">Face ${aLe(t.indice_nom)}</span><b>${!net ? "Pas d'avis net" : p >= .5 ? "Plutôt mieux" : "Plutôt moins bien"}</b><span>${net ? `${Math.round(p * 100)} chances sur 100 de faire mieux` : `chiffre brut ${Math.round(p * 100)} sur 100, trop incertain`}</span>
+    cases.push(`<div class="tp"><span class="tp-l">Face ${aLe(t.indice_nom)}</span><b>${p >= .5 ? (net ? "Plutôt mieux" : "Légèrement mieux") : (net ? "Plutôt moins bien" : "Légèrement moins bien")}</b><span>${Math.round(p * 100)} chances sur 100 de faire mieux${net ? "" : " · confiance faible"}</span>
       <span class="tp-f">${R.precision != null ? `Juste ${Math.round(R.precision * 100)} fois sur 100 (hasard : ${Math.round(R.precision_base * 100)})` : ""}</span></div>`);
   }
   if(t.proba_hausse != null){
-    const p = t.proba_hausse, net = t.avis_net !== false;
-    cases.push(`<div class="tp"><span class="tp-l">Sens du prix</span><b>${!net ? "Pas d'avis net" : p >= .5 ? "Plutôt à la hausse" : "Plutôt à la baisse"}</b><span>${net ? `${Math.round(p * 100)} chances sur 100 de monter` : `chiffre brut ${Math.round(p * 100)} sur 100, trop incertain`}</span>
+    const p = probaIA(t), c = confianceDe(t);
+    cases.push(`<div class="tp"><span class="tp-l">Sens du prix</span><b>${libSens(t)}</b><span>${Math.round(p * 100)} chances sur 100 de monter · ${LIB_CONF2[c]}</span>
       <span class="tp-f">${M_.precision != null ? `Juste ${Math.round(M_.precision * 100)} fois sur 100 (toujours la même réponse : ${Math.round(M_.precision_base * 100)})` : ""}</span></div>`);
   }
   return cases.length ? `<div class="trois-points" role="group" aria-label="Résumé en 3 points">${cases.join("")}</div>` : "";
@@ -3825,9 +3834,11 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
       const L = parMarche("crypto").filter(t => ch(t) != null && mv(t) != null).sort((a, b) => ch(a) - ch(b) || mv(a) - mv(b)).slice(0, 3);
       return `<p>${"Selon l'IA, les cryptos avec le moins de risque de perdre plus de 10 % ce mois-ci :"}</p>` + liste(L, t => `${"risque de chute"} ${pc(ch(t))}, ${"agitation prévue"} ±${pc(mv(t))}`)
         + `<p>${"Moins risquée ne veut pas dire qu'elle va monter : juste que les écarts devraient être plus petits."}</p>`; }],
-    ["monter-crypto", "Quelle crypto va le plus monter ?", () => {
-      return `<p>${"Honnêtement : l'IA ne sait pas le dire. Sur des années qu'elle n'avait jamais vues, ses avis sur le sens du prix des cryptos n'ont pas fait mieux que la tendance habituelle. C'est pour ça que le site n'affiche pas d'avis net sur la hausse des cryptos."}</p>`
-        + (D.en_cours ? `<p>${"Pour le vérifier en vrai, elle fait un défi public : voici ses 3 choix de la semaine."}</p>` + defiHtml() : `<p>${"Pour le vérifier en vrai, elle fera un défi public chaque semaine : ses 3 choix, comparés à la moyenne des cryptos 5 jours plus tard."}</p>`); }],
+    ["monter-crypto", "Quelle crypto va le plus monter ?", () => {   // version 67.5 : l'IA donne son avis, avec sa confiance
+      const L = parMarche("crypto").filter(t => probaIA(t) != null).sort((a, b) => probaIA(b) - probaIA(a)).slice(0, 3);
+      return `<p>${"Les cryptos que l'IA voit le plus à la hausse le mois prochain :"}</p>` + liste(L, t => `${libSens(t, true)} · ${Math.round(probaIA(t) * 100)} ${"chances sur 100"} · ${LIB_CONF2[confianceDe(t)]}`)
+        + `<p class="muted">${"Attention : sur le sens du prix des cryptos, l'IA se trompe souvent (confiance faible). Regarde aussi le risque de chute de chaque crypto."}</p>`
+        + (D.en_cours ? `<p>${"Pour le vérifier en vrai, elle fait un défi public : voici ses 3 choix de la semaine."}</p>` + defiHtml() : ""); }],
     ["calme-fr", "Quelles actions françaises sont les plus calmes ?", () =>
       `<p>${"Les actions françaises qui devraient bouger le moins le mois prochain :"}</p>` + liste(plusCalmes("fr", 5), t => `±${pc(mv(t))} ${"sur un mois"}`)],
     ["calme-us", "Quelles actions américaines sont les plus calmes ?", () =>
@@ -3985,7 +3996,9 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
   else if(SR.taux > 0.6) cartes.push(`<div class="preuve"><b>${Math.round(SR.taux * 100)} %</b><span>${"de bonnes réponses pour dire si un titre sera plus agité ou plus calme le mois prochain"}</span></div>`);
   if(CH.prouve && CH.taux_risque_haut && CH.base) cartes.push(`<div class="preuve"><b>×${(CH.taux_risque_haut / CH.base).toFixed(1).replace(".", ",")}</b><span>${"plus de fortes chutes chez les titres que l'IA juge les plus à risque"}</span></div>`);
   const n = (DATA.titres || []).filter(t => t.marche !== "tendances").length;
-  if(n) cartes.push(`<div class="preuve"><b>${n}</b><span>${"actions, ETF et cryptos analysés chaque heure, résultats publiés"} <a href="resultats.html" class="lien-site">${"ratés compris"}</a></span></div>`);
+  const ne = DATA.nb_etendu || 0;   // version 67.4 : les fiches simples comptent aussi
+  if(n && ne) cartes.push(`<div class="preuve"><b>${(n + ne).toLocaleString("fr-FR")}</b><span>${"titres suivis, dont"} ${n} ${"analysés par l'IA chaque heure, résultats publiés"} <a href="resultats.html" class="lien-site">${"ratés compris"}</a></span></div>`);
+  else if(n) cartes.push(`<div class="preuve"><b>${n}</b><span>${"actions, ETF et cryptos analysés chaque heure, résultats publiés"} <a href="resultats.html" class="lien-site">${"ratés compris"}</a></span></div>`);
   if(cartes.length < 2) return;
   z.innerHTML = cartes.join(""); z.hidden = false;
   // version 63 : les chiffres montent une seule fois quand ils apparaissent (sauf si l'on a demandé moins d'animations)
@@ -4125,16 +4138,16 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
     }).filter(([r]) => r < 9).sort((a, b) => a[0] - b[0] || a[1].nom.localeCompare(b[1].nom)).slice(0, 8).map(([, t]) => t);
     if(trouves.length < 8 && ETENDU && ETENDU.length){
       const ext = [];
-      for(const [n, k, sl, pays] of ETENDU){
+      for(const [n, k, sl, pays, sens, conf] of ETENDU){
         const n2 = sansAccent(n), k2 = sansAccent(k), k3 = k2.split(".")[0];
         const rang = k3 === q || k2 === q ? 0 : n2.startsWith(q) || k2.startsWith(q) ? 1 : n2.includes(" " + q) ? 2 : n2.includes(q) ? 3 : 9;
-        if(rang < 9) ext.push([rang, {nom: n, ticker: k, slug: sl, pays, ext: true}]);
+        if(rang < 9) ext.push([rang, {nom: n, ticker: k, slug: sl, pays, sens, conf, ext: true}]);
       }
       ext.sort((a, b) => a[0] - b[0] || a[1].nom.localeCompare(b[1].nom));
       trouves = trouves.concat(ext.slice(0, 8 - trouves.length).map(([, t]) => t));
     }
     liste.innerHTML = trouves.length ? trouves.map((t, i) => t.ext
-      ? `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}</b><span class="muted">Fiche simple</span><span>${esc(t.ticker)} · ${esc(t.pays)}</span><span></span></li>`
+      ? `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}</b><span class="muted">Fiche simple</span><span>${esc(t.ticker)} · ${esc(t.pays)}</span><span>${t.sens ? `<span class="pastille-sens ${t.sens > 0 ? "up" : "down"}${t.conf === "faible" ? " faible" : ""}">${t.sens > 0 ? (t.conf === "faible" ? "↑ Légère hausse" : "↑ Hausse probable") : (t.conf === "faible" ? "↓ Légère baisse" : "↓ Baisse probable")}</span>` : ""}</span></li>`
       : `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}${marqueSur(t)}</b><span class="num">${px(t.prix, t.devise)}</span><span>${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche] || ""}</span><span>${pastilleSens(t)}</span></li>`).join("")
       : `<li role="option" aria-disabled="true" aria-selected="false"><span>Aucun titre suivi ne correspond. Le radar suit ${T.length} titres.</span></li>`;
     liste.hidden = false; champ.setAttribute("aria-expanded", "true"); choisi = trouves.length ? 0 : -1; marquer();

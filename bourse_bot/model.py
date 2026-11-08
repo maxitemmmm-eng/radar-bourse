@@ -1090,6 +1090,52 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
 
 
 DOSSIER_MODELES = ".cache_modeles"
+_POUR_ETENDU: dict | None = None
+
+
+def predire_autres(lignes: list) -> dict:
+    """Version 67.5 : l'avis des IA du site pour des titres qu'elles ne suivent pas (fiches simples).
+    lignes : une ligne d'indicateurs par titre (dernier jour). Les classements entre titres sont calculés comme si
+    chaque titre faisait partie des titres du site, sans changer l'avis donné à ces derniers. La « mémoire » du titre
+    (son passé de prévisions) n'existe pas pour eux : elle est laissée vide, comme pour un titre nouveau."""
+    P = _POUR_ETENDU
+    if not P or not lignes:
+        return {}
+    actuel = P["actuel"]
+    X = pd.concat(lignes).reset_index(drop=True)
+    X["est_crypto"] = 0.0
+    for c in COLS_RANG:
+        if c in actuel.columns and c in X.columns:
+            ref = np.sort(actuel[c].dropna().to_numpy(dtype=float))
+            v = X[c].to_numpy(dtype=float)
+            X[f"rang_{c}"] = np.where(np.isfinite(v), (np.searchsorted(ref, v, "right") + 1) / (len(ref) + 1), np.nan) if len(ref) else np.nan
+    for c in ("ret_126j", "mom_ajuste_126"):
+        if c in actuel.columns and c in X.columns:
+            ref = np.sort(actuel.loc[actuel["est_crypto"] == 0, c].dropna().to_numpy(dtype=float))
+            v = X[c].to_numpy(dtype=float)
+            X[f"rangm_{c}"] = np.where(np.isfinite(v), (np.searchsorted(ref, v, "right") + 1) / (len(ref) + 1), np.nan) if len(ref) else np.nan
+    for c in ("marche_largeur", "marche_dispersion"):
+        if c in actuel.columns:
+            X[c] = float(actuel[c].iloc[0])
+    for c in actuel.columns:
+        if c not in X.columns:
+            X[c] = np.nan
+    X = X[list(actuel.columns)]
+    final, _q1, _q2 = P["decision"](X)
+    out = {}
+    for t, p in zip(X["ticker"], final):
+        if np.isfinite(p):
+            out[t] = {"proba": float(p)}
+    if P.get("risque"):
+        try:
+            modele, vs = P["risque"]
+            lp = modele.predict(X[vs])
+            for t, l in zip(X["ticker"], lp):
+                if t in out and np.isfinite(l):
+                    out[t]["vol"] = float(np.exp(l))
+        except Exception:
+            pass
+    return out
 
 
 def _signature_risque():
@@ -1227,6 +1273,9 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
                     evaluation.risque_titres[t]["chute"] = pv
     except Exception:
         mod_chute = None
+    global _POUR_ETENDU   # version 67.5 : de quoi donner l'avis de la même IA aux 2 000+ actions des fiches simples
+    _POUR_ETENDU = {"decision": decision, "actuel": actuel,
+                    "risque": mod_risque if bool((evaluation.risque or {}).get("prouve")) else None}
     if not cache:
         _sauver_modeles({"cle": cle, "ia1": ia1, "ia2": ia2, "vs_q": vs_q, "mods_q": mods_q, "rel": modele_rel,
                          "risque": mod_risque, "refs": locals().get("refs"), "chute": mod_chute})

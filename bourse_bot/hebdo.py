@@ -639,61 +639,64 @@ def avis_passes_html(ticker: str, V: dict, fr: bool = True, prefixe: str = "../"
 # ----------------------------------------------------------------------------
 # Version 67 : la réponse courte des pages fixes (« ça monte ou ça baisse ? », « de combien ? »)
 # ----------------------------------------------------------------------------
+def avis_ia(t: dict, modele: dict | None = None):
+    """Version 67.5 : l'avis de l'IA, toujours donné — (proba, sens ±1, confiance « faible » / « moyenne » / « forte »)."""
+    p = t.get("proba_ia") if t.get("source_proba") == "marche" and t.get("proba_ia") is not None else t.get("proba_hausse")
+    if p is None:
+        return None, 0, "faible"
+    marge = max(((modele or {}).get("avis_net") or {}).get("marge") or 0, .02)
+    faible = t.get("avis_net") is False or t.get("source_proba") == "marche" or abs(p - .5) < marge
+    conf = "faible" if faible else ("forte" if t.get("confiance") == "forte" else "moyenne")
+    return p, (1 if p >= .5 else -1), conf
+
+
+LIB_SENS = {(1, True): ("Légèrement à la hausse", "Slightly up"), (1, False): ("Plutôt à la hausse", "Leaning up"),
+            (-1, True): ("Légèrement à la baisse", "Slightly down"), (-1, False): ("Plutôt à la baisse", "Leaning down")}
+LIB_CONF = {"faible": ("confiance faible", "low confidence"), "moyenne": ("confiance moyenne", "medium confidence"),
+            "forte": ("confiance forte", "high confidence")}
+
+
 def reponse_courte_html(t: dict, modele: dict | None, fr: bool = True, px=None) -> str:
-    p = t.get("proba_hausse")
+    p, sens, conf = avis_ia(t, modele)
     if p is None:
         return ""
     M = modele or {}
     AN = M.get("avis_net") or {}
-    proche = abs(p - .5) < max(AN.get("marge") or 0, .02)
-    sans = t.get("avis_net") is False or t.get("source_proba") == "marche" or proche
-    sens = 0 if sans else (1 if p >= .5 else -1)
-    ch = round(p * 100)
-    prec = AN.get("precision") if (not sans and AN.get("precision")) else M.get("precision")
-    base = AN.get("base") if (not sans and AN.get("precision")) else M.get("precision_base")
+    k = 0 if fr else 1
+    titre = LIB_SENS[(sens, conf == "faible")][k]
+    ch = round(p * 100) if sens > 0 else 100 - round(p * 100)
+    prec = AN.get("precision") if (conf != "faible" and AN.get("precision")) else M.get("precision")
+    base = AN.get("base") if (conf != "faible" and AN.get("precision")) else M.get("precision_base")
     f = t.get("fourchette") or []
     mv = (t.get("risque_prevu") or {}).get("mouvement")
     px = px or (lambda v, d: f"{v:,.2f} {d}")
     if fr:
-        titre = ["Impossible à dire", "Plutôt à la hausse", "Plutôt à la baisse"][sens]
-        if sens == 0:
-            expl = ("Sur ce marché, l'IA n'a pas fait mieux que la tendance habituelle : le radar ne devine pas." if t.get("source_proba") == "marche"
-                    else f"Les chances sont trop proches de 50/50 pour que l'IA tranche ({ch} sur 100 de finir plus haut). Le radar préfère le dire que deviner."
-                    if proche else "Les deux IA du radar ne sont pas d'accord entre elles sur ce titre : le radar ne tranche pas."
-                    if t.get("accord_ia") is False else
-                    "Dans ce genre de cas, l'IA n'a pas fait mieux que le hasard sur les années testées : le radar ne tranche pas.")
-        else:
-            expl = (f"<b>{ch} chances sur 100</b> de finir plus haut dans un mois"
-                    + (f" (donc {100 - ch} sur 100 de finir plus bas)" if sens < 0 else "") + ".")
+        expl = (f"<b>{ch} chances sur 100</b> de finir plus {'haut' if sens > 0 else 'bas'} dans un mois, selon l'IA."
+                + (" <span class='muted'>Confiance faible : dans ce genre de cas, l'IA se trompe souvent. Regarde surtout l'agitation prévue.</span>"
+                   if conf == "faible" else ""))
         fiab = (f" <span class='muted'>Fiabilité réelle : sur des années jamais vues, l'IA a trouvé le bon sens {round(prec * 100)} fois sur 100 "
                 f"(en répondant toujours pareil : {round(base * 100)}).</span>") if prec and base else ""
-        k1, k2, lib = "Ça monte ou ça baisse ?", "De combien ça peut bouger ?", "La réponse courte"
+        k1, k2, lib = "Ça monte ou ça baisse ?", "De combien ça peut bouger ?", "L'avis de l'IA"
         mv_t = f"±{round(mv * 100)} % en un mois" if mv else ""
         fo = f"8 fois sur 10, entre {px(f[0], t.get('devise', ''))} et {px(f[1], t.get('devise', ''))}" if len(f) == 2 else ""
-        jb, jm, jh = "baisse", "50/50", "hausse"
     else:
-        titre = ["Impossible to say", "Leaning up", "Leaning down"][sens]
-        if sens == 0:
-            expl = ("On this market the AI did no better than the usual trend: the radar does not guess." if t.get("source_proba") == "marche"
-                    else f"The odds are too close to 50/50 for the AI to decide ({ch} in 100 of ending higher). The radar would rather say so than guess."
-                    if proche else "The radar's two AIs disagree on this asset: the radar does not decide." if t.get("accord_ia") is False
-                    else "In cases like this, the AI did no better than chance over the tested years: the radar does not decide.")
-        else:
-            expl = (f"<b>{ch} chances in 100</b> of ending higher in a month"
-                    + (f" (so {100 - ch} in 100 of ending lower)" if sens < 0 else "") + ".")
+        expl = (f"<b>{ch} chances in 100</b> of ending {'higher' if sens > 0 else 'lower'} in a month, according to the AI."
+                + (" <span class='muted'>Low confidence: in cases like this the AI is often wrong. Look mainly at the expected volatility.</span>"
+                   if conf == "faible" else ""))
         fiab = (f" <span class='muted'>Real reliability: on years it never saw, the AI got the direction right {round(prec * 100)} times in 100 "
                 f"(always giving the same answer: {round(base * 100)}).</span>") if prec and base else ""
-        k1, k2, lib = "Up or down?", "How much can it move?", "The short answer"
+        k1, k2, lib = "Up or down?", "How much can it move?", "The AI's call"
         mv_t = f"±{round(mv * 100)}% in a month" if mv else ""
         fo = f"8 times out of 10, between {px(f[0], t.get('devise', ''))} and {px(f[1], t.get('devise', ''))}" if len(f) == 2 else ""
-        jb, jm, jh = "down", "50/50", "up"
-    cls = ["rc-nul", "rc-up", "rc-down"][sens]
-    ic = ["↔", "↑", "↓"][sens]
+    cls = "rc-up" if sens > 0 else "rc-down"
+    ic = "↑" if sens > 0 else "↓"
     deux = (f"<div class='rc-q rc-q2'><span class='rc-ic' aria-hidden='true'>↕</span><div><span class='rc-k'>{k2}</span>"
             f"<b>{mv_t}</b>{f'<span class=rc-s>{fo}</span>' if fo else ''}</div></div>") if (mv_t or fo) else ""
-    return (f"<div class='carte rc {cls}'><div class='rc-l'>{lib}</div>"
+    return (f"<div class='carte rc {cls}{' rc-faible' if conf == 'faible' else ''}'><div class='rc-l'>{lib} "
+            f"<span class='conf conf-{conf}'>{LIB_CONF[conf][k]}</span></div>"
             f"<div class='rc-q rc-q1'><span class='rc-ic' aria-hidden='true'>{ic}</span><div><span class='rc-k'>{k1}</span><b>{titre}</b></div></div>"
-            f"<div class='rc-jauge' role='img' aria-label='{ch} / 100'><i style='--p:{ch}%'></i><span>{jb}</span><span>{jm}</span><span>{jh}</span></div>"
+            f"<div class='rc-jauge' role='img' aria-label='{round(p * 100)} / 100'><i style='--p:{round(p * 100)}%'></i><span>{'baisse' if fr else 'down'}</span>"
+            f"<span>50/50</span><span>{'hausse' if fr else 'up'}</span></div>"
             f"<p class='rc-t'>{expl}{fiab}</p>{deux}</div>")
 
 
@@ -708,7 +711,8 @@ CSS_RC = """
 .rc-jauge{position:relative;margin:14px 0 4px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--down) 0%,var(--line) 42%,var(--line) 58%,var(--up) 100%)}
 .rc-jauge i{position:absolute;top:50%;left:var(--p);width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--ink);border:3px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.3)}
 .rc-jauge span{position:absolute;top:12px;font-size:11.5px;color:var(--muted)}.rc-jauge span:nth-of-type(1){left:0}.rc-jauge span:nth-of-type(2){left:50%;transform:translateX(-50%)}.rc-jauge span:nth-of-type(3){right:0}
-.rc-t{margin:26px 0 12px;font-size:15px}.rc-q2{padding-top:12px;border-top:1px solid var(--line)}
+.rc-t{margin:26px 0 12px;font-size:15px}
+.conf{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:99px;font-size:11.5px;font-weight:600;background:var(--bg);color:var(--muted)}.conf-forte{background:var(--accent-soft);color:var(--accent)}.conf-moyenne{color:var(--ink)}.rc-faible .rc-q1 b{opacity:.85}.rc-q2{padding-top:12px;border-top:1px solid var(--line)}
 @media (prefers-reduced-motion:no-preference){.rc-jauge i{animation:rc-glisse .9s cubic-bezier(.2,.8,.2,1) both}@keyframes rc-glisse{from{left:50%;opacity:0}to{left:var(--p);opacity:1}}}
 """
 CSS = CSS + CSS_RC
@@ -719,10 +723,9 @@ def reponse_mini(t: dict, question: str, reponse: str, mouvement: str = "", lib_
     p = t.get("proba_hausse")
     if p is None:
         return ""
-    sans = t.get("avis_net") is False or t.get("source_proba") == "marche" or .48 < p < .52
-    sens = 0 if sans else (1 if p >= .5 else -1)
-    cls = ["rc-nul", "rc-up", "rc-down"][sens]
-    ic = ["↔", "↑", "↓"][sens]
+    p, sens, _conf = avis_ia(t)
+    cls = "rc-up" if sens > 0 else "rc-down"
+    ic = "↑" if sens > 0 else "↓"
     ch = round(p * 100)
     deux = (f"<div class='rc-q rc-q2'><span class='rc-ic' aria-hidden='true'>↕</span><div><span class='rc-k'>{lib_mouvement}</span>"
             f"<b><bdi>{mouvement}</bdi></b></div></div>") if mouvement else ""
