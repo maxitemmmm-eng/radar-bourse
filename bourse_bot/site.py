@@ -109,7 +109,44 @@ def _niveaux(d: pd.DataFrame) -> dict:
             "rsi": _arrondi(x["rsi"]), "adx": _arrondi(x["adx"])}
 
 
+_CACHE_BT: dict | None = None
+_FICHIER_BT = os.path.join(".cache_modeles", "backtests.json")
+
+
 def _backtest(ticker: str, d: pd.DataFrame) -> dict | None:
+    """Version 67 : le backtest de chaque titre (3 ans de stratégie rejouée) n'est recalculé qu'une fois par jour de
+    cotation ; les mises à jour horaires du même jour réutilisent le résultat (gain : ~15 s par mise à jour)."""
+    global _CACHE_BT
+    if _CACHE_BT is None:
+        try:
+            with open(_FICHIER_BT, encoding="utf-8") as f:
+                _CACHE_BT = json.load(f)
+        except Exception:
+            _CACHE_BT = {}
+    try:
+        jour = pd.Timestamp(d.index[-1]).strftime("%Y-%m-%d")
+    except Exception:
+        jour = None
+    c = _CACHE_BT.get(ticker)
+    if jour and isinstance(c, dict) and c.get("jour") == jour and c.get("n") == len(d):
+        return c.get("r")
+    r = _backtest_calcul(ticker, d)
+    if jour:
+        _CACHE_BT[ticker] = {"jour": jour, "n": len(d), "r": r}
+    return r
+
+
+def _sauver_cache_bt():
+    if _CACHE_BT:
+        try:
+            os.makedirs(os.path.dirname(_FICHIER_BT), exist_ok=True)
+            with open(_FICHIER_BT, "w", encoding="utf-8") as f:
+                json.dump(_CACHE_BT, f, separators=(",", ":"), default=lambda v: None)
+        except Exception:
+            pass
+
+
+def _backtest_calcul(ticker: str, d: pd.DataFrame) -> dict | None:
     jours_an = 365 if ticker.endswith("-USD") else 252
     dispo = len(d.dropna(subset=["sma200"])) / jours_an
     if dispo < 1:
@@ -228,6 +265,8 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
             usd_eur = 1 / dernier
 
     date_max = max(a.date_cours for a in analyses)
+    if not demo:
+        _sauver_cache_bt()
     suivi = dict(suivi or {})
     resultats = suivi.pop("toutes", [])
     return propre({
@@ -326,7 +365,7 @@ def _ecrire_anglais(gabarit: str, donnees: str, dossier: str, lib: str) -> None:
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
             + securite + tete.replace("<!--__LIB__-->", lib) + "\n</head>\n<body>\n" + corps + "\n</body>\n</html>\n")
     html = traduction_appli.traduire_page(html, traductions_en.EN)
-    for _fr, _en in (("avis-surs-verifies.html", "en/verified-calls.html"), ('"themes.html"', '"en/themes.html"'), ('"credits.html"', '"en/credits.html"')):
+    for _fr, _en in (("avis-surs-verifies.html", "en/verified-calls.html"), ('"themes.html"', '"en/themes.html"'), ('"credits.html"', '"en/credits.html"'), ('"toutes-les-actions.html"', '"en/all-stocks.html"')):
         html = html.replace(_fr, _en)   # version 65 : les liens de l'appli anglaise vont vers les pages anglaises
     html = html.replace("/*__DATA__*/null", donnees, 1)
     html = html.replace("</body>", traduction_appli.SCRIPT_DONNEES_EN + "\n</body>", 1)

@@ -159,6 +159,11 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("67", "« Avis sûrs » aussi pour le sens du prix (monte / baisse), comme pour l'agitation : seuil appris sur les années d'avant", False,
+     "Vrais cours 2018-2026 : visé 58 %, obtenu 54,3 % alors que « toujours la hausse » faisait 54,8 % dans les mêmes cas ; visé 60 %, obtenu 52,0 %. "
+     "Les avis les plus tranchés ne tiennent pas sur les années suivantes. Non adopté : le site continue de dire « impossible à dire » quand c'est le cas"),
+    ("67", "Moyenne de deux IA d'agitation (avec et sans « l'écart à sa normale ») au lieu d'une seule", False,
+     "Avis sûrs 80,6 % contre 80,8 %, tous les cas 70,5 % contre 70,5 %, erreur médiane un peu moins bonne : pas de gain. Non adopté"),
     ("66.1", "La même règle d'accord avec « retour vers sa normale », appliquée aussi au niveau « avis sûr »", False,
      "80,8 % de justes pour 51,7 % des cas, contre 80,8 % pour 52,3 % sans la règle : un peu moins d'avis, pas plus justes. Non adopté"),
     ("66", "« Avis très sûr » seulement quand l'IA et la règle simple « retour vers sa normale de l'année » sont d'accord (seuil réappris dans ces cas-là)", True,

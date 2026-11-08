@@ -67,6 +67,28 @@ def _univers(marches: list[str]) -> tuple[dict[str, str], dict[str, str]]:
     return noms, marche_de
 
 
+def _indicateurs_en_parallele(travaux: list) -> dict:
+    """Version 67 : les indicateurs de chaque titre sont calculés sur plusieurs cœurs du processeur à la fois
+    (résultat identique, 2 à 3 fois plus rapide). Au moindre souci, retour au calcul un par un."""
+    res = {}
+    n = min(4, os.cpu_count() or 1)
+    if n > 1 and len(travaux) > 40 and os.environ.get("RADAR_PARALLELE", "1") != "0":
+        try:
+            from concurrent.futures import ProcessPoolExecutor
+            with ProcessPoolExecutor(n) as ex:
+                calc = ex.map(indicators.calculer, [b for _, b, _, _ in travaux], [r for _, _, r, _ in travaux],
+                              [c for _, _, _, c in travaux], chunksize=8)
+                for (t, *_), d in zip(travaux, calc):
+                    res[t] = d
+            return res
+        except Exception as e:
+            console.print(f"[dim]Calcul parallèle indisponible ({e}) : calcul un par un.[/dim]")
+            res = {}
+    for t, b, r, c in travaux:
+        res[t] = indicators.calculer(b, r, c)
+    return res
+
+
 def _preparer(noms: dict[str, str], marche_de: dict[str, str]):
     """Télécharge tout en un lot puis calcule les indicateurs. Renvoie (données, bruts)."""
     extra = set(config.BENCHMARK.values()) | {t for t, _ in site.INDICES} | {"EURUSD=X"}
@@ -81,6 +103,7 @@ def _preparer(noms: dict[str, str], marche_de: dict[str, str]):
             contexte = {}
     bruts["__macro__"] = contexte
     donnees, ignores = {}, []
+    travaux = []   # version 67 : (ticker, cours, référence, contexte) calculés ensuite en parallèle
     for t in noms:
         brut = bruts.get(t)
         if brut is None or len(brut) < 260:
@@ -98,12 +121,12 @@ def _preparer(noms: dict[str, str], marche_de: dict[str, str]):
         bench = bruts.get(config.BENCHMARK.get(type_marche, "SPY"))
         # le sentiment « Fear & Greed » ne concerne que les cryptos
         ctx = contexte if type_marche == "crypto" else {k: v for k, v in contexte.items() if k != "fng"}
-        donnees[t] = indicators.calculer(brut, bench, ctx)
+        travaux.append((t, brut, bench, ctx))
     if ignores:
         console.print(f"[dim]{len(ignores)} titre(s) ignoré(s) (introuvable ou moins d'un an "
                       f"d'historique) : {', '.join(ignores[:12])}{'…' if len(ignores) > 12 else ''}[/dim]")
     # Titres servant uniquement à l'apprentissage de l'IA
-    supp = {}
+    travaux_supp = []
     for marche, liste in supplement.items():
         for t in liste:
             brut = bruts.get(t)
@@ -111,8 +134,12 @@ def _preparer(noms: dict[str, str], marche_de: dict[str, str]):
                 continue
             bench = bruts.get(config.BENCHMARK.get(marche, "SPY"))
             ctx = contexte if marche == "crypto" else {k: v for k, v in contexte.items() if k != "fng"}
-            supp[t] = indicators.calculer(brut, bench, ctx)
+            travaux_supp.append((t, brut, bench, ctx))
             marche_de.setdefault(t, marche)
+    with console.status(f"Calcul des indicateurs ({len(travaux) + len(travaux_supp)} titres)…"):
+        resultats = _indicateurs_en_parallele(travaux + travaux_supp)
+    donnees = {t: resultats[t] for t, *_ in travaux if t in resultats}
+    supp = {t: resultats[t] for t, *_ in travaux_supp if t in resultats}
     bruts["__apprentissage__"] = supp
     return donnees, bruts
 
@@ -173,8 +200,11 @@ def _ouvrir(chemin, args):
 
 # ----------------------------------------------------------------------------
 def cmd_site(args):
+    import time as _t
+    chrono = [("début", _t.time())]   # version 67 : le temps de chaque étape, affiché à la fin
     noms, marche_de = _univers(args.marches)
     donnees, bruts = _preparer(noms, marche_de)
+    chrono.append(("Téléchargement et indicateurs", _t.time()))
     args._apprentissage = bruts.pop("__apprentissage__", {})
     if not donnees:
         console.print("[red]Aucune donnée récupérée. Vérifie ta connexion Internet puis relance.[/red]")
@@ -189,6 +219,7 @@ def cmd_site(args):
         return 2
     try:
         analyses, evaluation = _analyser(donnees, noms, marche_de, args)
+        chrono.append(("IA (entraînement et prévisions)", _t.time()))
     except model.ErreurControle as e:
         console.print(f"[red]Contrôle de cohérence échoué : {e}. Site non publié : l'ancienne version reste en ligne.[/red]")
         return 3
@@ -260,6 +291,7 @@ def cmd_site(args):
                     "🚀" if a.potentiel_hausse else "")
     console.print(tab)
 
+    chrono.append(("Contrôles, actualités, fondamentaux", _t.time()))
     payload = site.construire(analyses, donnees, evaluation, suivi, bruts, demo=args.demo,
                               actus_marche=actus_marche, qualite=controle)
     payload["correction_erreurs"] = getattr(args, "_correction", None)
@@ -283,13 +315,28 @@ def cmd_site(args):
             t["robots"] = bot["votes"].get(t["ticker"], {})
     except Exception as e:
         console.print(f"[yellow]Mini-robots indisponibles cette fois : {e}[/yellow]")
+    try:   # version 67 : aucune prévision incohérente n'est publiée
+        from . import controle
+        rc = controle.appliquer(payload)
+        console.print(f"Contrôle des prévisions : {rc['verifies']} titres vérifiés"
+                      + (f", prévision retirée pour {len(rc['retires'])} : {', '.join(list(rc['retires'])[:8])}" if rc["retires"] else ", aucune anomalie"))
+    except Exception as e:
+        console.print(f"[yellow]Contrôle des prévisions indisponible : {e}[/yellow]")
     if not args.demo and os.environ.get("RADAR_SELECTION") == "1":
         seo.archiver_point(payload)   # le point du jour est archivé chaque soir
         try:
             seo.archiver_semaine(payload)   # et le résumé de la semaine en cours
         except Exception:
             pass
+    chrono.append(("Préparation des données du site", _t.time()))
     chemin = site.ecrire(payload)
+    chrono.append(("Écriture du site", _t.time()))
+    try:
+        console.print("[dim]Temps : " + " · ".join(f"{chrono[i][0]} {round(chrono[i][1] - chrono[i - 1][1])} s"
+                                                    for i in range(1, len(chrono)))
+                      + f" · total {round(chrono[-1][1] - chrono[0][1])} s[/dim]")
+    except Exception:
+        pass
     etat_alertes = alertes.publier_si_active(payload)
     if os.environ.get("RADAR_ALERTES") == "1":
         console.print(f"Alertes Telegram : {etat_alertes}")

@@ -290,7 +290,7 @@ def _pc(v, sep, signe=True):
     txt = f"{v * 100:.1f}"
     if sep == ",":
         txt = txt.replace(".", ",")
-    cls = "up" if v > 0 else "down" if v < 0 else ""
+    cls = ("up" if v > 0 else "down" if v < 0 else "") if signe else ""   # une agitation (±) n'est ni bonne ni mauvaise
     return f'<span class="m {cls}">{"+" if signe and v > 0 else ""}{txt} %</span>'
 
 
@@ -391,6 +391,9 @@ def _page_titre(lg, base, t, horizon, date, csp="", taux_surs=None):
              "<div class='carte grille'>" + "".join(f"<div class='k'><b><bdi>{v}</bdi></b><span>{_e(lib)}</span></div>" for v, lib in cases) + "</div>"
              + (f"<p class='avis-sur'><span class='badge-sur'>✓</span> {_e(X['fiche_agite' if rp['recent'] > 1 else 'fiche_calme'].format(nom=nom, e=round(abs(rp['recent'] - 1) * 100)))}"
                 f" <span class='muted'>({_e(X['surs_t'])} : {round(taux_surs * 100)} %)</span></p>" if X and rp.get("sur") and rp.get("recent") and taux_surs else "")
+             + __import__("bourse_bot.hebdo", fromlist=["x"]).reponse_mini(
+                 t, _e(L["sens"].format(h=horizon)), _e(L["sur10"].format(n=round(p * 10)) if net else L["sans_avis"]),
+                 f"±{_pc(mv, sep, signe=False)}" if mv else "", _e(L["agit"]))
              + seo.courbe_svg(t, {"aria": L["h1"].format(nom=nom, tk=tk)})
              + f"<h2>{_e(L['fiable_t'])}</h2><p>{L['fiable']}</p>"
              f"<p><a class='btn' href='../../index.html#{_e(re.sub(r'[^A-Za-z0-9._-]', '', t['ticker']))}'>{_e(L['app'])}</a> "

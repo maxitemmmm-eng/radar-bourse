@@ -488,21 +488,41 @@ def google(m, complet, login):
 # ----------------------------------------------------------------------------
 # Nom de domaine personnalisé (seulement avec nom_de_domaine.bat)
 # ----------------------------------------------------------------------------
+IP_GITHUB = ("185.199.108.153", "185.199.109.153", "185.199.110.153", "185.199.111.153")
+
+
+def _ips(nom):
+    """Adresses IP vers lesquelles pointe un nom de domaine (vide si le DNS ne répond pas encore)."""
+    import socket
+    try:
+        return sorted({a[4][0] for a in socket.getaddrinfo(nom, 443, socket.AF_INET)})
+    except Exception:
+        return []
+
+
+def _pause(texte="Appuie sur Entrée quand c'est fait…"):
+    try:
+        input(f"   👉 {texte}")
+    except EOFError:
+        pass
+
+
 def domaine(m, complet):
+    """Version 67 : tutoriel guidé, étape par étape, pour donner au site une vraie adresse (ex : radarbourse.fr)."""
     if "--domaine" not in sys.argv:
         if m.get("domaine"):
             ok(f"Nom de domaine : {m['domaine']}")
         return
-    print("\n🌍 Nom de domaine personnalisé (facultatif, environ 7 à 12 € par an)")
-    info("1. Achète un nom (ex : radarbourse.fr) chez OVH, Gandi, Namecheap ou Cloudflare.")
-    info("   Conseil anti-dox : active la « protection WHOIS » (souvent gratuite) pour que ton")
-    info("   nom n'apparaisse pas dans l'annuaire public des domaines.")
-    info("2. Dans la zone DNS de ton domaine, ajoute ces 4 enregistrements de type A :")
-    for ip in ("185.199.108.153", "185.199.109.153", "185.199.110.153", "185.199.111.153"):
-        info(f"      A   @   {ip}")
-    info(f"   et un enregistrement CNAME :  www   {complet.split('/')[0].lower()}.github.io")
-    nom = question("3. Ton nom de domaine (vide pour annuler, « aucun » pour le retirer)").strip().lower()
-    nom = nom.replace("https://", "").replace("http://", "").strip("/")
+    import webbrowser
+    login = complet.split("/")[0].lower()
+    print("\n🌍 Donner une vraie adresse au site (exemple : radarbourse.fr)")
+    info("Aujourd'hui, ton site est déjà en ligne à une adresse gratuite :")
+    info(f"   https://{login}.github.io/{complet.split('/')[1]}/")
+    info("Avec ton propre nom, c'est plus facile à retenir, plus pro, et Google le classe pareil.")
+    info("Coût : environ 7 à 12 € par an (le seul paiement, à faire toi-même ; je ne paie jamais rien à ta place).")
+    info("Le site reste hébergé gratuitement par GitHub. L'ancienne adresse renverra automatiquement vers la nouvelle.")
+    nom = question("\nÉTAPE 1/5 — Quel nom veux-tu ? (ex : radarbourse.fr ; vide pour annuler, « aucun » pour retirer le domaine actuel)").strip().lower()
+    nom = nom.replace("https://", "").replace("http://", "").replace("www.", "", 1).strip("/")
     if not nom:
         info("Annulé.")
         return
@@ -516,16 +536,66 @@ def domaine(m, complet):
     if not re.fullmatch(r"[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+", nom):
         info("⚠️ Ce nom ne semble pas valide (exemple attendu : radarbourse.fr). Relance nom_de_domaine.bat.")
         return
-    run([GH, "variable", "set", "RADAR_DOMAINE", "-R", complet, "--body", nom], montrer=False)
-    code, sortie = silencieux([GH, "api", "-X", "PUT", f"repos/{complet}/pages", "-f", f"cname={nom}"])
-    if code != 0:
-        info("⚠️ GitHub n'a pas accepté le domaine tout de suite (souvent parce que le DNS n'est pas encore")
-        info(f"   propagé). Tu peux aussi le saisir dans https://github.com/{complet}/settings/pages")
+    deja = set(_ips(nom)) & set(IP_GITHUB)
+    if not deja:
+        print("\nÉTAPE 2/5 — Acheter le nom (si ce n'est pas déjà fait)")
+        info("Je t'ouvre la page de recherche d'OVHcloud (français, sérieux). Tu peux aussi prendre Gandi ou Cloudflare.")
+        info("   • Vérifie que le nom est libre, puis achète-le pour 1 an (refuse les options payantes proposées).")
+        info("   • IMPORTANT, pour rester anonyme : active la « protection WHOIS » / « masquer mes informations »")
+        info("     (gratuite sur les .fr pour les particuliers) : ton nom n'apparaîtra pas dans l'annuaire public.")
+        try:
+            webbrowser.open(f"https://www.ovhcloud.com/fr/domains/?domain={nom}")
+        except Exception:
+            pass
+        _pause("Appuie sur Entrée une fois le nom acheté…")
+        print("\nÉTAPE 3/5 — Relier le nom au site (zone DNS)")
+        info("Chez ton vendeur, ouvre « Zone DNS » (OVH : Noms de domaine → ton nom → onglet « Zone DNS »).")
+        info("   • Supprime les enregistrements de type A et AAAA déjà présents pour le nom principal (« @ » ou vide).")
+        info("   • Ajoute ces 4 enregistrements de type A (sous-domaine vide ou @) :")
+        for ip in IP_GITHUB:
+            info(f"        A    @    {ip}")
+        info(f"   • Ajoute un enregistrement CNAME :   www   →   {login}.github.io.")
+        _pause("Appuie sur Entrée quand les 5 lignes sont enregistrées…")
+        print("\nÉTAPE 4/5 — Vérification (le DNS peut mettre de quelques minutes à quelques heures)")
+        for essai in range(20):
+            ips = _ips(nom)
+            if set(ips) & set(IP_GITHUB):
+                ok(f"{nom} pointe bien vers GitHub ({', '.join(ips)}).")
+                break
+            info(f"   Pas encore… ({', '.join(ips) or 'aucune réponse'}) — nouvel essai dans 30 s ({essai + 1}/20)")
+            time.sleep(30)
+        else:
+            info("⏳ Le DNS n'est pas encore à jour, c'est normal. Je continue quand même :")
+            info("   GitHub vérifiera tout seul. Si besoin, relance nom_de_domaine.bat dans quelques heures.")
     else:
-        ok(f"Domaine {nom} enregistré. Le DNS peut mettre jusqu'à 24 h à fonctionner.")
-        info(f"Ensuite, coche « Enforce HTTPS » dans https://github.com/{complet}/settings/pages")
+        ok(f"{nom} pointe déjà vers GitHub.")
+    print("\nÉTAPE 5/5 — Je règle GitHub et je reconstruis le site avec la nouvelle adresse")
+    run([GH, "variable", "set", "RADAR_DOMAINE", "-R", complet, "--body", nom], montrer=False)
+    code, _ = silencieux([GH, "api", "-X", "PUT", f"repos/{complet}/pages", "-f", f"cname={nom}"])
+    if code != 0:
+        info("⚠️ GitHub n'a pas accepté le domaine tout de suite (le DNS n'est sans doute pas encore propagé).")
+        info(f"   Tu peux aussi le saisir dans https://github.com/{complet}/settings/pages (case « Custom domain »).")
+    else:
+        ok(f"Domaine {nom} enregistré chez GitHub.")
+    # cadenas HTTPS : GitHub crée le certificat tout seul, ça peut prendre jusqu'à une heure
+    for essai in range(6):
+        c2, _ = silencieux([GH, "api", "-X", "PUT", f"repos/{complet}/pages", "-F", "https_enforced=true"])
+        if c2 == 0:
+            ok("Connexion sécurisée (https, le petit cadenas) activée.")
+            break
+        if essai == 0:
+            info("   Le certificat https est en cours de création par GitHub (jusqu'à 1 h)…")
+        time.sleep(20)
+    else:
+        info(f"⏳ Le cadenas https n'est pas encore prêt : dans une heure, coche « Enforce HTTPS » sur")
+        info(f"   https://github.com/{complet}/settings/pages (ou relance nom_de_domaine.bat).")
     m["domaine"] = nom
     sauver_memoire(m)
+    ok("Le site va être republié juste après avec la nouvelle adresse (≈ 30 à 60 min).")
+    print("\n✅ Terminé. Ce qu'il reste à faire (je peux le faire avec toi) :")
+    info(f"   • Search Console : ajouter la propriété https://{nom}/ et y envoyer sitemap.xml.")
+    info("   • GoatCounter : rien à changer, les statistiques continuent.")
+    info(f"   • L'ancienne adresse github.io renvoie automatiquement vers https://{nom}/ (Google suit tout seul).")
 
 
 # ----------------------------------------------------------------------------

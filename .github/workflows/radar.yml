@@ -63,6 +63,7 @@ jobs:
           path: |
             .cache_cours
             .cache_modeles
+            .cache_etendu
           key: cours-${{ github.run_id }}
           restore-keys: cours-
 

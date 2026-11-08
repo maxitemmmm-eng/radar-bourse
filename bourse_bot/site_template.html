@@ -148,6 +148,7 @@ tbody tr:last-child td{border-bottom:0}
 .bulle small{display:block;font-weight:400;opacity:.85;font-size:11.5px}
 .bulle::after{content:"";position:absolute;left:50%;bottom:-5px;width:10px;height:10px;background:inherit;transform:translateX(-50%) rotate(45deg);border-radius:2px}
 .bulle.g{transform:translate(calc(-100% - 12px),-50%)}
+.bulle.dessous{transform:translate(-50%,10px);white-space:normal;width:max-content;max-width:230px}.bulle.dessous::after{bottom:auto;top:-5px}
 .bulle.g::after{left:auto;right:-5px;bottom:auto;top:50%;transform:translateY(-50%) rotate(45deg)}
 .bulle.up{background:var(--up);color:var(--sur-couleur)}.bulle.down{background:var(--down);color:var(--sur-couleur)}
 .bulle.acc{background:var(--accent);color:var(--sur-couleur)}.bulle.warn{background:var(--warn);color:var(--sur-couleur)}
@@ -453,6 +454,21 @@ footer a{color:var(--accent);text-underline-offset:3px}
 /* version 66.1 : les sections loin sous l'écran ne sont mises en page qu'à l'approche (accueil plus rapide sur téléphone) */
 main section:nth-of-type(n+4){content-visibility:auto;contain-intrinsic-size:auto 900px}
 @media print{main section{content-visibility:visible}}
+.rc{padding:18px 20px;margin-bottom:14px;border-left:4px solid var(--muted)}
+.rc-up{border-left-color:var(--up)}.rc-down{border-left-color:var(--down)}
+.rc-l{font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:8px}
+.rc-q{display:flex;gap:14px;align-items:center}.rc-q b{display:block;font-size:24px;line-height:1.2}.rc-q2 b{font-size:19px}
+.rc-k{display:block;font-size:13.5px;color:var(--muted)}.rc-s{display:block;font-size:14px;color:var(--muted);margin-top:2px}
+.rc-ic{flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;font-size:24px;font-weight:700;background:var(--bg);color:var(--muted)}
+.rc-up .rc-q1 .rc-ic{background:var(--up-soft);color:var(--up)}.rc-down .rc-q1 .rc-ic{background:var(--down-soft);color:var(--down)}
+.rc-up .rc-q1 b{color:var(--up)}.rc-down .rc-q1 b{color:var(--down)}
+.rc-jauge{position:relative;margin:14px 0 4px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--down) 0%,var(--line) 42%,var(--line) 58%,var(--up) 100%)}
+.rc-jauge i{position:absolute;top:50%;left:var(--p);width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--ink);border:3px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.rc-jauge span{position:absolute;top:12px;font-size:11.5px;color:var(--muted)}.rc-jauge span:nth-of-type(1){left:0}.rc-jauge span:nth-of-type(2){left:50%;transform:translateX(-50%)}.rc-jauge span:nth-of-type(3){right:0}
+.rc-t{margin:26px 0 12px;font-size:14.5px}.rc-q2{padding-top:12px;border-top:1px solid var(--line)}
+@media (prefers-reduced-motion:no-preference){.rc-jauge i{animation:rc-glisse .9s cubic-bezier(.2,.8,.2,1) both}@keyframes rc-glisse{from{left:50%;opacity:0}to{left:var(--p);opacity:1}}}
+.fleche{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-weight:700;font-size:13px;flex:none;margin-right:2px}
+.fleche.up{background:var(--up-soft);color:var(--up)}.fleche.down{background:var(--down-soft);color:var(--down)}.fleche.nul{background:var(--bg);color:var(--muted)}
 .decouvrir{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 6px}
 .decouvrir a{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 .decouvrir a:hover,.decouvrir a:focus-visible{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 8px 22px rgba(5,10,20,.12)}
@@ -910,7 +926,7 @@ html.calme *{animation:none!important;transition:none!important}
   <a href="#signaux">Signaux forts</a><a href="#robots">Les mini-robots</a><a href="#carte-sec">Carte du marché</a><a href="#confiance">Fiabilité de l'IA</a>
   <span class="plus-titre">Autres pages</span>
   <a href="resultats.html" class="lien-site">Résultats réels</a><a href="journal-ia.html" class="lien-site">Journal de l'IA</a><a href="connaissances.html" class="lien-site">Ce que sait l'IA</a>
-  <a href="bourse-cette-semaine.html" class="lien-site">La semaine en Bourse</a><a href="themes.html" class="lien-site">Actions par thème</a><a href="avis-surs-verifies.html" class="lien-site">Avis de l'IA vérifiés</a>
+  <a href="toutes-les-actions.html" class="lien-site">Toutes les actions (2 000+)</a><a href="bourse-cette-semaine.html" class="lien-site">La semaine en Bourse</a><a href="themes.html" class="lien-site">Actions par thème</a><a href="avis-surs-verifies.html" class="lien-site">Avis de l'IA vérifiés</a>
   <a href="point.html" class="lien-site">Le point du jour</a><a href="actu-bourse.html" class="lien-site">Actu bourse</a><a href="krach-boursier.html" class="lien-site">Krach boursier</a>
   <a href="comparer.html" class="lien-site">Comparer deux titres</a><a href="portefeuille.html" class="lien-site">Sélection IA du mois</a><a href="outils.html" class="lien-site">Outils gratuits</a>
   <a href="apprendre.html" class="lien-site">Apprendre la Bourse</a><a href="guides.html" class="lien-site">Guides</a><a href="fonctionnalites.html" class="lien-site">Toutes les fonctionnalités</a>
@@ -999,7 +1015,7 @@ html.calme *{animation:none!important;transition:none!important}
     <p class="muted" style="font-size:12.5px;margin:8px 0 0">Vert : en hausse, rouge : en baisse. Plus la couleur est forte, plus le mouvement est grand. Clique sur une case pour ouvrir la fiche.</p>
   </section>
 
-  <section aria-labelledby="h-ctx">
+  <section aria-labelledby="h-ctx" class="expert">
     <div class="sec-head"><h2 id="h-ctx">Le contexte économique</h2>
       <p>Ce qui pèse sur tous les marchés en même temps. Ces données font partie de ce que le modèle analyse.</p></div>
     <div class="ctx-grid" id="ctx"></div>
@@ -1538,9 +1554,9 @@ const LIB_CONF = {faible: "Confiance faible", moyenne: "Confiance moyenne", fort
 const barresConf = c => !LIB_CONF[c] ? "" : `<span class="conf-ic c-${c}" role="img" aria-label="${LIB_CONF[c]}" title="${LIB_CONF[c]}"><i></i><i></i><i></i></span>`;
 function gauge(p, accord, net, conf){
   if(p==null) return `<span class="muted">–</span>`;
-  if(net === false) return `<div class="sans-avis" title="Pas d'avis net : dans ces cas-là, les IA n'ont pas fait mieux que le hasard"><div class="gauge" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span><span class="num">${Math.round(p*100)} %</span> · pas d'avis net</span></div>`;
+  if(net === false) return `<div class="sans-avis" title="Pas d'avis net : dans ces cas-là, les IA n'ont pas fait mieux que le hasard"><span class="fleche nul" aria-hidden="true">↔</span><div class="gauge" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span><span class="num">${Math.round(p*100)} %</span> · pas d'avis net</span></div>`;
   const desaccord = accord === false ? ` <span title="Les deux IA ne sont pas d'accord : avis peu fiable" role="img" aria-label="Les deux IA ne sont pas d'accord" style="color:var(--warn);font-weight:700">⚠</span>` : "";
-  return `<div style="display:flex;align-items:center;gap:8px"><div class="gauge ${p<0.5?'lo':''}" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span class="num" style="white-space:nowrap">${Math.round(p*100)} %</span>${barresConf(conf)}${desaccord}</div>`;
+  return `<div style="display:flex;align-items:center;gap:8px"><span class="fleche ${p>=.5?'up':'down'}" aria-hidden="true">${p>=.5?'↑':'↓'}</span><div class="gauge ${p<0.5?'lo':''}" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span class="num" style="white-space:nowrap">${Math.round(p*100)} %</span>${barresConf(conf)}${desaccord}</div>`;
 }
 
 /* ---------- Définitions des mots compliqués (bouton « ? ») ---------- */
@@ -2567,14 +2583,14 @@ function bulles(g){
   const W = box.clientWidth || g.el.clientWidth, Hh = box.clientHeight || g.el.clientHeight;
   const deja = [];
   const out = [];
-  const poser = (time, prix, cls, html, gauche = false) => {
+  const poser = (time, prix, cls, html, gauche = false, dessous = false) => {
     let x, y;
     try{ x = ts.timeToCoordinate(time); y = candles.priceToCoordinate(prix); }catch(e){ return; }
     if(x == null || y == null || !isFinite(x) || !isFinite(y)) return;
-    if(x < 20 || x > W - 70 || y < 34 || y > Hh - 24) return;
+    if(x < 20 || x > W - 70 || y < 34 || y > Hh - (dessous ? 70 : 24)) return;
     if(deja.some(([a, b]) => Math.abs(a - x) < 150 && Math.abs(b - y) < 34)) return;   // évite les chevauchements
     deja.push([x, y]);
-    out.push(`<div class="bulle ${cls}${gauche ? " g" : ""}" style="left:${x.toFixed(0)}px;top:${y.toFixed(0)}px">${html}</div>`);
+    out.push(`<div class="bulle ${cls}${gauche ? " g" : ""}${dessous ? " dessous" : ""}" style="left:${x.toFixed(0)}px;top:${y.toFixed(0)}px">${html}</div>`);
   };
   const i = s.t.length - 1;
   // Séparation nette entre le passé (vraies bougies) et la prévision (zones colorées)
@@ -2589,6 +2605,12 @@ function bulles(g){
     deja.push([xAuj, 20]);
   }
   poser(s.t[i], Math.max(s.h[i], s.c[i]), "", `Aujourd'hui · ${px(t.prix, t.devise)}`);
+  if(k && calques.prev !== false){   // version 67 : le verdict, écrit au bout de la prévision
+    const sn = sensDe(t), lib = sn > 0 ? "↑ Plutôt à la hausse" : sn < 0 ? "↓ Plutôt à la baisse" : "↔ Impossible à dire";
+    const ix = Math.max(1, Math.round(k.t.length * .6)), r50 = 0.6745 / 1.2816;
+    const sous = k.bas[ix] > 0 && k.mediane[ix] > 0 ? k.mediane[ix] * Math.pow(k.bas[ix] / k.mediane[ix], r50) : k.bas[ix];
+    poser(k.t[ix], sous, sn > 0 ? "up" : sn < 0 ? "down" : "", `${lib}<small>dans 1 mois, le plus probable : ${px(k.mediane.at(-1), t.devise)} (${k.mediane.at(-1) >= t.prix ? "+" : ""}${pctPlain(k.mediane.at(-1) / t.prix - 1, 1)})</small>`, false, true);
+  }
   if(calques.sma200 !== false){
     let rg = null; try{ rg = ts.getVisibleLogicalRange(); }catch(e){}
     if(rg){
@@ -2615,6 +2637,36 @@ function compteur(p){
     <text x="14" y="126">baisse</text><text x="206" y="126" text-anchor="end">hausse</text>
   </svg>`;
 }
+/* version 67 : le sens retenu pour un titre (1 : plutôt à la hausse, -1 : plutôt à la baisse, 0 : impossible à dire) */
+function sensDe(t){
+  const p = t.proba_hausse; if(p == null) return 0;
+  return (t.avis_net === false || t.source_proba === "marche" || (p > .48 && p < .52)) ? 0 : p >= .5 ? 1 : -1;
+}
+/* version 67 : la réponse courte, en haut de chaque fiche — « ça monte ou pas ? » et « de combien ? », sans jargon */
+function reponseCourte(t){
+  const p = t.proba_hausse; if(p == null) return "";
+  const AN = (DATA.modele || {}).avis_net || {}, M_ = DATA.modele || {};
+  const sens = sensDe(t), sansAvis = sens === 0;
+  const titre = sens > 0 ? "Plutôt à la hausse" : sens < 0 ? "Plutôt à la baisse" : "Impossible à dire";
+  const fleche = sens > 0 ? "↑" : sens < 0 ? "↓" : "↔";
+  const chances = Math.round(p * 100);
+  const prec = !sansAvis && AN.precision ? AN.precision : M_.precision, base = !sansAvis && AN.precision ? AN.base : M_.precision_base;
+  const f = t.fourchette, rq = t.risque_prevu || {};
+  const proche = Math.abs(p - .5) < Math.max(AN.marge || 0, .02);
+  const expl = sens === 0
+    ? (t.source_proba === "marche" ? `Sur ce marché, l'IA n'a pas fait mieux que la tendance habituelle : le radar ne devine pas.`
+       : proche ? `Les chances sont trop proches de 50/50 pour que l'IA tranche (${chances} sur 100 de finir plus haut). Le radar préfère le dire que deviner.`
+       : t.accord_ia === false ? `Les deux IA du radar ne sont pas d'accord entre elles sur ce titre : le radar ne tranche pas.`
+       : `Dans ce genre de cas, l'IA n'a pas fait mieux que le hasard sur les années testées : le radar ne tranche pas.`)
+    : `<b>${chances} chances sur 100</b> de finir plus haut dans un mois${sens < 0 ? ` (donc ${100 - chances} sur 100 de finir plus bas)` : ""}.`;
+  return `<div class="panel rc rc-${sens > 0 ? "up" : sens < 0 ? "down" : "nul"}" aria-label="Réponse courte">
+    <div class="rc-l">La réponse courte</div>
+    <div class="rc-q rc-q1"><span class="rc-ic" aria-hidden="true">${fleche}</span><div><span class="rc-k">Ça monte ou ça baisse ?</span><b>${titre}</b></div></div>
+    <div class="rc-jauge" role="img" aria-label="${chances} chances sur 100 de hausse"><i style="--p:${chances}%"></i><span>baisse</span><span>50/50</span><span>hausse</span></div>
+    <p class="rc-t">${expl}${prec ? ` <span class="muted">Fiabilité réelle : sur des années jamais vues, l'IA a trouvé le bon sens ${Math.round(prec * 100)} fois sur 100 (en répondant toujours pareil : ${Math.round(base * 100)}).</span>` : ""}</p>
+    ${f && f.length || rq.mouvement ? `<div class="rc-q rc-q2"><span class="rc-ic" aria-hidden="true">↕</span><div><span class="rc-k">De combien ça peut bouger ?</span><b>${rq.mouvement ? `±${Math.round(rq.mouvement * 100)} % en un mois` : ""}</b>${f && f.length ? `<span class="rc-s">8 fois sur 10, entre <span class="num">${px(f[0], t.devise)}</span> et <span class="num">${px(f[1], t.devise)}</span></span>` : ""}</div></div>` : ""}
+  </div>`;
+}
 function resumeSimple(t){
   const p = t.proba_hausse;
   if(p == null) return "";
@@ -2625,7 +2677,7 @@ function resumeSimple(t){
   const accordTxt = t.accord_ia === true ? `<span class="accord oui">✓ Les deux IA sont d'accord</span>`
     : t.accord_ia === false ? `<span class="accord non">⚠ Les deux IA ne sont pas d'accord : avis peu fiable</span>` : "";
   const SA = ((AN.marches_sans_avis) || {})[t.ticker.endsWith("-USD") ? "crypto" : t.marche];
-  return `${troisPoints(t)}<div class="panel resume"><div class="freq">${points100(p)}<p class="phrase muted" style="font-size:13px;max-width:260px">${t.source_proba === "marche" ? `Tendance habituelle de ce marché : il a fini plus haut <b>${Math.round(p*100)}</b> mois sur 100.` : sansAvis ? `Chiffre brut des IA : <b>${Math.round(p*100)}</b> sur 100. Ici, il n'est pas assez fiable pour compter.` : `Sur 100 situations passées comme celle-ci, <b class="up">${Math.round(p*100)}</b> ont fini plus haut un mois après.`}</p><span class="expert">${compteur(p)}</span></div>
+  return `${reponseCourte(t)}${troisPoints(t)}<div class="panel resume"><div class="freq">${points100(p)}<p class="phrase muted" style="font-size:13px;max-width:260px">${t.source_proba === "marche" ? `Tendance habituelle de ce marché : il a fini plus haut <b>${Math.round(p*100)}</b> mois sur 100.` : sansAvis ? `Chiffre brut des IA : <b>${Math.round(p*100)}</b> sur 100. Ici, il n'est pas assez fiable pour compter.` : `Sur 100 situations passées comme celle-ci, <b class="up">${Math.round(p*100)}</b> ont fini plus haut un mois après.`}</p><span class="expert">${compteur(p)}</span></div>
     <div><div class="label">En résumé, pour le mois qui vient ${aide("proba")}</div>
       <div class="verdict-grand ${sansAvis ? "" : p >= .52 ? "up" : p <= .48 ? "down" : ""}">${titre}${sansAvis ? ` ${aide("avis_net")}` : ""}</div>
       ${sansAvis && SA ? `<p class="muted" style="font-size:14px">Sur ce marché, même les avis tranchés des IA n'ont pas fait mieux que « toujours la même réponse » (${Math.round(SA.precision * 100)} % de bonnes directions contre ${Math.round(SA.base * 100)} %). Le radar ne donne donc pas d'avis de direction ici. Regarde plutôt l'agitation prévue et la comparaison avec son marché.</p>` : ""}
@@ -2857,26 +2909,25 @@ function grapheComplet(id, t, opts = {}){
 
   const k = t.cone, refs = {};
   if(k){
-    // Trois couches opaques empilées : vert du haut jusqu'à la médiane, rouge de la médiane au bas,
-    // puis la couleur du fond sous le bas. Résultat : une zone verte « si ça va bien » au-dessus
-    // de la trajectoire probable et une zone rouge « si ça va mal » en dessous.
-    const zone = {priceLineVisible:false, crosshairMarkerVisible:false};
-    const vert = chart.addAreaSeries({...zone, lineColor:C.up, lineWidth:2, topColor:melange(C.surf, C.up, .24), bottomColor:melange(C.surf, C.up, .07), lastValueVisible:true, title:"si ça va bien"});
-    vert.setData(k.t.map((d,i) => ({time:d, value:k.haut[i]})));
-    const rouge = chart.addAreaSeries({...zone, lineColor:"rgba(0,0,0,0)", lineWidth:1, topColor:melange(C.surf, C.down, .07), bottomColor:melange(C.surf, C.down, .24), lastValueVisible:false});
-    rouge.setData(k.t.map((d,i) => ({time:d, value:k.mediane[i]})));
-    const fond = chart.addAreaSeries({...zone, lineColor:C.down, lineWidth:2, topColor:C.surf, bottomColor:C.surf, lastValueVisible:true, title:"si ça va mal"});
+    // version 67 : un éventail d'UNE seule couleur, celle de la réponse courte (vert : plutôt à la hausse,
+    // rouge : plutôt à la baisse, gris : impossible à dire). Zone foncée : le prix finit dedans 1 fois sur 2 ;
+    // zone claire : 8 fois sur 10 ; ligne pleine : le plus probable. Couches empilées, la dernière masque le bas.
+    const sens = sensDe(t), col = sens > 0 ? C.up : sens < 0 ? C.down : C.muted;
+    const zone = {priceLineVisible:false, crosshairMarkerVisible:false, lineWidth:1};
+    const r50 = 0.6745 / 1.2816, demi = (v, m) => v > 0 && m > 0 ? m * Math.pow(v / m, r50) : m;
+    const clair = melange(C.surf, col, .16), fonce = melange(C.surf, col, .34);
+    const haut = chart.addAreaSeries({...zone, lineColor:rgba(col, .55), topColor:clair, bottomColor:clair, lastValueVisible:true, title:el.clientWidth > 600 ? "haut (8/10)" : ""});
+    haut.setData(k.t.map((d,i) => ({time:d, value:k.haut[i]})));
+    const h50 = chart.addAreaSeries({...zone, lineColor:"rgba(0,0,0,0)", topColor:fonce, bottomColor:fonce, lastValueVisible:false});
+    h50.setData(k.t.map((d,i) => ({time:d, value:demi(k.haut[i], k.mediane[i])})));
+    const b50 = chart.addAreaSeries({...zone, lineColor:"rgba(0,0,0,0)", topColor:clair, bottomColor:clair, lastValueVisible:false});
+    b50.setData(k.t.map((d,i) => ({time:d, value:demi(k.bas[i], k.mediane[i])})));
+    const fond = chart.addAreaSeries({...zone, lineColor:rgba(col, .55), topColor:C.surf, bottomColor:C.surf, lastValueVisible:true, title:el.clientWidth > 600 ? "bas (8/10)" : ""});
     fond.setData(k.t.map((d,i) => ({time:d, value:k.bas[i]})));
-    const med = chart.addLineSeries({color:C.cone, lineWidth:3, lineStyle:2, priceLineVisible:false, lastValueVisible:true, title:"le plus probable", crosshairMarkerVisible:false});
+    const med = chart.addLineSeries({color:col, lineWidth:3, priceLineVisible:false, lastValueVisible:true, title:el.clientWidth > 600 ? "dans 1 mois" : "", crosshairMarkerVisible:false});
     med.setData(k.t.map((d,i) => ({time:d, value:k.mediane[i]})));
-    // version 63 : graphique en éventail, comme les banques centrales — la zone où le prix finit 1 fois sur 2
-    // (même loi que la fourchette « 8 fois sur 10 » : écart × 0,6745 / 1,2816)
-    const r50 = 0.6745 / 1.2816, demi = (v, m) => v > 0 && m > 0 ? m * Math.pow(v / m, r50) : null;
-    const l50 = {lineWidth:1, lineStyle:1, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false};
-    const h50 = chart.addLineSeries({...l50, color:rgba(C.up, .9)}), b50 = chart.addLineSeries({...l50, color:rgba(C.down, .9)});
-    h50.setData(k.t.map((d,i) => { const v = demi(k.haut[i], k.mediane[i]); return v == null ? {time:d} : {time:d, value:v}; }));
-    b50.setData(k.t.map((d,i) => { const v = demi(k.bas[i], k.mediane[i]); return v == null ? {time:d} : {time:d, value:v}; }));
-    series.prev.push(vert, rouge, fond, med, h50, b50);
+    try{ med.setMarkers([{time:k.t.at(-1), position:"inBar", color:col, shape:sens > 0 ? "arrowUp" : sens < 0 ? "arrowDown" : "circle", size:2}]); }catch(e){}
+    series.prev.push(haut, h50, b50, fond, med);
   }
   series.bb.forEach(x => x.applyOptions({visible:false}));
 
@@ -2941,7 +2992,8 @@ function grapheComplet(id, t, opts = {}){
   if(window.ResizeObserver){ g.obs = new ResizeObserver(redessiner); g.obs.observe(el); }
   requestAnimationFrame(() => { voir(opts.periode ?? 126); redessiner(); });
 }
-function graphique(t){ grapheComplet("g-detail", t, {niveaux:true, periode:63}); }
+function graphique(t){   // version 67 : sur téléphone, moins de passé pour que la prévision soit bien visible
+  grapheComplet("g-detail", t, {niveaux:true, periode: innerWidth < 600 ? 21 : 63}); }
 function redessinerTout(){ for(const [id, g] of Object.entries(GRAPHS)) grapheComplet(id, g.t, g.opts); if(typeof rendreCarte === "function") rendreCarte(); }
 /* ---------- Prévision écrite : « Lecture du radar » ---------- */
 function lecture(t, court = false){
@@ -3190,7 +3242,7 @@ function ouvrir(tk, pousser=true){
         <div class="panel kpi"><div class="label">Risque</div><div class="v">${esc(t.risque)}</div><div class="d">volatilité annuelle ${pctPlain(t.perf["volatilité annuelle"],0)}</div></div>
       </div>
       ${coque("g-detail")}
-      <div class="legend"><span style="--c:var(--accent)">Moyenne 50 jours</span><span style="--c:var(--warn)">Moyenne 200 jours</span><span style="--c:var(--cone)">Le plus probable (pointillés)</span><span style="--c:var(--up)">Si ça va bien</span><span style="--c:var(--down)">Si ça va mal</span><span style="--c:var(--muted)">Lignes fines : le prix finit entre les deux 1 fois sur 2</span><span style="--c:var(--muted)">Stop-loss indicatif (tirets rouges)</span></div>
+      <div class="legend"><span style="--c:var(--accent)">Moyenne 50 jours</span><span style="--c:var(--warn)">Moyenne 200 jours</span><span style="--c:${sensDe(t) > 0 ? "var(--up)" : sensDe(t) < 0 ? "var(--down)" : "var(--muted)"}">Prévision : ligne = le plus probable, zone foncée = 1 fois sur 2, zone claire = 8 fois sur 10</span><span style="--c:var(--muted)">Stop-loss indicatif (tirets rouges)</span></div>
       <div class="panel"><div class="label" style="margin-bottom:10px">Lecture du radar</div><div class="lecture">${lecture(t)}</div></div>
     </div>
 
@@ -4046,6 +4098,10 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
   if(!champ) return;
   const sansAccent = x => String(x).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   let trouves = [], choisi = -1;
+  // version 67 : les 2 000+ actions des fiches simples, chargées seulement à la première recherche
+  let ETENDU = null, charge = false;
+  const chargerEtendu = () => { if(charge) return; charge = true;
+    fetch("recherche-etendue.json").then(r => r.ok ? r.json() : []).then(l => { ETENDU = l || []; if(champ.value.trim()) chercher(); }).catch(() => { ETENDU = []; }); };
   const fermerListe = () => { liste.hidden = true; champ.setAttribute("aria-expanded", "false"); champ.removeAttribute("aria-activedescendant"); choisi = -1; };
   const marquer = () => {
     liste.querySelectorAll("li").forEach((li, i) => li.setAttribute("aria-selected", i === choisi));
@@ -4059,13 +4115,27 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
       const rang = k2 === q || k === q ? 0 : n.startsWith(q) || k.startsWith(q) ? 1 : n.includes(" " + q) ? 2 : n.includes(q) || k.includes(q) ? 3 : 9;
       return [rang, t];
     }).filter(([r]) => r < 9).sort((a, b) => a[0] - b[0] || a[1].nom.localeCompare(b[1].nom)).slice(0, 8).map(([, t]) => t);
-    liste.innerHTML = trouves.length ? trouves.map((t, i) => `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}${marqueSur(t)}</b><span class="num">${px(t.prix, t.devise)}</span><span>${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche] || ""}</span><span>${t.proba_hausse != null ? Math.round(t.proba_hausse * 100) + " % de hausse" : ""}</span></li>`).join("")
+    if(trouves.length < 8 && ETENDU && ETENDU.length){
+      const ext = [];
+      for(const [n, k, sl, pays] of ETENDU){
+        const n2 = sansAccent(n), k2 = sansAccent(k), k3 = k2.split(".")[0];
+        const rang = k3 === q || k2 === q ? 0 : n2.startsWith(q) || k2.startsWith(q) ? 1 : n2.includes(" " + q) ? 2 : n2.includes(q) ? 3 : 9;
+        if(rang < 9) ext.push([rang, {nom: n, ticker: k, slug: sl, pays, ext: true}]);
+      }
+      ext.sort((a, b) => a[0] - b[0] || a[1].nom.localeCompare(b[1].nom));
+      trouves = trouves.concat(ext.slice(0, 8 - trouves.length).map(([, t]) => t));
+    }
+    liste.innerHTML = trouves.length ? trouves.map((t, i) => t.ext
+      ? `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}</b><span class="muted">Fiche simple</span><span>${esc(t.ticker)} · ${esc(t.pays)}</span><span></span></li>`
+      : `<li role="option" id="rech-${i}" data-i="${i}" aria-selected="false"><b>${esc(t.nom)}${marqueSur(t)}</b><span class="num">${px(t.prix, t.devise)}</span><span>${esc(affTk(t.ticker))} · ${NOM_MARCHE[t.marche] || ""}</span><span>${t.proba_hausse != null ? Math.round(t.proba_hausse * 100) + " % de hausse" : ""}</span></li>`).join("")
       : `<li role="option" aria-disabled="true" aria-selected="false"><span>Aucun titre suivi ne correspond. Le radar suit ${T.length} titres.</span></li>`;
     liste.hidden = false; champ.setAttribute("aria-expanded", "true"); choisi = trouves.length ? 0 : -1; marquer();
   };
-  const ouvrirChoix = i => { const t = trouves[i]; if(!t) return; fermerListe(); champ.value = ""; champ.blur(); ouvrir(t.ticker); };
-  champ.addEventListener("input", chercher);
-  champ.addEventListener("focus", () => { if(champ.value.trim()) chercher(); });
+  const ouvrirChoix = i => { const t = trouves[i]; if(!t) return; fermerListe(); champ.value = ""; champ.blur();
+    if(t.ext){ location.href = (document.documentElement.lang === "en" ? "en/stocks/" : "titres/") + t.slug + ".html"; return; }
+    ouvrir(t.ticker); };
+  champ.addEventListener("input", () => { chargerEtendu(); chercher(); });
+  champ.addEventListener("focus", () => { chargerEtendu(); if(champ.value.trim()) chercher(); });
   champ.addEventListener("keydown", e => {
     if(e.key === "ArrowDown" && trouves.length){ e.preventDefault(); choisi = (choisi + 1) % trouves.length; marquer(); }
     else if(e.key === "ArrowUp" && trouves.length){ e.preventDefault(); choisi = (choisi - 1 + trouves.length) % trouves.length; marquer(); }

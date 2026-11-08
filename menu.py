@@ -23,7 +23,7 @@ CHOIX = [
     ("Inscrire le site sur Google", [PY, "mettre_en_ligne.py", "--google"]),
     ("Campagne Google de la semaine (vérifier les pages, faire indexer les pages du jour)", [PY, "campagne_google.py"]),
     ("Statistiques de visites (privées)", [PY, "mettre_en_ligne.py", "--stats"]),
-    ("Nom de domaine personnalisé", [PY, "mettre_en_ligne.py", "--domaine"]),
+    ("Donner une vraie adresse au site (tuto guidé : radarbourse.fr…)", [PY, "mettre_en_ligne.py", "--domaine"]),
     ("Alertes Telegram", [PY, "mettre_en_ligne.py", "--telegram"]),
 ]
 

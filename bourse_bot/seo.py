@@ -136,12 +136,18 @@ html.texte-115 body{font-size:18px}html.texte-130 body{font-size:20px}
 .cs-haut{fill:var(--up);fill-opacity:.2}.cs-bas{fill:var(--down);fill-opacity:.2}
 .cs-med{fill:none;stroke:var(--ink);stroke-width:2;stroke-dasharray:6 5}
 .cs-h50,.cs-b50{fill:none;stroke-width:1.2;stroke-dasharray:1 3}.cs-h50{stroke:var(--up)}.cs-b50{stroke:var(--down)}
+.courbe{--sc:var(--muted)}.courbe.s-up{--sc:var(--up)}.courbe.s-down{--sc:var(--down)}
+.cs-b80{fill:var(--sc);fill-opacity:.13}.cs-b50z{fill:var(--sc);fill-opacity:.28}.cs-medv{fill:none;stroke:var(--sc);stroke-width:3;stroke-linecap:round}
+.cs-fin{fill:var(--sc);stroke:var(--surface);stroke-width:2}.cs-t-v{fill:var(--sc);font-weight:700}.cs-t-l{fill:var(--muted)}
+.cs-verdict{font:700 15px var(--m);fill:var(--sc)}
+.cs-leg .l-v::before{background:var(--sc)!important;height:3px}.cs-leg .l-z50::before{background:var(--sc)!important;opacity:.45;height:9px}.cs-leg .l-z80::before{background:var(--sc)!important;opacity:.2;height:9px}
+@media (prefers-reduced-motion:no-preference){.cs-b80,.cs-b50z,.cs-medv,.cs-fin,.cs-verdict,.cs-t{animation:cs-app .6s ease-out 1.1s both}@keyframes cs-app{from{opacity:0}to{opacity:1}}}
 .cs-auj{stroke:var(--muted);stroke-dasharray:3 4}.cs-point{fill:var(--accent);stroke:var(--surface);stroke-width:2}
 .cs-t{font:600 12.5px var(--m);fill:var(--ink)}.cs-t-haut{fill:var(--up)}.cs-t-bas{fill:var(--down)}.cs-d{font:11px var(--m);fill:var(--muted)}
 .cs-leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted);margin:6px 0 0}
 .cs-leg span::before{content:"";display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:3px;background:var(--accent)}
 .cs-leg .l-haut::before{background:var(--up)}.cs-leg .l-bas::before{background:var(--down)}.cs-leg .l-med::before{background:var(--ink)}.cs-leg .l-50::before{background:var(--muted);height:1px}
-@media (max-width:560px){.cs-t{font-size:22px}.cs-d{font-size:20px}}
+@media (max-width:560px){.cs-t{font-size:22px}.cs-d{font-size:20px}.cs-verdict{font-size:30px}}
 @media (prefers-reduced-motion:no-preference){@view-transition{navigation:auto}::view-transition-old(root),::view-transition-new(root){animation-duration:.22s}}
 .marque-sur{display:inline-grid;place-items:center;width:17px;height:17px;margin-left:6px;vertical-align:-3px;border-radius:50%;color:var(--up);background:var(--up-soft)}
 .marque-sur svg{width:13px;height:13px}.marque-sur.tres{color:var(--surface);background:var(--up)}
@@ -214,7 +220,7 @@ def liens_fr() -> list:
     return [("Accueil", "index.html"), ("Prévisions", "index.html#previsions"), ("Pronostic du jour", "index.html#prono"),
             ("Carte des risques", "index.html#nuage"), ("Tous les titres", "titres.html"), ("Résultats réels", "resultats.html"),
             ("Outils gratuits", "outils.html"), ("Guides", "guides.html"),
-            ("Le point du jour", "point.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actions par thème", "themes.html"), ("Avis de l'IA vérifiés", "avis-surs-verifies.html"), ("Données ouvertes", "donnees-ouvertes.html"), ("Actu bourse", "actu-bourse.html"), ("Actu bitcoin", "actu-bitcoin.html"),
+            ("Le point du jour", "point.html"), ("Toutes les actions (2 000+)", "toutes-les-actions.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actions par thème", "themes.html"), ("Avis de l'IA vérifiés", "avis-surs-verifies.html"), ("Données ouvertes", "donnees-ouvertes.html"), ("Actu bourse", "actu-bourse.html"), ("Actu bitcoin", "actu-bitcoin.html"),
             ("Krach boursier", "krach-boursier.html"), ("Comparer", "comparer.html"), ("Classements", "classements.html"),
             ("Sélection IA du mois", "portefeuille.html"), (f"Prévisions {datetime.now().year}", "previsions.html"),
             ("Simulateur boursier", "simulateur-boursier.html"), ("Apprendre", "apprendre.html"), ("Glossaire", "glossaire.html"),
@@ -269,13 +275,13 @@ def _pct(v, d=1):
 
 
 def balises_tete(base: str, titre: str, description: str, chemin: str = "", image: str = "partage.png",
-                 jsonld: dict | None = None, alternates: dict | None = None, langue: str = "fr") -> str:
+                 jsonld: dict | None = None, alternates: dict | None = None, langue: str = "fr", mots: str | None = None) -> str:
     """Balises <head> communes : description, Open Graph, Twitter, canonique, icônes, manifeste."""
     url = (base + chemin) if base else ""
     img = (base + image) if base else image
     lignes = [
         f'<meta name="description" content="{_e(description)}">',
-        f'<meta name="keywords" content="{_e(MOTS_CLES)}">',
+        f'<meta name="keywords" content="{_e(mots or MOTS_CLES)}">',
         '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">',
         f'<meta name="author" content="{NOM}">',
         f'<meta name="application-name" content="{NOM}">',
@@ -330,6 +336,11 @@ _VOLATIL = re.compile(r"\d{4}-\d{2}-\d{2}(?:T[\d:.+Z-]*)?|\d{1,2}/\d{1,2}(?:/\d{
                       r"|\b(?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}", re.I)
 
 
+# version 67 : même résultat, 2 à 3 fois plus rapide (le moteur ne teste que les positions qui commencent par
+# un chiffre ou une initiale de mois) — empreintes identiques, donc les dates du plan du site ne bougent pas
+_VOLATIL_RAPIDE = re.compile(r"(?=[0-9JFMASONDjfmasond])(?:" + _VOLATIL.pattern + ")", re.I)
+
+
 def _dates_modif(dossier: str, chemins: list, aujourdhui: str) -> dict:
     """Version 55 : vraie date de dernière modification de chaque page pour le sitemap. Avant, toutes les pages
     portaient la date du jour, même les guides qui ne changent jamais : Google finit alors par ignorer ces dates.
@@ -350,7 +361,7 @@ def _dates_modif(dossier: str, chemins: list, aujourdhui: str) -> dict:
         except OSError:
             dates[c] = aujourdhui
             continue
-        texte = _VOLATIL.sub("", re.sub(r"<script\b[^>]*>.*?</script>", "", texte, flags=re.S))
+        texte = _VOLATIL_RAPIDE.sub("", re.sub(r"<script\b[^>]*>.*?</script>", "", texte, flags=re.S))
         empreinte = hashlib.sha1(texte.encode("utf-8", "replace")).hexdigest()[:16]
         ancien = avant.get(c)
         date = ancien[1] if isinstance(ancien, list) and len(ancien) == 2 and ancien[0] == empreinte else aujourdhui
@@ -436,7 +447,7 @@ def typo_fr(h: str) -> str:
     return "".join(morceaux)
 
 
-def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternates=None, image="partage.png"):
+def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternates=None, image="partage.png", mots=None):
     image = _image_de(chemin, image)
     prefixe = "../" * chemin.count("/")
     csp = csp_avec_stats(csp)
@@ -450,7 +461,7 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 {f'<meta http-equiv="Content-Security-Policy" content="{csp}">' if csp else ''}
 <title>{_e(titre)}</title>
-{balises_tete(base, titre, description, chemin, image=image, jsonld=jsonld, alternates=alternates)}
+{balises_tete(base, titre, description, chemin, image=image, jsonld=jsonld, alternates=alternates, mots=mots)}
 {liens_icones(prefixe)}
 {SCRIPT_THEME}
 {POLICES}
@@ -481,6 +492,37 @@ def _avis_passes(t: dict) -> str:
         return avis_passes_html(t["ticker"], t.get("_verif"))
     except Exception:
         return ""
+
+
+def mots_titre(t: dict, langue: str = "fr") -> str:
+    """Version 67 : les mots-clés de chaque fiche, fabriqués automatiquement (chaque nouveau titre ou crypto a les siens)."""
+    nom, tk = t.get("nom", ""), aff_tk(t.get("ticker", ""))
+    court = re.sub(r"\s*\(.*?\)", "", nom).strip() or nom
+    sym = tk.split("-")[0].split(".")[0]
+    an = datetime.now().year
+    crypto = t.get("marche") == "crypto" or t.get("ticker", "").endswith("-USD")
+    etf = t.get("marche") == "etf"
+    if langue == "en":
+        mots = [f"{court} forecast", f"{court} price prediction", f"{sym} stock" if not crypto else f"{sym} price",
+                f"{court} {an} forecast", f"{court} volatility", f"{sym} forecast"]
+        if crypto:
+            mots += [f"{court} crypto", f"{sym} USD", f"{court} price today"]
+    else:
+        mots = [f"prévision {court}", f"cours {court}", f"{court} bourse", f"prévision {sym}", f"{court} {an}",
+                f"{court} prévision {an}", f"{court} avis", f"volatilité {court}"]
+        if crypto:
+            mots += [f"crypto {court}", f"prix {court}", f"{sym} prix", f"{court} euro", f"{sym} USD", f"prévision {court} crypto"]
+        elif etf:
+            mots += [f"ETF {court}", f"cours ETF {court}"]
+        else:
+            mots += [f"action {court}", f"cours action {court}", f"prévision action {court}", f"{sym} action"]
+    vus, out = set(), []
+    for m in mots:
+        k = m.lower()
+        if k not in vus and len(m.strip()) > 2:
+            vus.add(k)
+            out.append(m)
+    return ", ".join(out)
 
 
 def marque_sur(t: dict) -> str:
@@ -527,49 +569,56 @@ def courbe_svg(t: dict, libs: dict | None = None, jours: int = 126) -> str:
         y = pt + (H - pt - pb) * f
         morceaux.append(f"<line x1='{pl}' x2='{W - pr}' y1='{y:.1f}' y2='{y:.1f}' class='cs-grille'/>")
     morceaux.append(f"<path d='{aire}' class='cs-aire'/><path d='{ligne}' class='cs-ligne' pathLength='1'/>")
-    if ok_cone:
+    sens = 0
+    if ok_cone:   # version 67 : un éventail d'une seule couleur, celle du verdict (vert hausse, rouge baisse, gris)
+        p_ = t.get("proba_hausse")
+        if p_ is not None and not (t.get("avis_net") is False or t.get("source_proba") == "marche" or .48 < p_ < .52):
+            sens = 1 if p_ >= .5 else -1
         fx = lambda j: X(i0 + j)
-        up = " L".join(f"{fx(j):.0f},{Y(v):.0f}" for j, v in enumerate(haut))
-        mid_r = " L".join(f"{fx(j):.0f},{Y(v):.0f}" for j, v in reversed(list(enumerate(med))))
-        mid = " L".join(f"{fx(j):.0f},{Y(v):.0f}" for j, v in enumerate(med))
-        dn_r = " L".join(f"{fx(j):.0f},{Y(v):.0f}" for j, v in reversed(list(enumerate(bas))))
-        morceaux.append(f"<path d='M{up} L{mid_r} Z' class='cs-haut'/><path d='M{mid} L{dn_r} Z' class='cs-bas'/>")
         r50 = 0.6745 / 1.2816
-        for serie, cls in ((haut, "cs-h50"), (bas, "cs-b50")):
-            d50 = " L".join(f"{fx(j):.0f},{Y(m * (v / m) ** r50):.0f}" for j, (v, m) in enumerate(zip(serie, med)) if v > 0 and m > 0)
-            morceaux.append(f"<path d='M{d50}' class='{cls}'/>")
-        morceaux.append(f"<path d='M{mid}' class='cs-med'/>")
-        etiq = [[Y(haut[-1]) + 4, haut[-1], "cs-t-haut"], [Y(med[-1]) + 4, med[-1], "cs-t-med"], [Y(bas[-1]) + 4, bas[-1], "cs-t-bas"]]
+        h50 = [m * (v / m) ** r50 if v > 0 and m > 0 else m for v, m in zip(haut, med)]
+        b50 = [m * (v / m) ** r50 if v > 0 and m > 0 else m for v, m in zip(bas, med)]
+        poly = lambda a, b: ("M" + " L".join(f"{fx(j):.0f},{Y(v):.0f}" for j, v in enumerate(a)) + " L"
+                             + " L".join(f"{fx(j):.0f},{Y(v):.0f}" for j, v in reversed(list(enumerate(b)))) + " Z")
+        mid = " L".join(f"{fx(j):.0f},{Y(v):.0f}" for j, v in enumerate(med))
+        morceaux.append(f"<path d='{poly(haut, bas)}' class='cs-b80'/><path d='{poly(h50, b50)}' class='cs-b50z'/>"
+                        f"<path d='M{mid}' class='cs-medv'/>"
+                        f"<circle cx='{fx(len(med) - 1):.0f}' cy='{Y(med[-1]):.0f}' r='5' class='cs-fin'/>")
+        etiq = [[Y(haut[-1]) + 4, haut[-1], "cs-t-l"], [Y(med[-1]) + 4, med[-1], "cs-t-v"], [Y(bas[-1]) + 4, bas[-1], "cs-t-l"]]
         for a_, b_ in ((0, 1), (1, 2)):   # étiquettes jamais les unes sur les autres
             if etiq[b_][0] - etiq[a_][0] < 26:
                 etiq[b_][0] = etiq[a_][0] + 26
         for y, v, cls in etiq:
             morceaux.append(f"<text x='{W - pr + 8}' y='{y:.1f}' class='cs-t {cls}'>{_e(_px(v, dev))}</text>")
+        if libs and libs.get("hausse"):
+            lib = libs["hausse"] if sens > 0 else libs["baisse"] if sens < 0 else libs["nul"]
+            morceaux.append(f"<text x='{fx(len(med) - 1):.0f}' y='{pt + 12}' class='cs-verdict' text-anchor='end'>{_e(lib)}</text>")
     morceaux.append(f"<line x1='{x0:.1f}' x2='{x0:.1f}' y1='{pt}' y2='{H - pb}' class='cs-auj'/>"
                     f"<circle cx='{pts[-1][0]:.1f}' cy='{pts[-1][1]:.1f}' r='4.5' class='cs-point'/>")
     fmt = lambda d: f"{d[8:10]}/{d[5:7]}/{d[:4]}" if d and len(d) >= 10 else ""
     morceaux.append(f"<text x='{pl}' y='{H - 8}' class='cs-d'>{fmt(dates[0])}</text>"
                     f"<text x='{x0:.1f}' y='{H - 8}' class='cs-d' text-anchor='middle'>{fmt(dates[-1])}</text>")
-    if libs and ok_cone and libs.get("prevision"):
+    if libs and ok_cone and libs.get("prevision") and not libs.get("hausse"):
         morceaux.append(f"<text x='{x0 + 6:.1f}' y='{pt + 10}' class='cs-d'>{_e(libs['prevision'])}</text>")
     if not ok_cone:
         morceaux.append(f"<text x='{W - pr + 6}' y='{pts[-1][1] + 4:.1f}' class='cs-t'>{_e(_px(c[-1], dev))}</text>")
     titre = (libs or {}).get("aria", "") or f"{t.get('nom', '')}"
     legende = ""
-    if libs and ok_cone and libs.get("cours"):
-        legende = (f"<p class='cs-leg'><span class='l-prix'>{_e(libs['cours'])}</span><span class='l-haut'>{_e(libs['bien'])}</span>"
-                   f"<span class='l-med'>{_e(libs['probable'])}</span><span class='l-bas'>{_e(libs['mal'])}</span>"
-                   f"<span class='l-50'>{_e(libs['moitie'])}</span></p>")
-    return (f"<figure class='courbe'><svg viewBox='0 0 {W} {H}' role='img' aria-label='{_e(titre)}'>"
+    if libs and ok_cone and libs.get("cours") and libs.get("probable"):
+        legende = (f"<p class='cs-leg'><span class='l-prix'>{_e(libs['cours'])}</span><span class='l-v'>{_e(libs['probable'])}</span>"
+                   f"<span class='l-z50'>{_e(libs['moitie'])}</span><span class='l-z80'>{_e(libs.get('huit', ''))}</span></p>")
+    return (f"<figure class='courbe s-{'up' if sens > 0 else 'down' if sens < 0 else 'nul'}'><svg viewBox='0 0 {W} {H}' role='img' aria-label='{_e(titre)}'>"
             "<defs><linearGradient id='csg' x1='0' y1='0' x2='0' y2='1'><stop offset='0' class='cs-g1'/><stop offset='1' class='cs-g2'/></linearGradient></defs>"
             + "".join(morceaux) + f"</svg>{legende}</figure>")
 
 
 LIBS_COURBE_FR = {"prevision": "prévision →", "cours": "cours des 6 derniers mois", "bien": "si ça va bien",
-                  "probable": "le plus probable", "mal": "si ça va mal", "moitie": "lignes fines : le prix finit entre elles 1 fois sur 2",
+                  "probable": "le plus probable dans 1 mois", "mal": "si ça va mal", "moitie": "zone foncée : le prix y finit 1 fois sur 2",
+                  "huit": "zone claire : 8 fois sur 10", "hausse": "↑ plutôt à la hausse", "baisse": "↓ plutôt à la baisse", "nul": "↔ impossible à dire",
                   "aria": "Graphique : cours des six derniers mois et éventail des prévisions pour le mois suivant"}
 LIBS_COURBE_EN = {"prevision": "forecast →", "cours": "price over the last 6 months", "bien": "if things go well",
-                  "probable": "most likely", "mal": "if things go badly", "moitie": "thin lines: the price ends between them 1 time in 2",
+                  "probable": "most likely in 1 month", "mal": "if things go badly", "moitie": "dark band: the price ends there 1 time in 2",
+                  "huit": "light band: 8 times in 10", "hausse": "↑ leaning up", "baisse": "↓ leaning down", "nul": "↔ impossible to say",
                   "aria": "Chart: price over the last six months and the fan of forecasts for the next month"}
 
 
@@ -733,6 +782,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
   <div class="k"><b>{'pas d’avis net' if sur10 is not None and t.get("avis_net") is False else f'{sur10} sur 10' if sur10 is not None else '–'}</b><span>chances d'être plus haut dans {horizon} séances</span></div>
 </div>
 {courbe_svg(t, LIBS_COURBE_FR)}
+{__import__("bourse_bot.hebdo", fromlist=["x"]).reponse_courte_html(t, modele, True, _px)}
 <h2>En résumé</h2>
 <p>Pour le mois qui vient, le radar voit {_e(nom)} <b>{verdict}</b>.
 {f"Scénario central : environ <b class='m'>{_px(med, dev)}</b>. " if med else ""}
@@ -773,7 +823,8 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     from . import langues as _lg
     corps += f"<p class='muted'>Cette page dans d'autres langues : {_lg.selecteur('../', 'fr', _lg.alternates_titre(slug(tk)))}</p>"
     return chemin, _page(base, titre, desc, chemin, corps, jsonld, csp,
-                         alternates=__import__("bourse_bot.langues", fromlist=["x"]).alternates_titre(slug(tk)), image=img)
+                         alternates=__import__("bourse_bot.langues", fromlist=["x"]).alternates_titre(slug(tk)), image=img,
+                         mots=mots_titre(t))
 
 
 # Comparaisons que les gens tapent vraiment sur Google (« or ou bitcoin », « LVMH ou Hermès »…)
@@ -1902,8 +1953,7 @@ def _pages_semaines(base, dossier, csp, titres=None, verif=None):
     et une adresse fixe « bourse-cette-semaine.html » qui montre toujours la dernière semaine)."""
     from .hebdo import barres
     src = os.path.join(config.DOSSIER_HISTORIQUE, "semaines")
-    if not os.path.isdir(src):
-        return []
+    os.makedirs(src, exist_ok=True)
     semaines = {}
     for nom in sorted(os.listdir(src))[-104:]:
         try:
@@ -1912,8 +1962,14 @@ def _pages_semaines(base, dossier, csp, titres=None, verif=None):
             semaines[r["semaine"]] = r
         except Exception:
             continue
-    if not semaines:
-        return []
+    if not semaines:   # version 67 : l'adresse fixe existe toujours (elle est dans le menu de chaque page)
+        with open(os.path.join(dossier, "bourse-cette-semaine.html"), "w", encoding="utf-8") as f:
+            f.write(_page(base, f"La Bourse cette semaine : résumé et prévisions | {NOM}",
+                          "Le résumé de la semaine en Bourse : indices, plus fortes hausses et baisses, avis de l'IA.",
+                          "bourse-cette-semaine.html",
+                          "<h1>La Bourse cette semaine</h1><p>Le premier résumé de la semaine sera publié automatiquement ce soir, "
+                          "après la clôture des marchés.</p><p><a class='btn' href='point.html'>Le point du jour</a></p>", csp=csp))
+        return ["bourse-cette-semaine.html"]
     os.makedirs(os.path.join(dossier, "semaine"), exist_ok=True)
     ids = sorted(semaines)
     faits = []
@@ -2108,6 +2164,11 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     os.makedirs(os.path.join(dossier, "titres"), exist_ok=True)
     urls = [("", "hourly", "1.0"), ("app-en.html", "hourly", "0.9"), ("titres.html", "daily", "0.8"), ("glossaire.html", "monthly", "0.6")]
 
+    try:   # version 67 : plus de 2 000 actions en fiches simples (faits seulement, hors IA)
+        from . import etendu as _et, anglais as _ang3
+        urls += _et.generer(__import__(__name__, fromlist=["x"]), _ang3, base, dossier, csp, date)
+    except Exception as e:
+        print(f"Fiches simples non générées : {e}")
     # version 66.1 : les avis vérifiés sont calculés d'abord (chaque fiche montre ses avis passés)
     verif = None
     try:
@@ -2210,7 +2271,8 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     # Index des titres
     groupes = {"fr": "Actions françaises", "eu": "Actions européennes", "us": "Actions américaines",
                "monde": "Actions internationales", "crypto": "Cryptomonnaies", "etf": "ETF et indices", "tendances": "En tendance"}
-    corps = "<h1>Tous les titres analysés</h1><p class='muted'>Analyse et prévision à un mois, mises à jour automatiquement.</p>"
+    corps = ("<h1>Tous les titres analysés</h1><p class='muted'>Analyse et prévision à un mois, mises à jour automatiquement.</p>"
+             "<p><a class='btn' href='toutes-les-actions.html'>Plus de 2 000 autres actions du monde (fiches simples)</a></p>")
     for cle, lib in groupes.items():
         items = [l for l in liens if l[3] == cle]
         if items:

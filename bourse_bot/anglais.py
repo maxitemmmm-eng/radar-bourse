@@ -40,7 +40,7 @@ def _pct(v, d=1):
     return f'<span class="m {cls}">{"+" if v > 0 else ""}{v * 100:.{d}f}%</span>'
 
 
-def _page(base, titre, description, chemin, corps, csp, alternates):
+def _page(base, titre, description, chemin, corps, csp, alternates, mots=None):
     prefixe = "../" * chemin.count("/")
     titre, description = seo.titre_court(titre), seo.desc_courte(description)
     jsonld = {"@context": "https://schema.org", "@type": "WebPage", "name": titre, "description": description,
@@ -48,8 +48,7 @@ def _page(base, titre, description, chemin, corps, csp, alternates):
               "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None}}
     tete = seo.balises_tete(base, titre, description, chemin, image=seo._image_de(chemin), jsonld=jsonld, alternates=alternates, langue="en")
     tete = tete.replace(f'<meta name="keywords" content="{_e(seo.MOTS_CLES)}">',
-                        '<meta name="keywords" content="stock forecast, crypto forecast, technical analysis, RSI, MACD, '
-                        'S&amp;P 500, CAC 40, Bitcoin, stock prediction, market outlook">')
+                        f'<meta name="keywords" content="{_e(mots) if mots else "stock forecast, crypto forecast, technical analysis, RSI, MACD, S&amp;P 500, CAC 40, Bitcoin, stock prediction, market outlook"}">')
     csp = seo.csp_avec_stats(csp)
     return f"""<!doctype html>
 <html lang="en" data-theme="dark">
@@ -143,6 +142,7 @@ def _page_titre(base, t, horizon, date, csp, modele):
   <div class="k"><b>{'no clear call' if sur10 is not None and t.get("avis_net") is False else f'{sur10} in 10' if sur10 is not None else '–'}</b><span>chance of being higher in {horizon} sessions</span></div>
 </div>
 {seo.courbe_svg(t, seo.LIBS_COURBE_EN)}
+{__import__("bourse_bot.hebdo", fromlist=["x"]).reponse_courte_html(t, modele, False, _px)}
 <h2>Summary</h2>
 <p>For the coming month, the radar sees {_e(nom)} <b>{verdict}</b>.
 {f"Central scenario: about <b class='m'>{_px(med, dev)}</b>. " if med else ""}
@@ -164,7 +164,7 @@ def _page_titre(base, t, horizon, date, csp, modele):
 <h2>Reliability</h2>{fiab or "<p>Statistical forecast: it is often wrong.</p>"}
 """
     return chemin, _page(base, titre, desc, chemin, corps, csp,
-                         langues.alternates_titre(s))
+                         langues.alternates_titre(s), mots=seo.mots_titre(t, "en"))
 
 
 def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
