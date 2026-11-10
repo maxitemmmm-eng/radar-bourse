@@ -311,6 +311,15 @@ def _json_sur(payload: dict) -> str:
              .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029"))
 
 
+def _json_rapide(payload: dict) -> str:
+    """Version 69 : les données de l'accueil passées par JSON.parse('…') au lieu d'un gros objet JavaScript.
+    Le navigateur lit du JSON bien plus vite que du code (téléphones lents : l'accueil se fige moins au chargement).
+    Aucun « < » ne reste dans la page (échappé en \\u003c), donc rien ne peut fermer la balise <script>."""
+    s = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), allow_nan=False).replace("<", "\\u003c")
+    lit = json.dumps(s, ensure_ascii=False).replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
+    return f"JSON.parse({lit})"
+
+
 CHAMPS_DETAIL = ("serie", "rendements", "cone", "chandeliers", "backtest", "niveaux", "actus",
                  "fondamentaux", "raisons_pour", "raisons_contre", "raisons_ia")
 TOUJOURS_COMPLETS = {"^FCHI"}  # premier graphique de l'accueil : affiché tout de suite (les autres sont chargés au clic)
@@ -365,7 +374,7 @@ def _ecrire_anglais(gabarit: str, donnees: str, dossier: str, lib: str) -> None:
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
             + securite + tete.replace("<!--__LIB__-->", lib) + "\n</head>\n<body>\n" + corps + "\n</body>\n</html>\n")
     html = traduction_appli.traduire_page(html, traductions_en.EN)
-    for _fr, _en in (("avis-surs-verifies.html", "en/verified-calls.html"), ('"themes.html"', '"en/themes.html"'), ('"credits.html"', '"en/credits.html"'), ('"toutes-les-actions.html"', '"en/all-stocks.html"')):
+    for _fr, _en in (("avis-surs-verifies.html", "en/verified-calls.html"), ('"themes.html"', '"en/themes.html"'), ('"credits.html"', '"en/credits.html"'), ('"toutes-les-actions.html"', '"en/all-stocks.html"'), ('"prediction-crypto.html"', '"en/crypto-prediction.html"'), ('"prediction-bourse.html"', '"en/stock-market-prediction.html"')):
         html = html.replace(_fr, _en)   # version 65 : les liens de l'appli anglaise vont vers les pages anglaises
     html = html.replace("/*__DATA__*/null", donnees, 1)
     html = html.replace("</body>", traduction_appli.SCRIPT_DONNEES_EN + "\n</body>", 1)
@@ -402,7 +411,7 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
             pour_page["jeu_temps"] = "jeu_temps.json"
         else:
             pour_page["jeu_temps"] = jeu_temps[:80]
-    donnees = _json_sur(_decouper(pour_page, dossier) if decouper else pour_page)
+    donnees = _json_rapide(_decouper(pour_page, dossier) if decouper else pour_page)
     page = gabarit.replace("/*__DATA__*/null", donnees)
     tete, corps = page.split("<!--__CORPS__-->", 1)
     corps = corps.replace("<!--__FAQ__-->", seo.html_faq(), 1)

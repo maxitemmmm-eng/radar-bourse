@@ -128,6 +128,7 @@ def generer(seo, base, payload, dossier, csp, date) -> list:
                 "et l'agitation prévue, mis à jour automatiquement. Gratuit, résultats vérifiés.")
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(seo._page(base, titre, seo.desc_courte(desc), chemin, corps, jl, csp=csp,
+                              alternates={"fr": chemin, "en": "en/crypto-prediction.html", "x-default": chemin},
                               mots=f"prédiction crypto, prédiction bitcoin, prévision bitcoin, bitcoin va-t-il monter, prédiction ethereum, "
                                    f"crypto qui va monter, prédiction crypto {m.year}, prévision crypto {mois_an}"))
         faits.append(chemin)
@@ -170,7 +171,122 @@ def generer(seo, base, payload, dossier, csp, date) -> list:
                 "le CAC 40 et les grands indices. Gratuit, mis à jour automatiquement.")
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(seo._page(base, titre, seo.desc_courte(desc), chemin, corps, jl, csp=csp,
+                              alternates={"fr": chemin, "en": "en/stock-market-prediction.html", "x-default": chemin},
                               mots=f"prédiction bourse, prévision bourse, actions qui vont monter, prédiction action, prédiction CAC 40, "
                                    f"bourse va-t-elle monter, prévision bourse {mois_an}, prédiction bourse {m.year}"))
+        faits.append(chemin)
+    return faits
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Version 68.1 : les mêmes pages en anglais (« bitcoin price prediction », « stock market prediction »)
+# ---------------------------------------------------------------------------------------------------------------
+LIB_CONF_EN = {"faible": "low", "moyenne": "medium", "forte": "high"}
+
+
+def _ligne_en(seo, t):
+    e, slug, aff = seo._e, seo.slug, seo.aff_tk
+    p, sens, conf = avis_ia(t)
+    if p is None:
+        return ""
+    ch = round((p if sens > 0 else 1 - p) * 100)
+    rp = t.get("risque_prevu") or {}
+    return (f"<tr><td><a href='stocks/{slug(t['ticker'])}.html'>{e(t['nom'])}</a> <span class='muted'>{e(aff(t['ticker']))}</span></td>"
+            f"<td class='m'>{seo._px(t['prix'], t['devise'])}</td>"
+            f"<td class='m {'up' if sens > 0 else 'down'}'><b>{'↑ up' if sens > 0 else '↓ down'}</b></td>"
+            f"<td class='m'>{ch}/100</td><td>{LIB_CONF_EN[conf]}</td>"
+            f"<td class='m'>{('±' + str(round(rp['mouvement'] * 100)) + '%') if rp.get('mouvement') else '—'}</td></tr>")
+
+
+def _tableau_en(seo, items, legende):
+    return ("<div class='carte' style='overflow-x:auto' tabindex='0' role='region' aria-label='" + seo._e(legende) + "'><table>"
+            "<tr><th>Asset</th><th>Price</th><th>AI view</th><th>Chances</th><th>Confidence</th><th>Expected swing</th></tr>"
+            + "".join(_ligne_en(seo, t) for t in items) + "</table></div>")
+
+
+def _phrase_en(seo, t):
+    p, sens, conf = avis_ia(t)
+    if p is None:
+        return ""
+    ch = round((p if sens > 0 else 1 - p) * 100)
+    return (f"the AI sees <b>{seo._e(t['nom'])}</b> <b class='{'up' if sens > 0 else 'down'}'>{'going up ↑' if sens > 0 else 'going down ↓'}</b> "
+            f"over one month ({ch} chances out of 100, {LIB_CONF_EN[conf]} confidence)")
+
+
+def generer_en(seo, anglais, base, payload, dossier, csp, date) -> list:
+    titres = [t for t in payload.get("titres", []) if t.get("prix") and avis_ia(t)[0] is not None]
+    if not titres:
+        return []
+    os.makedirs(os.path.join(dossier, "en"), exist_ok=True)
+    m = datetime.now()
+    mois_an = m.strftime("%B %Y")
+    est_crypto = lambda t: t.get("marche") == "crypto" or t["ticker"].endswith("-USD")
+    note = ("<p class='muted'>The AI always gives a direction (up or down) with its confidence. On price direction it is often wrong: "
+            "what it forecasts best is volatility (<a href='verified-calls.html'>calls verified in public</a>). "
+            "Educational project, not investment advice.</p>")
+    graphe = lambda items, titre: barres([(seo._e(t["nom"]), avis_ia(t)[0] - .5) for t in items], titre=titre,
+                                         fmt=lambda v: f"{round((.5 + v) * 100)}% ↑" if v >= 0 else f"{round((.5 - v) * 100)}% ↓",
+                                         note="Green: the AI leans up. Red: down.")
+    faits = []
+    cryptos = [t for t in titres if est_crypto(t)]
+    if len(cryptos) >= 3:
+        par_tk = {t["ticker"]: t for t in cryptos}
+        vedettes = [par_tk[k] for k in CRYPTOS_VEDETTES if k in par_tk]
+        autres = sorted([t for t in cryptos if t["ticker"] not in CRYPTOS_VEDETTES], key=lambda t: -avis_ia(t)[0])
+        hausse = sum(1 for t in cryptos if avis_ia(t)[1] > 0)
+        btc = par_tk.get("BTC-USD")
+        faq = []
+        if btc:
+            faq.append((f"Will Bitcoin go up in {mois_an}?", f"Today, {_phrase_en(seo, btc)}. Nobody can know for sure: it is a probability, "
+                        "measured on years the AI had never seen."))
+        faq.append(("Which crypto will go up this month according to the AI?",
+                    "Highest chances of a rise today: " + ", ".join(f"{seo._e(t['nom'])} ({round(avis_ia(t)[0] * 100)}/100)"
+                                                                    for t in sorted(cryptos, key=lambda t: -avis_ia(t)[0])[:3])
+                    + ". Not buying advice: crypto is very risky."))
+        corps = (f"<h1>Crypto price prediction {seo._e(mois_an)}: Bitcoin, Ethereum… up or down?</h1>"
+                 f"<p class='muted'>AI view updated automatically · prices as of {seo._e(date)}</p>"
+                 f"<p>For the coming month, the AI sees <b>{hausse} of {len(cryptos)} cryptos</b> going up and <b>{len(cryptos) - hausse}</b> going down."
+                 + (f" In short, {_phrase_en(seo, btc)}." if btc else "") + "</p>"
+                 + graphe(vedettes or cryptos[:8], "Major cryptos: chances according to the AI")
+                 + "<h2>Major cryptos</h2>" + _tableau_en(seo, vedettes, "Major crypto predictions")
+                 + ("<h2>All other cryptos tracked</h2>" + _tableau_en(seo, autres, "Other crypto predictions") if autres else "")
+                 + _faq_html(faq).replace("Questions fréquentes", "FAQ") + note
+                 + "<p><a class='btn' href='stock-market-prediction.html'>Stock market prediction</a></p>")
+        chemin = "en/crypto-prediction.html"
+        alt = {"fr": "prediction-crypto.html", "en": chemin, "x-default": "prediction-crypto.html"}
+        with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
+            f.write(anglais._page(base, f"Crypto price prediction {mois_an}: Bitcoin, Ethereum, up or down? | {seo.NOM}",
+                                  f"Bitcoin, Ethereum, Solana price prediction for {mois_an}: the AI's view (up or down, chances out of 100) "
+                                  "and expected volatility, updated automatically. Free, results verified in public.",
+                                  chemin, corps, csp, alt,
+                                  mots="bitcoin price prediction, crypto price prediction, will bitcoin go up, ethereum price prediction, "
+                                       f"bitcoin forecast {m.year}, crypto forecast {mois_an}"))
+        faits.append(chemin)
+    actions = [t for t in titres if not est_crypto(t) and t.get("marche") not in ("etf", "tendances")]
+    if len(actions) >= 10:
+        tri = sorted(actions, key=lambda t: -avis_ia(t)[0])
+        haut, bas = tri[:15], list(reversed(tri[-15:]))
+        hausse = sum(1 for t in actions if avis_ia(t)[1] > 0)
+        faq = [("Which stocks will go up this month according to the AI?",
+                "Highest chances of a rise today: " + ", ".join(f"{seo._e(t['nom'])} ({round(avis_ia(t)[0] * 100)}/100)" for t in haut[:5])
+                + ". These are probabilities, not certainties or buying advice."),
+               ("Will the stock market go up or down?", f"Out of {len(actions)} stocks tracked, the AI sees <b>{hausse}</b> going up and "
+                f"<b>{len(actions) - hausse}</b> going down over the coming month.")]
+        corps = (f"<h1>Stock market prediction {seo._e(mois_an)}: stocks the AI sees going up or down</h1>"
+                 f"<p class='muted'>AI view updated automatically · prices as of {seo._e(date)}</p>"
+                 f"<p>Out of <b>{len(actions)}</b> stocks tracked (France, Europe, US, Asia), the AI sees <b>{hausse}</b> going up and "
+                 f"<b>{len(actions) - hausse}</b> going down over the coming month.</p>"
+                 + graphe(haut[:8] + bas[:8][::-1], "The AI's strongest views")
+                 + "<h2>The 15 stocks the AI sees most likely to rise</h2>" + _tableau_en(seo, haut, "Stocks seen going up")
+                 + "<h2>The 15 stocks the AI sees most likely to fall</h2>" + _tableau_en(seo, bas, "Stocks seen going down")
+                 + "<p><a class='btn' href='all-stocks.html'>All stocks (2,000+)</a> <a class='btn' href='crypto-prediction.html'>Crypto prediction</a></p>"
+                 + _faq_html(faq).replace("Questions fréquentes", "FAQ") + note)
+        chemin = "en/stock-market-prediction.html"
+        alt = {"fr": "prediction-bourse.html", "en": chemin, "x-default": "prediction-bourse.html"}
+        with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
+            f.write(anglais._page(base, f"Stock market prediction {mois_an}: stocks up or down | {seo.NOM}",
+                                  f"Stock market prediction for {mois_an}: the stocks the AI sees going up or down next month, with their "
+                                  "chances out of 100. Free, updated automatically.", chemin, corps, csp, alt,
+                                  mots="stock market prediction, stock prediction, stocks to go up, stock forecast next month, AI stock prediction"))
         faits.append(chemin)
     return faits

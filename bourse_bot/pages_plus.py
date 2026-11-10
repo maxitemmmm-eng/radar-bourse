@@ -159,6 +159,12 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("69", "Quand l'IA hésite (chances entre 47 et 53 sur 100), suivre plutôt le sens habituel du marché", False,
+     "Vrais cours 2018-2026 : +0,1 à +0,2 point au total, mais l'IA perd jusqu'à 1,4 point en 2022 et un peu en 2018, 2019 et 2024. "
+     "Règle du site : jamais de baisse. Non adopté : l'avis reste celui de l'IA, marqué « confiance faible »"),
+    ("68.1", "Pousser un peu l'avis hausse/baisse vers le sens habituel du marché (10 % de « le marché monte d'habitude »)", False,
+     "Vrais cours 2018-2026 : +0,4 point en moyenne (54,8 % contre 54,5 %), mais ça vient des années de hausse ; en 2022 l'IA perd 2 points "
+     "(45,3 % contre 47,3 %), en 2024 et 2018 aussi, et les chances sont moins bien calibrées. Règle du site : l'IA ne doit jamais baisser. Non adopté"),
     ("68", "Recalibrer les « chances sur 100 » de l'avis hausse/baisse (régression isotonique apprise sur les années d'avant, globale ou par marché)", False,
      "Vrais cours 2018-2026, 195 124 avis : justesse 53,8 % (globale) et 54,8 % (par marché) contre 54,5 % aujourd'hui, et chances moins bien "
      "calibrées (Brier 0,2519 et 0,2509 contre 0,2480). Non adopté"),

@@ -321,7 +321,51 @@ def selecteur(prefixe: str, actuel: str, chemins: dict) -> str:
                       for lg in TOUTES)
 
 
-def _page(lg, base, titre, desc, chemin, corps, csp, alternates, faq=None):
+# Version 69 : les mots que les gens tapent dans chaque langue (« Nvidia Prognose », « previsión Bitcoin »…), un jeu par fiche.
+MOTS_LG = {
+    "es": ["previsión {nom}", "{nom} predicción", "cotización {nom}", "{nom} acciones", "{nom} pronóstico {an}"],
+    "de": ["{nom} Prognose", "{nom} Aktie", "{nom} Kurs", "{nom} Vorhersage", "{nom} Prognose {an}"],
+    "it": ["previsione {nom}", "{nom} azioni", "quotazione {nom}", "{nom} previsioni {an}"],
+    "pt": ["previsão {nom}", "{nom} ações", "cotação {nom}", "{nom} previsão {an}"],
+    "nl": ["{nom} koersverwachting", "{nom} aandeel", "{nom} koers", "{nom} voorspelling {an}"],
+    "ru": ["{nom} прогноз", "{nom} акции", "{nom} курс", "прогноз {nom} {an}"],
+    "tr": ["{nom} tahmin", "{nom} hisse", "{nom} fiyat", "{nom} yorum {an}"],
+    "ar": ["توقعات {nom}", "سهم {nom}", "سعر {nom}", "توقعات {nom} {an}"],
+    "hi": ["{nom} भविष्यवाणी", "{nom} शेयर", "{nom} कीमत", "{nom} {an}"],
+    "zh": ["{nom} 预测", "{nom} 股票", "{nom} 价格", "{nom} 走势 {an}"],
+    "ja": ["{nom} 予想", "{nom} 株価", "{nom} 見通し", "{nom} {an}"],
+    "ko": ["{nom} 전망", "{nom} 주가", "{nom} 예측", "{nom} {an}"],
+    "cs": ["{nom} předpověď", "{nom} akcie", "{nom} cena", "{nom} {an}"],
+    "da": ["{nom} prognose", "{nom} aktie", "{nom} kurs", "{nom} {an}"],
+    "el": ["{nom} πρόβλεψη", "{nom} μετοχή", "{nom} τιμή", "{nom} {an}"],
+    "fi": ["{nom} ennuste", "{nom} osake", "{nom} kurssi", "{nom} {an}"],
+    "he": ["{nom} תחזית", "מניית {nom}", "מחיר {nom}", "{nom} {an}"],
+    "hu": ["{nom} előrejelzés", "{nom} részvény", "{nom} árfolyam", "{nom} {an}"],
+    "id": ["prediksi {nom}", "saham {nom}", "harga {nom}", "{nom} {an}"],
+    "nb": ["{nom} prognose", "{nom} aksje", "{nom} kurs", "{nom} {an}"],
+    "pl": ["{nom} prognoza", "{nom} akcje", "{nom} kurs", "{nom} {an}"],
+    "ro": ["prognoză {nom}", "acțiuni {nom}", "preț {nom}", "{nom} {an}"],
+    "sv": ["{nom} prognos", "{nom} aktie", "{nom} kurs", "{nom} {an}"],
+    "th": ["คาดการณ์ {nom}", "หุ้น {nom}", "ราคา {nom}", "{nom} {an}"],
+    "uk": ["{nom} прогноз", "{nom} акції", "{nom} ціна", "{nom} {an}"],
+    "vi": ["dự báo {nom}", "cổ phiếu {nom}", "giá {nom}", "{nom} {an}"],
+}
+
+
+def mots_lg(lg: str, noms, tk: str = "") -> str:
+    from datetime import datetime as _dt
+    an, out = _dt.now().year, []
+    for nom in noms:
+        for m in MOTS_LG.get(lg, []):
+            v = m.format(nom=nom, an=an).strip()
+            if v not in out:
+                out.append(v)
+    if tk and tk not in out:
+        out.append(tk)
+    return ", ".join(out[:14])
+
+
+def _page(lg, base, titre, desc, chemin, corps, csp, alternates, faq=None, mots=None):
     nom_lg, locale, sens, _ = LANGUES[lg]
     L = T[lg]
     prefixe = "../" * chemin.count("/")
@@ -336,6 +380,8 @@ def _page(lg, base, titre, desc, chemin, corps, csp, alternates, faq=None):
             {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": r}} for q, r in faq]})
     tete = seo.balises_tete(base, titre, desc, chemin, jsonld=jsonld, alternates=alternates, langue=lg)
     tete = re.sub(r'<meta name="keywords"[^>]*>\n?', "", tete)   # version 63 : pas de mots-clés français sur les pages étrangères
+    if mots:   # version 69 : des mots-clés dans la langue de la page
+        tete = f'<meta name="keywords" content="{seo._e(mots)}">\n' + tete
     csp = seo.csp_avec_stats(csp)
     return f"""<!doctype html>
 <html lang="{lg}" dir="{sens}" data-theme="dark">
@@ -399,8 +445,10 @@ def _page_titre(lg, base, t, horizon, date, csp="", taux_surs=None):
              + f"<h2>{_e(L['fiable_t'])}</h2><p>{L['fiable']}</p>"
              f"<p><a class='btn' href='../../index.html#{_e(re.sub(r'[^A-Za-z0-9._-]', '', t['ticker']))}'>{_e(L['app'])}</a> "
              f"<a class='btn ghost' href='../../en/stocks/{s}.html' hreflang='en'>{_e(L['en'])}</a></p>")
+    court = re.sub(r"\s*\(.*?\)", "", nom).strip() or nom
+    sym = tk.split("-")[0].split(".")[0].lstrip("^")
     return chemin, _page(lg, base, L["titre_page"].format(nom=nom, tk=tk) + f" | {NOM}", L["desc"].format(nom=nom, tk=tk),
-                         chemin, corps, csp, alternates_titre(s))
+                         chemin, corps, csp, alternates_titre(s), mots=mots_lg(lg, [court] + ([sym] if sym.lower() != court.lower() else []), tk))
 
 
 def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
@@ -456,6 +504,7 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
                  + surs + f"<h2 id='all'>{_e(L['tous'])}</h2>{groupes}" + faq_html)
         chemin = f"{lg}/index.html"
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
-            f.write(_page(lg, base, L["accueil_t"].format(nom=NOM), L["accueil_desc"], chemin, corps, csp, alternates_accueil(), faq=faq))
+            f.write(_page(lg, base, L["accueil_t"].format(nom=NOM), L["accueil_desc"], chemin, corps, csp, alternates_accueil(), faq=faq,
+                          mots=mots_lg(lg, ["Bitcoin", "Nvidia", "Apple", "S&P 500"])))
         urls.append((chemin, "daily", "0.7"))
     return urls

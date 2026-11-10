@@ -627,7 +627,7 @@ def courbe_svg(t: dict, libs: dict | None = None, jours: int = 126) -> str:
 
 LIBS_COURBE_FR = {"prevision": "prévision →", "cours": "cours des 6 derniers mois", "bien": "si ça va bien",
                   "probable": "le plus probable dans 1 mois", "mal": "si ça va mal", "moitie": "zone foncée : le prix y finit 1 fois sur 2",
-                  "huit": "zone claire : 8 fois sur 10", "hausse": "↑ plutôt à la hausse", "baisse": "↓ plutôt à la baisse", "nul": "↔ impossible à dire",
+                  "huit": "zone claire : 8 fois sur 10", "hausse": "↑ plutôt à la hausse", "baisse": "↓ plutôt à la baisse", "nul": "↑ légèrement à la hausse",
                   "aria": "Graphique : cours des six derniers mois et éventail des prévisions pour le mois suivant"}
 LIBS_COURBE_EN = {"prevision": "forecast →", "cours": "price over the last 6 months", "bien": "if things go well",
                   "probable": "most likely in 1 month", "mal": "if things go badly", "moitie": "dark band: the price ends there 1 time in 2",
@@ -1476,7 +1476,7 @@ def _page_previsions(base, payload, dossier, csp, date):
              f"{NOM} fait autrement : ses deux IA prévoient seulement <b>le mois qui vient</b>, et chaque prévision est "
              "<a href='resultats.html'>vérifiée publiquement</a>, ratés compris.</p>"
              "<p>Ce que les IA prévoient le mieux, c'est <b>l'agitation</b> : de combien un prix risque de bouger. "
-             "Deviner s'il va monter est beaucoup plus dur, et elles le disent quand elles n'ont pas d'avis net. "
+             "Deviner s'il va monter est beaucoup plus dur : elles donnent quand même un avis, et affichent « confiance faible » quand elles hésitent. "
              "La dernière colonne n'est pas une prévision : c'est l'écart que le prix parcourt souvent en un an (environ 2 chances sur 3), "
              "calculé à partir de sa volatilité. Elle mesure le risque.</p>")
     for cle, lib in groupes.items():
@@ -1595,7 +1595,7 @@ def _faq_titre(t, nom, date, verdict):
     if t.get("proba_marche") is not None:
         pm, ind = t["proba_marche"], t.get("indice_nom") or "son marché"
         faq.append((f"{nom} va-t-il faire mieux que {ind} ?",
-                    (f"Les IA n'ont pas d'avis net sur ce point aujourd'hui ({round(pm * 100)} chances sur 100). "
+                    (f"Les IA penchent {'pour' if pm >= .5 else 'contre'} : {round(pm * 100)} chances sur 100 que {_e(nom)} fasse mieux que {_e(ind)} d'ici un mois (confiance faible). "
                      if t.get("marche_net") is False else
                      f"Les IA donnent <b>{round(pm * 100)} chances sur 100</b> que {_e(nom)} fasse mieux que {_e(ind)} d'ici un mois. ")
                     + "Cette comparaison reste utile même quand tout le marché baisse : certains titres baissent moins que les autres."))
@@ -2445,6 +2445,9 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
         from . import prediction
         for chemin in prediction.generer(__import__(__name__, fromlist=["x"]), base, payload, dossier, csp, date):
             urls.append((chemin, "daily", "0.9"))
+        from . import anglais as _en
+        for chemin in prediction.generer_en(__import__(__name__, fromlist=["x"]), _en, base, payload, dossier, csp, date):
+            urls.append((chemin, "daily", "0.8"))
     except Exception as e:
         print(f"Pages prédiction non générées : {e}")
 

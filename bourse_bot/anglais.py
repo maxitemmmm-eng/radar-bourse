@@ -92,7 +92,8 @@ def _page_titre(base, t, horizon, date, csp, modele):
     cone, f = t.get("cone"), t.get("fourchette") or []
     med = cone["mediane"][-1] if cone else None
     sur10 = round(p * 10) if p is not None else None
-    verdict = ("leaning higher" if p >= .58 else "slightly higher" if p >= .52 else "no clear direction" if p > .48
+    # version 68 : toujours un sens (higher / lower), jamais « no clear direction »
+    verdict = ("leaning higher" if p >= .58 else "slightly higher" if p >= .5
                else "slightly lower" if p > .42 else "leaning lower") if p is not None else "not available"
     if p is not None and t.get("avis_net") is False:
         verdict = ("slightly higher" if p >= .5 else "slightly lower") + " (low confidence: the AIs are often wrong in such cases)"

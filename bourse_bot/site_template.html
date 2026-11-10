@@ -196,6 +196,28 @@ tbody tr:last-child td{border-bottom:0}
 .pf-ordre input{width:140px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:15px var(--f-mono);font-variant-numeric:tabular-nums}
 
 .hero-liens{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+/* version 69 : accueil pour les nouveaux — grande barre de recherche, titres populaires avec l'avis de l'IA */
+.hero-cherche{display:flex;align-items:center;gap:10px;width:100%;max-width:560px;margin-top:18px;padding:14px 16px;border-radius:14px;border:1.5px solid var(--accent);
+  background:var(--surface);color:var(--text);font:inherit;font-size:16.5px;font-weight:600;cursor:pointer;text-align:left}
+.hero-cherche:hover{background:var(--surface-2)}.hero-cherche:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hero-cherche kbd{margin-left:auto;font:inherit;font-size:13px;font-weight:400;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:420px){.hero-cherche kbd{display:none}}
+.populaires{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;max-width:620px}
+.populaires a{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);
+  color:var(--text);text-decoration:none;font-size:14px;font-weight:600}
+.populaires a:hover{border-color:var(--accent)}
+.pop-sens{font-size:12.5px;font-weight:800;padding:2px 7px;border-radius:999px;font-variant-numeric:tabular-nums}
+.pop-sens.up{color:var(--up);background:color-mix(in srgb,var(--up) 16%,transparent)}.pop-sens.down{color:var(--down);background:color-mix(in srgb,var(--down) 16%,transparent)}
+.pop-sens.faible{background:transparent;box-shadow:inset 0 0 0 1px currentColor}
+.pop-note{font-size:12px;color:var(--muted);width:100%}
+.populaires .pop-titre{font-size:13px;color:var(--muted);width:100%;margin-bottom:-2px}
+@media (prefers-reduced-motion:no-preference){.populaires a{animation:pop-arrive .45s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i) * 55ms)}
+  @keyframes pop-arrive{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}}
+.bienvenue-etapes{list-style:none;margin:6px 0 14px;padding:0;display:grid;gap:8px}
+@media (max-width:480px){.bienvenue-etapes{gap:5px;margin-bottom:10px}.bienvenue-etapes li{padding:6px 9px;font-size:14px}.bienvenue-etapes li b{width:28px;height:28px;font-size:13px}}
+.bienvenue-etapes li{display:grid;grid-template-columns:38px 1fr;gap:10px;align-items:center;padding:9px 11px;border-radius:10px;background:var(--surface-2)}
+.bienvenue-etapes li b{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;font-size:15px}
+@media (prefers-reduced-motion:no-preference){.bienvenue-etapes li{animation:pop-arrive .5s cubic-bezier(.2,.8,.2,1) both}.bienvenue-etapes li:nth-child(2){animation-delay:.12s}.bienvenue-etapes li:nth-child(3){animation-delay:.24s}}
 .hero-visuel{display:block;width:100%;max-width:560px;height:auto;margin:0 0 18px}
 @media (max-width:640px){.hero-visuel{margin-bottom:12px}}
 .hero-liens .btn{text-decoration:none;display:inline-block}
@@ -931,7 +953,7 @@ html.calme *{animation:none!important;transition:none!important}
   <a href="#signaux">Signaux forts</a><a href="#robots">Les mini-robots</a><a href="#carte-sec">Carte du marché</a><a href="#confiance">Fiabilité de l'IA</a>
   <span class="plus-titre">Autres pages</span>
   <a href="resultats.html" class="lien-site">Résultats réels</a><a href="journal-ia.html" class="lien-site">Journal de l'IA</a><a href="connaissances.html" class="lien-site">Ce que sait l'IA</a>
-  <a href="toutes-les-actions.html" class="lien-site">Toutes les actions (2 000+)</a><a href="bourse-cette-semaine.html" class="lien-site">La semaine en Bourse</a><a href="themes.html" class="lien-site">Actions par thème</a><a href="avis-surs-verifies.html" class="lien-site">Avis de l'IA vérifiés</a>
+  <a href="prediction-crypto.html" class="lien-site">Prédiction crypto</a><a href="prediction-bourse.html" class="lien-site">Prédiction bourse</a><a href="toutes-les-actions.html" class="lien-site">Toutes les actions (2 000+)</a><a href="bourse-cette-semaine.html" class="lien-site">La semaine en Bourse</a><a href="themes.html" class="lien-site">Actions par thème</a><a href="avis-surs-verifies.html" class="lien-site">Avis de l'IA vérifiés</a>
   <a href="point.html" class="lien-site">Le point du jour</a><a href="actu-bourse.html" class="lien-site">Actu bourse</a><a href="krach-boursier.html" class="lien-site">Krach boursier</a>
   <a href="comparer.html" class="lien-site">Comparer deux titres</a><a href="portefeuille.html" class="lien-site">Sélection IA du mois</a><a href="outils.html" class="lien-site">Outils gratuits</a>
   <a href="apprendre.html" class="lien-site">Apprendre la Bourse</a><a href="guides.html" class="lien-site">Guides</a><a href="fonctionnalites.html" class="lien-site">Toutes les fonctionnalités</a>
@@ -942,9 +964,11 @@ html.calme *{animation:none!important;transition:none!important}
 <main class="gutter" id="contenu" tabindex="-1"><div class="wrap">
   <div class="hero">
    <div>
-    <h2>Les marchés, lus calmement par les chiffres.</h2>
-    <p class="intro">Chaque heure, l'IA analyse près de 300 actions, ETF et cryptos. Elle prévoit surtout <b>de combien un prix peut bouger</b> et <b>le risque de forte chute</b>, et publie tous ses résultats, ratés compris. Gratuit et éducatif, pas un conseil.</p>
-    <div class="hero-liens"><a class="btn" href="#prono">🎯 Ton pronostic du jour</a><a class="btn ghost" href="#simulation">À combien dans un mois ?</a><a class="btn ghost" href="#remonte">Jouer contre l'IA</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
+    <h2>Hausse ou baisse ? L'avis de l'IA, action par action.</h2>
+    <p class="intro">Tape le nom d'une action ou d'une crypto : l'IA te dit si elle la voit <b class="up">monter ↑</b> ou <b class="down">baisser ↓</b> le mois prochain, avec ses chances et son niveau de confiance. Elle prévoit aussi de combien le prix peut bouger. Tous ses résultats sont vérifiés en public, ratés compris. Gratuit, sans compte, pas un conseil.</p>
+    <button class="hero-cherche" id="hero-cherche" type="button"><span aria-hidden="true">🔎</span> Chercher une action ou une crypto <kbd>Apple, Bitcoin, LVMH…</kbd></button>
+    <div class="populaires" id="populaires" aria-label="Les plus recherchés, avec l'avis de l'IA" hidden></div>
+    <div class="hero-liens"><a class="btn" href="prediction-crypto.html">₿ Prédiction crypto</a><a class="btn ghost" href="prediction-bourse.html">↑ Actions que l'IA voit monter</a><a class="btn ghost" href="#prono">🎯 Ton pronostic du jour</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
     <div class="preuves" id="preuves" hidden></div>
    </div>
    <aside class="bref" id="bref" aria-labelledby="bref-t" hidden><h3 id="bref-t">Aujourd'hui en bref</h3><p id="bref-txt"></p>
@@ -954,9 +978,10 @@ html.calme *{animation:none!important;transition:none!important}
   <div class="depart" id="depart" hidden>
     <h2 style="font-size:18px">Nouveau ? Par où commencer</h2>
     <ol>
-      <li><span aria-hidden="true">1</span><div><b>Regarde la météo du marché</b><p>Juste en dessous : en un coup d'œil, est-ce que les marchés montent ou baissent en ce moment ?</p></div></li>
-      <li><span aria-hidden="true">2</span><div><b>Cherche une action ou une crypto</b><p>Tape son nom en haut (Apple, Bitcoin, LVMH…). Sa fiche explique tout avec des mots simples.</p></div></li>
-      <li><span aria-hidden="true">3</span><div><b>Entraîne-toi sans risque</b><p>Le portefeuille virtuel te donne 10 000 € fictifs pour tester tes idées sans perdre un centime.</p></div></li>
+      <li><span aria-hidden="true">1</span><div><b>Cherche une action ou une crypto</b><p>Tape son nom en haut (Apple, Bitcoin, LVMH…). Plus de 2 500 titres ont leur fiche, expliquée avec des mots simples.</p></div></li>
+      <li><span aria-hidden="true">2</span><div><b>Lis l'avis de l'IA</b><p><span class="up">↑ hausse</span> ou <span class="down">↓ baisse</span>, avec ses chances sur 100 et sa confiance : <i>faible</i> (elle hésite), <i>moyenne</i> ou <i>forte</i>.</p></div></li>
+      <li><span aria-hidden="true">3</span><div><b>Vérifie si elle a raison</b><p>Chaque avis est contrôlé un mois plus tard, en public. <a href="avis-surs-verifies.html" class="lien-site">Voir les avis vérifiés</a>.</p></div></li>
+      <li><span aria-hidden="true">4</span><div><b>Entraîne-toi sans risque</b><p>Le portefeuille virtuel te donne 10 000 € fictifs pour tester tes idées sans perdre un centime.</p></div></li>
     </ol>
     <div class="bas"><span class="muted" style="font-size:13.5px">Les petits boutons <span class="def" aria-hidden="true" style="pointer-events:none">?</span> expliquent chaque mot compliqué. <b>Rien n'est sûr</b> : ce site t'aide à comprendre, pas à deviner l'avenir.</span>
       <button class="btn ghost" id="depart-ok">J'ai compris, masquer</button></div>
@@ -1166,7 +1191,7 @@ html.calme *{animation:none!important;transition:none!important}
     <details class="affiner" id="affiner"><summary>Filtrer selon mes critères <span class="muted" id="aff-nb"></span></summary>
       <div class="aff-grille">
         <label>Agitation prévue<select data-f="agit"><option value="">Toutes</option><option value="calme">Le tiers le plus calme</option><option value="moyen">Le tiers du milieu</option><option value="fort">Le tiers le plus agité</option></select></label>
-        <label>Avis des IA<select data-f="avis"><option value="">Tous</option><option value="net">Avec un avis net</option><option value="hausse">Plutôt à la hausse</option><option value="baisse">Plutôt à la baisse</option></select></label>
+        <label>Avis des IA<select data-f="avis"><option value="">Tous</option><option value="net">Confiance moyenne ou forte</option><option value="hausse">Plutôt à la hausse</option><option value="baisse">Plutôt à la baisse</option></select></label>
         <label>Face à son marché<select data-f="marche"><option value="">Tous</option><option value="mieux">Plutôt mieux</option><option value="moins">Plutôt moins bien</option></select></label>
         <label>Dividende<select data-f="div"><option value="">Peu importe</option><option value="2">Au moins 2 %</option><option value="4">Au moins 4 %</option><option value="0">Sans dividende</option></select></label>
         <label>PER<select data-f="per"><option value="">Peu importe</option><option value="bas">Moins de 15</option><option value="moyen">De 15 à 30</option><option value="haut">Plus de 30</option></select></label>
@@ -1463,20 +1488,25 @@ html.calme *{animation:none!important;transition:none!important}
 
 <div class="consent" id="consent" hidden role="dialog" aria-modal="true" aria-labelledby="consent-t" aria-describedby="consent-d">
   <div class="consent-boite">
-    <h2 id="consent-t">Avant de commencer</h2>
+    <h2 id="consent-t">Bienvenue sur Radar Bourse 👋</h2>
     <div id="consent-d">
-      <p>Radar Bourse est un <b>projet éducatif et gratuit</b>. Quatre choses à savoir :</p>
+      <ol class="bienvenue-etapes" aria-label="Comment ça marche">
+        <li><b aria-hidden="true">🔎</b><span>Tu cherches une action ou une crypto.</span></li>
+        <li><b aria-hidden="true">↑↓</b><span>L'IA te dit si elle la voit monter ou baisser, et à quel point elle est sûre.</span></li>
+        <li><b aria-hidden="true">✓</b><span>Ses résultats sont vérifiés en public, ratés compris.</span></li>
+      </ol>
+      <p>C'est un <b>projet éducatif et gratuit</b>. Quatre choses à savoir avant de commencer :</p>
       <ul>
-        <li><b>Rien n'est sûr.</b> Les prévisions sont des calculs automatiques qui se trompent souvent. Le site montre exactement combien.</li>
-        <li><b>Ce ne sont pas des conseils.</b> Personne ici ne te dit d'acheter ou de vendre. Tu restes seul·e responsable de tes décisions.</li>
-        <li><b>Investir peut faire perdre de l'argent</b>, parfois tout l'argent investi. N'investis que ce que tu peux te permettre de perdre.</li>
-        <li><b>Nous ne sommes pas responsables.</b> Radar Bourse et son éditeur ne peuvent être tenus responsables d'aucune perte, d'aucune erreur ou retard dans les données, ni d'aucune décision prise à partir du site. Les décisions d'investissement sont réservées aux personnes majeures.</li>
+        <li><b>Rien n'est sûr.</b> L'IA se trompe souvent, et le site montre exactement combien.</li>
+        <li><b>Ce ne sont pas des conseils.</b> Tu restes seul·e responsable de tes décisions.</li>
+        <li><b>Investir peut faire perdre de l'argent</b>, parfois tout. N'investis que ce que tu peux te permettre de perdre.</li>
+        <li><b>Nous ne sommes pas responsables</b> des pertes, des erreurs ou retards de données, ni des décisions prises à partir du site. Investir est réservé aux personnes majeures.</li>
       </ul>
-      <p class="muted" style="font-size:13.5px">En cliquant sur « J'ai compris », tu acceptes les conditions d'utilisation, dont la limitation de responsabilité (article 10). Aucun cookie publicitaire, aucun compte, rien à acheter.</p>
+      <p class="muted" style="font-size:13.5px">En cliquant sur « J'ai compris, c'est parti », tu acceptes les conditions d'utilisation, dont la limitation de responsabilité (article 10). Aucun cookie publicitaire, aucun compte, rien à acheter.</p>
     </div>
     <div class="consent-actions">
       <button class="btn ghost" data-legal="conditions">Lire les conditions</button>
-      <button class="btn" id="accept">J'ai compris</button>
+      <button class="btn" id="accept">J'ai compris, c'est parti</button>
     </div>
   </div>
 </div>
@@ -1559,7 +1589,7 @@ const LIB_CONF = {faible: "Confiance faible", moyenne: "Confiance moyenne", fort
 const barresConf = c => !LIB_CONF[c] ? "" : `<span class="conf-ic c-${c}" role="img" aria-label="${LIB_CONF[c]}" title="${LIB_CONF[c]}"><i></i><i></i><i></i></span>`;
 function gauge(p, accord, net, conf){
   if(p==null) return `<span class="muted">–</span>`;
-  if(net === false) return `<div class="sans-avis" title="Pas d'avis net : dans ces cas-là, les IA n'ont pas fait mieux que le hasard"><span class="fleche ${p>=.5?'up':'down'}" aria-hidden="true" style="opacity:.7">${p>=.5?'↑':'↓'}</span><div class="gauge" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span><span class="num">${Math.round(p*100)} %</span> · pas d'avis net</span></div>`;
+  if(net === false) return `<div class="sans-avis" title="Confiance faible : dans ces cas-là, les IA se sont souvent trompées"><span class="fleche ${p>=.5?'up':'down'}" aria-hidden="true" style="opacity:.7">${p>=.5?'↑':'↓'}</span><div class="gauge" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span><span class="num">${Math.round(p*100)} %</span> · confiance faible</span></div>`;
   const desaccord = accord === false ? ` <span title="Les deux IA ne sont pas d'accord : avis peu fiable" role="img" aria-label="Les deux IA ne sont pas d'accord" style="color:var(--warn);font-weight:700">⚠</span>` : "";
   return `<div style="display:flex;align-items:center;gap:8px"><span class="fleche ${p>=.5?'up':'down'}" aria-hidden="true">${p>=.5?'↑':'↓'}</span><div class="gauge ${p<0.5?'lo':''}" style="width:80px" aria-hidden="true"><i style="width:${(p*100).toFixed(0)}%"></i><b></b></div><span class="num" style="white-space:nowrap">${Math.round(p*100)} %</span>${barresConf(conf)}${desaccord}</div>`;
 }
@@ -1567,7 +1597,7 @@ function gauge(p, accord, net, conf){
 /* ---------- Définitions des mots compliqués (bouton « ? ») ---------- */
 const DEFS = {
   confiance: ["Niveau de confiance", "Une seule échelle pour tout le site. Faible : les IA hésitent ou ne sont pas d'accord. Moyenne : avis net. Forte : avis très tranché et les deux IA d'accord. Chaque niveau affiche ce qu'il a vraiment donné sur des années jamais vues."],
-  avis_net: ["Pas d'avis net", "Quand les chances de hausse sont proches de 50 %, les IA hésitent. Testé sur des années qu'elles n'avaient jamais vues : dans ces cas-là, elles n'ont pas fait mieux que le hasard. Sur certains marchés (par exemple les cryptos), même les avis tranchés n'ont pas fait mieux que « toujours la même réponse » : là, le radar ne donne jamais d'avis de direction. Il le dit franchement plutôt que de faire semblant de savoir."],
+  avis_net: ["Confiance faible", "L'IA donne toujours un avis : hausse ou baisse. Quand les chances sont proches de 50 %, elle hésite : testé sur des années qu'elle n'avait jamais vues, dans ces cas-là elle a souvent eu tort. Sur certains marchés (par exemple les cryptos), même ses avis tranchés n'ont pas fait mieux que « toujours la même réponse » : leurs avis sont donc toujours marqués « confiance faible ». Le radar le dit franchement plutôt que de faire semblant de savoir."],
   agitation: ["Agitation prévue", "De combien le prix risque de bouger le mois prochain, à la hausse comme à la baisse. Les périodes agitées ont tendance à durer : c'est beaucoup plus prévisible que la direction du prix. « ±6 % » veut dire qu'en général, le prix finira le mois entre 6 % plus bas et 6 % plus haut, mais il peut en sortir."],
   raisons: ["Les raisons de l'avis", "Pour chaque titre, on retire tour à tour chaque famille d'indicateurs et on regarde de combien l'avis des IA change. Les familles qui le font le plus bouger sont affichées. Ce sont les raisons du calcul, pas des certitudes sur l'avenir."],
   proba: ["Chances de hausse", "Sur 100 situations passées qui ressemblaient à celle d'aujourd'hui, combien de fois le prix était plus haut un mois après. 50 % = pile ou face : le radar ne sait pas."],
@@ -1622,7 +1652,7 @@ rendreTape();
   const agites = avec.filter(t => t.risque_prevu && t.risque_prevu.habitude > 1.25).length;
   let txt = jour + `Pour le mois qui vient, les deux IA sont ${ton} : en moyenne ${Math.round(moy*100)} % de chances de hausse par titre`;
   txt += tete.length ? `, avec ${tete.join(" et ")} en tête de liste. ` : ", sans titre qui se détache vraiment. ";
-  if(hesite) txt += hesite === avec.length ? "Elles n'ont aucun avis net aujourd'hui. " : `Sur ${hesite} titre${hesite > 1 ? "s" : ""}, elles n'ont pas d'avis net. `;
+  if(hesite) txt += hesite === avec.length ? "Leur confiance est faible pour tous aujourd'hui. " : `Sur ${hesite} titre${hesite > 1 ? "s" : ""}, leur confiance est faible. `;
   if(agites >= 3) txt += `${agites} titres s'annoncent plus agités que d'habitude. `;
   const vix = (DATA.contexte || []).find(c => c.cle === "vix"), CR = (DATA.entrainement || {}).crises || {};
   if(vix && vix.valeur >= 30) txt += `<b>Attention : la peur des marchés est forte (VIX à ${Math.round(vix.valeur)}), comme pendant les crises.</b> ${CR.crise != null ? `Dans les crises passées, les IA n'ont vu juste que ${Math.round(CR.crise * 100)} fois sur 100 : prudence. ` : "En période de crise, les prévisions sont encore moins sûres que d'habitude. "}`;
@@ -1751,7 +1781,7 @@ $("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t
       ${record ? `<p class="jeu-record">Nouveau record : ${S.serie} bonnes réponses d'affilée !</p>` : ""}
       <p class="jeu-verdict ${juste ? "up" : "down"} jeu-pop">${juste ? (iaJuste ? "Bien vu !" : "Bien vu, et mieux que l'IA !") : "Raté !"} <span class="muted" style="font-size:15px;font-family:var(--f-body)">${gain >= 0 ? "+" : ""}${gain} points</span></p>
       <p>C'était <b>${esc(nom)}</b>, le ${fmtDate(it.d)}. Un mois plus tard : <b class="${it.r > 0 ? "up" : "down"}">${it.r > 0 ? "+" : ""}${(it.r * 100).toFixed(1).replace(".", ",")} %</b>.</p>
-      <p>L'IA donnait <b>${Math.round(it.p * 100)} % de chances de hausse</b> : elle penchait pour ${iaDit ? "la hausse" : "la baisse"}${hesite ? ", mais sans avis net" : ""}. Elle ${iaJuste ? "a vu juste" : "s'est trompée"}.</p></div>`;
+      <p>L'IA donnait <b>${Math.round(it.p * 100)} % de chances de hausse</b> : elle penchait pour ${iaDit ? "la hausse" : "la baisse"}${hesite ? ", avec une confiance faible" : ""}. Elle ${iaJuste ? "a vu juste" : "s'est trompée"}.</p></div>`;
     const fini = mode === "jour" && S.jours[auj].fini;
     zone.innerHTML = fini ? `<button class="btn" id="jeu-suivant">Voir mon résultat du jour</button>` : `<button class="btn" id="jeu-suivant">${mode === "jour" ? "Manche suivante" : "Une autre période au hasard"}</button>`;
     $("#jeu-suivant").focus();
@@ -2366,8 +2396,8 @@ const M = DATA.modele;
       ${AN.precision_reste != null ? barreStat("Avis hésitants", AN.precision_reste, null, true) : ""}
       ${["faible","moyenne","forte"].map(n => AN.niveaux && AN.niveaux[n] ? barreStat(`${LIB_CONF[n]} (${Math.round(AN.niveaux[n].part*100)} % des cas)`, AN.niveaux[n].precision, AN.niveaux[n].ic, n === "faible") : "").join("")}
       ${AN.marches_sans_avis && Object.keys(AN.marches_sans_avis).length ? `<p style="margin:0;font-size:13.5px"><b>Aucun avis de direction</b> sur : ${Object.keys(AN.marches_sans_avis).map(m => esc(NOM_MARCHE[m] || m)).join(", ")}. Même tranchés, les avis n'y ont pas fait mieux que « toujours la même réponse ».</p>` : ""}
-      <p class="muted" style="margin:0;font-size:13px">Les avis hésitants sont marqués « pas d'avis net » sur le site. Gain des avis nets sur « toujours la même réponse » : de ${(AN.ic_gain[0]*100).toFixed(1).replace(".", ",")} à ${(AN.ic_gain[1]*100).toFixed(1).replace(".", ",")} points (marge d'erreur).</p>`
-      : `<p style="margin:0;font-size:14px">Pour l'instant, même leurs avis les plus tranchés n'ont pas fait mieux que le hasard de façon prouvée. Tous les avis sont donc marqués « pas d'avis net » : à lire comme de simples indications.</p>`}</div>`);
+      <p class="muted" style="margin:0;font-size:13px">Les avis hésitants sont marqués « confiance faible » sur le site. Gain des avis nets sur « toujours la même réponse » : de ${(AN.ic_gain[0]*100).toFixed(1).replace(".", ",")} à ${(AN.ic_gain[1]*100).toFixed(1).replace(".", ",")} points (marge d'erreur).</p>`
+      : `<p style="margin:0;font-size:14px">Pour l'instant, même leurs avis les plus tranchés n'ont pas fait mieux que le hasard de façon prouvée. Tous les avis sont donc marqués « confiance faible » : à lire comme de simples indications.</p>`}</div>`);
   }
   const RQ = M.risque || {};
   if(RQ.concordance_ia != null){
@@ -3411,7 +3441,12 @@ new MutationObserver(redessinerTout).observe(document.documentElement, {attribut
   $("#main-tabs").innerHTML = choix.map(([t, nom]) => `<button data-tk="${esc(t.ticker)}" aria-pressed="false">${esc(nom)}</button>`).join("");
   $("#main-tabs").querySelectorAll("button").forEach((b, i) => b.onclick = () => montrer(...choix[i]));
   $("#main-open").onclick = () => actif && ouvrir(actif.ticker);
-  requestAnimationFrame(() => montrer(...choix[0]));
+  // version 69 : le graphique du jour (section repliée au départ) n'est dessiné que quand il devient visible
+  const shell = $("#main-shell");
+  if("IntersectionObserver" in window && shell){
+    const io = new IntersectionObserver(es => { if(es.some(e => e.isIntersecting)){ io.disconnect(); montrer(...choix[0]); } }, {rootMargin: "300px"});
+    io.observe(shell);
+  } else requestAnimationFrame(() => montrer(...choix[0]));
 })();
 
 /* ---------- Thème clair / sombre ---------- */
@@ -3444,9 +3479,10 @@ function verifierSante(){
 verifierSante(); setInterval(verifierSante, 300000);
 
 /* ---------- Heure de mise à jour et nouvelles prévisions ---------- */
+const LANGUE_DATE = () => (document.documentElement.lang || "fr").startsWith("en") ? "en-GB" : "fr-FR";   // version 69
 function majHorodatage(){
   const min = Math.round((Date.now() - new Date(DATA.genere_le)) / 60000);
-  const rel = min < 1 ? "à l'instant" : min < 60 ? `il y a ${min} min` : min < 1440 ? `il y a ${Math.round(min/60)} h` : `le ${new Date(DATA.genere_le).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}`;
+  const rel = min < 1 ? "à l'instant" : min < 60 ? `il y a ${min} min` : min < 1440 ? `il y a ${Math.round(min/60)} h` : `${"le"} ${new Date(DATA.genere_le).toLocaleDateString(LANGUE_DATE(),{day:'numeric',month:'short'})}`;
   $("#stamp").textContent = `Prévisions mises à jour ${rel}`;
 }
 majHorodatage(); setInterval(majHorodatage, 60000);
@@ -3628,6 +3664,24 @@ $("#sources-txt").textContent = "Cours historiques : Yahoo Finance · cryptos en
   maj();
 })();
 
+/* ---------- Version 69 : titres populaires avec l'avis de l'IA, et la grande barre de recherche de l'accueil ---------- */
+(function(){
+  const z = $("#populaires"), b = $("#hero-cherche");
+  if(b) b.onclick = () => { const r = $("#rech"); if(r){ r.scrollIntoView({block: "center"}); r.focus(); } };
+  if(!z) return;
+  const VOULUS = ["BTC-USD", "ETH-USD", "NVDA", "AAPL", "TSLA", "MC.PA", "TTE.PA", "^FCHI", "SOL-USD", "MSFT"];
+  const par = {}; (DATA.titres || []).forEach(t => par[t.ticker] = t);
+  const items = VOULUS.map(k => par[k]).filter(t => t && probaIA(t) != null).slice(0, 8);
+  if(items.length < 3) return;
+  z.innerHTML = `<span class="pop-titre">${"Les plus recherchés, avec l'avis de l'IA :"}</span>` + items.map((t, i) =>
+    { const sn = sensDe(t), c = confianceDe(t), ch = Math.round((sn > 0 ? probaIA(t) : 1 - probaIA(t)) * 100);
+      return `<a href="#${encodeURIComponent(t.ticker)}" data-tk="${esc(t.ticker)}" style="--i:${i}" title="${LIB_CONF2[c]}">${esc(t.nom.replace(/\s*\(.*?\)/, ""))} `
+        + `<span class="pop-sens ${sn > 0 ? "up" : "down"}${c === "faible" ? " faible" : ""}">${sn > 0 ? "↑" : "↓"} ${ch}</span></a>`; }).join("")
+    + `<span class="pop-note">${"↑ hausse ou ↓ baisse, et ses chances sur 100 · contour seul = confiance faible"}</span>`;
+  z.querySelectorAll("a[data-tk]").forEach(a => a.onclick = e => { e.preventDefault(); ouvrir(a.dataset.tk); });
+  z.hidden = false;
+})();
+
 /* ---------- « Par où commencer ? » pour les nouveaux visiteurs ---------- */
 (function(){
   let vu = false; try{ vu = localStorage.getItem("radar-depart-vu") === "1"; }catch(e){}
@@ -3665,7 +3719,8 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
     if(i === dernier) return; dernier = i; [...pts.children].forEach((x, k) => x.classList.toggle("on", k === i)); };
   tape.addEventListener("scroll", () => { if(!prevu){ prevu = true; requestAnimationFrame(majPoints); } }, {passive: true});
   ["touchstart", "pointerdown", "wheel"].forEach(ev => tape.addEventListener(ev, () => { touche = Date.now(); }, {passive: true}));
-  new MutationObserver(() => { if(pts.children.length !== tape.children.length) majPoints(); }).observe(tape, {childList: true});
+  // version 69 : plus de mesure de la page pendant le chargement (elle forçait un calcul complet de la mise en page)
+  new MutationObserver(() => { if(pts.children.length !== tape.children.length && !prevu){ prevu = true; requestAnimationFrame(majPoints); } }).observe(tape, {childList: true});
   const calme = () => document.documentElement.classList.contains("calme") || matchMedia("(prefers-reduced-motion: reduce)").matches;
   setInterval(() => {
     if(document.hidden || calme() || Date.now() - touche < 10000 || tape.scrollWidth <= tape.clientWidth + 4) return;
@@ -3673,7 +3728,7 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
     const fin = tape.scrollLeft + tape.clientWidth >= tape.scrollWidth - 4;
     tape.scrollTo({left: fin ? 0 : tape.scrollLeft + w, behavior: "smooth"});
   }, 4000);
-  majPoints();
+  prevu = true; requestAnimationFrame(majPoints);
 })();
 
 /* ---------- Version 56 : pronostic du jour (on revient le lendemain voir le résultat) ---------- */
@@ -3925,7 +3980,8 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
     if(r.chute != null) parts.push(`${"risque de perdre plus de 10 % :"} <b>${pc(r.chute)}</b>`);
     if(t.div > 0) parts.push(`${"dividende :"} ${t.div.toFixed(1).replace(".", ",")} % ${"par an"}`);
     return `<p><b>${esc(t.nom)}</b> (${esc(affTk(t.ticker))}) · ${px(t.prix, t.devise)}</p>` + (parts.length ? "<ul>" + parts.map(x => `<li>${x}</li>`).join("") + "</ul>" : "")
-      + `<p>${"Sur le sens du prix (hausse ou baisse), l'IA ne fait pas mieux que la tendance habituelle : elle ne dit donc pas si ça va monter."}</p><p>${lien(t)}</p>`;
+      + (probaIA(t) != null ? `<p>${"L'avis de l'IA :"} <b class="${sensDe(t) > 0 ? "up" : "down"}">${libSens(t)}</b> (${Math.round((sensDe(t) > 0 ? probaIA(t) : 1 - probaIA(t)) * 100)} ${"chances sur 100"}, ${LIB_CONF2[confianceDe(t)]}).</p>` : "")
+      + `<p>${lien(t)}</p>`;
   };
   const trouverTitre = (mots, brut) => {
     const txt = " " + mots.join(" ") + " ";
@@ -4027,7 +4083,11 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
   };
   (window.requestIdleCallback || (f => setTimeout(f, 300)))(() => fixer(document.body));   // version 64 : après l'affichage
   const vif = n => n && n.closest && n.closest("[data-px],[data-j1],.tape,.tick");   // cours en direct : mis à jour sans arrêt, rien à corriger
-  new MutationObserver(ms => { for(const m of ms){ if(vif(m.target)) continue; for(const n of m.addedNodes){ if(n.nodeType === 1 && !SAUTER[n.nodeName]) fixer(n); else if(n.nodeType === 3 && n.parentNode) fixer(n.parentNode); } } })
+  // version 69 : les morceaux ajoutés sont corrigés par paquets, quand le navigateur a le temps (accueil plus fluide au chargement)
+  const enAttente = new Set(); let prevuF = false;
+  const traiter = () => { prevuF = false; for(const n of enAttente) if(n.isConnected) fixer(n); enAttente.clear(); };
+  new MutationObserver(ms => { for(const m of ms){ if(vif(m.target)) continue; for(const n of m.addedNodes){ if(n.nodeType === 1 && !SAUTER[n.nodeName]) enAttente.add(n); else if(n.nodeType === 3 && n.parentNode) enAttente.add(n.parentNode); } }
+      if(enAttente.size && !prevuF){ prevuF = true; (window.requestIdleCallback ? requestIdleCallback(traiter, {timeout: 400}) : setTimeout(traiter, 60)); } })
     .observe(document.body, {childList: true, subtree: true});
 })();
 
@@ -4058,7 +4118,7 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
   ["touchstart", "pointerdown", "wheel", "focusin", "mouseenter"].forEach(ev => nav.addEventListener(ev, () => { touche = Date.now(); }, {passive: true}));
   const calme = () => document.documentElement.classList.contains("calme") || matchMedia("(prefers-reduced-motion: reduce)").matches;
   // version 64 : la barre ne tourne plus toute seule (plus calme, plus pro, et moins de calculs) : flèches et glisser suffisent
-  addEventListener("resize", maj, {passive: true}); maj(); setTimeout(maj, 1500);
+  addEventListener("resize", maj, {passive: true}); requestAnimationFrame(maj); setTimeout(maj, 1500);
 })();
 
 /* ---------- Version 53 : sections repliables (accueil plus court et plus clair) ---------- */
@@ -4171,7 +4231,7 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
 (function(){
   const tete = document.querySelector("header.top");
   const majHauteur = () => document.documentElement.style.setProperty("--tete", (tete ? tete.offsetHeight : 118) + "px");
-  majHauteur(); addEventListener("resize", majHauteur);
+  requestAnimationFrame(majHauteur); addEventListener("resize", majHauteur);   // version 69 : mesuré après le premier affichage
   // Quand l'en-tête change de hauteur, le navigateur décale la page : on ignore ce décalage
   // (sinon l'en-tête clignoterait en boucle entre compact et complet).
   let dernierY = scrollY, calmeJusqua = 0;
