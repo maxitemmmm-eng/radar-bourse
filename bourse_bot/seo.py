@@ -105,6 +105,32 @@ CSS_PAGE = """:root{--bg:#eef1f5;--surface:#fff;--surface-2:#f6f8fb;--ink:#0f1b2
 .plus-panneau a{display:block;padding:8px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:14px}
 .plus-panneau a:hover,.plus-panneau a:focus-visible{background:var(--bg)}
 .plus-panneau a[aria-current]{font-weight:700;background:var(--bg)}
+/* version 69.1 : menu rangé par thème ; sur téléphone, un seul bouton « Menu » au lieu d'une barre qui défile */
+.plus-panneau:has(.plus-groupe){width:min(900px,calc(100vw - 32px));grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px;padding:14px;border-radius:14px}
+.plus-groupe{display:flex;flex-direction:column;gap:1px}
+.plus-titre{font-size:12.5px;font-weight:700;color:var(--accent);padding:4px 10px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.plus-principal,.plus-principal-plat{display:none}
+.plus-principal-plat{grid-column:1/-1;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:4px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.plus-mobile,.plus-mobile-t{display:none}
+.plus-seul{display:none}
+.top .nav-sec{flex-wrap:wrap;overflow:visible;row-gap:6px}
+.nav-sec a[href$="prediction-crypto.html"],.nav-sec a[href$="prediction-bourse.html"]{color:var(--ink);border-color:color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+@media (prefers-reduced-motion:no-preference){.plus[open] .plus-panneau{animation:menu-ouvre .22s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes menu-ouvre{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}}
+@media (max-width:760px){
+  .nav-ligne .nav-sec{display:none}
+  .nav-ligne{position:absolute;right:16px;top:9px;max-width:none}
+  .top .in{padding-right:104px}
+  .plus{padding:0}
+  .plus>summary{display:flex;align-items:center;gap:8px;padding:6px 12px}
+  .plus-large{display:none}.plus-mobile-t{display:inline}
+  .plus-mobile{display:inline-grid;gap:3px}.plus-mobile i{display:block;width:16px;height:2px;border-radius:2px;background:currentColor}
+  .plus-panneau{position:fixed;left:12px;right:12px;width:auto!important;top:58px;max-height:calc(100vh - 72px);overflow-y:auto}
+  .plus-principal{display:flex}.plus-principal-plat{display:grid}
+  .plus-seul{display:block}
+  .brand b{overflow:hidden;text-overflow:ellipsis}
+}
+@media (max-width:480px){.top .ouvrir{display:none}}
 .nav-sec{max-width:1240px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-bottom:10px}
 .nav-sec::-webkit-scrollbar{display:none}
 .nav-sec a{flex:none;text-decoration:none;color:var(--muted);font-size:13.5px;font-weight:600;padding:6px 11px;border-radius:99px;border:1px solid transparent;white-space:nowrap}
@@ -183,12 +209,30 @@ def entete(prefixe: str, chemin: str, accueil: str, sous_titre: str, liens: list
     def lien(t, h, r, classe=""):
         cur = (" aria-current=" + chr(34) + ("page" if h == chemin else "true") + chr(34)) if h == rubrique else ""
         return f'<a href="{prefixe}{h}"{cur}{(" " + r[0]) if r else ""}{classe}>{_e(t)}</a>'
-    N_MENU = 8
+    N_MENU = N_MENU_FR if liens and liens[0][1] == "index.html" and len(liens) > 20 else 8
     principaux, autres = (liens[:N_MENU], liens[N_MENU:]) if len(liens) > N_MENU + 2 else (liens, [])
     visibles = list(principaux) + [l for l in autres if l[1] == rubrique]
     pastilles = "".join(lien(t, h, r) for t, h, *r in visibles)
-    plus = (f'<details class="plus"><summary>{"More" if aria_nav == "Site pages" else "Plus"} ▾</summary><div class="plus-panneau">'
-            + "".join(lien(t, h, r) for t, h, *r in autres) + "</div></details>") if autres else ""
+    plus_t = "More" if aria_nav == "Site pages" else "Plus"
+    menu_t = "Menu"
+    par_h = {l[1]: l for l in autres}
+    if N_MENU == N_MENU_FR and all(h in par_h for _, hs in GROUPES_FR for h in hs if h in par_h):
+        ranges = {h for _, hs in GROUPES_FR for h in hs}
+        reste = [l for l in autres if l[1] not in ranges]
+        contenu = "".join(f'<div class="plus-groupe"><span class="plus-titre">{_e(g)}</span>'
+                          + "".join(lien(*par_h[h][:2], par_h[h][2:]) for h in hs if h in par_h) + "</div>" for g, hs in GROUPES_FR)
+        contenu += ("<div class='plus-groupe'>" + "".join(lien(t, h, r) for t, h, *r in reste) + "</div>") if reste else ""
+        # sur téléphone, les pages du menu principal sont aussi dans le panneau
+        contenu = ('<div class="plus-groupe plus-principal"><span class="plus-titre">Les pages principales</span>'
+                   + "".join(lien(t, h, r) for t, h, *r in principaux) + "</div>") + contenu
+    else:   # autres langues : liste simple, avec les pages principales en tête sur téléphone
+        contenu = ('<div class="plus-principal-plat">' + "".join(lien(t, h, r) for t, h, *r in principaux) + "</div>"
+                   + "".join(lien(t, h, r) for t, h, *r in autres))
+    seul = not autres   # version 69.1 : même sans « Plus », un bouton « Menu » sur téléphone
+    if seul:
+        contenu = '<div class="plus-principal-plat">' + "".join(lien(t, h, r) for t, h, *r in principaux) + "</div>"
+    plus = (f'<details class="plus{" plus-seul" if seul else ""}"><summary><span class="plus-large">{plus_t} ▾</span><span class="plus-mobile" aria-hidden="true"><i></i><i></i><i></i></span>'
+            f'<span class="plus-mobile-t">{menu_t}</span></summary><div class="plus-panneau">' + contenu + "</div></details>")
     bouton = f'<a class="ouvrir" href="{prefixe}{ouvrir[1]}">{_e(ouvrir[0])}</a>' if ouvrir else ""
     return (f'<a class="skip" href="#contenu">{_e(aller)}</a>'
             f'<header class="top g"><div class="in"><a class="brand" href="{prefixe}{accueil}">{LOGO}<b>{NOM}</b>'
@@ -216,17 +260,31 @@ def barre_partage(base: str, chemin: str, titre: str, libelle: str = "Partager c
 
 
 def liens_fr() -> list:
-    # version 60 : les 8 premiers forment le menu (le même que celui de l'appli) ; les autres vont dans « Plus ▾ »
-    return [("Accueil", "index.html"), ("Prévisions", "index.html#previsions"), ("Pronostic du jour", "index.html#prono"),
-            ("Carte des risques", "index.html#nuage"), ("Tous les titres", "titres.html"), ("Résultats réels", "resultats.html"),
-            ("Outils gratuits", "outils.html"), ("Guides", "guides.html"),
-            ("Le point du jour", "point.html"), ("Prédiction crypto", "prediction-crypto.html"), ("Prédiction bourse", "prediction-bourse.html"), ("Toutes les actions (2 000+)", "toutes-les-actions.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actions par thème", "themes.html"), ("Avis de l'IA vérifiés", "avis-surs-verifies.html"), ("Données ouvertes", "donnees-ouvertes.html"), ("Actu bourse", "actu-bourse.html"), ("Actu bitcoin", "actu-bitcoin.html"),
-            ("Krach boursier", "krach-boursier.html"), ("Comparer", "comparer.html"), ("Classements", "classements.html"),
-            ("Sélection IA du mois", "portefeuille.html"), (f"Prévisions {datetime.now().year}", "previsions.html"),
-            ("Simulateur boursier", "simulateur-boursier.html"), ("Apprendre", "apprendre.html"), ("Glossaire", "glossaire.html"),
-            ("Les mini-robots", "robots.html"), ("Ce que sait l'IA", "connaissances.html"), ("Fiche technique", "fiche-technique-ia.html"),
-            ("Journal de l'IA", "journal-ia.html"), ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"),
-            ("Contact", "contact.html"), ("English", "en/index.html", 'hreflang="en" lang="en"')]
+    # version 69.1 : les 7 premiers forment le menu (les vraies pages d'abord, comme sur l'appli) ; les autres vont dans « Plus ▾ », rangés par thème
+    return [("Accueil", "index.html"), ("Prédiction crypto", "prediction-crypto.html"), ("Prédiction bourse", "prediction-bourse.html"),
+            ("Toutes les actions", "toutes-les-actions.html"), ("Par thème", "themes.html"), ("Résultats vérifiés", "avis-surs-verifies.html"),
+            ("Guides", "guides.html"),
+            ("Tous les titres suivis", "titres.html"), ("Prévisions du mois", "index.html#previsions"), (f"Prévisions {datetime.now().year}", "previsions.html"),
+            ("Classements", "classements.html"), ("Sélection IA du mois", "portefeuille.html"),
+            ("Pronostic du jour", "index.html#prono"), ("Simulateur boursier", "simulateur-boursier.html"), ("Comparer deux titres", "comparer.html"),
+            ("Outils gratuits", "outils.html"),
+            ("Résultats réels", "resultats.html"), ("Journal de l'IA", "journal-ia.html"), ("Ce que sait l'IA", "connaissances.html"),
+            ("Fiche technique", "fiche-technique-ia.html"), ("Données ouvertes", "donnees-ouvertes.html"),
+            ("Le point du jour", "point.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actu bourse", "actu-bourse.html"),
+            ("Actu bitcoin", "actu-bitcoin.html"), ("Krach boursier", "krach-boursier.html"), ("Carte des risques", "index.html#nuage"),
+            ("Apprendre la Bourse", "apprendre.html"), ("Glossaire", "glossaire.html"), ("Les mini-robots", "robots.html"),
+            ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"), ("Contact", "contact.html"),
+            ("English", "en/index.html", 'hreflang="en" lang="en"')]
+
+
+N_MENU_FR = 7
+# version 69.1 : rangement du menu « Plus ▾ » par thème (pages françaises)
+GROUPES_FR = [("Prédictions de l'IA", ["titres.html", "index.html#previsions", "previsions.html", "classements.html", "portefeuille.html"]),
+              ("Jouer et s'entraîner", ["index.html#prono", "simulateur-boursier.html", "comparer.html", "outils.html"]),
+              ("L'IA est-elle fiable ?", ["resultats.html", "journal-ia.html", "connaissances.html", "fiche-technique-ia.html", "donnees-ouvertes.html"]),
+              ("Marchés et actualités", ["point.html", "bourse-cette-semaine.html", "actu-bourse.html", "actu-bitcoin.html", "krach-boursier.html", "index.html#nuage"]),
+              ("Apprendre", ["apprendre.html", "glossaire.html", "robots.html"]),
+              ("Le site", ["fonctionnalites.html", "a-propos.html", "contact.html", "en/index.html"])]
 
 
 def url_site() -> str:

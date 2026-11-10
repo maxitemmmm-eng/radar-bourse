@@ -718,11 +718,39 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .plus{flex:none;position:relative;padding-bottom:10px;margin-top:-4px}
 .plus>summary{list-style:none;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink);padding:6px 12px;border-radius:99px;border:1px solid var(--line);white-space:nowrap;background:var(--surface)}
 .plus>summary::-webkit-details-marker{display:none}.plus[open]>summary{background:var(--ink);color:var(--surface)}
-.plus-panneau{position:absolute;right:0;top:calc(100% - 4px);z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:12px;
-  box-shadow:0 14px 34px rgba(5,10,20,.2);padding:10px;width:min(560px,calc(100vw - 32px));display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:2px}
+.plus-panneau{position:absolute;right:0;top:calc(100% - 4px);z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 18px 44px rgba(5,10,20,.28);padding:14px;width:min(860px,calc(100vw - 32px));display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px}
+.plus-groupe{display:flex;flex-direction:column;gap:1px}
+.plus-mobile,.plus-mobile-t{display:none}
+.plus-reglages{display:none}
+.plus-mode{display:flex;gap:6px;padding:4px 10px}.plus-mode button{flex:1;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-weight:600;cursor:pointer}
+.plus-mode button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+@media (max-width:640px){.top .wrap:first-child .mode{display:none}.plus-reglages{display:flex}}
+@media (min-width:641px) and (max-width:900px){.brand .stamp{display:none}}
 .plus-panneau a{display:block;padding:8px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:14px}
 .plus-panneau a:hover,.plus-panneau a:focus-visible{background:var(--bg)}
-.plus-titre{grid-column:1/-1;font-size:12px;font-weight:700;color:var(--muted);padding:6px 10px 2px;letter-spacing:.02em}
+.plus-titre{font-size:12.5px;font-weight:700;color:var(--accent);padding:4px 10px 4px;border-bottom:1px solid var(--line);margin-bottom:4px}
+/* version 69.1 : menu refait — les vraies pages en premier, deux « Prédiction » mises en avant, plus de barre qui défile */
+.top .nav-sec{flex-wrap:wrap;overflow:visible;row-gap:6px}
+.nav-sec a.nav-fort{color:var(--ink);border-color:color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.nav-sec a.nav-fort:hover{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+.nav-sec a.lien-site::after{content:none}
+@media (prefers-reduced-motion:no-preference){.plus[open] .plus-panneau{animation:menu-ouvre .22s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes menu-ouvre{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}}
+@media (max-width:980px){
+  .top .wrap:first-child .recherche{order:5;flex:1 1 100%;max-width:none;margin-right:-96px}
+  .top .nav-sec{display:none}
+  .nav-ligne{position:absolute;right:16px;top:10px;padding:0}
+  .plus{padding:0;margin:0}
+  .plus>summary{display:flex;align-items:center;gap:8px;padding:7px 12px}
+  .plus-large{display:none}.plus-mobile-t{display:inline}
+  .plus-mobile{display:inline-grid;gap:3px}.plus-mobile i{display:block;width:16px;height:2px;border-radius:2px;background:currentColor}
+  .plus-panneau{position:fixed;left:12px;right:12px;width:auto;top:calc(var(--tete,118px) + 4px);max-height:calc(100vh - var(--tete,118px) - 20px);overflow-y:auto}
+  .top .wrap:first-child{padding-right:112px}
+  .top .live{display:none}
+  html.defile .top .wrap:first-child{display:flex!important}
+  html.defile .top .wrap:first-child .stamp{display:none}
+}
 /* Version 55 : barre des onglets « tournante » — flèches collées aux bords, défilement en boucle */
 .nav-sec .nav-fl{position:sticky;z-index:2;flex:none;align-self:center;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);
   background:var(--surface);color:var(--ink);font-size:18px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0;box-shadow:0 0 0 6px var(--bg)}
@@ -944,19 +972,30 @@ html.calme *{animation:none!important;transition:none!important}
     </div></div>
   <button class="theme-btn" id="theme" aria-label="Changer de thème" title="Thème clair / sombre"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg></button>
 </div>
-<div class="wrap nav-ligne"><nav class="nav-sec" id="nav-sec" aria-label="Sections du site">
-  <a href="#assistant">Assistant</a><a href="#previsions">Prévisions</a><a href="#prono">Pronostic du jour</a><a href="#nuage">Carte des risques</a><a href="#simulation">Simulation</a>
-  <a href="#remonte">L'Arène</a><a href="#portefeuille">Portefeuille</a><a href="#tous">Tous les titres</a>
+<div class="wrap nav-ligne"><nav class="nav-sec" id="nav-sec" aria-label="Menu principal">
+  <a href="prediction-crypto.html" class="lien-site nav-fort">Prédiction crypto</a><a href="prediction-bourse.html" class="lien-site nav-fort">Prédiction bourse</a>
+  <a href="toutes-les-actions.html" class="lien-site">Toutes les actions</a><a href="themes.html" class="lien-site">Par thème</a>
+  <a href="#prono">Pronostic du jour</a><a href="#simulation">Simulation</a><a href="avis-surs-verifies.html" class="lien-site">Résultats vérifiés</a>
 </nav>
-<details class="plus" id="nav-plus"><summary>Plus ▾</summary><div class="plus-panneau">
-  <span class="plus-titre">Sur cette page</span>
-  <a href="#signaux">Signaux forts</a><a href="#robots">Les mini-robots</a><a href="#carte-sec">Carte du marché</a><a href="#confiance">Fiabilité de l'IA</a>
-  <span class="plus-titre">Autres pages</span>
-  <a href="resultats.html" class="lien-site">Résultats réels</a><a href="journal-ia.html" class="lien-site">Journal de l'IA</a><a href="connaissances.html" class="lien-site">Ce que sait l'IA</a>
-  <a href="prediction-crypto.html" class="lien-site">Prédiction crypto</a><a href="prediction-bourse.html" class="lien-site">Prédiction bourse</a><a href="toutes-les-actions.html" class="lien-site">Toutes les actions (2 000+)</a><a href="bourse-cette-semaine.html" class="lien-site">La semaine en Bourse</a><a href="themes.html" class="lien-site">Actions par thème</a><a href="avis-surs-verifies.html" class="lien-site">Avis de l'IA vérifiés</a>
-  <a href="point.html" class="lien-site">Le point du jour</a><a href="actu-bourse.html" class="lien-site">Actu bourse</a><a href="krach-boursier.html" class="lien-site">Krach boursier</a>
-  <a href="comparer.html" class="lien-site">Comparer deux titres</a><a href="portefeuille.html" class="lien-site">Sélection IA du mois</a><a href="outils.html" class="lien-site">Outils gratuits</a>
-  <a href="apprendre.html" class="lien-site">Apprendre la Bourse</a><a href="guides.html" class="lien-site">Guides</a><a href="fonctionnalites.html" class="lien-site">Toutes les fonctionnalités</a>
+<details class="plus" id="nav-plus"><summary><span class="plus-large">Plus ▾</span><span class="plus-mobile" aria-hidden="true"><i></i><i></i><i></i></span><span class="plus-mobile-t">Menu</span></summary><div class="plus-panneau">
+  <div class="plus-groupe"><span class="plus-titre">Prédictions de l'IA</span>
+    <a href="prediction-crypto.html" class="lien-site">Prédiction crypto</a><a href="prediction-bourse.html" class="lien-site">Prédiction bourse</a>
+    <a href="toutes-les-actions.html" class="lien-site">Toutes les actions (2 000+)</a><a href="themes.html" class="lien-site">Actions par thème</a>
+    <a href="#previsions">Prévisions du mois</a><a href="#tous">Tous les titres suivis</a></div>
+  <div class="plus-groupe"><span class="plus-titre">Jouer et s'entraîner</span>
+    <a href="#prono">Pronostic du jour</a><a href="#remonte">L'Arène : joue contre l'IA</a><a href="#portefeuille">Portefeuille virtuel</a>
+    <a href="#simulation">Simulation : à combien dans un mois ?</a><a href="comparer.html" class="lien-site">Comparer deux titres</a><a href="outils.html" class="lien-site">Outils gratuits</a></div>
+  <div class="plus-groupe"><span class="plus-titre">L'IA est-elle fiable ?</span>
+    <a href="avis-surs-verifies.html" class="lien-site">Avis vérifiés en public</a><a href="resultats.html" class="lien-site">Résultats réels</a>
+    <a href="#confiance">Fiabilité de l'IA</a><a href="journal-ia.html" class="lien-site">Journal de l'IA</a><a href="connaissances.html" class="lien-site">Ce que sait l'IA</a></div>
+  <div class="plus-groupe"><span class="plus-titre">Marchés et actualités</span>
+    <a href="point.html" class="lien-site">Le point du jour</a><a href="bourse-cette-semaine.html" class="lien-site">La semaine en Bourse</a>
+    <a href="actu-bourse.html" class="lien-site">Actu bourse</a><a href="krach-boursier.html" class="lien-site">Krach boursier</a><a href="#nuage">Carte des risques</a><a href="#signaux">Signaux forts</a></div>
+  <div class="plus-groupe"><span class="plus-titre">Apprendre</span>
+    <a href="#assistant">Poser une question à l'assistant</a><a href="apprendre.html" class="lien-site">Apprendre la Bourse</a><a href="guides.html" class="lien-site">Guides</a>
+    <a href="#robots">Les mini-robots</a><a href="fonctionnalites.html" class="lien-site">Toutes les fonctionnalités</a></div>
+  <div class="plus-groupe plus-reglages"><span class="plus-titre">Affichage</span>
+    <div class="plus-mode" role="group" aria-label="Niveau de détail"><button type="button" data-proxy-mode="simple">Simple</button><button type="button" data-proxy-mode="expert">Expert</button></div></div>
 </div></details></div></header>
 <div class="alerte-donnees" id="alerte-donnees" role="status" hidden></div>
 <div class="demo gutter" id="demo" hidden role="region" aria-label="Avertissement : données de démonstration"><div class="wrap">Données fictives de démonstration. Lance <span class="num">python -m bourse_bot site</span> sur ton PC pour afficher les vrais cours.</div></div>
@@ -3682,6 +3721,15 @@ $("#sources-txt").textContent = "Cours historiques : Yahoo Finance · cryptos en
   z.hidden = false;
 })();
 
+/* ---------- Version 69.1 : sur téléphone, « Simple / Expert » passe dans le menu ---------- */
+(function(){
+  const vrais = [...document.querySelectorAll(".mode [data-mode]")], prox = [...document.querySelectorAll("[data-proxy-mode]")];
+  if(!vrais.length || !prox.length) return;
+  const maj = () => prox.forEach(b => b.setAttribute("aria-pressed", vrais.find(v => v.dataset.mode === b.dataset.proxyMode)?.getAttribute("aria-pressed") || "false"));
+  prox.forEach(b => b.onclick = () => { vrais.find(v => v.dataset.mode === b.dataset.proxyMode)?.click(); setTimeout(maj, 30); });
+  new MutationObserver(maj).observe(document.querySelector(".mode"), {subtree: true, attributes: true, attributeFilter: ["aria-pressed"]}); maj();
+})();
+
 /* ---------- « Par où commencer ? » pour les nouveaux visiteurs ---------- */
 (function(){
   let vu = false; try{ vu = localStorage.getItem("radar-depart-vu") === "1"; }catch(e){}
@@ -4059,11 +4107,13 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
   z.innerHTML = cartes.join(""); z.hidden = false;
   // version 63 : les chiffres montent une seule fois quand ils apparaissent (sauf si l'on a demandé moins d'animations)
   if(matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) return;
-  const nombres = [...z.querySelectorAll("b")].map(b => { const m = b.textContent.match(/^(\D*)(\d+)(?:,(\d))?(.*)$/); return m ? {b, avant: m[1], n: +(m[2] + "." + (m[3] || "0")), dec: m[3] ? 1 : 0, apres: m[4]} : null; }).filter(Boolean);
+  // version 69.1 : les grands nombres (« 2 537 ») gardent leur séparateur pendant l'animation
+  const nombres = [...z.querySelectorAll("b")].map(b => { const m = b.textContent.match(/^(\D*?)(\d[\d\s\u202f\u00a0]*\d|\d)(?:,(\d))?(\D.*)?$/); if(!m) return null;
+    const brut = m[2].replace(/[\s\u202f\u00a0]/g, ""); return {b, avant: m[1], n: +(brut + "." + (m[3] || "0")), dec: m[3] ? 1 : 0, apres: m[4] || "", mille: brut.length > 3}; }).filter(Boolean);
   const io = new IntersectionObserver(es => { if(!es.some(e => e.isIntersecting)) return; io.disconnect();
     const t0 = performance.now(), d = 900;
     const pas = t => { const k = Math.min(1, (t - t0) / d), f = 1 - Math.pow(1 - k, 3);
-      nombres.forEach(x => { x.b.textContent = x.avant + (x.n * f).toFixed(x.dec).replace(".", ",") + x.apres; });
+      nombres.forEach(x => { const v = x.n * f; x.b.textContent = x.avant + (x.mille ? Math.round(v).toLocaleString("fr-FR") : v.toFixed(x.dec).replace(".", ",")) + x.apres; });
       if(k < 1) requestAnimationFrame(pas); };
     requestAnimationFrame(pas); }, {threshold: .4});
   io.observe(z);

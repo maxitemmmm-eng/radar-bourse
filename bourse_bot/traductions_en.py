@@ -1523,6 +1523,12 @@ EN = {
 "de bonnes réponses quand l'IA est sûre d'elle : plus agité ou plus calme le mois prochain (années jamais vues)": "right answers when the AI is confident: more agitated or calmer next month (years never seen)",
 "juste": "right",
 "Monde": "World",
+# version 69.1 : nouveau menu
+"Menu principal": "Main menu", "Affichage": "Display", "Menu": "Menu", "Toutes les actions": "All stocks", "Par thème": "By theme", "Résultats vérifiés": "Verified results",
+"Prédictions de l'IA": "AI predictions", "Prévisions du mois": "This month's forecasts", "Tous les titres suivis": "All tracked assets",
+"Jouer et s'entraîner": "Play and practise", "L'Arène : joue contre l'IA": "The Arena: play against the AI", "Portefeuille virtuel": "Virtual portfolio",
+"Simulation : à combien dans un mois ?": "Simulation: where in a month?", "L'IA est-elle fiable ?": "Is the AI reliable?", "Avis vérifiés en public": "Calls verified in public",
+"Marchés et actualités": "Markets and news", "Apprendre": "Learn", "Poser une question à l'assistant": "Ask the assistant a question",
 # version 69 : nouvel accueil pour les nouveaux visiteurs
 "Hausse ou baisse ? L'avis de l'IA, action par action.": "Up or down? The AI's view, stock by stock.",
 "Tape le nom d'une action ou d'une crypto : l'IA te dit si elle la voit <b class=\"up\">monter ↑</b> ou <b class=\"down\">baisser ↓</b> le mois prochain, avec ses chances et son niveau de confiance. Elle prévoit aussi de combien le prix peut bouger. Tous ses résultats sont vérifiés en public, ratés compris. Gratuit, sans compte, pas un conseil.": "Type the name of a stock or a crypto: the AI tells you whether it sees it <b class=\"up\">going up ↑</b> or <b class=\"down\">going down ↓</b> next month, with its chances and confidence level. It also forecasts how much the price may move. All its results are checked in public, misses included. Free, no sign-up, not advice.",
