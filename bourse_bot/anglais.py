@@ -62,7 +62,7 @@ def _page(base, titre, description, chemin, corps, csp, alternates, mots=None):
 {seo.SCRIPT_THEME}
 {seo.POLICES}
 {seo.script_stats()}
-<style>{seo.CSS_PAGE}</style>
+{seo.lien_css(prefixe)}
 </head>
 <body>
 {seo.entete(prefixe, chemin, "en/index.html", "Checked forecasts, no promises",

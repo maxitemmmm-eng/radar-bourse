@@ -395,7 +395,7 @@ def _page(lg, base, titre, desc, chemin, corps, csp, alternates, faq=None, mots=
 {seo.SCRIPT_THEME}
 {seo.POLICES}
 {seo.script_stats()}
-<style>{seo.CSS_PAGE}</style>
+{seo.lien_css(prefixe)}
 </head>
 <body>
 {seo.entete(prefixe, chemin, f"{lg}/index.html", nom_lg,

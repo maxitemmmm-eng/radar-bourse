@@ -104,12 +104,19 @@ jobs:
       id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deploiement.outputs.page_url }}
+      url: ${{ steps.deploiement.outputs.page_url || steps.deploiement2.outputs.page_url }}
     steps:
+      # version 69.2 : GitHub limite l'attente à 10 minutes ; si la publication n'a pas fini, on réessaie une fois
       - id: deploiement
+        continue-on-error: true
         uses: actions/deploy-pages@v4
         with:
-          timeout: 1800000   # version 63 : près de 10 000 pages, la publication peut dépasser les 10 minutes par défaut
+          timeout: 600000
+      - id: deploiement2
+        if: steps.deploiement.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 600000
 
       # Le soir, envoie TOUTES les pages du plan du site aux moteurs IndexNow (Bing, DuckDuckGo, Yahoo, Yandex, Seznam…)
       # en un seul envoi (jusqu'à 10 000 adresses). Google n'utilise pas IndexNow : lui lit le sitemap.
@@ -118,7 +125,7 @@ jobs:
         continue-on-error: true
         env:
           DEPOT: ${{ github.repository }}
-          URL_SITE: ${{ steps.deploiement.outputs.page_url }}
+          URL_SITE: ${{ steps.deploiement.outputs.page_url || steps.deploiement2.outputs.page_url }}
         run: |
           sleep 60   # laisse le temps à la nouvelle version d'être en ligne
           python3 - <<'PY'

@@ -184,6 +184,30 @@ html.texte-115 body{font-size:18px}html.texte-130 body{font-size:20px}
 
 LOGO = '<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id=\'rbf\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'1\'><stop offset=\'0\' stop-color=\'#1c3576\'/><stop offset=\'1\' stop-color=\'#0a1330\'/></linearGradient><linearGradient id=\'rbl\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#86a8ff\'/><stop offset=\'1\' stop-color=\'#44e09c\'/></linearGradient><linearGradient id=\'rbs\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#44e09c\' stop-opacity=\'0\'/><stop offset=\'1\' stop-color=\'#44e09c\' stop-opacity=\'.85\'/></linearGradient></defs><rect width=\'64\' height=\'64\' rx=\'15\' fill=\'url(#rbf)\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'22.00\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.28\' stroke-width=\'2.00\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'12.50\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.18\' stroke-width=\'2.00\'/><path d=\'M19.67 15.58 A22.00 22.00 0 0 1 42.3 16.76\' fill=\'none\' stroke=\'url(#rbs)\' stroke-width=\'3.20\' stroke-linecap=\'round\'/><polyline points=\'9.0,47.0 18.0,39.5 26.0,42.5 34.5,31.0 40.5,33.5 44.72,18.65\' fill=\'none\' stroke=\'url(#rbl)\' stroke-width=\'5.00\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'8.00\' fill=\'#44e09c\' fill-opacity=\'.2\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'4.50\' fill=\'#44e09c\'/></svg>'
 
+def nom_css() -> str:
+    """Version 69.2 : la feuille de style commune est un fichier partagé (avant : recopiée dans chacune des 13 000 pages,
+    soit ~200 Mo). Le nom change avec son contenu, donc le navigateur ne garde jamais une ancienne version."""
+    import hashlib
+    return "style-" + hashlib.sha1(CSS_PAGE.encode("utf-8")).hexdigest()[:10] + ".css"
+
+
+def lien_css(prefixe: str) -> str:
+    return f'<link rel="stylesheet" href="{prefixe}{nom_css()}">'
+
+
+def ecrire_css(dossier: str) -> str:
+    nom = nom_css()
+    with open(os.path.join(dossier, nom), "w", encoding="utf-8") as f:
+        f.write(CSS_PAGE)
+    for ancien in os.listdir(dossier):   # les anciennes versions ne servent plus
+        if ancien.startswith("style-") and ancien.endswith(".css") and ancien != nom:
+            try:
+                os.remove(os.path.join(dossier, ancien))
+            except OSError:
+                pass
+    return nom
+
+
 # Lu avant l'affichage : même thème et mêmes réglages de lecture que sur l'appli (pas d'éclair blanc en mode sombre)
 SCRIPT_THEME = ('<script>try{var d=document.documentElement,t=localStorage.getItem("radar-theme");if(t)d.dataset.theme=t;'
                 'var a=JSON.parse(localStorage.getItem("radar-acces")||"{}")||{};if(a.taille==="115"||a.taille==="130")d.classList.add("texte-"+a.taille);'
@@ -538,7 +562,7 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 {SCRIPT_THEME}
 {POLICES}
 {script_stats()}
-<style>{CSS_PAGE}</style>
+{lien_css(prefixe)}
 </head>
 <body>
 {entete(prefixe, chemin, "index.html", "Prévisions vérifiées, sans promesse", liens_fr(), ("Ouvrir l'appli", "index.html"))}
@@ -2614,6 +2638,7 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
                   [c for c, *_ in urls if c.startswith("semaine/")])
     except Exception as e:
         print(f"Flux RSS non généré : {e}")
+    ecrire_css(dossier)   # version 69.2 : feuille de style commune
     for nom in FICHIERS_GOOGLE:   # version 68 : fichier de vérification Google (à garder pour rester vérifié)
         if re.fullmatch(r"google[0-9a-f]{8,32}\.html", nom):
             with open(os.path.join(dossier, nom), "w", encoding="utf-8") as f:
