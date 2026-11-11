@@ -174,6 +174,9 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("75", "Juger chaque titre par rapport aux autres du même marché le même jour (la moitié la mieux classée en hausse, l'autre en baisse)", False,
+     "228 443 avis jugés de 2016 à 2026 : 51,8 % de bonnes réponses au lieu de 55,78 %, jusqu'à 12 points de moins certaines années (quand presque tout monte ou tout baisse ensemble). "
+     "Non adopté"),
     ("74", "Inverser l'avis de l'IA sur les titres où elle s'est souvent trompée récemment (moins de 40 % de réussite sur ses 20 ou 40 derniers avis connus)", False,
      "228 443 avis jugés de 2016 à 2026 : 53,0 % à 54,0 % de bonnes réponses au lieu de 55,78 %, et jusqu'à 7,8 points de moins certaines années. "
      "Une série d'erreurs sur un titre ne dit rien des suivantes. Non adopté"),

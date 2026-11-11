@@ -16,6 +16,7 @@ from datetime import datetime
 
 from . import config
 from .hebdo import CSS as _CSS_HEBDO
+from .transitions import CSS as _CSS_VT
 from .trois_parties import CSS as _CSS_TROIS, barre as _barre_trois, partie_de as _partie_de
 
 NOM = "Radar Bourse"
@@ -92,7 +93,7 @@ CSS_PAGE = """:root{--bg:#eef1f5;--surface:#fff;--surface-2:#f6f8fb;--ink:#0f1b2
 .top{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
 .top .in{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:12px;padding-block:10px}
 .brand{display:flex;align-items:center;gap:10px;margin-right:auto;text-decoration:none;color:var(--ink);min-width:0}
-.brand svg{width:26px;height:26px;flex:none}.brand b{font-family:var(--d);font-size:22px;font-weight:700;white-space:nowrap}
+.brand svg{width:26px;height:26px;flex:none;view-transition-name:logo}.brand b{font-family:var(--d);font-size:22px;font-weight:700;white-space:nowrap}
 .brand span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ouvrir{flex:none;text-decoration:none;font-size:13.5px;font-weight:600;color:var(--surface);background:var(--ink);padding:6px 12px;border-radius:8px;white-space:nowrap}
 .theme-btn{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;width:34px;height:30px;display:grid;place-items:center;cursor:pointer}
@@ -181,7 +182,7 @@ html.texte-115 body{font-size:18px}html.texte-130 body{font-size:20px}
 .marque-sur svg{width:13px;height:13px}.marque-sur.tres{color:var(--surface);background:var(--up)}
 .avis-sur{border-left:3px solid var(--up);padding:8px 12px;background:var(--up-soft);border-radius:0 8px 8px 0}
 .badge-sur{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:700;background:var(--up);color:var(--surface)}
-""" + _CSS_HEBDO.replace("\n", "") + _CSS_TROIS.replace("\n", "") + """th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:13px;color:var(--muted)}
+""" + _CSS_HEBDO.replace("\n", "") + _CSS_TROIS.replace("\n", "") + _CSS_VT.replace("\n", "") + """th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:13px;color:var(--muted)}
 @media print{.top,.nav-ligne,.plus,.theme-btn,.ouvrir,.partager-page,footer .muted{display:none!important}body{background:#fff;color:#000}.carte{border-color:#bbb}a{color:#000}}"""
 
 LOGO = '<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id=\'rbf\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'1\'><stop offset=\'0\' stop-color=\'#1c3576\'/><stop offset=\'1\' stop-color=\'#0a1330\'/></linearGradient><linearGradient id=\'rbl\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#86a8ff\'/><stop offset=\'1\' stop-color=\'#44e09c\'/></linearGradient><linearGradient id=\'rbs\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#44e09c\' stop-opacity=\'0\'/><stop offset=\'1\' stop-color=\'#44e09c\' stop-opacity=\'.85\'/></linearGradient></defs><rect width=\'64\' height=\'64\' rx=\'15\' fill=\'url(#rbf)\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'22.00\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.28\' stroke-width=\'2.00\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'12.50\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.18\' stroke-width=\'2.00\'/><path d=\'M19.67 15.58 A22.00 22.00 0 0 1 42.3 16.76\' fill=\'none\' stroke=\'url(#rbs)\' stroke-width=\'3.20\' stroke-linecap=\'round\'/><polyline points=\'9.0,47.0 18.0,39.5 26.0,42.5 34.5,31.0 40.5,33.5 44.72,18.65\' fill=\'none\' stroke=\'url(#rbl)\' stroke-width=\'5.00\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'8.00\' fill=\'#44e09c\' fill-opacity=\'.2\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'4.50\' fill=\'#44e09c\'/></svg>'

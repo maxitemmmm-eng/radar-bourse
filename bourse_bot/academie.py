@@ -11,10 +11,10 @@ OBJECTIF_XP = 30
 
 _CLAIR = ("--a-bg:#f5f6f8;--a-card:#ffffff;--a-card2:#eff1f4;--a-ink:#111827;--a-muted:#566070;--a-line:#e1e4e9;"
           "--a-prim:#0b6b63;--a-prim-d:#08524c;--a-soft:#e2f0ee;--a-ok:#15803d;--a-ok-soft:#e6f5eb;--a-ko:#b42318;--a-ko-soft:#fdeceb;"
-          "--a-or:#c2610c;--a-or-soft:#fdf0e1;--a-gris:#d4d8de;--a-side:#0f1d24;--a-side-ink:#dbe5e8;--a-side-muted:#8fa3aa;--a-side-line:#22343b;--a-side-act:#173038")
+          "--a-or:#c2610c;--a-or-soft:#fdf0e1;--a-on:#ffffff;--a-gris:#d4d8de;--a-side:#0f1d24;--a-side-ink:#dbe5e8;--a-side-muted:#8fa3aa;--a-side-line:#22343b;--a-side-act:#173038")
 _SOMBRE = ("--a-bg:#0d1215;--a-card:#141b1f;--a-card2:#1a2328;--a-ink:#e6edf0;--a-muted:#95a3a9;--a-line:#253136;"
            "--a-prim:#3fbfb1;--a-prim-d:#2b958a;--a-soft:#13302d;--a-ok:#4ade80;--a-ok-soft:#11301e;--a-ko:#f87171;--a-ko-soft:#381718;"
-           "--a-or:#f59e0b;--a-or-soft:#35270f;--a-gris:#2b363b;--a-side:#0a0f12;--a-side-ink:#dbe5e8;--a-side-muted:#869aa1;--a-side-line:#1c282d;--a-side-act:#15282e")
+           "--a-or:#f59e0b;--a-or-soft:#35270f;--a-on:#071a18;--a-gris:#2b363b;--a-side:#0a0f12;--a-side-ink:#dbe5e8;--a-side-muted:#869aa1;--a-side-line:#1c282d;--a-side-act:#15282e")
 
 CSS = """
 html[data-aca="clair"]{""" + _CLAIR + """}
@@ -27,17 +27,17 @@ body.aca-app a{color:var(--a-prim)}
 body.aca-app :focus-visible{outline:2px solid var(--a-prim);outline-offset:2px}
 .a-skip{position:absolute;left:-999px}.a-skip:focus{left:12px;top:12px;z-index:99;background:var(--a-card);padding:8px 12px}
 .a-btn,body.aca-app .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--a-prim);border-radius:8px;padding:10px 18px;
-  font:inherit;font-weight:600;font-size:15px;text-decoration:none;cursor:pointer;background:var(--a-prim);color:#fff;transition:background .15s,border-color .15s}
+  font:inherit;font-weight:600;font-size:15px;text-decoration:none;cursor:pointer;background:var(--a-prim);color:var(--a-on);transition:background .15s,border-color .15s}
 .a-btn:hover,body.aca-app .btn:hover{background:var(--a-prim-d);border-color:var(--a-prim-d)}
 .a-btn.ghost,body.aca-app .btn.ghost{background:var(--a-card);color:var(--a-ink);border-color:var(--a-line)}
 .a-btn.ghost:hover,body.aca-app .btn.ghost:hover{border-color:var(--a-muted);background:var(--a-card)}
-body.aca-app a.a-btn{color:#fff}body.aca-app a.a-btn.ghost{color:var(--a-ink)}.a-btn[hidden]{display:none!important}
+body.aca-app a.a-btn{color:var(--a-on)}body.aca-app a.a-btn.ghost{color:var(--a-ink)}.a-btn[hidden]{display:none!important}
 .a-btn[disabled]{background:var(--a-gris);border-color:var(--a-gris);color:var(--a-muted);cursor:not-allowed}
 /* ----- coque : barre latérale sombre, contenu clair ----- */
 .a-app{display:grid;grid-template-columns:264px minmax(0,1fr);min-height:100vh}
 .a-side{position:sticky;top:0;height:100vh;box-sizing:border-box;padding:18px 14px;background:var(--a-side);color:var(--a-side-ink);display:flex;flex-direction:column;gap:6px;overflow:auto}
 .a-logo,body.aca-app .a-logo{display:flex;align-items:center;gap:10px;padding:2px 8px 14px;text-decoration:none;color:inherit}
-.a-logo svg{width:30px;height:30px;flex:none}.a-logo b{font-family:var(--d);font-size:19px;font-weight:700;line-height:1.1}
+.a-logo svg{width:30px;height:30px;flex:none}.a-side .a-logo svg{view-transition-name:logo}.a-logo b{font-family:var(--d);font-size:19px;font-weight:700;line-height:1.1}
 .a-logo small{display:block;font-size:12px;color:var(--a-side-muted);font-weight:500}
 .a-parties{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--a-side-line);margin-bottom:10px}
 .a-parties a,body.aca-app .a-parties a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;border-radius:7px;text-decoration:none;color:var(--a-side-muted);font-size:12px;font-weight:600}
@@ -179,7 +179,7 @@ svg.g path,svg.g line{fill:none;stroke-linecap:round;stroke-linejoin:round}
 .l-bas .a-btn{min-width:160px}
 .l-bas.ok{border-top:3px solid var(--a-ok);background:var(--a-ok-soft)}.l-bas.ok .l-retour b{color:var(--a-ok)}
 .l-bas.ko{border-top:3px solid var(--a-ko);background:var(--a-ko-soft)}.l-bas.ko .l-retour b{color:var(--a-ko)}
-.l-bas.ok .a-btn{background:var(--a-ok);border-color:var(--a-ok)}.l-bas.ko .a-btn{background:var(--a-ko);border-color:var(--a-ko)}
+.l-bas.ok .a-btn{background:var(--a-ok);border-color:var(--a-ok);color:var(--a-on)}.l-bas.ko .a-btn{background:var(--a-ko);border-color:var(--a-ko);color:var(--a-on)}
 @media (max-width:980px){.l-corps{grid-template-columns:1fr;gap:0;padding-top:18px}.l-plan{display:none}.l-retour{padding-left:0}}
 @media (max-width:600px){.l-bas .in{flex-direction:column;align-items:stretch;gap:12px}.l-bas .a-btn{width:100%}.l-carte h1,.l-carte h2{font-size:23px}.l-exo{padding:18px 16px}.l-pts{display:none}}
 .l-fin .bilan{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--a-line);border-radius:12px;overflow:hidden;margin:20px 0}
@@ -213,8 +213,9 @@ SVG = {
     "lune": '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>',
 }
 
-JS_THEME = ('<script>try{var t=localStorage.getItem("radar-aca-theme")||"clair";document.documentElement.dataset.aca=t;}'
-            'catch(e){document.documentElement.dataset.aca="clair";}</script>')
+# version 75 : un seul réglage clair / sombre pour tout le site (avant, l'Académie passait en clair et le reste en sombre : changement brutal)
+JS_THEME = ('<script>try{var t=localStorage.getItem("radar-theme");document.documentElement.dataset.aca=t==="light"?"clair":"sombre";'
+            'document.documentElement.dataset.theme=t==="light"?"light":"dark";}catch(e){document.documentElement.dataset.aca="sombre";}</script>')
 
 JS_STATS = """<script>
 (function(){
@@ -232,7 +233,7 @@ JS_STATS = """<script>
   document.querySelectorAll("[data-a=xpj]").forEach(e=>e.textContent=Math.min(xj,""" + str(OBJECTIF_XP) + """)+" / """ + str(OBJECTIF_XP) + """ points aujourd'hui");
   requestAnimationFrame(()=>document.querySelectorAll("[data-a=jauge]").forEach(e=>e.style.width=Math.min(100,xj/""" + str(OBJECTIF_XP) + """*100)+"%"));
   document.querySelectorAll("[data-a=serie-txt]").forEach(e=>e.textContent=auj?"Série entretenue aujourd'hui.":(s?"Fais un exercice aujourd'hui pour garder ta série.":"Fais un exercice pour lancer ta série."));
-  const b=document.getElementById("a-theme");if(b)b.onclick=()=>{const n=document.documentElement.dataset.aca==="sombre"?"clair":"sombre";document.documentElement.dataset.aca=n;try{localStorage.setItem("radar-aca-theme",n)}catch(e){}};
+  const b=document.getElementById("a-theme");if(b)b.onclick=()=>{const n=document.documentElement.dataset.aca==="sombre"?"clair":"sombre";document.documentElement.dataset.aca=n;document.documentElement.dataset.theme=n==="clair"?"light":"dark";try{localStorage.setItem("radar-theme",n==="clair"?"light":"dark")}catch(e){}};
 })();
 </script>"""
 
@@ -292,7 +293,7 @@ def page(seo, base, titre, description, chemin, corps, jsonld=None, csp="", mots
     corps = seo.typo_fr(corps)
     contenu = corps if lecon else coque(seo, prefixe, chemin, corps)
     return f"""<!doctype html>
-<html lang="fr" data-aca="clair">
+<html lang="fr" data-aca="sombre" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">

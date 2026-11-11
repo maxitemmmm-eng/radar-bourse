@@ -190,6 +190,32 @@ def _deux_portefeuilles():
                 "Deux portefeuilles A et B pendant une crise")
 
 
+def _taux_prix():
+    taux = [2.0, 2.1, 2.0, 2.3, 2.6, 3.0, 3.4, 3.7, 3.9, 4.0, 4.1, 4.0]
+    prix = [100 - (t - 2.0) * 8.5 for t in taux]
+    d1, p1 = _chemin(taux, y0=18, y1=70)
+    d2, p2 = _chemin(prix, y0=84, y1=H - 26)
+    return _svg(f"<path class='g-ma' d='{d1}'/><path class='g-prix' d='{d2}'/>"
+                f"<text class='g-txt g-ma-t' x='30' y='14'>taux d'intérêt</text><text class='g-txt' x='30' y='{p2[0][1] - 8:.0f}'>prix de l'obligation</text>",
+                "Les taux d'intérêt montent, le prix d'une obligation baisse")
+
+
+def _levier():
+    # position fixe 5 fois la mise : valeur = mise + 5 × variation du marché ; une fois à zéro, la position est fermée
+    marche = [100, 103, 101, 97, 94, 90, 86, 82, 79, 83, 88, 92, 95]
+    x5, perdu = [], False
+    for m in marche:
+        v = 100 + 5 * (m - 100)
+        perdu = perdu or v <= 0
+        x5.append(0 if perdu else v)
+    d1, p1 = _chemin(marche, vmin=0, vmax=120)
+    d2, p2 = _chemin(x5, vmin=0, vmax=120)
+    return _svg(f"<path class='g-prix' d='{d1}'/><path class='g-down' d='{d2}'/>"
+                f"<text class='g-lettre' x='{p1[-1][0] - 4:.0f}' y='{p1[-1][1] - 8:.0f}' text-anchor='end'>A</text>"
+                f"<text class='g-lettre g-down-t' x='{p2[-1][0] - 4:.0f}' y='{p2[-1][1] - 8:.0f}' text-anchor='end'>B</text>",
+                "Le même marché, sans levier (A) et avec un levier de 5 (B)")
+
+
 def _G(svg, q, choix, bonne, expl):
     return {"type": "graphique", "svg": svg, "q": q, "choix": choix, "bonne": bonne, "expl": expl}
 
@@ -236,6 +262,16 @@ def exercices():
         "investir-regulierement": [
             (1, _G(_dca(), "Tu investis 100 € chaque mois. Quel mois ton versement achète-t-il le plus de parts ?", ["Janvier", "Avril", "Juin"], 1,
                    "En avril, la part coûte 6 € : 100 € achètent environ 16,7 parts, contre 10 en janvier et 9,1 en juin. C'est le principe du DCA.")),
+        ],
+        "obligations-en-detail": [
+            (1, _G(_taux_prix(), "D'après ce graphique, que se passe-t-il pour le prix de l'obligation quand les taux montent ?",
+                   ["Il baisse", "Il monte", "Il ne bouge pas"], 0,
+                   "Les deux courbes vont en sens inverse : quand les taux d'intérêt montent, le prix des obligations déjà émises baisse.")),
+        ],
+        "levier-options-cfd": [
+            (0, _G(_levier(), "Le marché (A) baisse d'environ 21 % puis remonte en partie. Pourquoi la courbe B (levier de 5) ne remonte-t-elle pas ?",
+                   ["Elle est tombée à zéro : la mise est perdue", "Elle remonte plus tard", "Le levier protège des baisses"], 0,
+                   "Avec un levier de 5, une baisse de 20 % suffit à tout perdre. Une fois à zéro, la remontée du marché ne sert plus à rien.")),
         ],
         "diversification": [
             (0, _G(_deux_portefeuilles(), "Pendant cette crise, lequel des deux portefeuilles est sans doute diversifié ?", ["A", "B"], 1,

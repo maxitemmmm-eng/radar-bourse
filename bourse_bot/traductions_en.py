@@ -1538,7 +1538,7 @@ EN = {
 "Bienvenue sur": "Welcome to", "Que veux-tu faire aujourd'hui ?": "What would you like to do today?", "Choisis ton espace": "Choose your space",
 "Le Radar": "The Radar", "Les avis de l'IA sur plus de 2 500 actions et cryptos : hausse ou baisse, agitation, risque de chute.": "The AI's view on 2,500+ stocks and cryptos: up or down, volatility, risk of a fall.",
 "Mis à jour chaque heure": "Updated every hour", "L'Académie": "The Academy",
-"Apprendre la Bourse et la crypto de zéro : 30 chapitres, test de niveau, fiches de révision, quiz corrigés et examen final avec certificat.": "Learn investing and crypto from scratch: 30 chapters (in French), a placement test, flashcards, quizzes and a final exam with a certificate.",
+"Apprendre la Bourse et la crypto de zéro : 36 chapitres, test de niveau, fiches de révision, quiz corrigés et examen final avec certificat.": "Learn investing and crypto from scratch: 36 chapters (in French), a placement test, flashcards, quizzes and a final exam with a certificate.",
 "Gratuit, sans compte": "Free, no sign-up", "Entrée": "Enter", "Pronos": "Forecasts", "Plus": "More", "Raccourcis": "Shortcuts", "Prédiction bourse": "Stock market prediction", "Pronostic du jour": "Daily prediction", "Test de niveau": "Level test", "Révisions express": "Quick revision", "Examen final": "Final exam", "Apprendre": "Learn", "Les trois parties du site": "The three parts of the site", "Entrer ›": "Enter ›", "pour choisir ·": "to choose ·", "pour valider": "to confirm",
 "Aller directement au site": "Go straight to the site", "titres suivis · mis à jour chaque heure": "assets tracked · updated hourly",
 "chapitre(s) validé(s) · reprends où tu en étais": "chapter(s) completed · pick up where you left off",

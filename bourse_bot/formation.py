@@ -13,8 +13,11 @@ from datetime import datetime
 from .formation_cours_1 import COURS_1, COURS_2
 from .formation_cours_2 import COURS_3, COURS_4, COURS_5
 from .formation_cours_3 import COURS_6
+from .formation_cours_4 import COURS_7, EXOS_7
+from . import formation_exos as _fx
+_fx.EXOS.update(EXOS_7)
 
-CHAPITRES = COURS_1 + COURS_2 + COURS_3 + COURS_4 + COURS_5 + COURS_6
+CHAPITRES = COURS_1 + COURS_2 + COURS_3 + COURS_4 + COURS_5 + COURS_6 + COURS_7
 
 NIVEAUX = [
     (1, "Les bases", "Comprendre ce qu'est la Bourse, sans aucun prérequis.", "#3f7be0"),
@@ -23,6 +26,7 @@ NIVEAUX = [
     (4, "Lire le marché", "Graphiques, volatilité, taux d'intérêt et krachs.", "#8b5cf6"),
     (5, "Investir comme un pro", "Diversifier, construire un portefeuille, fiscalité, psychologie.", "#d4495a"),
     (6, "Comprendre la crypto", "Blockchain, stablecoins, sécurité, fiscalité crypto 2026.", "#0ea5a4"),
+    (7, "Aller plus loin", "Obligations, devises, secteurs, opérations sur actions, levier, documents réglementaires.", "#7c3aed"),
 ]
 VERIFIE_LE = "11 novembre 2026"
 MOTS_ACADEMIE = ("apprendre la bourse, bourse pour débutant, formation bourse gratuite, cours de bourse débutant, comment investir en bourse, "
@@ -395,7 +399,7 @@ def _page_hub(seo, base, csp):
              f"aria-valuemin='0' aria-valuemax='{len(CHAPITRES)}' aria-valuenow='0'><i id='aca-barre'></i></div>"
              "<a class='btn' id='aca-reprendre' href='formation/" + CHAPITRES[0]["id"] + ".html'>Commencer</a></div>"
              f"<div class='aca-badges' aria-label='Badges de niveau'>{badges}<span class='aca-badge' data-niv='examen'>Certificat de l'Académie</span></div>"
-             "<div class='aca-outils'><a href='formation/test-de-niveau.html'><b>Test de niveau</b><span>12 questions pour savoir par où commencer.</span></a>"
+             "<div class='aca-outils'><a href='formation/test-de-niveau.html'><b>Test de niveau</b><span>14 questions pour savoir par où commencer.</span></a>"
              "<a href='formation/revision.html'><b>Révisions express</b><span>Des fiches qui reviennent au bon moment pour tout retenir.</span></a>"
              "<a href='formation/examen.html'><b>Examen final</b><span>20 questions, et un certificat si tu réussis.</span></a>"
              "<a href='glossaire.html'><b>Glossaire</b><span>Tous les mots de la Bourse, expliqués simplement.</span></a></div>"
@@ -590,7 +594,7 @@ def _page_test_niveau(seo, base, csp):
     corps = (f"<style>{CSS}{CSS_LEX}</style>{JS_PROGRES}"
              "<p class='aca-fil'><a href='../formation.html'>Académie</a> › Test de niveau</p>"
              "<h1>Test de niveau : par où commencer ?</h1>"
-             f"<p>{len(qs)} questions, des bases jusqu'à la crypto. Réponds sans chercher : le test te dit à quel niveau commencer et quels chapitres tu peux survoler. "
+             f"<p>{len(qs)} questions, des bases jusqu'aux notions avancées. Réponds sans chercher : le test te dit à quel niveau commencer et quels chapitres tu peux survoler. "
              "Il prend environ 4 minutes.</p><div class='aca-quiz' id='tn'></div><p class='aca-res' id='tn-res' role='status'></p><div id='tn-conseil'></div>"
              "<script>(function(){const Q=" + json.dumps(qs, ensure_ascii=False) + ",NIV=" + json.dumps([[n, nom] for n, nom, *_ in NIVEAUX], ensure_ascii=False) + ";"
              "const esc=s=>String(s).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));"
@@ -612,7 +616,7 @@ def _page_test_niveau(seo, base, csp):
              "<nav class='aca-nav'><a class='btn ghost' href='../formation.html'>Retour à l'Académie</a></nav>")
     chemin = "formation/test-de-niveau.html"
     return chemin, seo._page(base, f"Test de niveau en Bourse : par où commencer ? | {seo.NOM}",
-                             "Test gratuit de connaissances en Bourse : 12 questions des bases à la crypto, pour savoir à quel niveau commencer l'Académie Radar Bourse.",
+                             "Test gratuit de connaissances en Bourse : 14 questions des bases aux notions avancées, pour savoir à quel niveau commencer l'Académie Radar Bourse.",
                              chemin, corps, None, csp=csp, mots="test niveau bourse, test connaissances bourse, quiz bourse débutant, " + MOTS_ACADEMIE)
 
 
