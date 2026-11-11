@@ -174,6 +174,12 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("74", "Inverser l'avis de l'IA sur les titres où elle s'est souvent trompée récemment (moins de 40 % de réussite sur ses 20 ou 40 derniers avis connus)", False,
+     "228 443 avis jugés de 2016 à 2026 : 53,0 % à 54,0 % de bonnes réponses au lieu de 55,78 %, et jusqu'à 7,8 points de moins certaines années. "
+     "Une série d'erreurs sur un titre ne dit rien des suivantes. Non adopté"),
+    ("73", "Quand l'IA hésite (chances entre 47 et 53 sur 100), garder plutôt son avis de la veille", False,
+     "228 443 avis jugés de 2016 à 2026 : 55,73 % à 55,77 % de bonnes réponses contre 55,78 % sans ce changement, et 5 ou 6 années sur 11 reculent. "
+     "Non adopté : l'IA ferait moins bien"),
     ("72", "Mélanger à nouveau l'avis de la première IA avec l'avis final, pour corriger les hésitations", False,
      "228 443 avis jugés de 2016 à 2026 : exactement le même nombre de bonnes réponses (55,78 %) avec 25 % ou 50 % de mélange, sur chacune des 11 années. "
      "L'avis final contient déjà tout ce que sait la première IA. Non adopté : aucun gain"),

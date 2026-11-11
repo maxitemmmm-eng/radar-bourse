@@ -9,7 +9,7 @@ def partie_de(chemin: str) -> str:
                            or chemin.startswith(("guides/", "lecons/", "glossaire/"))) else "pronos"
 
 
-def barre(prefixe: str, actif: str, libelles=("Menu", "Pronos", "Apprendre")) -> str:
+def barre(prefixe: str, actif: str, libelles=("Menu", "Pronos", "Académie")) -> str:
     liens = (("menu", prefixe + "index.html#menu", libelles[0]), ("pronos", prefixe + "index.html", libelles[1]),
              ("apprendre", prefixe + "formation.html", libelles[2]))
     return ('<nav class="trois" aria-label="Les trois parties du site">'
@@ -21,10 +21,10 @@ def barre(prefixe: str, actif: str, libelles=("Menu", "Pronos", "Apprendre")) ->
 #   Pronos    : bleu nuit et vert (le thème historique du radar)
 #   Apprendre : prune et ambre, plus chaleureux, comme un carnet de cours
 #   Menu      : l'écran d'accueil façon jeu (noir profond et grille verte), dans l'appli
-_APP_CLAIR = ("--bg:#f5f3fa;--surface:#ffffff;--surface-2:#efebf7;--ink:#1d1631;--muted:#5d5576;--line:#ddd5ec;"
-              "--accent:#6a3fcf;--accent-soft:#ece4fb;--marque:#b7791f")
-_APP_SOMBRE = ("--bg:#130f1f;--surface:#1c1730;--surface-2:#251f3d;--ink:#eee9f8;--muted:#a79fc0;--line:#362d55;"
-               "--accent:#f2b54a;--accent-soft:#3a2d16;--marque:#f2b54a")
+_APP_CLAIR = ("--bg:#f5f4fa;--surface:#ffffff;--surface-2:#f0eef7;--ink:#211c35;--muted:#656080;--line:#e2deee;"
+              "--accent:#6c47ff;--accent-soft:#eee9ff;--marque:#f59e0b")
+_APP_SOMBRE = ("--bg:#14111e;--surface:#1e1a2d;--surface-2:#28233b;--ink:#f1eefa;--muted:#a39cba;--line:#342e4a;"
+               "--accent:#9479ff;--accent-soft:#2c2550;--marque:#ffbe3d")
 CSS_THEMES = (
     "\n/* version 72 : un thème par partie */\n"
     "body.partie-apprendre{" + _APP_CLAIR + "}\n"

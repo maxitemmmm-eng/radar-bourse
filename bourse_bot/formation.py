@@ -324,6 +324,50 @@ def _page_chapitre(seo, base, csp, ch, i):
                              mots=ch["mots"] + ", " + MOTS_ACADEMIE)
 
 
+class _Capture:
+    """Récupère les données structurées d'une page sans la fabriquer."""
+    def __init__(self, seo):
+        self._seo = seo
+
+    def __getattr__(self, nom):
+        return getattr(self._seo, nom)
+
+    def _page(self, base, titre, description, chemin, corps, jsonld=None, *a, **k):
+        return jsonld
+
+
+def _page_chapitre_app(seo, base, csp, ch, i):
+    """Version 73 : la leçon plein écran façon appli de cours (le contenu et le référencement restent ceux du chapitre)."""
+    from . import academie
+    from .formation_exos import EXOS
+    from .academie_graphiques import exercices as _graphes
+    lecons = avec_lexique("".join(f"<!--L{k}-->{h}" for k, (t, h) in enumerate(ch["sections"]))).split("<!--L")[1:]
+    lecons = [x.split("-->", 1)[1] for x in lecons]
+    corps = academie.lecon(seo, ch, i, CHAPITRES, NIVEAUX, EXOS[ch["id"]], _graphes().get(ch["id"], []), lecons, VERIFIE_LE)
+    chemin, jl = _page_chapitre(_Capture(seo), base, csp, ch, i)   # mêmes données structurées que la page de cours
+    n_lecons = len(ch["sections"])
+    titre = f"{ch['titre']} | Cours de Bourse débutant gratuit"
+    titre = titre if len(titre) <= 66 else f"{ch['titre']} | Académie {seo.NOM}"
+    return chemin, academie.page(seo, base, titre, ch["desc"] + f" {n_lecons} mini-leçons avec exercices, puis un quiz corrigé.", chemin, corps, jl,
+                                 csp=csp, mots=ch["mots"] + ", " + MOTS_ACADEMIE, lecon=True)
+
+
+def _page_hub_app(seo, base, csp):
+    from . import academie
+    corps = f"<style>{CSS_LEX}</style>" + academie.parcours(CHAPITRES, NIVEAUX, VERIFIE_LE, seo.NOM)
+    jl = _page_hub(_Capture(seo), base, csp)
+    return academie.page(seo, base, f"Apprendre la Bourse de zéro : formation gratuite pour débutants | {seo.NOM}",
+                         f"Formation Bourse gratuite façon appli : {len(CHAPITRES)} chapitres, {sum(len(c['sections']) for c in CHAPITRES)} mini-leçons avec exercices, "
+                         "série de jours, examen final et certificat. Des bases à la crypto.", "formation.html", corps, jl, csp=csp, mots=MOTS_ACADEMIE)
+
+
+def _page_profil(seo, base, csp):
+    from . import academie
+    chemin = "formation/profil.html"
+    return chemin, academie.page(seo, base, f"Mon profil | Académie {seo.NOM}", "Ta progression dans l'Académie Radar Bourse : série, XP, badges et chapitres validés.",
+                                 chemin, academie.profil(NIVEAUX, CHAPITRES), None, csp=csp)
+
+
 def _page_hub(seo, base, csp):
     blocs = []
     for n, nom, desc, coul in NIVEAUX:
@@ -421,11 +465,17 @@ def _page_examen(seo, base, csp):
 def generer(seo, base, dossier, csp) -> list:
     os.makedirs(os.path.join(dossier, "formation"), exist_ok=True)
     faits = []
+    from .academie import SeoAcademie
     with open(os.path.join(dossier, "formation.html"), "w", encoding="utf-8") as f:
-        f.write(_page_hub(seo, base, csp))
+        f.write(_page_hub_app(seo, base, csp))
     faits.append("formation.html")
+    chemin, html_ = _page_profil(seo, base, csp)
+    with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
+        f.write(html_)
+    faits.append(chemin)
+    seo = SeoAcademie(seo)   # test de niveau, révisions et examen passent dans la coque de l'Académie
     for i, ch in enumerate(CHAPITRES):
-        chemin, html_ = _page_chapitre(seo, base, csp, ch, i)
+        chemin, html_ = _page_chapitre_app(seo._seo, base, csp, ch, i)
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(html_)
         faits.append(chemin)
