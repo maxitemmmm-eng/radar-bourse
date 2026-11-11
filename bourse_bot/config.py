@@ -68,10 +68,13 @@ CRYPTOS = {
     "FET-USD": "Fetch.ai (ASI)", "GRT-USD": "The Graph", "SEI-USD": "Sei", "TIA-USD": "Celestia", "JUP-USD": "Jupiter",
     "WIF-USD": "dogwifhat", "BONK-USD": "Bonk", "FLOKI-USD": "Floki", "WLD-USD": "Worldcoin", "PYTH-USD": "Pyth Network",
     "STRK-USD": "Starknet", "GALA-USD": "Gala", "AXS-USD": "Axie Infinity", "CRV-USD": "Curve DAO", "RUNE-USD": "THORChain",
+    # ajoutées en version 71 : 45 cryptos de plus, cours pris chez Binance (puis CryptoCompare) pour éviter les homonymes de Yahoo.
+    # Une crypto sans au moins un an d'historique fiable est écartée automatiquement par le contrôle qualité.
+    "AR-USD": "Arweave", "SNX-USD": "Synthetix", "CAKE-USD": "PancakeSwap", "1INCH-USD": "1inch", "ENS-USD": "Ethereum Name Service", "CHZ-USD": "Chiliz", "EGLD-USD": "MultiversX", "FLOW-USD": "Flow", "KAVA-USD": "Kava", "MINA-USD": "Mina", "NEO-USD": "NEO", "IOTA-USD": "IOTA", "ZIL-USD": "Zilliqa", "QTUM-USD": "Qtum", "BAT-USD": "Basic Attention Token", "ENJ-USD": "Enjin Coin", "ZRX-USD": "0x", "ANKR-USD": "Ankr", "ROSE-USD": "Oasis", "CFX-USD": "Conflux", "CELO-USD": "Celo", "KSM-USD": "Kusama", "RVN-USD": "Ravencoin", "ICX-USD": "ICON", "LRC-USD": "Loopring", "YFI-USD": "yearn.finance", "SUSHI-USD": "SushiSwap", "JASMY-USD": "JasmyCoin", "PENDLE-USD": "Pendle", "ORDI-USD": "ORDI", "CKB-USD": "Nervos Network", "ASTR-USD": "Astar", "LPT-USD": "Livepeer", "PAXG-USD": "PAX Gold", "TWT-USD": "Trust Wallet Token", "IOTX-USD": "IoTeX", "ZEN-USD": "Horizen", "TRB-USD": "Tellor", "BLUR-USD": "Blur", "CVX-USD": "Convex Finance", "SKL-USD": "SKALE", "DYDX-USD": "dYdX", "GMX-USD": "GMX", "APE-USD": "ApeCoin", "JTO-USD": "Jito",
 }
 CRYPTOS_SANS_YAHOO = {"TON11419-USD", "OP-USD", "POL-USD", "STX-USD", "IMX-USD", "LDO-USD", "FET-USD", "GRT-USD", "SEI-USD", "TIA-USD",
                       "JUP-USD", "WIF-USD", "BONK-USD", "FLOKI-USD", "WLD-USD", "PYTH-USD", "STRK-USD", "GALA-USD",
-                      "AXS-USD", "CRV-USD", "RUNE-USD"}
+                      "AXS-USD", "CRV-USD", "RUNE-USD"} | {"AR-USD", "SNX-USD", "CAKE-USD", "1INCH-USD", "ENS-USD", "CHZ-USD", "EGLD-USD", "FLOW-USD", "KAVA-USD", "MINA-USD", "NEO-USD", "IOTA-USD", "ZIL-USD", "QTUM-USD", "BAT-USD", "ENJ-USD", "ZRX-USD", "ANKR-USD", "ROSE-USD", "CFX-USD", "CELO-USD", "KSM-USD", "RVN-USD", "ICX-USD", "LRC-USD", "YFI-USD", "SUSHI-USD", "JASMY-USD", "PENDLE-USD", "ORDI-USD", "CKB-USD", "ASTR-USD", "LPT-USD", "PAXG-USD", "TWT-USD", "IOTX-USD", "ZEN-USD", "TRB-USD", "BLUR-USD", "CVX-USD", "SKL-USD", "DYDX-USD", "GMX-USD", "APE-USD", "JTO-USD"}
 
 
 def symbole_binance(ticker: str) -> str:

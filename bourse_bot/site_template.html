@@ -196,6 +196,66 @@ tbody tr:last-child td{border-bottom:0}
 .pf-ordre input{width:140px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:15px var(--f-mono);font-variant-numeric:tabular-nums}
 
 .hero-liens{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+
+/* version 71 : le site en 3 parties — Menu, Pronos, Apprendre (sélecteur en haut sur ordinateur, onglets en bas sur téléphone) */
+.trois{display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line)}
+.trois a{display:flex;align-items:center;gap:7px;padding:6px 13px;border-radius:9px;text-decoration:none;color:var(--muted);font-weight:700;font-size:14px;white-space:nowrap}
+.trois a svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.trois a:hover{color:var(--ink)}
+.trois a[aria-current]{background:var(--ink);color:var(--surface)}
+.trois a::after{content:none!important}
+@media (max-width:980px){
+  .trois{position:fixed;left:0;right:0;bottom:0;z-index:30;border-radius:0;border:0;border-top:1px solid var(--line);background:var(--surface);
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));justify-content:space-around;box-shadow:0 -6px 20px rgba(5,10,20,.18)}
+  .trois a{flex:1;flex-direction:column;gap:3px;font-size:12px;padding:6px 4px;justify-content:center}
+  .trois a svg{width:22px;height:22px}
+  .trois a[aria-current]{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--ink)}
+  body{padding-bottom:72px}
+  .retour-haut{bottom:84px!important}
+}
+@media print{.trois{display:none!important}}
+
+.top .trois{margin:0 6px}
+@media (min-width:981px) and (max-width:1180px){.trois a span{display:none}.trois a{padding:6px 10px}}
+/* version 70 : écran d'accueil façon menu de jeu — choisir entre le Radar et l'Académie */
+.titre-ecran{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:#070d1a;color:#e8eef8;overflow-y:auto}
+.titre-ecran[hidden]{display:none}
+.confiance-bloc{margin:26px 0 8px;padding:20px 22px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+.confiance-bloc h2{font-size:22px;margin:0 0 12px}
+.cb-grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px 22px}
+.cb-grille b{display:block;font-size:15.5px;margin-bottom:4px}.cb-grille p{margin:0;font-size:14px;color:var(--muted);line-height:1.5}
+body.titre-ouvert{overflow:hidden}
+.te-fond{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.te-grille{position:absolute;inset:-50%;background-image:linear-gradient(rgba(134,168,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(134,168,255,.07) 1px,transparent 1px);background-size:44px 44px;transform:perspective(600px) rotateX(55deg) translateY(10%)}
+.te-balayage{position:absolute;left:50%;top:50%;width:140vmax;height:140vmax;margin:-70vmax 0 0 -70vmax;border-radius:50%;
+  background:conic-gradient(from 0deg,rgba(68,224,156,.16),rgba(68,224,156,0) 18%,transparent 100%)}
+@media (prefers-reduced-motion:no-preference){.te-balayage{animation:te-tourne 7s linear infinite}@keyframes te-tourne{to{transform:rotate(360deg)}}
+  .te-boite>*{animation:te-apparait .6s cubic-bezier(.2,.8,.2,1) both}.te-boite>*:nth-child(2){animation-delay:.08s}.te-boite>*:nth-child(3){animation-delay:.16s}
+  .te-boite>*:nth-child(4){animation-delay:.24s}.te-boite>*:nth-child(5){animation-delay:.34s}.te-boite>*:nth-child(6){animation-delay:.4s}
+  @keyframes te-apparait{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}}
+.te-boite{position:relative;width:min(860px,100%);text-align:center}
+.te-sur{margin:0;font-size:14px;letter-spacing:.06em;color:#9fb0cc}
+.te-nom{font-family:var(--f-display,Georgia,serif);font-size:clamp(42px,8vw,76px);font-weight:700;margin:4px 0 6px;color:#fff;letter-spacing:-.01em}
+.te-sous{margin:0 0 26px;color:#b9c6dc;font-size:17px}
+.te-choix{display:grid;grid-template-columns:1fr 1fr;gap:18px;text-align:left}
+@media (max-width:640px){.te-choix{grid-template-columns:1fr}.te-carte span{display:none}}
+.te-carte{position:relative;display:flex;flex-direction:column;gap:8px;padding:22px 22px 18px;border-radius:18px;text-decoration:none;color:#e8eef8;
+  background:rgba(17,28,52,.82);border:1.5px solid rgba(134,168,255,.22);transition:transform .18s,border-color .18s,box-shadow .18s;backdrop-filter:blur(4px)}
+.te-carte svg{width:46px;height:46px;color:#86a8ff}
+.te-carte b{font-size:24px;font-family:var(--f-display,Georgia,serif)}
+.te-carte span{color:#b9c6dc;font-size:15px;line-height:1.5}
+.te-carte em{font-style:normal;font-size:13px;color:#44e09c}
+.te-carte .te-entrer{font-style:normal;font-weight:700;margin-top:4px;color:#fff;opacity:.55}
+.te-carte[aria-selected="true"],.te-carte:hover,.te-carte:focus-visible{border-color:#44e09c;transform:translateY(-3px);box-shadow:0 0 0 4px rgba(68,224,156,.14),0 18px 40px rgba(0,0,0,.35);outline:none}
+.te-carte[aria-selected="true"] .te-entrer{opacity:1}
+.te-carte[aria-selected="true"]::before{content:"▶";position:absolute;left:-26px;top:50%;transform:translateY(-50%);color:#44e09c;font-size:16px}
+@media (max-width:980px){.te-carte[aria-selected="true"]::before{display:none}}
+.te-raccourcis{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:22px auto 0;max-width:760px}
+.te-raccourcis a{padding:7px 13px;border-radius:99px;border:1px solid rgba(134,168,255,.25);color:#cfd9ea;text-decoration:none;font-size:13.5px;background:rgba(17,28,52,.6)}
+.te-raccourcis a:hover,.te-raccourcis a:focus-visible{border-color:#44e09c;color:#fff;outline:none}
+.te-aide{margin:20px 0 6px;color:#8496b4;font-size:13px}.te-aide kbd{font:inherit;font-size:12px;border:1px solid #3a4a68;border-radius:5px;padding:1px 6px;color:#cfd9ea}
+@media (hover:none){.te-aide{display:none}}
+.te-passer{margin-top:8px;background:none;border:0;color:#9fb0cc;text-decoration:underline;cursor:pointer;font:inherit;font-size:14px}
 /* version 69 : accueil pour les nouveaux — grande barre de recherche, titres populaires avec l'avis de l'IA */
 .hero-cherche{display:flex;align-items:center;gap:10px;width:100%;max-width:560px;margin-top:18px;padding:14px 16px;border-radius:14px;border:1.5px solid var(--accent);
   background:var(--surface);color:var(--text);font:inherit;font-size:16.5px;font-weight:600;cursor:pointer;text-align:left}
@@ -723,6 +783,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .plus-groupe{display:flex;flex-direction:column;gap:1px}
 .plus-mobile,.plus-mobile-t{display:none}
 .plus-reglages{display:none}
+.plus-lien{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:8px;color:var(--ink);background:none;border:0;font:inherit;font-size:14px;cursor:pointer}
+.plus-lien:hover{background:var(--bg)}
+.nav-sec a.nav-aca{border-color:color-mix(in srgb,#f2c14e 60%,transparent);background:color-mix(in srgb,#f2c14e 12%,transparent)}
 .plus-mode{display:flex;gap:6px;padding:4px 10px}.plus-mode button{flex:1;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-weight:600;cursor:pointer}
 .plus-mode button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
 @media (max-width:640px){.top .wrap:first-child .mode{display:none}.plus-reglages{display:flex}}
@@ -956,8 +1019,34 @@ html.calme *{animation:none!important;transition:none!important}
 <!--__CORPS__-->
 
 <a class="skip" href="#contenu">Aller au contenu</a>
+<div class="titre-ecran" id="titre-ecran" hidden role="dialog" aria-modal="true" aria-labelledby="te-nom">
+  <div class="te-fond" aria-hidden="true"><div class="te-grille"></div><div class="te-balayage"></div></div>
+  <div class="te-boite">
+    <p class="te-sur">Bienvenue sur</p>
+    <h2 class="te-nom" id="te-nom">Radar Bourse</h2>
+    <p class="te-sous">Que veux-tu faire aujourd'hui ?</p>
+    <div class="te-choix" role="listbox" aria-label="Choisis ton espace">
+      <a class="te-carte" href="#contenu" data-choix="radar" role="option" aria-selected="true">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="none" stroke="currentColor" stroke-width="2.5" opacity=".35"/><circle cx="24" cy="24" r="10" fill="none" stroke="currentColor" stroke-width="2.5" opacity=".25"/><path d="M24 24 L38 12" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="35" cy="15" r="3.5" fill="#44e09c"/></svg>
+        <b>Le Radar</b><span>Les avis de l'IA sur plus de 2 500 actions et cryptos : hausse ou baisse, agitation, risque de chute.</span>
+        <em id="te-radar-info">Mis à jour chaque heure</em><i class="te-entrer">Entrer ›</i></a>
+      <a class="te-carte" href="formation.html" data-choix="academie" role="option" aria-selected="false">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M4 18 L24 9 L44 18 L24 27 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 22 V32 C16 36 32 36 36 32 V22" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M44 18 V30" stroke="#f2c14e" stroke-width="3" stroke-linecap="round"/></svg>
+        <b>L'Académie</b><span>Apprendre la Bourse et la crypto de zéro : 30 chapitres, test de niveau, fiches de révision, quiz corrigés et examen final avec certificat.</span>
+        <em id="te-aca-info">Gratuit, sans compte</em><i class="te-entrer">Entrer ›</i></a>
+    </div>
+    <nav class="te-raccourcis" aria-label="Raccourcis">
+      <a href="prediction-crypto.html">Prédiction crypto</a><a href="prediction-bourse.html">Prédiction bourse</a><a href="#prono" data-ferme="1">Pronostic du jour</a>
+      <a href="toutes-les-actions.html">Toutes les actions</a><a href="formation/test-de-niveau.html">Test de niveau</a><a href="formation/revision.html">Révisions express</a>
+      <a href="formation/examen.html">Examen final</a><a href="avis-surs-verifies.html">Résultats vérifiés</a>
+    </nav>
+    <p class="te-aide"><kbd>←</kbd> <kbd>→</kbd> pour choisir · <kbd>Entrée</kbd> pour valider</p>
+    <button class="te-passer" type="button" id="te-passer">Aller directement au site</button>
+  </div>
+</div>
 <header class="top gutter"><div class="wrap">
   <div class="brand"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id='rbf' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#1c3576'/><stop offset='1' stop-color='#0a1330'/></linearGradient><linearGradient id='rbl' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='#86a8ff'/><stop offset='1' stop-color='#44e09c'/></linearGradient><linearGradient id='rbs' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='#44e09c' stop-opacity='0'/><stop offset='1' stop-color='#44e09c' stop-opacity='.85'/></linearGradient></defs><rect width='64' height='64' rx='15' fill='url(#rbf)'/><circle cx='30.0' cy='35.0' r='22.00' fill='none' stroke='#86a8ff' stroke-opacity='.28' stroke-width='2.00'/><circle cx='30.0' cy='35.0' r='12.50' fill='none' stroke='#86a8ff' stroke-opacity='.18' stroke-width='2.00'/><path d='M19.67 15.58 A22.00 22.00 0 0 1 42.3 16.76' fill='none' stroke='url(#rbs)' stroke-width='3.20' stroke-linecap='round'/><polyline points='9.0,47.0 18.0,39.5 26.0,42.5 34.5,31.0 40.5,33.5 44.72,18.65' fill='none' stroke='url(#rbl)' stroke-width='5.00' stroke-linecap='round' stroke-linejoin='round'/><circle cx='44.72' cy='18.65' r='8.00' fill='#44e09c' fill-opacity='.2'/><circle cx='44.72' cy='18.65' r='4.50' fill='#44e09c'/></svg><h1>Radar Bourse</h1><span class="stamp" id="stamp"></span></div>
+  <nav class="trois" aria-label="Les trois parties du site"><a href="#menu" data-partie="menu"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg><span>Menu</span></a><a href="#contenu" data-partie="pronos" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12 L19 6"/></svg><span>Pronos</span></a><a href="formation.html" data-partie="apprendre"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9 L12 4 L22 9 L12 14 Z"/><path d="M6 11 V16 C8.5 18.5 15.5 18.5 18 16 V11"/></svg><span>Apprendre</span></a></nav>
   <div class="recherche" role="search">
     <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.6 3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
     <input id="rech" type="search" placeholder="Chercher une action, une crypto…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="rech-liste" aria-label="Chercher un titre">
@@ -974,10 +1063,11 @@ html.calme *{animation:none!important;transition:none!important}
 </div>
 <div class="wrap nav-ligne"><nav class="nav-sec" id="nav-sec" aria-label="Menu principal">
   <a href="prediction-crypto.html" class="lien-site nav-fort">Prédiction crypto</a><a href="prediction-bourse.html" class="lien-site nav-fort">Prédiction bourse</a>
+  <a href="formation.html" class="lien-site nav-fort nav-aca">Académie</a>
   <a href="toutes-les-actions.html" class="lien-site">Toutes les actions</a><a href="themes.html" class="lien-site">Par thème</a>
   <a href="#prono">Pronostic du jour</a><a href="#simulation">Simulation</a><a href="avis-surs-verifies.html" class="lien-site">Résultats vérifiés</a>
 </nav>
-<details class="plus" id="nav-plus"><summary><span class="plus-large">Plus ▾</span><span class="plus-mobile" aria-hidden="true"><i></i><i></i><i></i></span><span class="plus-mobile-t">Menu</span></summary><div class="plus-panneau">
+<details class="plus" id="nav-plus"><summary><span class="plus-large">Plus ▾</span><span class="plus-mobile" aria-hidden="true"><i></i><i></i><i></i></span><span class="plus-mobile-t">Plus</span></summary><div class="plus-panneau">
   <div class="plus-groupe"><span class="plus-titre">Prédictions de l'IA</span>
     <a href="prediction-crypto.html" class="lien-site">Prédiction crypto</a><a href="prediction-bourse.html" class="lien-site">Prédiction bourse</a>
     <a href="toutes-les-actions.html" class="lien-site">Toutes les actions (2 000+)</a><a href="themes.html" class="lien-site">Actions par thème</a>
@@ -992,8 +1082,10 @@ html.calme *{animation:none!important;transition:none!important}
     <a href="point.html" class="lien-site">Le point du jour</a><a href="bourse-cette-semaine.html" class="lien-site">La semaine en Bourse</a>
     <a href="actu-bourse.html" class="lien-site">Actu bourse</a><a href="krach-boursier.html" class="lien-site">Krach boursier</a><a href="#nuage">Carte des risques</a><a href="#signaux">Signaux forts</a></div>
   <div class="plus-groupe"><span class="plus-titre">Apprendre</span>
+    <a href="formation.html" class="lien-site">L'Académie : apprendre de zéro</a><a href="formation/examen.html" class="lien-site">Quiz : examen final</a>
     <a href="#assistant">Poser une question à l'assistant</a><a href="apprendre.html" class="lien-site">Apprendre la Bourse</a><a href="guides.html" class="lien-site">Guides</a>
     <a href="#robots">Les mini-robots</a><a href="fonctionnalites.html" class="lien-site">Toutes les fonctionnalités</a></div>
+  <div class="plus-groupe"><span class="plus-titre">Accueil</span><button type="button" class="plus-lien" onclick="window.ouvrirEcranTitre&&ouvrirEcranTitre();document.getElementById('nav-plus').open=false">Écran d'accueil (Radar ou Académie)</button></div>
   <div class="plus-groupe plus-reglages"><span class="plus-titre">Affichage</span>
     <div class="plus-mode" role="group" aria-label="Niveau de détail"><button type="button" data-proxy-mode="simple">Simple</button><button type="button" data-proxy-mode="expert">Expert</button></div></div>
 </div></details></div></header>
@@ -1005,9 +1097,9 @@ html.calme *{animation:none!important;transition:none!important}
    <div>
     <h2>Hausse ou baisse ? L'avis de l'IA, action par action.</h2>
     <p class="intro">Tape le nom d'une action ou d'une crypto : l'IA te dit si elle la voit <b class="up">monter ↑</b> ou <b class="down">baisser ↓</b> le mois prochain, avec ses chances et son niveau de confiance. Elle prévoit aussi de combien le prix peut bouger. Tous ses résultats sont vérifiés en public, ratés compris. Gratuit, sans compte, pas un conseil.</p>
-    <button class="hero-cherche" id="hero-cherche" type="button"><span aria-hidden="true">🔎</span> Chercher une action ou une crypto <kbd>Apple, Bitcoin, LVMH…</kbd></button>
+    <button class="hero-cherche" id="hero-cherche" type="button"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M11 11l3.6 3.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg> Chercher une action ou une crypto <kbd>Apple, Bitcoin, LVMH…</kbd></button>
     <div class="populaires" id="populaires" aria-label="Les plus recherchés, avec l'avis de l'IA" hidden></div>
-    <div class="hero-liens"><a class="btn" href="prediction-crypto.html">₿ Prédiction crypto</a><a class="btn ghost" href="prediction-bourse.html">↑ Actions que l'IA voit monter</a><a class="btn ghost" href="#prono">🎯 Ton pronostic du jour</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
+    <div class="hero-liens"><a class="btn" href="formation.html">Débutant ? Commence par l'Académie</a><a class="btn ghost" href="prediction-crypto.html">Prédiction crypto</a><a class="btn ghost" href="prediction-bourse.html">Actions que l'IA voit monter</a><a class="btn ghost" href="#prono">Ton pronostic du jour</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
     <div class="preuves" id="preuves" hidden></div>
    </div>
    <aside class="bref" id="bref" aria-labelledby="bref-t" hidden><h3 id="bref-t">Aujourd'hui en bref</h3><p id="bref-txt"></p>
@@ -1034,6 +1126,16 @@ html.calme *{animation:none!important;transition:none!important}
     <a class="lien-site" href="themes.html"><b>Actions par thème</b><span>Luxe, IA et puces, défense, banques, énergie…</span></a>
     <a class="lien-site" href="donnees-ouvertes.html"><b>Données ouvertes</b><span>Tous les avis de l'IA en CSV et JSON, pour vérifier toi-même.</span></a>
   </nav>
+
+  <section class="confiance-bloc" aria-labelledby="h-confiance">
+    <h2 id="h-confiance">Pourquoi tu peux te fier à ce site</h2>
+    <div class="cb-grille">
+      <div><b>Les ratés sont publiés</b><p>Chaque avis important est archivé le jour même et vérifié un mois plus tard, en public. Rien n'est effacé. <a href="avis-surs-verifies.html" class="lien-site">Voir</a></p></div>
+      <div><b>Rien à te vendre</b><p>Pas d'abonnement, pas de publicité, pas de commission d'un courtier. Le site ne gagne rien si tu achètes une action.</p></div>
+      <div><b>La méthode est publique</b><p>Les données, les modèles et toutes les idées testées (même celles qui ont échoué) sont décrits. <a href="fiche-technique-ia.html" class="lien-site">Lire</a></p></div>
+      <div><b>Les limites sont dites</b><p>Sur le sens du prix, l'IA fait à peine mieux que le hasard : chaque avis affiche sa confiance pour que tu le saches.</p></div>
+    </div>
+  </section>
 
   <section aria-labelledby="h-assist" id="assistant">
     <div class="sec-head"><h2 id="h-assist">Ton assistant</h2>
@@ -1527,12 +1629,12 @@ html.calme *{animation:none!important;transition:none!important}
 
 <div class="consent" id="consent" hidden role="dialog" aria-modal="true" aria-labelledby="consent-t" aria-describedby="consent-d">
   <div class="consent-boite">
-    <h2 id="consent-t">Bienvenue sur Radar Bourse 👋</h2>
+    <h2 id="consent-t">Bienvenue sur Radar Bourse</h2>
     <div id="consent-d">
       <ol class="bienvenue-etapes" aria-label="Comment ça marche">
-        <li><b aria-hidden="true">🔎</b><span>Tu cherches une action ou une crypto.</span></li>
-        <li><b aria-hidden="true">↑↓</b><span>L'IA te dit si elle la voit monter ou baisser, et à quel point elle est sûre.</span></li>
-        <li><b aria-hidden="true">✓</b><span>Ses résultats sont vérifiés en public, ratés compris.</span></li>
+        <li><b aria-hidden="true">1</b><span>Tu cherches une action ou une crypto.</span></li>
+        <li><b aria-hidden="true">2</b><span>L'IA te dit si elle la voit monter ou baisser, et à quel point elle est sûre.</span></li>
+        <li><b aria-hidden="true">3</b><span>Ses résultats sont vérifiés en public, ratés compris.</span></li>
       </ol>
       <p>C'est un <b>projet éducatif et gratuit</b>. Quatre choses à savoir avant de commencer :</p>
       <ul>
@@ -2266,7 +2368,7 @@ function rendreDefis(){
     if(!d.fin) return `<li>${esc(d.nom)} : résultat indisponible (titre plus suivi)</li>`;
     const reel = d.fin >= d.depart ? "hausse" : "baisse";
     finis++; if(d.sens === reel) toi++; if(d.radar === reel) radar++;
-    return `<li>${esc(d.nom)} : ${reel === "hausse" ? "a monté" : "a baissé"} (${pct(d.fin / d.depart - 1)}) · toi ${d.sens === reel ? "✅" : "❌"} · radar ${d.radar === reel ? "✅" : "❌"}</li>`;
+    return `<li>${esc(d.nom)} : ${reel === "hausse" ? "a monté" : "a baissé"} (${pct(d.fin / d.depart - 1)}) · toi ${d.sens === reel ? "juste" : "raté"} · radar ${d.radar === reel ? "juste" : "raté"}</li>`;
   });
   sauverDefis();
   el.innerHTML = `${finis ? `<div class="defi-score"><div>${toi}<span>tes bons pronostics</span></div><div>${radar}<span>bons pronostics du radar</span></div><div>${finis}<span>défis terminés</span></div></div>` : ""}
@@ -2609,7 +2711,7 @@ function rendre(){
     <td class="spk"><span>${spark(t.spark,72,24)}</span><span>${pct(t.perf["3 mois"],0)}</span></td>
     <td class="expert"><span class="score"><span class="num">${Math.round(t.score)}</span><span class="mini"><i style="width:${t.score}%"></i></span></span></td>
     <td><span class="pill ${SIG[t.signal]}" title="Tendance technique (moyennes, RSI, MACD…), indépendante de l'avis des IA">${esc(LIB[t.signal] || t.signal)}</span>${t.signal_fort?'<span class="badge-fort">Fort</span>':''}</td>
-    <td>${gauge(t.proba_hausse, t.accord_ia, t.avis_net, t.confiance)}</td><td>${t.proba_marche != null ? `<span class="num ${t.marche_net === false ? "muted" : t.proba_marche >= .55 ? "up" : t.proba_marche <= .45 ? "down" : ""}" title="vs ${esc(t.indice_nom || "son indice")}${t.marche_net === false ? " · pas d'avis net" : ""}">${Math.round(t.proba_marche*100)} %</span>` : '<span class="muted">–</span>'}</td><td class="expert">${ton(t.tonalite)}</td><td class="risk r${RISK[t.risque]}">${esc(t.risque)}${t.risque_prevu && t.risque_prevu.mouvement != null ? `<span class="agit-cell" title="Agitation prévue le mois prochain">±${Math.round(t.risque_prevu.mouvement*100)} %</span>` : ""}</td>
+    <td>${gauge(t.proba_hausse, t.accord_ia, t.avis_net, t.confiance)}</td><td>${t.proba_marche != null ? `<span class="num ${t.marche_net === false ? "muted" : t.proba_marche >= .55 ? "up" : t.proba_marche <= .45 ? "down" : ""}" title="vs ${esc(t.indice_nom || "son indice")}${t.marche_net === false ? " · confiance faible" : ""}">${Math.round(t.proba_marche*100)} %</span>` : '<span class="muted">–</span>'}</td><td class="expert">${ton(t.tonalite)}</td><td class="risk r${RISK[t.risque]}">${esc(t.risque)}${t.risque_prevu && t.risque_prevu.mouvement != null ? `<span class="agit-cell" title="Agitation prévue le mois prochain">±${Math.round(t.risque_prevu.mouvement*100)} %</span>` : ""}</td>
     <td class="expert">${t.potentiel_hausse?'<span title="Configuration de décollage" role="img" aria-label="Configuration de décollage">🚀</span>':''}</td></tr>`).join("")
     || `<tr><td colspan="12" class="empty">${Object.values(CRIT).some(Boolean) ? "Aucun titre ne remplit tous ces critères aujourd'hui. Essaie d'en retirer un." : filtre === "fav" ? "Pas encore de favori : ouvre un titre et clique sur « ☆ Suivre » pour le retrouver ici." : "Aucun titre ne correspond."}</td></tr>`;
 }
@@ -2770,10 +2872,10 @@ function resumeSimple(t){
       ${sansAvis && !SA && AN.marge ? `<p class="muted" style="font-size:14px">Les IA hésitent : leur avis est trop proche de 50 % pour compter. Quand elles sont plus tranchées (sous ${Math.round((.5 - AN.marge) * 100)} % ou au-dessus de ${Math.round((.5 + AN.marge) * 100)} %), elles ont vu juste ${Math.round(AN.precision * 100)} fois sur 100 ; sinon, pas mieux que le hasard.</p>` : ""}
       <p>${t.source_proba === "marche" ? `Sur ce marché, l'avis des IA n'a pas fait mieux que sa tendance habituelle sur les années testées. Le radar affiche donc cette tendance (${Math.round(p * 100)} mois sur 100 en hausse) plutôt que l'avis des IA${t.proba_ia != null ? ` (pour info : ${Math.round(t.proba_ia * 100)} sur 100)` : ""}.` : sansAvis ? `Pour info, le chiffre brut des IA est de ${Math.round(p * 100)} sur 100, à ne pas prendre comme un avis.` : `Le radar donne <b>${Math.round(p * 100)} chances sur 100</b> que ${esc(t.nom)} soit plus haut dans un mois.`}${med ? ` Le scénario le plus probable : environ <b class="num">${px(med, t.devise)}</b> (${pct(med / t.prix - 1)}).` : ""}${t.signal_fort ? " <b>Signal fort</b> : la tendance technique va dans le même sens." : ""}</p>
       ${t.proba_marche != null ? `<p><span class="badge-marche">Face à son marché</span>${aide("marche")} ${Math.round(t.proba_marche * 100)} chances sur 100 de faire <b>mieux que ${esc(t.indice_nom || "son marché")}</b> sur la même période.</p>` : ""}
-      ${t.fourchette_elargie ? `<p class="muted" style="font-size:13.5px">📅 Résultats de l'entreprise avant l'échéance : la fourchette a été élargie par prudence.</p>` : ""}
+      ${t.fourchette_elargie ? `<p class="muted" style="font-size:13.5px">Résultats de l'entreprise avant l'échéance : la fourchette a été élargie par prudence.</p>` : ""}
       ${accordTxt ? `<p>${accordTxt} ${aide("accord")}</p>` : ""}
       ${ligneConfiance(t)}${lignePalmares(t)}
-      ${t.actu_contredit ? `<p class="muted" style="font-size:13.5px">📰 Les actualités récentes vont plutôt dans l'autre sens : prudence.</p>` : ""}</div></div>
+      ${t.actu_contredit ? `<p class="muted" style="font-size:13.5px">Les actualités récentes vont plutôt dans l'autre sens : prudence.</p>` : ""}</div></div>
     ${blocRisquer(t)}${blocRaisons(t)}${votesRobots(t)}`;
 }
 
@@ -2825,7 +2927,7 @@ function ligneConfiance(t){
 function lignePalmares(t){
   const P = ((DATA.suivi || {}).detail || {}).par_titre || {}, x = P[t.ticker];
   if(!x || x[0] < 5) return "";
-  return `<p class="muted" style="font-size:13.5px">📒 Sur ce titre, depuis le début du suivi, les IA ont vu juste <b>${x[1]} fois sur ${x[0]}</b> (prévisions vérifiées un mois plus tard).</p>`;
+  return `<p class="muted" style="font-size:13.5px">Sur ce titre, depuis le début du suivi, les IA ont vu juste <b>${x[1]} fois sur ${x[0]}</b> (prévisions vérifiées un mois plus tard).</p>`;
 }
 
 /* Les raisons de l'avis : ce qui a le plus pesé dans le calcul des deux IA */
@@ -3127,7 +3229,7 @@ function lecture(t, court = false){
     : `Un retour durable au-dessus de ${px(plafond, dev)} remettrait un scénario haussier sur la table. Sous ${px(plancher, dev)}, la baisse pourrait s'accélérer.`}</p>`);
 
   if(t.tonalite != null && !isNaN(t.tonalite)){
-    parts.push(`<h3>Actualités</h3><p>Tonalité des articles des 7 derniers jours : ${ton(t.tonalite)}.${t.actus && t.actus[0] ? ` Dernier titre : « ${esc(t.actus[0].titre)} ».` : ""} Cette tonalité n'entre pas dans la probabilité.</p>`);
+    parts.push(`<h3>Actualités</h3><p>Tonalité des articles des 7 derniers jours : ${ton(t.tonalite)}.${t.actus && t.actus[0] ? ` Dernier titre : « ${esc(t.actus[0].titre)} ».` : ""} Elle n'entre pas encore dans la probabilité : le ton des actus est archivé chaque soir depuis novembre 2026 pour mesurer, sur des jours que l'IA n'aura pas vus, s'il aide vraiment à prévoir.</p>`);
   }
   const M = DATA.modele;
   if(M && M.precision != null){
@@ -3867,8 +3969,8 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
     const BADGES = [[E.meilleure >= 3, "🔥", "3 jours de suite"], [E.meilleure >= 7, "🏅", "Une semaine complète"], [E.meilleure >= 30, "🏆", "Un mois sans manquer"],
       [E.points >= 100, "💯", "100 points"], [E.points >= 500, "💎", "500 points"], [E.total >= 20 && E.justes / E.total >= 0.6, "🎯", "Plus de 60 % de bonnes réponses"]];
     h += '<div class="prono-badges" aria-label="' + "Badges" + '">' + BADGES.map(([ok, ic, t]) => '<span class="prono-badge' + (ok ? " ok" : "") + '" title="' + t + '">' + ic + ' ' + t + '</span>').join("") + '</div>';
-    h += '<div class="prono-bas"><button class="btn ghost" id="prono-rappel" type="button">' + "📅 Me le rappeler chaque jour" + '</button>'
-      + (E.total || (j && j.picks) ? '<button class="btn ghost" id="prono-partage" type="button">' + "📣 Partager mon score" + '</button>' : "") + '</div>';
+    h += '<div class="prono-bas"><button class="btn ghost" id="prono-rappel" type="button">' + "Me le rappeler chaque jour" + '</button>'
+      + (E.total || (j && j.picks) ? '<button class="btn ghost" id="prono-partage" type="button">' + "Partager mon score" + '</button>' : "") + '</div>';
     zone.innerHTML = h;
   };
   zone.addEventListener("click", e => {
@@ -4332,7 +4434,7 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
   try{ localStorage.setItem(CLE, JSON.stringify(maintenant)); }catch(e){}
   if(!changes.length) return;
   const el = $("#alerte-fav");
-  el.innerHTML = `<b>🔔 Tes favoris depuis ta dernière visite</b><ul>${changes.slice(0, 8).map(c => `<li>${c}</li>`).join("")}</ul>
+  el.innerHTML = `<b>Tes favoris depuis ta dernière visite</b><ul>${changes.slice(0, 8).map(c => `<li>${c}</li>`).join("")}</ul>
     <span class="muted" style="font-size:12.5px">Rien n'est sûr : un changement de signal n'est pas une raison d'acheter ou de vendre.</span>
     <button class="mini-btn ferme" id="alerte-fav-ok">OK, compris</button>`;
   el.hidden = false;
@@ -4474,6 +4576,44 @@ document.addEventListener("click", e => {
 $("#l-close").onclick = fermerLegal;
 $("#legal").addEventListener("click", e => { if(e.target.id === "legal") fermerLegal(); });
 document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#legal").hidden) fermerLegal(); });
+
+/* ---------- Version 70 : écran d'accueil façon menu de jeu (une fois par visite, jamais pour les robots ni les liens directs) ---------- */
+(function(){
+  const z = document.getElementById("titre-ecran"); if(!z) return;
+  let vu = false; try{ vu = sessionStorage.getItem("radar-titre-vu") === "1"; }catch(e){}
+  const robot = /bot|crawl|spider|slurp|lighthouse|headless|preview/i.test(navigator.userAgent) || navigator.webdriver;
+  const ouvrir = () => {
+    const cartes = [...z.querySelectorAll(".te-carte")]; let i = 0;
+    try{ if(localStorage.getItem("radar-dernier-espace") === "academie") i = 1; }catch(e){}
+    const choisir = k => { i = (k + cartes.length) % cartes.length; cartes.forEach((c, j) => c.setAttribute("aria-selected", j === i)); cartes[i].focus({preventScroll: true}); };
+    const n = (DATA.titres || []).filter(t => t.marche !== "tendances").length + (DATA.nb_etendu || 0);
+    if(n > 0) $("#te-radar-info").textContent = `${n.toLocaleString("fr-FR")} ${"titres suivis · mis à jour chaque heure"}`;
+    try{ const a = JSON.parse(localStorage.getItem("radar-academie") || "{}") || {}; const f = Object.values(a).filter(x => x && x.fait).length;
+      if(f) $("#te-aca-info").textContent = `${f} ${"chapitre(s) validé(s) · reprends où tu en étais"}`; }catch(e){}
+    const fermer = () => { z.hidden = true; document.body.classList.remove("titre-ouvert"); try{ sessionStorage.setItem("radar-titre-vu", "1"); }catch(e){} };
+    cartes.forEach((c, j) => { c.addEventListener("mouseenter", () => choisir(j)); c.addEventListener("click", e => {
+      try{ localStorage.setItem("radar-dernier-espace", c.dataset.choix); sessionStorage.setItem("radar-titre-vu", "1"); }catch(e2){}
+      if(c.dataset.choix === "radar"){ e.preventDefault(); fermer(); } }); });
+    z.addEventListener("keydown", e => {
+      if(e.key === "ArrowRight" || e.key === "ArrowDown"){ e.preventDefault(); choisir(i + 1); }
+      else if(e.key === "ArrowLeft" || e.key === "ArrowUp"){ e.preventDefault(); choisir(i - 1); }
+      else if(e.key === "Escape"){ fermer(); }
+      else if(e.key === "Tab"){ e.preventDefault(); choisir(i + (e.shiftKey ? -1 : 1)); }
+    });
+    $("#te-passer").onclick = fermer;
+    z.querySelectorAll("[data-ferme]").forEach(a => a.addEventListener("click", () => fermer()));
+    z.hidden = false; document.body.classList.add("titre-ouvert"); setTimeout(() => choisir(i), 60);
+  };
+  window.ouvrirEcranTitre = ouvrir;
+  // version 71 : « Menu » (en haut ou dans la barre du bas) rouvre l'écran d'accueil ; « Pronos » ramène en haut du radar
+  const tp = [...document.querySelectorAll(".trois a")];
+  const marquer = k => tp.forEach(a => a.dataset.partie === k ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+  tp.forEach(a => { if(a.dataset.partie === "menu") a.addEventListener("click", e => { e.preventDefault(); marquer("menu"); ouvrir(); });
+    if(a.dataset.partie === "pronos") a.addEventListener("click", e => { e.preventDefault(); scrollTo({top: 0, behavior: "smooth"}); }); });
+  new MutationObserver(() => { if(z.hidden) marquer("pronos"); }).observe(z, {attributes: true, attributeFilter: ["hidden"]});
+  if(location.hash === "#menu"){ history.replaceState(null, "", location.pathname); ouvrir(); }
+  else if(!vu && !robot && !location.hash) ouvrir();
+})();
 
 const CLE_AVERT = "radar-bourse-avertissement-v2";   // v2 : point sur la responsabilité, réaffiché une fois à tous
 let dejaVu = false;

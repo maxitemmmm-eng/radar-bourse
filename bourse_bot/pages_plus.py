@@ -110,23 +110,38 @@ def _page_simulateur(base, csp):
 def _page_a_propos(base, payload, csp):
     chemin = "a-propos.html"
     n = len(payload.get("titres", []))
+    ne = payload.get("nb_etendu") or 0
+    total = f"{n + ne:,}".replace(",", "\u202f") if ne else str(n)
+    # version 70 : page réécrite, plus humaine — qui, pourquoi, comment, et ce qu'on ne fera jamais
     corps = ("<h1>À propos de Radar Bourse</h1>"
-             f"<p><b>Radar Bourse</b> est un projet personnel, <b>éducatif et gratuit</b>, créé par un particulier passionné de finance et de programmation. "
-             f"Il analyse chaque heure {n} actions, ETF et cryptos, et publie des prévisions à un mois expliquées simplement.</p>"
-             "<h2>Pourquoi ce site</h2><p>Beaucoup de sites promettent de « prédire la Bourse ». Radar Bourse fait l'inverse : il montre ce que "
-             "l'IA prévoit vraiment bien (l'agitation des prix, le risque de forte chute), ce qu'elle prévoit mal (le sens du prix à un mois), "
-             "et il <b>publie tous ses résultats, ratés compris</b>.</p>"
-             "<h2>Comment ça marche</h2><ul>"
-             "<li><b>Les données</b> : cours publics (Yahoo Finance, Binance, CryptoCompare), vérifiés automatiquement.</li>"
-             "<li><b>L'IA</b> : des modèles d'apprentissage automatique (arbres de décision) entraînés sur plus de 10 ans d'historique.</li>"
-             "<li><b>Les tests</b> : chaque méthode est jugée sur des années que l'IA n'avait jamais vues, comme dans la réalité.</li>"
-             "<li><b>Le suivi</b> : chaque prévision publiée est vérifiée un mois plus tard, en public.</li></ul>"
-             "<h2>Nos principes</h2><ul><li>Gratuit, sans compte, sans publicité, sans cookie publicitaire.</li>"
-             "<li>Aucun conseil en investissement : le site explique et mesure, il ne dit pas quoi acheter.</li>"
-             "<li>Honnêteté sur les chiffres : jamais de résultat embelli.</li></ul>"
+             "<p class='muted'>Un projet indépendant, gratuit et sans publicité, mené sous le pseudonyme <b>maxitemmmm</b>.</p>"
+             "<h2>Comment tout a commencé</h2>"
+             "<p>Radar Bourse est né d'une question toute simple : <i>est-ce qu'une IA peut vraiment prévoir la Bourse ?</i> "
+             "En cherchant la réponse, on tombe surtout sur des sites qui promettent des gains, vendent des « signaux » et ne montrent jamais leurs erreurs. "
+             "Alors plutôt que de croire sur parole, j'ai construit l'outil moi-même, en solo, sur mon temps libre, et décidé de tout publier : "
+             "les avis de l'IA, la méthode, et surtout les résultats, ratés compris.</p>"
+             "<p>La réponse, aujourd'hui, est nuancée. Deviner si un prix va monter le mois prochain reste très difficile (l'IA fait un peu mieux que le hasard, pas beaucoup plus). "
+             "En revanche, prévoir de combien un prix va bouger, ou le risque d'une forte chute, ça marche nettement mieux. Le site est construit autour de cette honnêteté.</p>"
+             "<h2>Ce que tu trouves ici</h2><ul>"
+             f"<li><b>Le Radar</b> : l'avis de l'IA sur {total} actions, ETF et cryptos, mis à jour chaque heure, toujours avec son niveau de confiance.</li>"
+             "<li><b>L'Académie</b> : un parcours gratuit pour apprendre la Bourse de zéro, avec quiz, exercices et certificat. <a href='formation.html'>Commencer</a>.</li>"
+             "<li><b>Les preuves</b> : chaque avis important est contrôlé un mois plus tard, en public. <a href='avis-surs-verifies.html'>Voir les avis vérifiés</a>.</li></ul>"
+             "<h2>Comment ça marche, concrètement</h2><ul>"
+             "<li><b>Les données</b> : cours publics (Yahoo Finance, Binance, CryptoCompare, Stooq) et indicateurs économiques (FRED), contrôlés automatiquement avant chaque publication. "
+             "Une prévision incohérente est retirée plutôt que publiée.</li>"
+             "<li><b>L'IA</b> : des modèles d'apprentissage automatique (forêts d'arbres de décision et boosting) entraînés sur plus de dix ans de cours.</li>"
+             "<li><b>Les tests</b> : chaque idée est jugée sur des années que l'IA n'avait jamais vues, comme dans la vraie vie. Si elle ne fait pas mieux, elle n'est pas gardée, "
+             "et c'est écrit sur la page des <a href='fiche-technique-ia.html'>idées testées</a>.</li>"
+             "<li><b>Le suivi</b> : les avis sont archivés le jour même et vérifiés vingt séances plus tard. Rien n'est effacé.</li></ul>"
+             "<h2>Ce que Radar Bourse ne fera jamais</h2><ul>"
+             "<li>Te dire quoi acheter ou te promettre un gain.</li><li>Cacher une erreur ou embellir un résultat.</li>"
+             "<li>Vendre tes données, te pister avec des cookies publicitaires ou t'obliger à créer un compte.</li>"
+             "<li>Te faire payer quoi que ce soit, ou t'envoyer vers une plateforme en échange d'une commission.</li></ul>"
+             "<h2>Une question, une erreur repérée ?</h2><p>Les remarques sont les bienvenues, surtout les critiques sur la méthode : "
+             "<a href='contact.html'>contact</a>. Chaque remarque est lue, et les erreurs sont corrigées dès la mise à jour suivante.</p>"
              "<h2>En savoir plus</h2><ul><li><a href='fonctionnalites.html'>Toutes les fonctionnalités</a></li>"
              "<li><a href='fiche-technique-ia.html'>La fiche technique de l'IA</a></li><li><a href='resultats.html'>Les résultats réels</a></li>"
-             "<li><a href='contact.html'>Nous contacter</a></li><li><a href='index.html#conditions'>Conditions d'utilisation et mentions légales</a></li></ul>")
+             "<li><a href='credits.html'>Sources des données et crédits</a></li><li><a href='index.html#conditions'>Conditions d'utilisation et mentions légales</a></li></ul>")
     url = (base + chemin) if base else None
     jl = {"@context": "https://schema.org", "@graph": [
         {"@type": "AboutPage", "name": "À propos de Radar Bourse", "url": url, "inLanguage": "fr",
@@ -159,6 +174,19 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("72", "Mélanger à nouveau l'avis de la première IA avec l'avis final, pour corriger les hésitations", False,
+     "228 443 avis jugés de 2016 à 2026 : exactement le même nombre de bonnes réponses (55,78 %) avec 25 % ou 50 % de mélange, sur chacune des 11 années. "
+     "L'avis final contient déjà tout ce que sait la première IA. Non adopté : aucun gain"),
+    ("71", "Lisser l'avis de l'IA : faire la moyenne de ses chances des derniers jours, titre par titre, pour un avis plus stable", False,
+     "228 443 avis jugés de 2016 à 2026 : 55,78 % de bonnes réponses sans lissage, 55,79 % à 55,82 % avec (moyennes de 2 à 5 jours ou lissage exponentiel). "
+     "Le gain global est du bruit, et 5 ou 6 années sur 11 reculent (jusqu'à −0,8 point). Non adopté : l'IA ne doit jamais faire moins bien"),
+    ("70", "Fourchettes « conformes » : recalculer chaque année la marge des fourchettes à partir des erreurs passées, globalement ou marché par marché", False,
+     "515 008 cas, jugés sur 2018-2026 : la version globale revient au réglage déjà utilisé par le site (tenue proche de 79 % pour 80 % promis) ; "
+     "la version par marché déséquilibre les cryptos (85 % au lieu de 80 %) et n'améliore pas la pire année. Non adopté"),
+    ("70", "Ajouter le ton des actualités au calcul de l'IA", False,
+     "Impossible à tester honnêtement aujourd'hui : il n'existe pas d'historique fiable du ton des actus pour les années passées. "
+     "Le ton des actus de chaque titre est désormais archivé chaque soir ; il sera testé sur des jours que l'IA n'a pas vus dès qu'il y aura assez de recul. "
+     "En attendant, il sert seulement de garde-fou (signal fort suspendu si les actus sont nettement négatives)"),
     ("69", "Quand l'IA hésite (chances entre 47 et 53 sur 100), suivre plutôt le sens habituel du marché", False,
      "Vrais cours 2018-2026 : +0,1 à +0,2 point au total, mais l'IA perd jusqu'à 1,4 point en 2022 et un peu en 2018, 2019 et 2024. "
      "Règle du site : jamais de baisse. Non adopté : l'avis reste celui de l'IA, marqué « confiance faible »"),

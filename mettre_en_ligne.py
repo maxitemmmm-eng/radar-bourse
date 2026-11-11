@@ -510,6 +510,12 @@ def _pause(texte="Appuie sur Entrée quand c'est fait…"):
 def domaine(m, complet):
     """Version 67 : tutoriel guidé, étape par étape, pour donner au site une vraie adresse (ex : radarbourse.fr)."""
     if "--domaine" not in sys.argv:
+        if not m.get("domaine"):   # version 70 : domaine réglé directement sur GitHub (variable RADAR_DOMAINE) → on le retient
+            code, val = silencieux([GH, "variable", "get", "RADAR_DOMAINE", "-R", complet])
+            val = (val or "").strip().lower()
+            if code == 0 and re.fullmatch(r"[a-z0-9.-]+\.[a-z]{2,}", val):
+                m["domaine"] = val
+                sauver_memoire(m)
         if m.get("domaine"):
             ok(f"Nom de domaine : {m['domaine']}")
         return
@@ -615,7 +621,7 @@ def dernier_run(complet, depuis):
 
 
 def publier(complet, login):
-    etape(10, "Publication (3 à 6 minutes)")
+    etape(10, "Publication (environ 1 heure : le robot recalcule tout le site)")
     depuis = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if SIMULATION:
         run([GH, "workflow", "run", "radar.yml", "-R", complet])
@@ -642,10 +648,25 @@ def publier(complet, login):
              f"{complet}/actions, active les workflows si GitHub le demande, puis relance ce script.")
 
     info("Le robot GitHub télécharge les cours, entraîne le modèle et construit le site.")
-    info("Tu peux suivre ici (ne ferme pas la fenêtre) :")
+    info("Tu peux suivre ici. Si tu fermes la fenêtre, ce n'est pas grave : GitHub continue tout seul.")
     rid = str(r["databaseId"])
-    code = subprocess.run([GH, "run", "watch", rid, "-R", complet, "--exit-status", "-i", "15"],
+    code = subprocess.run([GH, "run", "watch", rid, "-R", complet, "--exit-status", "-i", "30"],
                           cwd=ICI).returncode
+    # version 70 : si seule la publication finale a calé (GitHub trop lent), on la relance automatiquement, deux fois au plus
+    for essai in range(2):
+        if code == 0:
+            break
+        _, etat = silencieux([GH, "run", "view", rid, "-R", complet, "--json", "jobs"])
+        try:
+            jobs = {j["name"]: j.get("conclusion") for j in json.loads(etat).get("jobs", [])}
+        except (ValueError, AttributeError):
+            jobs = {}
+        if jobs.get("construire") != "success" or jobs.get("publier") == "success":
+            break
+        info(f"⏳ GitHub a mis trop de temps à publier : je relance la publication ({essai + 1}/2), sans tout recalculer…")
+        silencieux([GH, "run", "rerun", rid, "-R", complet, "--failed"])
+        time.sleep(20)
+        code = subprocess.run([GH, "run", "watch", rid, "-R", complet, "--exit-status", "-i", "30"], cwd=ICI).returncode
     if code != 0:
         _, logs = silencieux([GH, "run", "view", rid, "-R", complet, "--log-failed"])
         stop("La mise à jour en ligne a échoué.", logs[-15000:])

@@ -372,7 +372,7 @@ def _ecrire_anglais(gabarit: str, donnees: str, dossier: str, lib: str) -> None:
     html = ("<!doctype html>\n<html lang=\"en\" data-theme=\"dark\">\n<head>\n<meta charset=\"utf-8\">\n"
             "<script>try{var t=localStorage.getItem(\"radar-theme\");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>\n"
             "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
-            + securite + tete.replace("<!--__LIB__-->", lib) + "\n</head>\n<body>\n" + corps + "\n</body>\n</html>\n")
+            + securite + tete.replace("<!--__LIB__-->", lib) + "\n</head>\n<body class=\"partie-pronos\">\n" + corps + "\n</body>\n</html>\n")
     html = traduction_appli.traduire_page(html, traductions_en.EN)
     for _fr, _en in (("avis-surs-verifies.html", "en/verified-calls.html"), ('"themes.html"', '"en/themes.html"'), ('"credits.html"', '"en/credits.html"'), ('"toutes-les-actions.html"', '"en/all-stocks.html"'), ('"prediction-crypto.html"', '"en/crypto-prediction.html"'), ('"prediction-bourse.html"', '"en/stock-market-prediction.html"')):
         html = html.replace(_fr, _en)   # version 65 : les liens de l'appli anglaise vont vers les pages anglaises
@@ -438,7 +438,7 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
         html = ("<!doctype html>\n<html lang=\"fr\" data-theme=\"dark\">\n<head>\n<meta charset=\"utf-8\">\n"
                 "<script>try{var t=localStorage.getItem(\"radar-theme\");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>\n"
                 "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
-                + securite + tete.replace("<!--__LIB__-->", lib) + "\n</head>\n<body>\n" + corps
+                + securite + tete.replace("<!--__LIB__-->", lib) + "\n</head>\n<body class=\"partie-pronos\">\n" + corps
                 + "\n</body>\n</html>\n")
     os.makedirs(dossier, exist_ok=True)
     chemin = os.path.join(dossier, "index.html")

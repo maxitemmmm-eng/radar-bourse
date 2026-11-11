@@ -16,6 +16,7 @@ from datetime import datetime
 
 from . import config
 from .hebdo import CSS as _CSS_HEBDO
+from .trois_parties import CSS as _CSS_TROIS, barre as _barre_trois, partie_de as _partie_de
 
 NOM = "Radar Bourse"
 SLOGAN = "Analyse et prévisions boursières à un mois, expliquées simplement"
@@ -27,8 +28,8 @@ def description_accueil(payload: dict | None = None) -> str:
     rq = (((payload or {}).get("modele") or {}).get("risque") or {})
     av, sr = rq.get("avis_surs") or {}, rq.get("sens_recent") or {}
     if (av.get("taux") or 0) > 0.75:   # version 63 : le chiffre des avis sûrs
-        d = (f"Prévisions bourse et crypto par IA, gratuites : {round(av['taux'] * 100)} % de réussite sur ses avis sûrs, "
-             "risque de chute, près de 300 titres. Résultats vérifiés.")
+        d = (f"Avis de l'IA sur 2 500 actions et cryptos ({round(av['taux'] * 100)} % de réussite sur ses avis sûrs) "
+             "et Académie gratuite pour apprendre la Bourse de zéro.")
         if len(d) <= 160:
             return d
     if (sr.get("taux") or 0) > 0.6:
@@ -39,7 +40,7 @@ def description_accueil(payload: dict | None = None) -> str:
     return DESCRIPTION
 
 
-MOTS_CLES = ("radar bourse, prédiction bourse, prédiction bitcoin, prédiction crypto, prévision bourse IA, prévision action, prévision crypto, prévision bitcoin, simulateur boursier gratuit, "
+MOTS_CLES = ("radar bourse, bourse pour débutant, apprendre la bourse, formation bourse gratuite, comment investir en bourse, débuter en bourse, quiz bourse, prédiction bourse, prédiction bitcoin, prédiction crypto, prévision bourse IA, prévision action, prévision crypto, prévision bitcoin, simulateur boursier gratuit, "
              "portefeuille virtuel, risque de chute action, volatilité, CAC 40, S&P 500, convertisseur bitcoin euro, "
              "si j'avais investi, intérêts composés, calcul plus-value flat tax, apprendre la bourse, krach boursier, "
              "risque de krach, bulle IA bourse, actu bourse, actu bitcoin, actualité crypto, CAC 40 aujourd'hui, prévision Nvidia, "
@@ -114,6 +115,7 @@ CSS_PAGE = """:root{--bg:#eef1f5;--surface:#fff;--surface-2:#f6f8fb;--ink:#0f1b2
 .plus-mobile,.plus-mobile-t{display:none}
 .plus-seul{display:none}
 .top .nav-sec{flex-wrap:wrap;overflow:visible;row-gap:6px}
+.nav-sec a[href$="formation.html"]{color:var(--ink);border-color:color-mix(in srgb,#f2c14e 60%,transparent);background:color-mix(in srgb,#f2c14e 12%,transparent)}
 .nav-sec a[href$="prediction-crypto.html"],.nav-sec a[href$="prediction-bourse.html"]{color:var(--ink);border-color:color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 @media (prefers-reduced-motion:no-preference){.plus[open] .plus-panneau{animation:menu-ouvre .22s cubic-bezier(.2,.8,.2,1) both}
   @keyframes menu-ouvre{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}}
@@ -179,7 +181,7 @@ html.texte-115 body{font-size:18px}html.texte-130 body{font-size:20px}
 .marque-sur svg{width:13px;height:13px}.marque-sur.tres{color:var(--surface);background:var(--up)}
 .avis-sur{border-left:3px solid var(--up);padding:8px 12px;background:var(--up-soft);border-radius:0 8px 8px 0}
 .badge-sur{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:700;background:var(--up);color:var(--surface)}
-""" + _CSS_HEBDO.replace("\n", "") + """th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:13px;color:var(--muted)}
+""" + _CSS_HEBDO.replace("\n", "") + _CSS_TROIS.replace("\n", "") + """th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:13px;color:var(--muted)}
 @media print{.top,.nav-ligne,.plus,.theme-btn,.ouvrir,.partager-page,footer .muted{display:none!important}body{background:#fff;color:#000}.carte{border-color:#bbb}a{color:#000}}"""
 
 LOGO = '<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id=\'rbf\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'1\'><stop offset=\'0\' stop-color=\'#1c3576\'/><stop offset=\'1\' stop-color=\'#0a1330\'/></linearGradient><linearGradient id=\'rbl\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#86a8ff\'/><stop offset=\'1\' stop-color=\'#44e09c\'/></linearGradient><linearGradient id=\'rbs\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#44e09c\' stop-opacity=\'0\'/><stop offset=\'1\' stop-color=\'#44e09c\' stop-opacity=\'.85\'/></linearGradient></defs><rect width=\'64\' height=\'64\' rx=\'15\' fill=\'url(#rbf)\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'22.00\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.28\' stroke-width=\'2.00\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'12.50\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.18\' stroke-width=\'2.00\'/><path d=\'M19.67 15.58 A22.00 22.00 0 0 1 42.3 16.76\' fill=\'none\' stroke=\'url(#rbs)\' stroke-width=\'3.20\' stroke-linecap=\'round\'/><polyline points=\'9.0,47.0 18.0,39.5 26.0,42.5 34.5,31.0 40.5,33.5 44.72,18.65\' fill=\'none\' stroke=\'url(#rbl)\' stroke-width=\'5.00\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'8.00\' fill=\'#44e09c\' fill-opacity=\'.2\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'4.50\' fill=\'#44e09c\'/></svg>'
@@ -238,7 +240,7 @@ def entete(prefixe: str, chemin: str, accueil: str, sous_titre: str, liens: list
     visibles = list(principaux) + [l for l in autres if l[1] == rubrique]
     pastilles = "".join(lien(t, h, r) for t, h, *r in visibles)
     plus_t = "More" if aria_nav == "Site pages" else "Plus"
-    menu_t = "Menu"
+    menu_t = "More" if aria_nav == "Site pages" else "Plus"
     par_h = {l[1]: l for l in autres}
     if N_MENU == N_MENU_FR and all(h in par_h for _, hs in GROUPES_FR for h in hs if h in par_h):
         ranges = {h for _, hs in GROUPES_FR for h in hs}
@@ -258,9 +260,14 @@ def entete(prefixe: str, chemin: str, accueil: str, sous_titre: str, liens: list
     plus = (f'<details class="plus{" plus-seul" if seul else ""}"><summary><span class="plus-large">{plus_t} ▾</span><span class="plus-mobile" aria-hidden="true"><i></i><i></i><i></i></span>'
             f'<span class="plus-mobile-t">{menu_t}</span></summary><div class="plus-panneau">' + contenu + "</div></details>")
     bouton = f'<a class="ouvrir" href="{prefixe}{ouvrir[1]}">{_e(ouvrir[0])}</a>' if ouvrir else ""
+    # version 71 : les 3 parties du site (Menu, Pronos, Apprendre)
+    if aria_nav == "Pages du site":
+        trois = _barre_trois(prefixe, _partie_de(chemin))
+    else:
+        trois = _barre_trois(prefixe, "pronos", ("Menu", "Forecasts", "Learn")).replace('index.html#menu"', 'app-en.html#menu"').replace('index.html"', 'app-en.html"')
     return (f'<a class="skip" href="#contenu">{_e(aller)}</a>'
             f'<header class="top g"><div class="in"><a class="brand" href="{prefixe}{accueil}">{LOGO}<b>{NOM}</b>'
-            f'<span>{_e(sous_titre)}</span></a>{bouton}'
+            f'<span>{_e(sous_titre)}</span></a>{trois}{bouton}'
             f'<button class="theme-btn" id="theme" type="button" aria-label="{_e(aria_theme)}" title="{_e(aria_theme)}">'
             '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" '
             'stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg></button></div>'
@@ -286,8 +293,8 @@ def barre_partage(base: str, chemin: str, titre: str, libelle: str = "Partager c
 def liens_fr() -> list:
     # version 69.1 : les 7 premiers forment le menu (les vraies pages d'abord, comme sur l'appli) ; les autres vont dans « Plus ▾ », rangés par thème
     return [("Accueil", "index.html"), ("Prédiction crypto", "prediction-crypto.html"), ("Prédiction bourse", "prediction-bourse.html"),
-            ("Toutes les actions", "toutes-les-actions.html"), ("Par thème", "themes.html"), ("Résultats vérifiés", "avis-surs-verifies.html"),
-            ("Guides", "guides.html"),
+            ("Académie", "formation.html"), ("Toutes les actions", "toutes-les-actions.html"), ("Par thème", "themes.html"),
+            ("Résultats vérifiés", "avis-surs-verifies.html"),
             ("Tous les titres suivis", "titres.html"), ("Prévisions du mois", "index.html#previsions"), (f"Prévisions {datetime.now().year}", "previsions.html"),
             ("Classements", "classements.html"), ("Sélection IA du mois", "portefeuille.html"),
             ("Pronostic du jour", "index.html#prono"), ("Simulateur boursier", "simulateur-boursier.html"), ("Comparer deux titres", "comparer.html"),
@@ -296,7 +303,7 @@ def liens_fr() -> list:
             ("Fiche technique", "fiche-technique-ia.html"), ("Données ouvertes", "donnees-ouvertes.html"),
             ("Le point du jour", "point.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actu bourse", "actu-bourse.html"),
             ("Actu bitcoin", "actu-bitcoin.html"), ("Krach boursier", "krach-boursier.html"), ("Carte des risques", "index.html#nuage"),
-            ("Apprendre la Bourse", "apprendre.html"), ("Glossaire", "glossaire.html"), ("Les mini-robots", "robots.html"),
+            ("Quiz : examen de l'Académie", "formation/examen.html"), ("Guides", "guides.html"), ("Mini-cours", "apprendre.html"), ("Glossaire", "glossaire.html"), ("Les mini-robots", "robots.html"),
             ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"), ("Contact", "contact.html"),
             ("English", "en/index.html", 'hreflang="en" lang="en"')]
 
@@ -307,7 +314,7 @@ GROUPES_FR = [("Prédictions de l'IA", ["titres.html", "index.html#previsions", 
               ("Jouer et s'entraîner", ["index.html#prono", "simulateur-boursier.html", "comparer.html", "outils.html"]),
               ("L'IA est-elle fiable ?", ["resultats.html", "journal-ia.html", "connaissances.html", "fiche-technique-ia.html", "donnees-ouvertes.html"]),
               ("Marchés et actualités", ["point.html", "bourse-cette-semaine.html", "actu-bourse.html", "actu-bitcoin.html", "krach-boursier.html", "index.html#nuage"]),
-              ("Apprendre", ["apprendre.html", "glossaire.html", "robots.html"]),
+              ("Apprendre", ["formation/examen.html", "guides.html", "apprendre.html", "glossaire.html", "robots.html"]),
               ("Le site", ["fonctionnalites.html", "a-propos.html", "contact.html", "en/index.html"])]
 
 
@@ -564,15 +571,15 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 {script_stats()}
 {lien_css(prefixe)}
 </head>
-<body>
-{entete(prefixe, chemin, "index.html", "Prévisions vérifiées, sans promesse", liens_fr(), ("Ouvrir l'appli", "index.html"))}
+<body class="partie-{_partie_de(chemin)}">
+{entete(prefixe, chemin, "index.html", "L'Académie : la Bourse pas à pas" if _partie_de(chemin) == "apprendre" else "Prévisions vérifiées, sans promesse", liens_fr(), ("Voir les pronos", "index.html") if _partie_de(chemin) == "apprendre" else ("Ouvrir l'appli", "index.html"))}
 <div class="w">
 <main id="contenu" tabindex="-1">
 {corps}
 </main>
 {barre_partage(base, chemin, titre)}
-<footer><p class="avert"><b>Rien n'est sûr en Bourse.</b> {NOM} est un projet éducatif : ces informations sont générées automatiquement,
-peuvent contenir des erreurs et ne constituent pas un conseil en investissement. Tu peux perdre tout l'argent investi.
+<footer><p class="avert"><b>Rien n'est sûr en Bourse.</b> {NOM} est un projet éducatif et indépendant. Les avis sont calculés chaque jour par l'IA du site : ils peuvent se tromper
+et ne constituent pas un conseil en investissement. Tu peux perdre tout l'argent investi.
 Conditions d'utilisation, méthodologie et aide : voir la <a href="{prefixe}index.html#conditions">page d'accueil</a>.</p>
 <p class="muted"><a href="{prefixe}fonctionnalites.html">Fonctionnalités</a> · <a href="{prefixe}journal-ia.html">Journal de l'IA</a> · <a href="{prefixe}simulateur-boursier.html">Simulateur boursier</a> · <a href="{prefixe}outils.html">Outils gratuits</a> · <a href="{prefixe}a-propos.html">À propos</a> · <a href="{prefixe}contact.html">Contact</a> · <a href="{prefixe}donnees-ouvertes.html">Données ouvertes</a></p>
 <p class="muted">© {__import__("bourse_bot.credits", fromlist=["x"]).annees()} {NOM} · <a href="{prefixe}credits.html">Droits d'auteur et crédits</a> · Marques et noms de sociétés cités à des fins d'identification uniquement.</p></footer>
@@ -2020,6 +2027,10 @@ def resume_du_jour(payload: dict) -> dict:
                        for a in payload.get("actus_marche", [])}.values())[:5],
         # version 65 : les avis sûrs du soir, vérifiés en public 20 séances plus tard (avis-surs-verifies.html)
         "surs": _avis_du_jour(payload),
+        # version 70 : le ton des actus et l'avis de l'IA de chaque titre, archivés chaque soir. Dans quelques mois, on pourra
+        # mesurer honnêtement (sur des jours que l'IA n'a pas vus) si le ton des actus aide à prévoir, avant de l'ajouter au calcul.
+        "actus_ton": [[t["ticker"], round(t["tonalite"], 3), len(t.get("actus") or []), (round(t["proba_hausse"], 3) if t.get("proba_hausse") is not None else None)]
+                      for t in titres if isinstance(t.get("tonalite"), (int, float)) and t["tonalite"] == t["tonalite"]],
     }
 
 
@@ -2522,6 +2533,13 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
             urls.append((chemin, "daily", "0.7"))
     except Exception as e:
         print(f"Thèmes non générés : {e}")
+
+    try:   # version 70 : l'Académie, centre de formation gratuit pour débutants
+        from . import formation
+        for chemin in formation.generer(__import__(__name__, fromlist=["x"]), base, dossier, csp):
+            urls.append((chemin, "weekly", "0.9" if chemin == "formation.html" else "0.7"))
+    except Exception as e:
+        print(f"Académie non générée : {e}")
 
     try:   # version 68 : pages « prédiction crypto / prédiction bourse » (recherches « prédiction bitcoin », « bitcoin va-t-il monter »)
         from . import prediction
