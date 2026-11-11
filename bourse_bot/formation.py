@@ -18,6 +18,12 @@ from . import formation_exos as _fx
 _fx.EXOS.update(EXOS_7)
 
 CHAPITRES = COURS_1 + COURS_2 + COURS_3 + COURS_4 + COURS_5 + COURS_6 + COURS_7
+# version 76 : une étude de cas à débloquer à la fin de chaque module
+from .formation_cours_5 import CAS as _CAS, EXOS_CAS as _EXOS_CAS
+_fx.EXOS.update(_EXOS_CAS)
+for _c in _CAS:
+    _fin = max(k for k, x in enumerate(CHAPITRES) if x["niveau"] == _c["niveau"])
+    CHAPITRES.insert(_fin + 1, _c)
 
 NIVEAUX = [
     (1, "Les bases", "Comprendre ce qu'est la Bourse, sans aucun prérequis.", "#3f7be0"),

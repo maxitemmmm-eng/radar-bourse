@@ -620,6 +620,46 @@ def dernier_run(complet, depuis):
     return recents[0] if recents else None
 
 
+def _etat_run(complet, rid):
+    """État d'une exécution GitHub, en réessayant si GitHub répond une erreur passagère (502, 503, coupure réseau…)."""
+    for essai in range(6):
+        code, sortie = silencieux([GH, "run", "view", rid, "-R", complet, "--json", "status,conclusion,jobs"])
+        if code == 0 and sortie:
+            try:
+                return json.loads(sortie)
+            except ValueError:
+                pass
+        time.sleep(min(60, 10 * (essai + 1)))
+    return None
+
+
+def suivre(complet, rid):
+    """Version 76 : suit l'exécution sans s'arrêter sur une erreur passagère de GitHub (avant : « failed to get jobs: HTTP 502 » = échec).
+    Renvoie (conclusion, jobs) ; conclusion = "success", "failure", "cancelled"… ou None si GitHub est resté injoignable très longtemps."""
+    debut, dernier_texte, injoignable = time.time(), "", 0
+    while time.time() - debut < 4 * 3600:
+        etat = _etat_run(complet, rid)
+        if etat is None:
+            injoignable += 1
+            info("⚠️ GitHub ne répond pas pour l'instant (erreur de leur côté). Je réessaie dans 2 minutes, le robot continue de son côté.")
+            if injoignable >= 10:
+                return None, {}
+            time.sleep(120)
+            continue
+        injoignable = 0
+        jobs = {j.get("name"): j for j in etat.get("jobs", [])}
+        en_cours = [n for n, j in jobs.items() if j.get("status") != "completed"]
+        faits = [n for n, j in jobs.items() if j.get("status") == "completed"]
+        texte = (f"En cours : {', '.join(en_cours)}" if en_cours else ("Fin" if faits else "Préparation…")) + (f" · terminé : {', '.join(faits)}" if faits else "")
+        if texte != dernier_texte:
+            info(f"{datetime.now().strftime('%H:%M')} · {texte}")
+            dernier_texte = texte
+        if etat.get("status") == "completed":
+            return etat.get("conclusion"), {n: j.get("conclusion") for n, j in jobs.items()}
+        time.sleep(45)
+    return None, {}
+
+
 def publier(complet, login):
     etape(10, "Publication (environ 1 heure : le robot recalcule tout le site)")
     depuis = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -650,24 +690,21 @@ def publier(complet, login):
     info("Le robot GitHub télécharge les cours, entraîne le modèle et construit le site.")
     info("Tu peux suivre ici. Si tu fermes la fenêtre, ce n'est pas grave : GitHub continue tout seul.")
     rid = str(r["databaseId"])
-    code = subprocess.run([GH, "run", "watch", rid, "-R", complet, "--exit-status", "-i", "30"],
-                          cwd=ICI).returncode
+    conclusion, jobs = suivre(complet, rid)
     # version 70 : si seule la publication finale a calé (GitHub trop lent), on la relance automatiquement, deux fois au plus
     for essai in range(2):
-        if code == 0:
+        if conclusion == "success" or conclusion is None:
             break
-        _, etat = silencieux([GH, "run", "view", rid, "-R", complet, "--json", "jobs"])
-        try:
-            jobs = {j["name"]: j.get("conclusion") for j in json.loads(etat).get("jobs", [])}
-        except (ValueError, AttributeError):
-            jobs = {}
         if jobs.get("construire") != "success" or jobs.get("publier") == "success":
             break
         info(f"⏳ GitHub a mis trop de temps à publier : je relance la publication ({essai + 1}/2), sans tout recalculer…")
         silencieux([GH, "run", "rerun", rid, "-R", complet, "--failed"])
-        time.sleep(20)
-        code = subprocess.run([GH, "run", "watch", rid, "-R", complet, "--exit-status", "-i", "30"], cwd=ICI).returncode
-    if code != 0:
+        time.sleep(30)
+        conclusion, jobs = suivre(complet, rid)
+    if conclusion is None:
+        stop("GitHub ne répond plus depuis un long moment (panne de leur côté). Le robot continue sûrement tout seul : "
+             f"regarde dans une heure sur https://github.com/{complet}/actions, ou relance ce script plus tard.")
+    if conclusion != "success":
         _, logs = silencieux([GH, "run", "view", rid, "-R", complet, "--log-failed"])
         stop("La mise à jour en ligne a échoué.", logs[-15000:])
     ok("Mise à jour terminée.")

@@ -174,6 +174,9 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("76", "Quand la peur est très forte sur les marchés (indice VIX au-dessus de 30), donner un avis de rebond (hausse)", False,
+     "228 443 avis jugés de 2016 à 2026 : 56,36 % de bonnes réponses au lieu de 55,78 % au total, mais une année recule légèrement (−0,06 point), "
+     "et l'idée repose sur peu d'épisodes (5,7 % des avis, surtout 2020 et 2022). Règle du site : jamais moins bien sur aucune année. Non adopté, à retester avec plus de recul"),
     ("75", "Juger chaque titre par rapport aux autres du même marché le même jour (la moitié la mieux classée en hausse, l'autre en baisse)", False,
      "228 443 avis jugés de 2016 à 2026 : 51,8 % de bonnes réponses au lieu de 55,78 %, jusqu'à 12 points de moins certaines années (quand presque tout monte ou tout baisse ensemble). "
      "Non adopté"),

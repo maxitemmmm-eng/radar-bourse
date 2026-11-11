@@ -97,13 +97,20 @@ html[data-aca="clair"] .a-nav a[aria-current]{box-shadow:inset 3px 0 0 #3fbfb1}
 .c-mprog .barre i{display:block;height:100%;width:0;background:var(--a-prim);border-radius:99px;transition:width .8s cubic-bezier(.2,.8,.2,1)}
 .c-chaps{list-style:none;margin:0;padding:0}
 .c-chaps li+li{border-top:1px solid var(--a-line)}
-.c-chaps a,body.aca-app .c-chaps a{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:12px 20px;text-decoration:none;color:var(--a-ink)}
-.c-chaps a:hover{background:var(--a-card2)}
+.c-chaps>li>a,body.aca-app .c-chaps>li>a{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:12px 20px;text-decoration:none;color:var(--a-ink)}
+.c-chaps>li>a:hover{background:var(--a-card2)}.c-verrou a{font-weight:600}
 .c-idx{font-family:var(--m);font-size:13.5px;color:var(--a-muted)}
 .c-chaps b{font-weight:600;display:block;line-height:1.35}.c-chaps small{color:var(--a-muted);font-size:13px}
 .c-etat{font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap;border:1px solid var(--a-line);color:var(--a-muted)}
 .c-etat.fait{background:var(--a-ok-soft);border-color:transparent;color:var(--a-ok)}
 .c-etat.encours{background:var(--a-soft);border-color:transparent;color:var(--a-prim)}
+.c-etat svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;vertical-align:-1px;margin-right:4px}
+.c-etat.dispo{border-color:var(--a-prim);color:var(--a-prim)}
+.c-chaps a.ferme b{color:var(--a-muted);font-weight:500}.c-chaps a.ferme .c-idx{color:var(--a-muted)}
+.c-verrou{margin:0;padding:0 20px 12px 72px;font-size:13.5px;color:var(--a-muted)}
+.c-cas{background:color-mix(in srgb,var(--a-or) 6%,transparent)}.c-cas .c-idx svg{width:20px;height:20px;fill:none;stroke:var(--a-or);stroke-width:2}
+.c-cas small{display:block}
+@media (prefers-reduced-motion:no-preference){.c-verrou:not([hidden]){animation:l-entre .25s ease-out}}
 .c-badge-m{display:flex;gap:10px;align-items:center;padding:10px 20px;font-size:13.5px;color:var(--a-muted);background:var(--a-card2)}
 .c-badge-m svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
 .c-badge-m.ok{color:var(--a-ok)}
@@ -117,7 +124,7 @@ html[data-aca="clair"] .a-nav a[aria-current]{box-shadow:inset 3px 0 0 #3fbfb1}
 .a-auteur .av{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--a-soft);color:var(--a-prim);font-weight:700}
 .a-auteur b{color:var(--a-ink)}
 @media (max-width:640px){.c-chiffres{grid-template-columns:1fr 1fr}.c-reprendre{grid-template-columns:1fr}.c-mtete{grid-template-columns:auto 1fr}.c-mprog{grid-column:1/-1;text-align:left}
-  .c-chaps a{grid-template-columns:34px 1fr;padding:12px 16px}.c-chaps .c-etat{grid-column:2;justify-self:start}.c-exam{grid-template-columns:auto 1fr}.c-exam .a-btn{grid-column:1/-1}}
+  .c-verrou{padding-left:66px}.c-chaps>li>a{grid-template-columns:34px 1fr;padding:12px 16px}.c-chaps .c-etat{grid-column:2;justify-self:start}.c-exam{grid-template-columns:auto 1fr}.c-exam .a-btn{grid-column:1/-1}}
 /* ----- leçon ----- */
 .l-top{position:sticky;top:0;z-index:20;background:var(--a-card);border-bottom:1px solid var(--a-line)}
 .l-top .in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:12px 20px}
@@ -185,6 +192,9 @@ svg.g path,svg.g line{fill:none;stroke-linecap:round;stroke-linejoin:round}
 .l-fin .bilan{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--a-line);border-radius:12px;overflow:hidden;margin:20px 0}
 .l-fin .bilan div{padding:14px 16px;background:var(--a-card)}.l-fin .bilan div+div{border-left:1px solid var(--a-line)}
 .l-fin .bilan b{display:block;font-size:22px;font-family:var(--m);font-weight:600}.l-fin .bilan span{font-size:13px;color:var(--a-muted)}
+.l-reprise{margin-top:18px;padding:16px 18px;border:1px solid var(--a-prim);border-radius:12px;background:var(--a-soft)}.l-reprise p{margin:0 0 12px}
+.l-deblocage{list-style:none;margin:0 0 18px;padding:14px 18px;border-radius:12px;border:1px solid var(--a-line);background:var(--a-card)}.l-deblocage li{margin:4px 0;font-size:15px}
+.l-deblocage li::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--a-or);margin-right:10px;vertical-align:1px}
 .l-fin .statut{display:flex;align-items:center;gap:12px}
 .l-fin .statut .rond{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--a-ok-soft);color:var(--a-ok)}
 .l-fin .statut .rond svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
@@ -210,6 +220,8 @@ SVG = {
     "flamme": '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2c1 3.5 5 5.5 5 11a5 5 0 0 1-10 0c0-2.4 1-4 2.3-5.3.2 1.6.9 2.6 1.9 3.1C11 8 11.2 5 12 2z"/></svg>',
     "check": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
     "retour": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>',
+    "cadenas": '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>',
+    "loupe": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>',
     "lune": '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>',
 }
 
@@ -329,61 +341,83 @@ class SeoAcademie:
 
 # ------------------------------------------------------------------ le programme ------------------------------------------------------------------
 def parcours(chapitres, niveaux, verifie_le, nom):
+    reguliers = [c for c in chapitres if not c.get("cas")]
     total_l = sum(len(c["sections"]) for c in chapitres)
+    n_cas = len(chapitres) - len(reguliers)
     modules = ""
     for n, titre_n, desc, coul in niveaux:
-        chs = [(i, c) for i, c in enumerate(chapitres) if c["niveau"] == n]
+        chs = [c for c in reguliers if c["niveau"] == n]
+        cas = next((c for c in chapitres if c.get("cas") and c["niveau"] == n), None)
         lignes = "".join(
             f"<li><a href='formation/{c['id']}.html' data-chap='{c['id']}'><span class='c-idx'>{n}.{k + 1}</span>"
             f"<span><b>{_e(c['titre'])}</b><small>{len(c['sections'])} mini-leçons et exercices · environ {c['minutes'] + 3} min</small></span>"
-            f"<span class='c-etat'>À faire</span></a></li>" for k, (i, c) in enumerate(chs))
+            f"<span class='c-etat'>À faire</span></a><p class='c-verrou' hidden></p></li>" for k, c in enumerate(chs))
+        if cas:
+            lignes += (f"<li class='c-cas'><a href='formation/{cas['id']}.html' data-cas='{cas['id']}'><span class='c-idx'>{SVG['loupe']}</span>"
+                       f"<span><b>{_e(cas['titre'])}</b><small>{_e(cas['desc'])}</small></span><span class='c-etat'>Bonus</span></a><p class='c-verrou' hidden></p></li>")
         modules += (f"<li class='c-module' style='--c:{coul}' id='niv{n}' data-niv='{n}'><div class='c-mtete'><span class='c-num' aria-hidden='true'>{n}</span>"
                     f"<div><h2>Module {n} : {_e(titre_n)}</h2><p>{_e(desc)}</p></div>"
                     f"<div class='c-mprog'><span class='txt'>0 / {len(chs)} chapitres</span><div class='barre'><i></i></div></div></div>"
                     f"<ol class='c-chaps'>{lignes}</ol>"
                     f"<div class='c-badge-m'>{SVG['examen']}<span>Attestation du module {n} : valide les {len(chs)} chapitres pour l'obtenir.</span></div></li>")
     corps = (f"<header class='c-tete'><h1>Apprendre la Bourse, de zéro à l'autonomie</h1>"
-             f"<p>{len(chapitres)} chapitres en {len(niveaux)} modules, {total_l} mini-leçons, chacune suivie d'un exercice corrigé. "
+             f"<p>{len(reguliers)} chapitres en {len(niveaux)} modules et {n_cas} études de cas à débloquer, {total_l} mini-leçons, chacune suivie d'un exercice corrigé. "
              "Gratuit, sans compte : ta progression reste dans ce navigateur.</p></header>"
              "<section class='a-carte c-reprendre' aria-labelledby='rep-t'><div><p class='sur' id='rep-sur'>Pour commencer</p>"
-             f"<h2 id='rep-t'>{_e(chapitres[0]['titre'])}</h2><p id='rep-p'>Module 1 · {len(chapitres[0]['sections'])} mini-leçons · environ {chapitres[0]['minutes'] + 3} min</p></div>"
-             f"<a class='a-btn' id='rep-a' href='formation/{chapitres[0]['id']}.html'>Commencer</a></section>"
+             f"<h2 id='rep-t'>{_e(reguliers[0]['titre'])}</h2><p id='rep-p'>Module 1 · {len(reguliers[0]['sections'])} mini-leçons · environ {reguliers[0]['minutes'] + 3} min</p></div>"
+             f"<a class='a-btn' id='rep-a' href='formation/{reguliers[0]['id']}.html'>Commencer</a></section>"
              f"<div class='c-chiffres'><div class='fl'><b>{SVG['flamme']}<span data-a='serie'>0</span></b><span>jours de suite</span></div>"
-             f"<div><b><span id='c-n'>0</span> / {len(chapitres)}</b><span>chapitres validés</span></div>"
+             f"<div><b><span id='c-n'>0</span> / {len(reguliers)}</b><span>chapitres validés</span></div>"
              "<div><b data-a='xp'>0</b><span>points</span></div>"
-             f"<div><b id='c-mod'>0 / {len(niveaux)}</b><span>modules terminés</span></div></div>"
+             f"<div><b id='c-cas'>0 / {n_cas}</b><span>études de cas débloquées</span></div></div>"
              f"<ol class='c-modules'>{modules}</ol>"
              f"<section class='a-carte c-exam' aria-labelledby='ex-t'><span class='ic'>{SVG['examen']}</span><div><h2 id='ex-t'>Examen final et certificat</h2>"
              "<p>20 questions tirées de tout le programme. 15 bonnes réponses donnent le certificat de l'Académie.</p></div>"
              "<a class='a-btn ghost' href='formation/examen.html'>Passer l'examen</a></section>"
-             "<section class='c-methode' aria-labelledby='m-t'><h2 id='m-t'>Comment fonctionne un chapitre</h2><ol>"
+             "<section class='c-methode' aria-labelledby='m-t'><h2 id='m-t'>Comment fonctionne l'Académie</h2><ol>"
              "<li><b>Une mini-leçon</b> de quelques paragraphes, avec les mots techniques expliqués au survol.</li>"
              "<li><b>Un exercice tout de suite après</b> : choix, vrai ou faux, calcul ou lecture de graphique, corrigé et expliqué.</li>"
              "<li><b>Tes erreurs reviennent</b> à la fin du chapitre, puis dans les révisions, pour qu'elles ne se répètent pas.</li>"
-             "<li><b>Un récap, un cas concret et un bilan</b> de 3 questions : 2 bonnes réponses valident le chapitre.</li></ol>"
-             "<p>Chaque jour où tu fais au moins un exercice entretient ta <b>série</b> (la flamme). L'objectif conseillé : "
-             f"{OBJECTIF_XP} points par jour, soit un chapitre environ tous les deux jours.</p>"
+             "<li><b>Un récap, un cas concret et un bilan</b> de 3 questions : 2 bonnes réponses valident le chapitre et <b>débloquent le suivant</b>.</li>"
+             "<li><b>Chaque module terminé</b> donne une attestation et débloque une <b>étude de cas</b> : une histoire vraie (GameStop, FTX, le CAC 40…) ou un cas pratique complet.</li></ol>"
+             "<p>Déjà à l'aise ? Le <a href='formation/test-de-niveau.html'>test de niveau</a> débloque directement les modules que tu maîtrises. "
+             "Tu peux aussi ouvrir n'importe quel chapitre verrouillé si tu le souhaites : le verrou est un guide, pas une barrière.</p>"
+             f"<p>Chaque jour où tu fais au moins un exercice entretient ta <b>série</b> (la flamme). L'objectif conseillé : {OBJECTIF_XP} points par jour.</p>"
              f"<div class='a-auteur'><span class='av' aria-hidden='true'>M</span><p style='margin:0'>Écrit et tenu à jour par <b>maxitemmmm</b>, créateur de {nom}. "
              f"Chaque chiffre est relu à partir des sources officielles (AMF, impots.gouv.fr, service-public.fr, Banque de France), dernière relecture le {verifie_le}. "
              "Une erreur ou une idée de chapitre ? <a href='contact.html'>Écris-moi</a>.</p></div></section>")
-    js = ("<script>document.addEventListener('DOMContentLoaded',function(){const S=window.acaStats;const d=S?S.lire():{};"
-          "const liens=[...document.querySelectorAll('[data-chap]')];let n=0;"
-          "liens.forEach(a=>{const x=d[a.dataset.chap],e=a.querySelector('.c-etat');if(x&&x.fait){e.textContent='Validé';e.classList.add('fait');n++;}"
-          "else if(x&&x.etape){e.textContent='Commencé';e.classList.add('encours');}});"
-          "document.getElementById('c-n').textContent=n;let m=0;"
-          "document.querySelectorAll('.c-module').forEach(mo=>{const ls=[...mo.querySelectorAll('[data-chap]')],f=ls.filter(a=>d[a.dataset.chap]&&d[a.dataset.chap].fait).length;"
+    js = ("<script>document.addEventListener('DOMContentLoaded',function(){const S=window.acaStats;const d=S?S.lire():{};const t=d.niveau_test||{};"
+          "const fait=id=>!!(d[id]&&d[id].fait);const liens=[...document.querySelectorAll('[data-chap]')];let n=0,libre=true;"
+          "const CADENAS=" + json.dumps(SVG["cadenas"]) + ";"
+          "function verrou(a,msg){a.classList.add('ferme');const e=a.querySelector('.c-etat');e.innerHTML=CADENAS+'Verrouillé';"
+          "const p=a.parentElement.querySelector('.c-verrou');a.addEventListener('click',ev=>{if(!a.classList.contains('ferme'))return;ev.preventDefault();"
+          "p.hidden=!p.hidden;p.innerHTML=msg+\" <a href='\"+a.getAttribute('href')+\"'>Ouvrir quand même</a>\";});}"
+          "liens.forEach((a,k)=>{const x=d[a.dataset.chap],e=a.querySelector('.c-etat');const nv=+a.closest('.c-module').dataset.niv;"
+          "if(fait(a.dataset.chap)){e.textContent='Validé';e.classList.add('fait');n++;return;}"
+          "if(libre||(t.depart&&nv<t.depart)||(x&&x.etape)){if(x&&x.etape){e.textContent='Commencé';e.classList.add('encours');}else if(libre){e.textContent='À faire';e.classList.add('dispo');}"
+          "else{e.textContent='Débloqué par le test';e.classList.add('dispo');}libre=false;return;}"
+          "const prec=liens[k-1];verrou(a,'Valide d\\u2019abord « '+(prec?prec.querySelector('b').textContent:'')+' » pour débloquer ce chapitre.');});"
+          "document.getElementById('c-n').textContent=n;let m=0,cas=0;"
+          "document.querySelectorAll('.c-module').forEach(mo=>{const ls=[...mo.querySelectorAll('[data-chap]')],f=ls.filter(a=>fait(a.dataset.chap)).length;"
           "mo.querySelector('.c-mprog .txt').textContent=f+' / '+ls.length+' chapitres';requestAnimationFrame(()=>mo.querySelector('.c-mprog i').style.width=(100*f/ls.length)+'%');"
-          "if(f===ls.length){m++;const b=mo.querySelector('.c-badge-m');b.classList.add('ok');b.querySelector('span').textContent='Attestation du module obtenue.';}});"
-          f"document.getElementById('c-mod').textContent=m+' / {len(niveaux)}';"
-          "const suite=liens.find(a=>!(d[a.dataset.chap]&&d[a.dataset.chap].fait));"
+          "const c=mo.querySelector('[data-cas]');"
+          "if(f===ls.length){m++;const b=mo.querySelector('.c-badge-m');b.classList.add('ok');b.querySelector('span').textContent='Attestation du module obtenue.';"
+          "if(c){cas++;const e=c.querySelector('.c-etat');if(fait(c.dataset.cas)){e.textContent='Terminée';e.classList.add('fait');}else{e.textContent='Débloquée';e.classList.add('encours');}}}"
+          "else if(c){verrou(c,'Cette étude de cas se débloque quand les '+ls.length+' chapitres du module sont validés.');}});"
+          f"document.getElementById('c-cas').textContent=cas+' / {n_cas}';"
+          "const suite=liens.find(a=>!fait(a.dataset.chap));"
           "if(n>0&&suite){document.getElementById('rep-sur').textContent='Reprendre où tu en étais';document.getElementById('rep-t').textContent=suite.querySelector('b').textContent;"
           "document.getElementById('rep-p').textContent='Chapitre '+suite.querySelector('.c-idx').textContent+' · '+suite.querySelector('small').textContent;"
           "const a=document.getElementById('rep-a');a.href=suite.getAttribute('href');a.textContent='Continuer';}"
           "else if(!suite){document.getElementById('rep-sur').textContent='Programme terminé';document.getElementById('rep-t').textContent='Passe l\\u2019examen final';"
           "document.getElementById('rep-p').textContent='Tous les chapitres sont validés.';const a=document.getElementById('rep-a');a.href='formation/examen.html';a.textContent='Passer l\\u2019examen';}"
-          "const t=d.niveau_test;if(n===0&&t&&t.depart>1&&t.depart<=" + str(len(niveaux)) + "){const p=document.querySelector('.c-module[data-niv=\"'+t.depart+'\"] [data-chap]');"
+          "if(n===0&&t.depart>1){const p=document.querySelector('.c-module[data-niv=\"'+t.depart+'\"] [data-chap]');"
           "if(p){document.getElementById('rep-sur').textContent='Conseillé par ton test de niveau';document.getElementById('rep-t').textContent=p.querySelector('b').textContent;"
           "const a=document.getElementById('rep-a');a.href=p.getAttribute('href');}}"
+          "const enc=d.encours||{};const k=Object.keys(enc).filter(i=>!fait(i)).sort((x,y)=>enc[y].t-enc[x].t)[0];"
+          "if(k){const a=document.querySelector('[data-chap=\"'+k+'\"],[data-cas=\"'+k+'\"]');if(a){document.getElementById('rep-sur').textContent='Chapitre en cours';"
+          "document.getElementById('rep-t').textContent=a.querySelector('b').textContent;document.getElementById('rep-p').textContent='Tu t\\u2019étais arrêté à l\\u2019étape '+(enc[k].pos+1)+'.';"
+          "const r=document.getElementById('rep-a');r.href=a.getAttribute('href');r.textContent='Reprendre';}}"
           "});</script>")
     return corps + js
 
@@ -457,15 +491,20 @@ JS_LECON = """<script>
     else { bandeau("ko","<b>Réponse attendue : "+c.dataset.sol+"</b><p>"+c.dataset.expl+"</p>"); if(!revues.has(i)){revues.add(i); file.push(i);} else faites.add(i); }
     etat="suite"; action.textContent="Continuer"; action.disabled=false; majProg(); setTimeout(()=>action.focus(),40);
   }
-  function suivant(){ const i=file[pos]; if(cartes[i].dataset.type!=="exo") faites.add(i); pos++; if(pos>=file.length) fin(); else montre(); }
+  function sauve(){ try{ const d=acaStats.lire(); d.encours=d.encours||{}; d.encours[id]={pos,file,faites:[...faites],revues:[...revues],xp,justes,essais,bilanOK,bilanN,t:Date.now()};
+    const j=acaStats.jour(); d.jours=[...new Set([...(d.jours||[]),j])].slice(-400); localStorage.setItem("radar-academie",JSON.stringify(d)); }catch(e){} }
+  function suivant(){ const i=file[pos]; if(cartes[i].dataset.type!=="exo") faites.add(i); pos++; if(pos>=file.length) fin(); else { if(essais) sauve(); montre(); } }
   function fin(){
     const d=acaStats.lire(), j=acaStats.jour(), x=d[id]||{}; const deja=!!x.fait; const besoin=Math.ceil(bilanN*2/3); const valide=bilanOK>=besoin;
     const gain=deja?Math.round(xp/4):xp+(valide?20:0);
     if(!d.xp_migre){d.xp=acaStats.xp(d); d.xp_migre=1;}
     d.xp=(d.xp||0)+gain; d.xp_jours=d.xp_jours||{}; d.xp_jours[j]=(d.xp_jours[j]||0)+gain; d.jours=[...new Set([...(d.jours||[]),j])].slice(-400);
     d[id]=Object.assign(x,{score:Math.max(x.score||0,bilanOK),total:bilanN,fait:deja||valide,etape:99,date:Date.now()}); d.serie_max=Math.max(d.serie_max||0,acaStats.serie(d));
+    if(d.encours) delete d.encours[id];
     try{localStorage.setItem("radar-academie",JSON.stringify(d))}catch(e){}
     const prec=essais?Math.round(100*justes/essais):100;
+    // version 76 : ce que la validation débloque
+    const deb=f_deb(d,valide,deja);
     cartes.forEach(c=>c.classList.remove("active")); prog.style.width="100%"; plan.forEach(l=>{l.classList.remove("ici");l.classList.add("fait");}); etp.textContent="Chapitre terminé";
     const f=document.getElementById("l-fin"); f.hidden=false; f.classList.add("active"); f.classList.toggle("rate",!valide);
     f.querySelector("[data-f=titre]").textContent=valide?(deja?"Chapitre révisé":"Chapitre validé"):"Chapitre pas encore validé";
@@ -477,6 +516,11 @@ JS_LECON = """<script>
     bandeau("",""); action.textContent=valide?(document.body.dataset.suite.endsWith("formation.html")?"Retour au programme":"Chapitre suivant"):"Retour au programme";
     action.dataset.va=valide?"":"../formation.html"; etat="fin"; action.disabled=false; scrollTo({top:0});
   }
+  function f_deb(d,valide,deja){ const b=document.body.dataset, mod=JSON.parse(b.module||"[]"), fait=k=>!!(d[k]&&d[k].fait), el=document.querySelector("[data-f=deblocage]"); const l=[];
+    if(valide&&!deja&&b.cas!==id){ if(b.suiteTitre) l.push("<li><b>Débloqué :</b> "+b.suiteTitre+"</li>");
+      if(mod.length&&mod.every(fait)) l.push("<li><b>Module "+b.niveau+" terminé :</b> attestation obtenue"+(b.cas?" et étude de cas débloquée : <a href='"+b.cas+".html'>"+b.casTitre+"</a>":"")+".</li>"); }
+    if(valide&&b.cas===id&&!deja) l.push("<li><b>Étude de cas terminée.</b> Elle compte dans ta progression.</li>");
+    el.innerHTML=l.join(""); el.hidden=!l.length; return l.length; }
   action.addEventListener("click",()=>{ if(action.disabled) return;
     if(etat==="repondre") verifier(); else if(etat==="pratique"){ cartes[file[pos]].querySelector(".l-cor").hidden=false; etat="lire"; action.textContent="Continuer"; }
     else if(etat==="fin") location.href=action.dataset.va||document.body.dataset.suite; else suivant(); });
@@ -484,6 +528,17 @@ JS_LECON = """<script>
     if(e.key==="Enter"&&!(e.target.tagName==="BUTTON"&&e.target!==action)&&!(e.target.tagName==="A")){ e.preventDefault(); action.click(); }
     if(etat==="repondre"&&/^[1-6]$/.test(e.key)&&e.target.tagName!=="INPUT"){ const c=cartes[file[pos]]; const b=[...c.querySelectorAll(".l-choix button")][+e.key-1]; if(b) b.click(); } });
   montre();
+  // version 76 : reprendre un chapitre là où on l'avait laissé
+  document.addEventListener("DOMContentLoaded",()=>{ try{ const enc=(acaStats.lire().encours||{})[id];
+    if(enc&&enc.pos>0&&enc.file&&enc.file.length===enc.file.length&&enc.pos<enc.file.length&&Date.now()-enc.t<30*864e5){
+      const intro=cartes[0].querySelector(".l-texte"); const box=document.createElement("div"); box.className="l-reprise";
+      box.innerHTML="<p><b>Tu t'étais arrêté à l'étape "+(enc.pos+1)+" sur "+enc.file.length+".</b> Tes réponses et tes points sont gardés.</p>"
+        +"<button class='a-btn' type='button'>Reprendre à l'étape "+(enc.pos+1)+"</button> <button class='a-btn ghost' type='button'>Recommencer depuis le début</button>";
+      intro.appendChild(box); const [r,z]=box.querySelectorAll("button");
+      r.onclick=()=>{ file=enc.file; pos=enc.pos; faites=new Set(enc.faites); revues=new Set(enc.revues); xp=enc.xp||0; justes=enc.justes||0; essais=enc.essais||0;
+        bilanOK=enc.bilanOK||0; bilanN=enc.bilanN||0; if(file.some(i=>i>=cartes.length)){file=cartes.map((c,i)=>i);pos=0;} montre(); };
+      z.onclick=()=>{ box.remove(); try{const d=acaStats.lire(); if(d.encours){delete d.encours[id]; localStorage.setItem("radar-academie",JSON.stringify(d));}}catch(e){} action.focus(); };
+    } }catch(e){} });
 })();
 </script>"""
 
@@ -492,9 +547,15 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
     niv = next(n for n in niveaux if n[0] == ch["niveau"])
     suiv = chapitres[i + 1] if i + 1 < len(chapitres) else None
     n_l = len(ch["sections"])
-    k_mod = [c["id"] for c in chapitres if c["niveau"] == niv[0]].index(ch["id"]) + 1
+    regs = [c for c in chapitres if c["niveau"] == niv[0] and not c.get("cas")]
+    cas_m = next((c for c in chapitres if c["niveau"] == niv[0] and c.get("cas")), None)
+    k_mod = ([c["id"] for c in regs].index(ch["id"]) + 1) if not ch.get("cas") else 0
+    num = f"Étude de cas" if ch.get("cas") else f"Chapitre {niv[0]}.{k_mod}"
+    suiv_reg = next((c for c in chapitres[i + 1:] if not c.get("cas")), None)
+    donnees = {"module": json.dumps([c["id"] for c in regs]), "niveau": str(niv[0]), "cas": cas_m["id"] if cas_m else "", "casTitre": cas_m["titre"] if cas_m else "",
+               "suiteTitre": suiv_reg["titre"] if suiv_reg else ""}
     noms = [t.split(". ", 1)[1] if t[:1].isdigit() and ". " in t[:4] else t for t, _ in ch["sections"]]
-    cartes = [f"<section class='l-carte' data-type='intro' data-g='intro'><p class='l-type'>Module {niv[0]} : {_e(niv[1])} · Chapitre {niv[0]}.{k_mod}</p>"
+    cartes = [f"<section class='l-carte' data-type='intro' data-g='intro'><p class='l-type'>Module {niv[0]} : {_e(niv[1])} · {num}</p>"
               f"<h1>{_e(ch['titre'])}</h1><div class='l-texte'><p>{_e(ch['desc'])}</p>"
               f"<p><b>Dans ce chapitre</b> : {n_l} mini-leçons ({', '.join(_e(x) for x in noms)}), chacune suivie d'un exercice, "
               f"puis un récap, un cas concret et un bilan de {len(ch['quiz'])} questions. Environ {ch['minutes'] + 3} minutes.</p></div></section>"]
@@ -519,6 +580,7 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
            "<div><h2 data-f='titre' style='margin:0'>Chapitre validé</h2><p data-f='texte' style='margin:2px 0 0;color:var(--a-muted)'></p></div></div>"
            "<div class='bilan'><div><b data-f='bilan'>0</b><span>au bilan</span></div><div><b data-f='prec'>0</b><span>de bonnes réponses du premier coup</span></div>"
            "<div><b data-f='xp'>0</b><span>points gagnés</span></div><div><b data-f='serie' style='color:var(--a-or)'>0</b><span>de série</span></div></div>"
+           "<ul class='l-deblocage' data-f='deblocage' hidden></ul>"
            "<p><button class='a-btn ghost' type='button' data-f='refaire' hidden>Recommencer le chapitre</button></p>"
            "<p class='muted' style='font-size:14.5px'>Les notions de ce chapitre reviendront dans les <a href='revision.html'>révisions</a>, au bon moment pour ne pas les oublier.</p></section>")
     plan = ("<aside class='l-plan' aria-label='Plan du chapitre'><h2>Plan du chapitre</h2><ol>"
@@ -526,7 +588,7 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
             + "<li data-g='recap'>Récap</li><li data-g='cas'>Cas concret</li><li data-g='bilan'>Bilan</li></ol>"
             + "<p class='note'>Raccourcis : touches 1 à 4 pour répondre, Entrée pour valider.</p></aside>")
     corps = (f"<header class='l-top'><div class='in'><a class='l-quitter' href='../formation.html'>{SVG['retour']}<span>Programme</span></a>"
-             f"<div class='l-titre'><b>{niv[0]}.{k_mod} · {_e(ch['titre'])}</b><span id='l-etape'>Module {niv[0]} : {_e(niv[1])}</span></div>"
+             f"<div class='l-titre'><b>{(str(niv[0]) + '.' + str(k_mod) + ' · ') if k_mod else ''}{_e(ch['titre'])}</b><span id='l-etape'>Module {niv[0]} : {_e(niv[1])}</span></div>"
              f"<span class='l-pts' id='l-pts' aria-live='polite'></span></div><div class='l-prog' role='presentation'><i></i></div></header>"
              f"<div class='l-corps'>{plan}<main class='l-main' id='contenu'>{''.join(cartes)}{fin}"
              "<div class='a-auteur' style='margin-top:30px'><span class='av' aria-hidden='true'>M</span><p style='margin:0'>Écrit et vérifié par <b>maxitemmmm</b>. "
@@ -535,7 +597,8 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
              + ". Une erreur ? <a href='../contact.html'>Signale-la</a>.</p></div></main></div>"
              "<div class='l-bas' id='l-bas'><div class='in'><div class='l-retour' id='l-retour' role='status' aria-live='polite'></div>"
              "<button class='a-btn' id='l-action' type='button'>Continuer</button></div></div>"
-             f"<script>document.body.dataset.chap={json.dumps(ch['id'])};document.body.dataset.suite={json.dumps((suiv['id'] + '.html') if suiv else '../formation.html')};</script>"
+             f"<script>document.body.dataset.chap={json.dumps(ch['id'])};document.body.dataset.suite={json.dumps((suiv['id'] + '.html') if suiv else '../formation.html')};"
+             f"Object.assign(document.body.dataset,{json.dumps(donnees, ensure_ascii=False)});</script>"
              + JS_LECON)
     return corps
 
