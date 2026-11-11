@@ -2537,7 +2537,8 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     try:   # version 70 : l'Académie, centre de formation gratuit pour débutants
         from . import formation
         for chemin in formation.generer(__import__(__name__, fromlist=["x"]), base, dossier, csp):
-            urls.append((chemin, "weekly", "0.9" if chemin == "formation.html" else "0.7"))
+            if chemin != "formation/profil.html":   # page personnelle, sans intérêt pour Google
+                urls.append((chemin, "weekly", "0.9" if chemin == "formation.html" else "0.7"))
     except Exception as e:
         print(f"Académie non générée : {e}")
 

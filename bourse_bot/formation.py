@@ -27,7 +27,9 @@ NIVEAUX = [
 VERIFIE_LE = "11 novembre 2026"
 MOTS_ACADEMIE = ("apprendre la bourse, bourse pour débutant, formation bourse gratuite, cours de bourse débutant, comment investir en bourse, "
                  "investir en bourse débutant, débuter en bourse, quiz bourse, exercices bourse, formation investissement gratuite, "
-                 "comprendre la bourse, bourse expliquée simplement, apprendre à investir, éducation financière")
+                 "comprendre la bourse, bourse expliquée simplement, apprendre à investir, éducation financière, "
+                 "apprendre la crypto, formation crypto gratuite, crypto pour débutant, comprendre le bitcoin, cours d'analyse technique, "
+                 "lire un graphique boursier, cours finance gratuit, formation trading débutant")
 
 CSS = """
 .aca-hero{padding:8px 0 4px}.aca-hero h1{margin-bottom:6px}

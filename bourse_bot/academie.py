@@ -299,6 +299,7 @@ def page(seo, base, titre, description, chemin, corps, jsonld=None, csp="", mots
 {f'<meta http-equiv="Content-Security-Policy" content="{csp}">' if csp else ''}
 <title>{_e(titre)}</title>
 {seo.balises_tete(base, titre, description, chemin, image=image, jsonld=jsonld, mots=mots)}
+{'<meta name="robots" content="noindex, follow">' if chemin == "formation/profil.html" else ''}
 {seo.liens_icones(prefixe)}
 {JS_THEME}
 {seo.POLICES}
