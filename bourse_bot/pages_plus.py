@@ -187,6 +187,15 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("84", "Mettre en avant seulement les 10 % d'avis les plus tranchés (« avis très net »)", False,
+     "Testé de 2018 à 2026, seuil fixé avec les seules années passées : 60,4 % de bons sens en moyenne contre 54,3 % pour tous les avis, et mieux 8 années sur 9. "
+     "Mais en 2021 ces avis tranchés ont fait moins bien que les autres (54,6 % contre 55,7 %) : pas de badge qui promettrait plus que la réalité. Non adopté"),
+    ("84", "Une IA spécialisée par marché (un modèle pour les actions américaines, un pour l'Europe, un pour les cryptos…)", False,
+     "Moins d'exemples par modèle : −1,7 point en moyenne, recul 6 années sur 9 (jusqu'à −5,2 points). Non adopté"),
+    ("84", "Donner à l'IA la santé du marché entier (part des titres au-dessus de leur moyenne 200 jours, hausse moyenne, dispersion)", False,
+     "−1,5 point en moyenne, recul 6 années sur 9 (jusqu'à −8,4 points) : ces informations font surtout apprendre le passé par cœur. Non adopté"),
+    ("84", "Recalibrer les pourcentages pour que « 60 % » arrive vraiment 60 fois sur 100 (régression isotonique)", False,
+     "Le score de Brier (précision des pourcentages) se dégrade 7 années sur 9 : les pourcentages actuels sont déjà mieux réglés. Non adopté"),
     ("83", "Nouveau test de l'idée « rebond quand la peur est forte » : avis de hausse quand l'indice de la peur (VIX) dépasse un seuil, seuil choisi chaque année avec les seules années précédentes", False,
      "Testé de 2016 à 2026 : +0,49 point en moyenne, gain net en 2020 (+4,8 points), mais 2022 recule encore légèrement (−0,06 point). Avec un seuil fixé après coup (35), aucune année ne recule, "
      "mais ce serait choisir le réglage en connaissant les résultats : ce n'est pas un test honnête. Non adopté, à retester quand de nouvelles périodes de forte peur auront été vécues"),

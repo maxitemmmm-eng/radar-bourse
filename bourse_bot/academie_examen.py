@@ -355,6 +355,7 @@ function plan(){
   Z.querySelector(".a-btn").focus();
 }
 document.getElementById("p-go").onclick=()=>{document.getElementById("p-intro").hidden=true;profil(0);};
+if(/[?&]go=1/.test(location.search)){document.getElementById("p-intro").hidden=true;profil(0);}
 })();
 """
 

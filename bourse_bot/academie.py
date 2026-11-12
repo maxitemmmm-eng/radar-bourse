@@ -250,6 +250,22 @@ svg.g path,svg.g line{fill:none;stroke-linecap:round;stroke-linejoin:round}
 .c-cherche input:focus{border-color:var(--a-prim);outline:0;box-shadow:0 0 0 1px var(--a-prim)}
 .c-cherche svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;fill:none;stroke:var(--a-muted);stroke-width:2;stroke-linecap:round}
 .c-cherche p{margin:8px 2px 0;font-size:13.5px;color:var(--a-muted)}
+.c-menu{display:block;margin:20px 0 14px}.c-menu .c-reprendre{margin:0 0 12px}
+.c-rep-barre{height:6px;border-radius:99px;background:var(--a-line);margin-top:10px;max-width:360px;overflow:hidden}.c-rep-barre i{display:block;height:100%;width:0;background:var(--a-prim);transition:width .6s}
+.c-go{font-size:16px;padding:13px 22px}
+.c-tuiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.c-tuile,body.aca-app .c-tuile{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:14px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);text-decoration:none;transition:border-color .15s,transform .15s}
+.c-tuile:hover{border-color:var(--a-prim);transform:translateY(-2px)}.c-tuile b{font-size:15px}.c-tuile small{color:var(--a-muted);font-size:13px}
+.c-tuile .ic{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:var(--a-soft);color:var(--a-prim);margin-bottom:4px}
+.c-tuile .ic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.c-tuile.ferme{cursor:not-allowed;border-style:dashed}.c-tuile.ferme .ic{opacity:.5}.c-tuile.ferme b{color:var(--a-muted)}.c-tuile.ferme:hover{transform:none;border-color:var(--a-line)}
+.l-verrou{max-width:620px;margin:40px auto;text-align:left}.l-verrou h1{margin-top:0}
+.c-bienvenue[hidden]{display:none}.c-bienvenue{position:fixed;inset:0;z-index:80;background:rgba(5,10,14,.72);display:grid;place-items:center;padding:16px;animation:pIn .3s ease}
+.c-bienvenue .a-carte{max-width:520px;text-align:center;padding:30px}.c-bienvenue .ic{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:14px;background:var(--a-prim);color:var(--a-on)}
+.c-bienvenue .ic svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8}.c-bienvenue h2{font-size:24px;margin:12px 0 6px}
+.c-passer{border:0;background:none;color:var(--a-muted);font:inherit;font-size:14px;text-decoration:underline;cursor:pointer}
+@keyframes pIn{from{opacity:0}}
+@media (max-width:760px){.c-tuiles{grid-template-columns:1fr 1fr}}
 .c-jour{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;margin:0 0 14px}
 .c-jour .ic{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;background:var(--a-soft);color:var(--a-prim)}
 .c-jour .ic svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -472,12 +488,23 @@ def parcours(chapitres, niveaux, verifie_le, nom):
              "<h2 id='plan-t'>Fais le point en 5 minutes</h2><p id='plan-p'>3 questions sur toi et un court diagnostic : tu sais par où commencer, "
              "quels modules tu peux survoler et quand tu auras fini à ton rythme.</p></div>"
              "<a class='a-btn' id='plan-a' href='formation/test-de-niveau.html'>Commencer le questionnaire</a></section>"
-             "<section class='a-carte c-reprendre' aria-labelledby='rep-t'><div><p class='sur' id='rep-sur'>Pour commencer</p>"
-             f"<h2 id='rep-t'>{_e(reguliers[0]['titre'])}</h2><p id='rep-p'>Module 1 · {len(reguliers[0]['sections'])} mini-leçons · environ {_min(reguliers[0])} min</p></div>"
-             f"<a class='a-btn' id='rep-a' href='formation/{reguliers[0]['id']}.html'>Commencer</a></section>"
-             f"<section class='a-carte c-jour' aria-labelledby='jour-t'><span class='ic'>{SVG['entrainement']}</span><div><h2 id='jour-t'>Entraînement du jour</h2>"
-             "<p id='jour-p'>6 questions en 3 minutes, piochées dans ce que tu as déjà vu. Tes erreurs passées reviennent en premier.</p></div>"
-             "<a class='a-btn ghost' href='formation/entrainement.html'>S'entraîner</a></section>"
+             "<nav class='c-menu' aria-label=\"Menu de l'Académie\">"
+             "<section class='a-carte c-reprendre' aria-labelledby='rep-t'><div><p class='sur' id='rep-sur'>Ta prochaine leçon</p>"
+             f"<h2 id='rep-t'>{_e(reguliers[0]['titre'])}</h2><p id='rep-p'>Module 1 · {len(reguliers[0]['sections'])} mini-leçons · environ {_min(reguliers[0])} min</p>"
+             "<div class='c-rep-barre'><i id='rep-barre'></i></div></div>"
+             f"<a class='a-btn c-go' id='rep-a' href='formation/{reguliers[0]['id']}.html'>Commencer la leçon</a></section>"
+             "<div class='c-tuiles'>"
+             f"<a class='c-tuile' href='formation/entrainement.html'><span class='ic'>{SVG['entrainement']}</span><b id='jour-t'>Entraînement du jour</b><small id='jour-p'>6 questions en 3 minutes</small></a>"
+             f"<a class='c-tuile' href='formation/revision.html'><span class='ic'>{SVG['revision']}</span><b>Révisions</b><small>Ce que tu risques d'oublier</small></a>"
+             f"<a class='c-tuile' href='glossaire.html'><span class='ic'>{SVG['lexique']}</span><b>Lexique</b><small>Les mots de la Bourse</small></a>"
+             f"<a class='c-tuile' id='ex-tuile' href='formation/examen.html'><span class='ic'>{SVG['examen']}</span><b>Examen final</b><small id='ex-tuile-p'>À la fin du programme</small></a>"
+             "</div></nav>"
+             "<div class='c-bienvenue' id='c-bienvenue' hidden role='dialog' aria-modal='true' aria-labelledby='bv-t'><div class='a-carte'>"
+             f"<span class='ic'>{SVG['academie']}</span><h2 id='bv-t'>Bienvenue à l'Académie</h2>"
+             "<p>Avant ta première leçon, faisons connaissance : 3 questions sur toi et un court diagnostic. En 5 minutes, tu sais par où commencer "
+             "et l'Académie te guide leçon après leçon, dans l'ordre.</p>"
+             "<p><a class='a-btn' href='formation/test-de-niveau.html?go=1'>Commencer le questionnaire</a></p>"
+             "<p><button type='button' class='c-passer' data-passer>Je pars de zéro, commencer directement au module 1</button></p></div></div>"
              f"<div class='c-chiffres'><div class='fl'><b>{SVG['flamme']}<span data-a='serie'>0</span></b><span>jours de suite</span></div>"
              f"<div><b><span id='c-n'>0</span> / {len(reguliers)}</b><span>chapitres validés</span></div>"
              "<div><b data-a='xp'>0</b><span>points</span></div>"
@@ -512,9 +539,10 @@ def parcours(chapitres, niveaux, verifie_le, nom):
           "const CADENAS=" + json.dumps(SVG["cadenas"]) + ";"
           "function verrou(a,msg){a.classList.add('ferme');const e=a.querySelector('.c-etat');e.innerHTML=CADENAS+'Verrouillé';"
           "const p=a.parentElement.querySelector('.c-verrou');a.addEventListener('click',ev=>{if(!a.classList.contains('ferme'))return;ev.preventDefault();"
-          "p.hidden=!p.hidden;p.innerHTML=msg+\" <a href='\"+a.getAttribute('href')+\"'>Ouvrir quand même</a>\";});}"
+          "p.hidden=!p.hidden;p.innerHTML=msg;});}"
           "liens.forEach((a,k)=>{const x=d[a.dataset.chap],e=a.querySelector('.c-etat');const nv=+a.closest('.c-module').dataset.niv;"
           "if(fait(a.dataset.chap)){e.textContent='Validé';e.classList.add('fait');n++;return;}"
+          "if(t.depart&&nv<t.depart&&!(x&&x.etape)){e.textContent='Débloqué par le test';e.classList.add('dispo');return;}"
           "if(libre||(t.depart&&nv<t.depart)||(x&&x.etape)){if(x&&x.etape){e.textContent='Commencé';e.classList.add('encours');}else if(libre){e.textContent='À faire';e.classList.add('dispo');}"
           "else{e.textContent='Débloqué par le test';e.classList.add('dispo');}libre=false;return;}"
           "const prec=liens[k-1];verrou(a,'Valide d\\u2019abord « '+(prec?prec.querySelector('b').textContent:'')+' » pour débloquer ce chapitre.');});"
@@ -553,9 +581,15 @@ def parcours(chapitres, niveaux, verifie_le, nom):
           "const toutFait=liens.every(a=>fait(a.dataset.chap)),ea=document.getElementById('ex-a'),ev=document.getElementById('ex-verrou'),ex=d.examen||{};"
           "if(ex.v===2&&ex.reussi){document.getElementById('ex-etat').textContent='Certificat obtenu ('+ex.meilleur+' / '+ex.sur+').';}"
           "else if(!toutFait){ea.innerHTML=CADENAS+' Verrouillé';ea.addEventListener('click',e=>{if(ev.hidden){e.preventDefault();ev.hidden=false;"
-          "ev.innerHTML='L\u2019examen se débloque quand tous les chapitres sont validés ('+n+' / '+liens.length+'). <a href=formation/examen.html>Ouvrir quand même</a>';}});}"
+          "ev.innerHTML='L\u2019examen se débloque quand tous les chapitres sont validés ('+n+' / '+liens.length+').';}else e.preventDefault();});"
+          "const tu=document.getElementById('ex-tuile');if(tu&&!((d.niveau_test||{}).depart>8)){tu.classList.add('ferme');document.getElementById('ex-tuile-p').textContent='Verrouillé : '+n+' / '+liens.length+' chapitres';tu.addEventListener('click',e=>e.preventDefault());}}"
+          "const enc0=(d.encours||{})[(document.getElementById('rep-a').getAttribute('href')||'').replace('formation/','').replace('.html','')];"
+          "if(enc0&&enc0.file){document.getElementById('rep-barre').style.width=Math.round(100*enc0.pos/enc0.file.length)+'%';}"
+          "const robot=/bot|crawl|spider|slurp|lighthouse|headless/i.test(navigator.userAgent);"
+          "if(!robot&&!d.niveau_test&&!d.q_passe&&!n){const m=document.getElementById('c-bienvenue');if(m){m.hidden=false;document.body.style.overflow='hidden';"
+          "const go=m.querySelector('.a-btn');setTimeout(()=>go.focus(),50);m.querySelector('[data-passer]').onclick=()=>{const x=S.lire();x.q_passe=1;S.ecrire(x);m.hidden=true;document.body.style.overflow='';};}}"
           "const jp=document.getElementById('jour-p');if(jp){const nr=Object.keys(d.ratees||{}).length;const fj=(d.entr||{}).jour===S.jour();"
-          "if(fj)jp.textContent='Déjà fait aujourd\u2019hui, bravo. Tu peux en refaire une série quand tu veux.';"
+          "if(fj)jp.textContent='Fait aujourd\u2019hui';"
           "else if(nr)jp.textContent='6 questions en 3 minutes. '+nr+(nr>1?' questions ratées t\u2019attendent':' question ratée t\u2019attend')+' en premier.';"
           "else if(!n)jp.textContent='6 questions en 3 minutes sur les bases, pour te faire une idée avant même de commencer.';}"
           "});</script>")
@@ -593,7 +627,21 @@ def _carte_exo(ex, k, groupe, bilan=False, type_txt=None):
 
 JS_LECON = """<script>
 (function(){
-  const main=document.getElementById("contenu"); if(!main) return; main.classList.add("l-js");
+  const main=document.getElementById("contenu"); if(!main) return;
+  // version 83 : verrou. Un chapitre ne s'ouvre que si le précédent est validé (ou débloqué par le questionnaire de départ)
+  try{ const D=JSON.parse(localStorage.getItem("radar-academie")||"{}")||{}, b=document.body.dataset, ok=k=>!!(D[k]&&D[k].fait), dep=+((D.niveau_test||{}).depart||0);
+    const deja=ok(b.chap)||!!(D.encours||{})[b.chap]; let msg=null, lien=null, lib=null;
+    const robot=/bot|crawl|spider|slurp|lighthouse/i.test(navigator.userAgent);
+    if(!robot&&!deja){
+      if(b.cas&&b.cas===b.chap){ const mod=JSON.parse(b.module||"[]"), manque=mod.filter(k=>!ok(k)); if(manque.length&&+b.niveau>=dep){ msg="Cette étude de cas se débloque quand les "+mod.length+" chapitres du module sont validés (il en reste "+manque.length+")."; lien=manque[0]+".html"; lib="Aller au prochain chapitre du module"; } }
+      else if(b.precId&&!ok(b.precId)&&+b.niveau>=dep&&+(b.precNiveau||0)>=dep){ msg="Les leçons se suivent dans l'ordre : valide d'abord « "+b.precTitre+" »."; lien=b.precId+".html"; lib="Aller à cette leçon"; }
+    }
+    if(msg){ main.querySelectorAll(".l-carte").forEach(c=>c.hidden=true); const bas=document.getElementById("l-bas"); if(bas) bas.hidden=true;
+      const v=document.createElement("section"); v.className="l-verrou a-carte"; v.innerHTML="<h1>Leçon verrouillée</h1><p>"+msg+"</p><p><a class='a-btn' href='"+lien+"'>"+lib+"</a> <a class='a-btn ghost' href='../formation.html'>Retour au programme</a></p>"
+        +"<p class='muted' style='font-size:14px'>Tu connais déjà ces notions ? Le <a href='test-de-niveau.html'>questionnaire de départ</a> débloque directement les modules que tu maîtrises.</p>";
+      main.prepend(v); return; }
+  }catch(e){}
+  main.classList.add("l-js");
   const bas=document.getElementById("l-bas"); bas.classList.add("on");
   const action=document.getElementById("l-action"), retour=document.getElementById("l-retour"), prog=document.querySelector(".l-prog i"), pts=document.getElementById("l-pts"), etp=document.getElementById("l-etape");
   const cartes=[...main.querySelectorAll(".l-carte:not(.l-fin)")]; const id=document.body.dataset.chap; const plan=[...document.querySelectorAll(".l-plan li")];
@@ -715,8 +763,12 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
     k_mod = ([c["id"] for c in regs].index(ch["id"]) + 1) if not ch.get("cas") else 0
     num = f"Étude de cas" if ch.get("cas") else f"Chapitre {niv[0]}.{k_mod}"
     suiv_reg = next((c for c in chapitres[i + 1:] if not c.get("cas")), None)
+    # version 83 : les leçons se font dans l'ordre ; on donne à la page le chapitre qui doit être validé avant celui-ci
+    tous_reg = [c for c in chapitres if not c.get("cas")]
+    prec = None if ch.get("cas") else next((tous_reg[k - 1] for k, c in enumerate(tous_reg) if c["id"] == ch["id"] and k > 0), None)
     donnees = {"module": json.dumps([c["id"] for c in regs]), "niveau": str(niv[0]), "cas": cas_m["id"] if cas_m else "", "casTitre": cas_m["titre"] if cas_m else "",
-               "suiteTitre": suiv_reg["titre"] if suiv_reg else ""}
+               "suiteTitre": suiv_reg["titre"] if suiv_reg else "", "precId": prec["id"] if prec else "", "precTitre": prec["titre"] if prec else "", "precNiveau": str(prec["niveau"]) if prec else "",
+               "premierModule": next((c["id"] for c in regs), "")}
     noms = [t.split(". ", 1)[1] if t[:1].isdigit() and ". " in t[:4] else t for t, _ in ch["sections"]]
     plus, labos = PLUS.get(ch["id"], []), LABOS.get(ch["id"], [])
     promesse = ("<p>Tu y trouveras aussi " + (f"{len(labos)} simulateur{'s' if len(labos) > 1 else ''} à manipuler et " if labos else "")

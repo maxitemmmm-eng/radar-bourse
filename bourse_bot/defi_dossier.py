@@ -15,9 +15,13 @@ HTML = """
     <div class="ds-carte" id="ds">
       <div class="ds-tete"><div><span class="ds-num" id="ds-num">Dossier du jour</span><b id="ds-titre">Actif masqué · révélé à la fin</b></div>
         <div class="ds-etapes" id="ds-etapes" role="img" aria-label="Avancement du dossier, 6 étapes"></div></div>
+      <div class="ds-corps"><div class="ds-gauche">
+      <p class="ds-lire"><b>Comment lire ce graphique.</b> C'est le vrai cours d'une action ou d'une crypto pendant environ 4 mois, jusqu'au « jour du dossier » (trait pointillé).
+      Le cours est ramené à 100 ce jour-là : 110 veut dire 10 % plus haut, 80 veut dire 20 % plus bas. La zone bleutée à droite cache le mois qui a suivi : c'est ce que tu dois prévoir.
+      En bas, le RSI mesure si les dernières hausses ou baisses ont été rapides. Passe la souris ou le doigt sur le graphique pour lire chaque jour.</p>
       <div class="ds-graph" id="ds-graph"><p class="muted">Chargement du dossier…</p></div>
       <div class="ds-leg" id="ds-leg" aria-hidden="true"><span class="l-px">Cours (base 100 = jour du dossier)</span><span class="l-20">Moyenne 20 jours</span><span class="l-50">Moyenne 50 jours</span><span class="l-rsi">RSI 14 jours (en bas)</span></div>
-      <div class="ds-q" id="ds-q" aria-live="polite"></div>
+      </div><div class="ds-q" id="ds-q" aria-live="polite"></div></div>
     </div>
   </section>
 """
@@ -34,13 +38,21 @@ CSS = """
 .ds-leg{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin:6px 0 12px}
 .ds-leg span::before{content:"";display:inline-block;width:16px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--ink)}
 .ds-leg .l-20::before{background:var(--accent)}.ds-leg .l-50::before{background:var(--warn)}.ds-leg .l-rsi::before{background:var(--muted)}
-.ds-q{border-top:1px solid var(--line);padding-top:14px}
+.ds-q{border-top:1px solid var(--line);padding-top:14px;scroll-margin-top:120px}
+@media (min-width:1100px){.ds-corps{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,1fr);gap:22px;align-items:start}
+  .ds-gauche{position:sticky;top:96px}.ds-q{border-top:0;border-left:1px solid var(--line);padding:0 0 0 20px;min-height:380px}
+  .ds-opts{grid-template-columns:1fr}}
+.ds-opts button[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft)}
+.ds-valider{margin-top:10px}
+.ds-lire{font-size:13.5px;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:4px 0 10px;max-width:none}
+.ds-lire b{color:var(--ink)}.ds-suite{scroll-margin-bottom:110px}.dossier .ds-carte{padding-bottom:22px}
 .ds-q h3{font-size:17px;margin:0 0 4px}.ds-q .ds-cons{color:var(--muted);font-size:13.5px;margin:0 0 12px}
 .ds-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
 .ds-opts button{font:inherit;text-align:left;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);cursor:pointer;transition:border-color .15s,transform .15s}
 .ds-opts button:hover{border-color:var(--accent)}.ds-opts button:active{transform:scale(.98)}
 .ds-opts button.bon{border-color:var(--up);background:var(--up-soft)}.ds-opts button.faux{border-color:var(--down);background:var(--down-soft)}
 .ds-opts button:disabled{cursor:default}
+#ds-ok:disabled{opacity:.55;cursor:not-allowed}.ds-sens button{transition:border-color .15s,background .15s}.ds-sens button:hover{border-color:var(--accent)}
 .ds-expl{margin-top:12px;padding:12px 14px;border-radius:10px;background:var(--accent-soft);font-size:14px;animation:dsIn .35s ease}
 .ds-expl b.m{display:block;font-size:12.5px;margin-bottom:2px}
 .ds-reg{display:grid;gap:14px;margin:6px 0 12px}.ds-reg label{font-size:14px;display:flex;justify-content:space-between;gap:10px}
@@ -87,8 +99,9 @@ JS = r"""
     const moy = rets.reduce((x, y) => x + y, 0) / rets.length;
     const sd = Math.sqrt(rets.reduce((x, y) => x + (y - moy) ** 2, 0) / (rets.length - 1));
     const perf = x / passe[0] - 1, ecart50 = m50[a] ? x / m50[a] - 1 : 0;
-    const tend = perf > .08 && ecart50 > 0 ? "h" : perf < -.08 && ecart50 < 0 ? "b" : "n";
-    return {s, a, x, m20, m50, r, dd, sd, sdm: sd * Math.sqrt(21), perf, ecart50, tend, rsiJ: r[a]};
+    const pente50 = m50[a] && m50[a - 20] ? m50[a] / m50[a - 20] - 1 : 0;
+    const tend = pente50 > .02 && ecart50 > 0 ? "h" : pente50 < -.02 && ecart50 < 0 ? "b" : "n";
+    return {s, a, x, m20, m50, r, dd, sd, sdm: sd * Math.sqrt(21), perf, ecart50, pente50, tend, rsiJ: r[a]};
   }
 
   function dessiner(revele){
@@ -106,12 +119,13 @@ JS = r"""
     const xa = x(a);
     g += `<line x1="${xa}" x2="${xa}" y1="4" y2="${H1 + gap + H2}" stroke="var(--accent)" stroke-dasharray="5 4"/>`;
     g += `<text x="${xa - 6}" y="16" text-anchor="end">jour du dossier</text>`;
-    if(!revele) g += `<rect x="${xa + 1}" y="4" width="${W - pr - xa - 1}" height="${H1 - 4}" fill="var(--accent-soft)" opacity=".5"/><text x="${(xa + W - pr) / 2}" y="${H1 / 2}" text-anchor="middle" style="font-size:13px">? un mois plus tard</text>`;
+    if(!revele) g += `<rect x="${xa + 1}" y="4" width="${W - pr - xa - 1}" height="${H1 - 4}" fill="var(--accent-soft)" opacity=".5"/><text x="${(xa + W - pr) / 2}" y="${H1 / 2}" text-anchor="middle" style="font-size:30px;fill:var(--accent)">?</text><text x="${(xa + W - pr) / 2}" y="${H1 / 2 + 20}" text-anchor="middle">mois caché</text>`;
     const aire = `M${x(0)} ${y(lo)}` + chemin(s, 0, a).replace(/^M/, "L") + `L${xa} ${y(lo)}Z`;
     g += `<path d="${aire}" fill="var(--accent-soft)" opacity=".55"/>`;
     g += `<path d="${chemin(M.m50, 0, n - 1)}" fill="none" stroke="var(--warn)" stroke-width="1.6"/>`;
     g += `<path d="${chemin(M.m20, 0, n - 1)}" fill="none" stroke="var(--accent)" stroke-width="1.4"/>`;
     g += `<path d="${chemin(s, 0, a)}" fill="none" stroke="var(--ink)" stroke-width="2.2" stroke-linejoin="round"/>`;
+    g += `<text x="${pl + 4}" y="${H1 + gap + 12}">RSI 14 j</text>`;
     if(revele){
       const up = s.at(-1) >= s[a];
       if(etat && etat.bas != null) g += `<rect x="${xa}" y="${y(etat.haut).toFixed(1)}" width="${W - pr - xa}" height="${(y(etat.bas) - y(etat.haut)).toFixed(1)}" fill="var(--accent)" opacity=".12"/><text x="${W - pr - 4}" y="${(y(etat.haut) - 4).toFixed(1)}" text-anchor="end">ta fourchette</text>`;
@@ -142,10 +156,10 @@ JS = r"""
     const T = {h:"Haussière", b:"Baissière", n:"Sans direction nette"};
     const dd = M.dd * 100, e50 = M.ecart50 * 100, sd = M.sd * 100, sdm = M.sdm * 100;
     return [
-      {titre:"1. Quelle est la tendance de fond sur la période ?", cons:"Regarde la pente générale et la position du cours par rapport à la moyenne 50 jours (orange).",
+      {titre:"1. Quelle est la tendance de fond au jour du dossier ?", cons:"Regarde la ligne orange (moyenne 50 jours) sur le dernier mois : monte-t-elle ou descend-elle ? Et le cours est-il au-dessus ou en dessous ?",
        opts:["h", "b", "n"].map(k => ({v:k, txt:T[k], bon:k === M.tend})),
-       expl:`Sur les ${M.a + 1} séances, le cours a fait <b>${f1(M.perf * 100)}</b> et finit <b>${M.ecart50 >= 0 ? "au-dessus" : "en dessous"}</b> de sa moyenne 50 jours (${f1(e50)}). Règle utilisée : tendance haussière si plus de +8 % <i>et</i> au-dessus de la moyenne 50 jours, baissière si moins de −8 % <i>et</i> en dessous, sinon sans direction nette.`,
-       methode:"Tendance = pente + position face à une moyenne longue. Une seule condition ne suffit pas."},
+       expl:`Sur le dernier mois, la moyenne 50 jours a ${M.pente50 >= 0 ? "monté" : "baissé"} de <b>${f1(Math.abs(M.pente50) * 100).slice(1)}</b> et le cours finit <b>${M.ecart50 >= 0 ? "au-dessus" : "en dessous"}</b> de cette moyenne (${f1(e50)}). Règle : haussière si la moyenne 50 jours monte de plus de 2 % en un mois <i>et</i> que le cours est au-dessus ; baissière si elle baisse de plus de 2 % <i>et</i> que le cours est en dessous ; sinon, pas de direction nette.`,
+       methode:"Tendance = pente de la moyenne longue + position du cours. Les deux doivent aller dans le même sens."},
       {titre:"2. Quelle a été la pire baisse depuis un sommet ?", cons:"C'est le « drawdown maximal » : la plus forte chute entre un plus haut et un plus bas qui le suit.",
        opts:options(Math.round(dd), [Math.round(dd / 2), Math.round(dd * 1.7), Math.round(Math.min(-2, M.perf * 100)), Math.round(dd) - 9], v => f0(v)),
        expl:`Le pire recul depuis un sommet a été de <b>${f1(dd)}</b>. Pour le trouver : on garde en mémoire le plus haut atteint, et chaque jour on calcule cours ÷ plus haut − 1 ; la valeur la plus basse est le drawdown maximal.`,
@@ -163,30 +177,36 @@ JS = r"""
 
   function etapes(){ ET.innerHTML = [0, 1, 2, 3, 4, 5].map(i => `<i class="${etat.rep[i] === true ? "ok" : etat.rep[i] === false ? "ko" : i === etat.k ? "on" : ""}"></i>`).join(""); }
 
+  function voir(el, ou){ if(!el) return; requestAnimationFrame(() => { const r = el.getBoundingClientRect(), bas = innerHeight - (innerWidth < 900 ? 110 : 30);
+      if(ou === "start" ? (r.top < 100 || r.top > innerHeight * .6) : r.bottom > bas) el.scrollIntoView({behavior:"smooth", block:ou === "start" ? "start" : "end"}); }); }
   function poser(){
     etapes();
     const qs = questions();
     if(etat.k < 4){
       const q = qs[etat.k];
-      Q.innerHTML = `<h3>${q.titre}</h3><p class="ds-cons">${q.cons}</p><div class="ds-opts">${q.opts.map((o, i) => `<button type="button" data-i="${i}">${o.txt}</button>`).join("")}</div><div class="ds-suite"></div>`;
-      Q.querySelectorAll(".ds-opts button").forEach(b => b.onclick = () => {
+      Q.innerHTML = `<p class="ds-num">Question ${etat.k + 1} sur 4 · méthode</p><h3>${q.titre.replace(/^\d\. /, "")}</h3><p class="ds-cons">${q.cons}</p><div class="ds-opts" role="group" aria-label="Choisis une réponse">${q.opts.map((o, i) => `<button type="button" data-i="${i}" aria-pressed="false">${o.txt}</button>`).join("")}</div>
+        <p class="ds-valider"><button class="btn" type="button" id="ds-val" disabled>Choisis une réponse</button></p><div class="ds-suite"></div>`;
+      let choisi = null; const val = Q.querySelector("#ds-val");
+      Q.querySelectorAll(".ds-opts button").forEach(b => b.onclick = () => { if(b.disabled) return; choisi = b;
+        Q.querySelectorAll(".ds-opts button").forEach(x => x.setAttribute("aria-pressed", x === b)); val.disabled = false; val.textContent = "Valider ma réponse"; });
+      val.onclick = () => { if(!choisi) return; const b = choisi; val.closest("p").remove();
         const o = q.opts[+b.dataset.i]; etat.rep[etat.k] = !!o.bon;
         Q.querySelectorAll(".ds-opts button").forEach((x, i) => { x.disabled = true; if(q.opts[i].bon) x.classList.add("bon"); else if(x === b) x.classList.add("faux"); });
         Q.querySelector(".ds-suite").innerHTML = `<div class="ds-expl"><b class="m">${o.bon ? "Juste." : "Pas tout à fait."} Méthode : ${q.methode}</b>${q.expl}</div><p><button class="btn" type="button" id="ds-next">Question suivante</button></p>`;
         etapes(); sauverEtat();
-        const n = Q.querySelector("#ds-next"); n.focus(); n.onclick = () => { etat.k++; sauverEtat(); poser(); };
-      });
+        const n = Q.querySelector("#ds-next"); n.focus({preventScroll:true}); voir(Q.querySelector(".ds-suite"), "nearest"); n.onclick = () => { etat.k++; sauverEtat(); poser(); voir(Q, "start"); };
+      };
       return;
     }
     if(etat.k === 4){
       Q.innerHTML = `<h3>5. Ton pronostic à un mois</h3><p class="ds-cons">Plus haut ou plus bas dans 21 séances, et avec quelle confiance ? Être sûr à 90 % et se tromper coûte cher : c'est la règle des prévisionnistes.</p>
         <div class="ds-sens"><button type="button" class="h" data-s="1" aria-pressed="false">Plus haut ↑</button><button type="button" class="b" data-s="0" aria-pressed="false">Plus bas ↓</button></div>
         <div class="ds-reg"><label for="ds-conf">Ta confiance <b id="ds-conf-v">60 %</b></label><input type="range" id="ds-conf" min="50" max="95" step="5" value="60"></div>
-        <p><button class="btn" type="button" id="ds-ok" disabled>Valider mon pronostic</button></p>`;
+        <p><button class="btn" type="button" id="ds-ok" disabled>Choisis d'abord plus haut ou plus bas</button></p>`;
       let sens = null; const c = Q.querySelector("#ds-conf"), ok = Q.querySelector("#ds-ok");
-      Q.querySelectorAll(".ds-sens button").forEach(b => b.onclick = () => { sens = +b.dataset.s; Q.querySelectorAll(".ds-sens button").forEach(x => x.setAttribute("aria-pressed", x === b)); ok.disabled = false; });
+      Q.querySelectorAll(".ds-sens button").forEach(b => b.onclick = () => { sens = +b.dataset.s; Q.querySelectorAll(".ds-sens button").forEach(x => x.setAttribute("aria-pressed", x === b)); ok.disabled = false; ok.textContent = "Valider mon pronostic"; });
       c.oninput = () => Q.querySelector("#ds-conf-v").textContent = c.value + " %";
-      ok.onclick = () => { etat.sens = sens; etat.conf = +c.value / 100; etat.k = 5; sauverEtat(); poser(); };
+      ok.onclick = () => { etat.sens = sens; etat.conf = +c.value / 100; etat.k = 5; sauverEtat(); poser(); voir(Q, "start"); };
       return;
     }
     if(etat.k === 5){
@@ -196,7 +216,7 @@ JS = r"""
         <p><button class="btn" type="button" id="ds-ok">Valider et voir la suite du graphique</button></p>`;
       const l = Q.querySelector("#ds-l"), v = () => { Q.querySelector("#ds-l-v").textContent = `± ${l.value} % · entre ${(M.x * (1 - l.value / 100)).toFixed(1).replace(".", ",")} et ${(M.x * (1 + l.value / 100)).toFixed(1).replace(".", ",")}`; };
       l.oninput = v; v();
-      Q.querySelector("#ds-ok").onclick = () => { etat.largeur = +l.value / 100; etat.bas = M.x * (1 - etat.largeur); etat.haut = M.x * (1 + etat.largeur); etat.k = 6; sauverEtat(); poser(); };
+      Q.querySelector("#ds-ok").onclick = () => { etat.largeur = +l.value / 100; etat.bas = M.x * (1 - etat.largeur); etat.haut = M.x * (1 + etat.largeur); etat.k = 6; sauverEtat(); poser(); voir(G, "start"); };
       return;
     }
     bilan();
