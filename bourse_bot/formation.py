@@ -548,12 +548,15 @@ def generer(seo, base, dossier, csp) -> list:
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(html_)
         faits.append(chemin)
-    for fab in (_page_test_niveau, _page_revision, _page_entrainement):
+    from . import academie_examen
+    from .formation_plus import OBJECTIFS as _OBJ
+    _pos = lambda seo_, base_, csp_: academie_examen.page_positionnement(seo_, base_, csp_, CHAPITRES, NIVEAUX, _OBJ, JS_PROGRES)   # version 83
+    for fab in (_pos, _page_revision, _page_entrainement):
         chemin, html_ = fab(seo, base, csp)
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(html_)
         faits.append(chemin)
-    chemin, html_ = _page_examen(seo, base, csp)
+    chemin, html_ = academie_examen.page_examen(seo, base, csp, CHAPITRES, NIVEAUX, JS_PROGRES)   # version 83 : examen expert
     with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
         f.write(html_)
     faits.append(chemin)

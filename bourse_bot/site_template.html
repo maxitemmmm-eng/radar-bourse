@@ -440,6 +440,18 @@ body.titre-ouvert{overflow:hidden}
 .sentence{font-size:15.5px;line-height:1.55;max-width:65ch;margin:0}
 .reasons{display:grid;gap:6px;margin:0;padding:0;list-style:none;font-size:14px}
 .reasons li{display:grid;grid-template-columns:20px 1fr;gap:6px}
+.bandeau-tech{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:14px 0 10px}
+.bandeau-tech>div{background:var(--surface);padding:9px 12px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.bandeau-tech .label{font-size:11.5px}.bt-v{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:14px}.bt-v small{display:block;font-family:inherit;font-size:11.5px;color:var(--muted);white-space:normal}
+.bt-52{display:flex;align-items:center;gap:6px;font-size:12px}.bt-barre{position:relative;flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--down),var(--line) 50%,var(--up));min-width:40px}
+.bt-barre i{position:absolute;top:-3px;width:3px;height:12px;border-radius:2px;background:var(--ink);transform:translateX(-1px)}
+.tab-prev{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin:12px 0}
+.scen{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}.scen th,.scen td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:right}
+.scen th:first-child,.scen td:first-child{text-align:left}.scen th small{display:block;font-weight:400;font-size:11.5px;color:var(--muted)}
+.scen thead th{font-size:11.5px;color:var(--muted);font-weight:500}.scen td.num{white-space:nowrap}.scen.passes{font-size:12.5px}
+.fiab-gros{display:flex;gap:12px;align-items:baseline;margin:8px 0}.fiab-gros b{font-size:26px;font-family:var(--f-mono)}.fiab-gros span{color:var(--muted);font-size:13px}
+.petit{font-size:12.5px;margin:8px 0 0}
+/*__DEFI_CSS__*/
 .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
 .fact{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px}
 .fact .v{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:15px}
@@ -1056,9 +1068,9 @@ html.calme *{animation:none!important;transition:none!important}
         <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M4 18 L24 9 L44 18 L24 27 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 22 V32 C16 36 32 36 36 32 V22" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M44 18 V30" stroke="#f2c14e" stroke-width="3" stroke-linecap="round"/></svg>
         <b>L'Académie</b><span>Apprendre la Bourse et la crypto de zéro : des leçons courtes avec exercices corrigés, des simulateurs à manipuler, un entraînement de 3 minutes par jour et un examen final avec certificat.</span>
         <em id="te-aca-info">Gratuit, sans compte</em><i class="te-entrer">Entrer ›</i></a>
-      <a class="te-carte" href="#prono" data-choix="defi" role="option" aria-selected="false">
+      <a class="te-carte" href="#defi" data-choix="defi" role="option" aria-selected="false">
         <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 8h20v8a10 10 0 0 1-20 0z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M14 11H8a6 6 0 0 0 7 8M34 11h6a6 6 0 0 1-7 8M24 26v8M16 40h16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-        <b>Le Défi du jour</b><span>Choisis hausse ou baisse sur quelques titres, puis compare ton score à celui de l'IA. Une partie par jour, sans argent réel.</span>
+        <b>Le Défi du jour</b><span>Un vrai dossier d'analyse chaque jour : graphique complet, 4 questions de méthode, ton pronostic chiffré et ta fourchette, notés face à l'IA.</span>
         <em id="te-defi-info">Une nouvelle partie chaque jour</em><i class="te-entrer">Jouer ›</i></a>
     </div>
     <section class="te-jour" aria-label="Aujourd'hui en un coup d'œil">
@@ -1068,7 +1080,7 @@ html.calme *{animation:none!important;transition:none!important}
         <div class="te-q-choix"><button type="button" data-r="1">Vrai</button><button type="button" data-r="0">Faux</button></div><p class="te-q-rep" id="te-q-rep" role="status"></p></div>
     </section>
     <nav class="te-raccourcis" aria-label="Raccourcis">
-      <a href="prediction-crypto.html">Prédiction crypto</a><a href="prediction-bourse.html">Prédiction bourse</a><a href="#prono" data-ferme="1">Pronostic du jour</a>
+      <a href="prediction-crypto.html">Prédiction crypto</a><a href="prediction-bourse.html">Prédiction bourse</a><a href="#defi" data-ferme="1">Défi du jour</a><a href="#prono" data-ferme="1">Pronostic du jour</a>
       <a href="toutes-les-actions.html">Toutes les actions</a><a href="formation/test-de-niveau.html">Test de niveau</a><a href="formation/revision.html">Révisions express</a>
       <a href="formation/examen.html">Examen final</a><a href="avis-surs-verifies.html">Résultats vérifiés</a>
     </nav>
@@ -1097,7 +1109,7 @@ html.calme *{animation:none!important;transition:none!important}
   <a href="prediction-crypto.html" class="lien-site nav-fort">Prédiction crypto</a><a href="prediction-bourse.html" class="lien-site nav-fort">Prédiction bourse</a>
   <a href="formation.html" class="lien-site nav-fort nav-aca">Académie</a>
   <a href="toutes-les-actions.html" class="lien-site">Toutes les actions</a><a href="themes.html" class="lien-site">Par thème</a>
-  <a href="#prono">Pronostic du jour</a><a href="#simulation">Simulation</a><a href="avis-surs-verifies.html" class="lien-site">Résultats vérifiés</a>
+  <a href="#defi">Défi du jour</a><a href="#prono">Pronostic du jour</a><a href="#simulation">Simulation</a><a href="avis-surs-verifies.html" class="lien-site">Résultats vérifiés</a>
 </nav>
 <details class="plus" id="nav-plus"><summary><span class="plus-large">Plus ▾</span><span class="plus-mobile" aria-hidden="true"><i></i><i></i><i></i></span><span class="plus-mobile-t">Plus</span></summary><div class="plus-panneau">
   <div class="plus-groupe"><span class="plus-titre">Prédictions de l'IA</span>
@@ -1105,7 +1117,7 @@ html.calme *{animation:none!important;transition:none!important}
     <a href="toutes-les-actions.html" class="lien-site">Toutes les actions (2 000+)</a><a href="themes.html" class="lien-site">Actions par thème</a>
     <a href="#previsions">Prévisions du mois</a><a href="#tous">Tous les titres suivis</a></div>
   <div class="plus-groupe"><span class="plus-titre">Jouer et s'entraîner</span>
-    <a href="#prono">Pronostic du jour</a><a href="#remonte">L'Arène : joue contre l'IA</a><a href="#portefeuille">Portefeuille virtuel</a>
+    <a href="#defi">Défi du jour</a><a href="#prono">Pronostic du jour</a><a href="#remonte">L'Arène : joue contre l'IA</a><a href="#portefeuille">Portefeuille virtuel</a>
     <a href="#simulation">Simulation : à combien dans un mois ?</a><a href="comparer.html" class="lien-site">Comparer deux titres</a><a href="outils.html" class="lien-site">Outils gratuits</a></div>
   <div class="plus-groupe"><span class="plus-titre">L'IA est-elle fiable ?</span>
     <a href="avis-surs-verifies.html" class="lien-site">Avis vérifiés en public</a><a href="resultats.html" class="lien-site">Résultats réels</a>
@@ -1187,6 +1199,7 @@ html.calme *{animation:none!important;transition:none!important}
     </div>
   </section>
 
+<!--__DEFI__-->
   <section aria-labelledby="h-prono" id="prono">
     <div class="sec-head"><h2 id="h-prono">Ton pronostic du jour</h2>
       <p>Trois marchés, une question : plus haut ou plus bas demain ? Reviens demain pour voir si tu avais raison. Des points et une série de jours, jamais d'argent.</p></div>
@@ -1303,7 +1316,7 @@ html.calme *{animation:none!important;transition:none!important}
       <div class="panel jeu">
         <div class="arene-modes" role="group" aria-label="Mode de jeu">
           <button class="chip" data-mode-jeu="libre" aria-pressed="true">Partie libre</button>
-          <button class="chip" data-mode-jeu="jour" aria-pressed="false">Défi du jour (5 manches)</button>
+          <button class="chip" data-mode-jeu="jour" aria-pressed="false">Série du jour (5 manches)</button>
         </div>
         <div class="jeu-tete"><p class="muted" id="jeu-info">Titre et date mystères, révélés après ta réponse. Le pointillé bleu marque le jour mystère.</p><p class="jeu-manche" id="jeu-manche"></p></div>
         <div class="jeu-vide" id="jeu-vide">Appuie sur « Commencer » : le graphique d'un moment du passé va apparaître ici.</div>
@@ -1777,6 +1790,7 @@ const DEFS = {
   avis_net: ["Confiance faible", "L'IA donne toujours un avis : hausse ou baisse. Quand les chances sont proches de 50 %, elle hésite : testé sur des années qu'elle n'avait jamais vues, dans ces cas-là elle a souvent eu tort. Sur certains marchés (par exemple les cryptos), même ses avis tranchés n'ont pas fait mieux que « toujours la même réponse » : leurs avis sont donc toujours marqués « confiance faible ». Le radar le dit franchement plutôt que de faire semblant de savoir."],
   agitation: ["Agitation prévue", "De combien le prix risque de bouger le mois prochain, à la hausse comme à la baisse. Les périodes agitées ont tendance à durer : c'est beaucoup plus prévisible que la direction du prix. « ±6 % » veut dire qu'en général, le prix finira le mois entre 6 % plus bas et 6 % plus haut, mais il peut en sortir."],
   raisons: ["Les raisons de l'avis", "Pour chaque titre, on retire tour à tour chaque famille d'indicateurs et on regarde de combien l'avis des IA change. Les familles qui le font le plus bouger sont affichées. Ce sont les raisons du calcul, pas des certitudes sur l'avenir."],
+  fiab: ["Fiabilité vérifiée", "Chaque jour, l'IA annonce une fourchette de prix pour dans un mois. Un mois plus tard, le site vérifie automatiquement si le vrai prix est tombé dedans, et publie le résultat, même quand c'est raté. Rien n'est retouché à la main."],
   proba: ["Chances de hausse", "Sur 100 situations passées qui ressemblaient à celle d'aujourd'hui, combien de fois le prix était plus haut un mois après. 50 % = pile ou face : le radar ne sait pas."],
   fourchette: ["Fourchette", "L'écart de prix entre un scénario bas et un scénario haut. Testée sur le passé, elle a contenu le vrai prix final environ 8 fois sur 10. Donc 2 fois sur 10, le prix en sort."],
   central: ["Scénario central", "Le prix « du milieu » : il y a autant de chances de finir au-dessus qu'en dessous. Ce n'est pas une promesse."],
@@ -1935,7 +1949,7 @@ $("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t
   function defiDuJour(){ const r = graine("radar-" + auj), choix = []; while(choix.length < Math.min(5, items.length)){ const k = Math.floor(r() * items.length); if(!choix.includes(k)) choix.push(k); } return choix; }
   function manche(){
     if(mode === "jour"){ const j = S.jours[auj] || (S.jours[auj] = {k: 0, toi: 0, ia: 0, fini: false});
-      if(j.fini){ finDefi(); return; } actuel = items[defiDuJour()[j.k]]; $("#jeu-manche").textContent = `Défi du jour · manche ${j.k + 1} sur 5`; }
+      if(j.fini){ finDefi(); return; } actuel = items[defiDuJour()[j.k]]; $("#jeu-manche").textContent = `Série du jour · manche ${j.k + 1} sur 5`; }
     else { if(deja.size >= items.length) deja.clear(); let k; do { k = Math.floor(Math.random() * items.length); } while(deja.has(k)); deja.add(k); actuel = items[k]; $("#jeu-manche").textContent = ""; }
     indice = false; dessiner(actuel, false); res.innerHTML = "";
     zone.innerHTML = `<span>Dans un mois, le prix sera…</span><button class="btn" data-pari="1">Plus haut ↑</button><button class="btn" data-pari="0">Plus bas ↓</button><button class="btn ghost" id="jeu-indice">Voir l'avis de l'IA (−3 points)</button>`;
@@ -1965,7 +1979,7 @@ $("#rockets").innerHTML = rockets.slice(0,7).map(t => `<button class="rk" data-t
   }
   function finDefi(){
     const j = S.jours[auj];
-    $("#jeu-manche").textContent = "Défi du jour terminé";
+    $("#jeu-manche").textContent = "Série du jour terminée";
     const texte = `Radar Bourse · Défi du ${new Date().toLocaleDateString("fr-FR")} : ${j.toi}/5 (l'IA : ${j.ia}/5). Arriveras-tu à faire mieux ?`;
     res.innerHTML = `<div class="jeu-res"><p class="jeu-verdict">${j.toi > j.ia ? "Tu as battu l'IA aujourd'hui !" : j.toi === j.ia ? "Égalité avec l'IA." : "L'IA gagne aujourd'hui."}</p>
       <p>Ton score : <b>${j.toi} sur 5</b> · l'IA : <b>${j.ia} sur 5</b>. Un nouveau défi arrive demain, le même pour tout le monde.</p></div>`;
@@ -3089,7 +3103,7 @@ function grapheComplet(id, t, opts = {}){
     grid:{vertLines:{color:rgba(C.line, .55)}, horzLines:{color:rgba(C.line, .55)}}};
   const chart = LightweightCharts.createChart(el, {...base, crosshair:{mode:1},
     watermark:{visible:true, text:affTk(t.ticker).replace(/-USD$|^\^/g, ""), fontSize:64, fontFamily:"IBM Plex Sans, Arial, sans-serif", fontStyle:"bold", color:rgba(C.muted, .1), horzAlign:"center", vertAlign:"center"},
-    rightPriceScale:{borderColor:C.line, minimumWidth:76, scaleMargins:{top:.06, bottom:.2}},
+    rightPriceScale:{borderColor:C.line, minimumWidth:84, scaleMargins:{top:.06, bottom:.2}},
     timeScale:{borderColor:C.line, rightOffset:2}});
   const s = t.serie, series = {sma50:[], sma200:[], bb:[], vol:[], prev:[], bougies:[]};
 
@@ -3105,16 +3119,29 @@ function grapheComplet(id, t, opts = {}){
   const marqueursFig = (t.chandeliers || []).filter(m => m.t < s.t.at(-1) || m.t === s.t.at(-1)).map(m => ({
     time:m.t, position: HAUSS.includes(m.code) ? "belowBar" : "aboveBar", color: HAUSS.includes(m.code) ? C.up : C.down,
     shape: HAUSS.includes(m.code) ? "arrowUp" : "arrowDown", text: m.nom}));
+  // version 83 : les prévisions passées de l'IA posées sur la courbe (rond vert : prix tombé dans la fourchette annoncée, rouge : sorti)
+  const dansSerie = new Set(s.t);
+  const marqueursPasses = opts.niveaux ? (t.passes_ia || []).filter(p => dansSerie.has(p.d1) && p.d1 !== s.t.at(-1)).map((p, i, a) => ({
+    time:p.d1, position:p.pf >= (p.bas + p.haut) / 2 ? "aboveBar" : "belowBar", color:p.dans ? C.up : C.down, shape:"circle",
+    text: i >= a.length - 2 ? (p.dans ? "prévision tenue" : "prévision ratée") : ""})) : [];
   const majMarqueurs = avecFig => {
-    const liste = (avecFig ? marqueursFig.filter(m => m.time !== s.t.at(-1)) : []).concat([{time:s.t.at(-1), position:"aboveBar", color:C.ink, shape:"arrowDown", text:"aujourd'hui"}]);
+    const liste = (avecFig ? marqueursFig.filter(m => m.time !== s.t.at(-1)) : []).concat(marqueursPasses.filter(m => !avecFig || !marqueursFig.some(f => f.time === m.time)))
+      .concat([{time:s.t.at(-1), position:"aboveBar", color:C.ink, shape:"arrowDown", text:"aujourd'hui"}]);
     liste.sort((a, b) => a.time < b.time ? -1 : 1);
     candles.setMarkers(liste);
+    try{ courbe.setMarkers(liste.filter(m => m.shape === "circle" || m.text === "aujourd'hui")); }catch(e){}   // version 83 : aussi en mode courbe
   };
   majMarqueurs(!(opts.calques && opts.calques.fig === false));
   if(opts.niveaux){
     const n = t.niveaux || {};
     if(t.stop_loss) candles.createPriceLine({price:t.stop_loss, color:C.down, lineWidth:1, lineStyle:2, axisLabelVisible:true, title:"stop"});
     if(n.resistance && n.resistance > t.prix * 1.005) candles.createPriceLine({price:n.resistance, color:C.muted, lineWidth:1, lineStyle:1, axisLabelVisible:true, title:"résistance"});
+    const an = extremesAn(t);
+    if(an){
+      [candles, courbe].forEach(sr => {
+        sr.createPriceLine({price:an.hi, color:rgba(C.muted, .7), lineWidth:1, lineStyle:3, axisLabelVisible:false, title:el.clientWidth > 600 ? "+ haut 1 an" : ""});
+        sr.createPriceLine({price:an.lo, color:rgba(C.muted, .7), lineWidth:1, lineStyle:3, axisLabelVisible:false, title:el.clientWidth > 600 ? "+ bas 1 an" : ""}); });
+    }
   }
 
   const vol = chart.addHistogramSeries({priceFormat:{type:"volume"}, priceScaleId:"vol", lastValueVisible:false, priceLineVisible:false});
@@ -3215,6 +3242,61 @@ function grapheComplet(id, t, opts = {}){
   chart.timeScale().subscribeVisibleLogicalRangeChange(redessiner);
   if(window.ResizeObserver){ g.obs = new ResizeObserver(redessiner); g.obs.observe(el); }
   requestAnimationFrame(() => { voir(opts.periode ?? 126); redessiner(); });
+}
+/* version 83 : l'appli gagne un bandeau technique (comme un terminal de marché) et un tableau de prévision chiffré, vérifiable */
+function extremesAn(t){
+  const s = t.serie; if(!s || !s.c) return null;
+  const n = Math.min(252, s.c.length), hs = (s.h || s.c).slice(-n).filter(v => v != null), ls = (s.l || s.c).slice(-n).filter(v => v != null);
+  if(!hs.length || !ls.length) return null;
+  return {hi:Math.max(...hs), lo:Math.min(...ls), n};
+}
+function bandeauTechnique(t){
+  const s = t.serie; if(!s || !s.c || s.c.length < 30) return "";
+  const c = s.c, n = c.length, der = c[n - 1], an = extremesAn(t), pf = t.perf || {};
+  const rsi = s.rsi ? s.rsi.filter(v => v != null).at(-1) : null;
+  const sma = s.sma200 ? s.sma200.filter(v => v != null).at(-1) : null;
+  const vols = (s.v || []).slice(-21).filter(v => v > 0), vRatio = vols.length > 10 ? vols.at(-1) / (vols.slice(0, -1).reduce((a, b) => a + b, 0) / (vols.length - 1)) : null;
+  const pos = an && an.hi > an.lo ? (der - an.lo) / (an.hi - an.lo) : null;
+  const libRsi = rsi == null ? "" : rsi >= 70 ? "a beaucoup monté, vite" : rsi <= 30 ? "a beaucoup baissé, vite" : "ni excès ni panique";
+  const cases = [
+    ["1 jour", pct(pf["1 jour"], 2)], ["1 mois", pct(pf["1 mois"])], ["6 mois", pct(pf["6 mois"])],
+    an ? [`Sur ${an.n >= 250 ? "1 an" : an.n + " séances"}`, `<span class="bt-52"><span class="num">${px(an.lo, t.devise)}</span><span class="bt-barre" title="Position du cours entre le plus bas et le plus haut"><i style="left:${(pos * 100).toFixed(1)}%"></i></span><span class="num">${px(an.hi, t.devise)}</span></span>`] : null,
+    sma ? ["Vs moyenne 200 j", `${pct(der / sma - 1)} <small>${der >= sma ? "au-dessus : tendance de fond positive" : "en dessous : tendance de fond négative"}</small>`] : null,
+    rsi != null ? ["RSI 14 j", `<b class="num">${Math.round(rsi)}</b> <small>${libRsi}</small>`] : null,
+    pf["volatilité annuelle"] != null ? ["Volatilité", `${pctPlain(pf["volatilité annuelle"], 0)} <small>par an</small>`] : null,
+    vRatio ? ["Volume du jour", `${vRatio.toFixed(1).replace(".", ",")}× <small>la moyenne d'un mois</small>`] : null,
+  ].filter(Boolean);
+  return `<div class="bandeau-tech" role="group" aria-label="Chiffres clés de ${esc(t.nom)}">${cases.map(([l, v]) => `<div><span class="label">${l}</span><span class="bt-v">${v}</span></div>`).join("")}</div>`;
+}
+function tableauPrevision(t){
+  const k = t.cone; if(!k || !k.mediane) return "";
+  const dev = t.devise, p0 = t.prix, sens = sensDe(t), pa = probaIA(t);
+  const r50 = 0.6745 / 1.2816, demi = (v, m) => v > 0 && m > 0 ? m * Math.pow(v / m, r50) : m;
+  const m = k.mediane.at(-1), b = k.bas.at(-1), h = k.haut.at(-1), b50 = demi(b, m), h50 = demi(h, m);
+  const ligne = (lib, sous, v, cls) => `<tr><th scope="row">${lib}<small>${sous}</small></th><td class="num">${px(v, dev)}</td><td class="num ${cls}">${pct(v / p0 - 1)}</td></tr>`;
+  const ps = t.passes_ia || [], kOk = ps.filter(x => x.dans).length, sj = ps.filter(x => x.juste != null), sOk = sj.filter(x => x.juste).length;
+  const G = DATA.passes_tous || {}, F = (DATA.suivi || {}).fourchette;
+  const tauxG = G.n ? Math.round(G.k / G.n * 100) : null;
+  const derniers = ps.slice(-6).reverse().map(x => `<tr><td>${fmtDate(x.d0)}</td><td class="num">${px(x.bas, dev)} – ${px(x.haut, dev)}</td><td class="num">${px(x.pf, dev)}</td><td class="${x.dans ? "up" : "down"}">${x.dans ? "✓ dans la fourchette" : "✗ en dehors"}</td></tr>`).join("");
+  const date = t.date_cours || DATA.date_donnees;
+  return `<div class="tab-prev">
+    <div class="panel"><div class="label">Les scénarios à un mois ${aide("proba")}</div>
+      <table class="scen"><thead><tr><th></th><th>Prix</th><th>Écart</th></tr></thead><tbody>
+        ${ligne("Si ça va bien", "9 fois sur 10, le prix finit en dessous", h, "up")}
+        ${ligne("Plutôt bien", "3 fois sur 4 en dessous", h50, "up")}
+        ${ligne("Le plus probable", pa != null ? `avis de l'IA : ${sens > 0 ? "hausse" : "baisse"}, ${Math.round((sens > 0 ? pa : 1 - pa) * 100)} chances sur 100` : "médiane", m, "")}
+        ${ligne("Plutôt mal", "3 fois sur 4 au-dessus", b50, "down")}
+        ${ligne("Si ça va mal", "9 fois sur 10, le prix finit au-dessus", b, "down")}
+      </tbody></table>
+      <p class="muted petit">Un écart de ${pctPlain((h - b) / p0, 0)} entre le scénario bas et le scénario haut : c'est l'incertitude réelle, pas un défaut du modèle.</p></div>
+    <div class="panel"><div class="label">Fiabilité vérifiée ${aide("fiab")}</div>
+      ${ps.length ? `<div class="fiab-gros"><b>${kOk} sur ${ps.length}</b><span>prévisions passées sur ${esc(t.nom)} tombées dans la fourchette annoncée${sj.length ? ` · sens du prix juste ${sOk} fois sur ${sj.length}` : ""}</span></div>
+        <table class="scen passes"><thead><tr><th>Prévision du</th><th>Fourchette annoncée</th><th>Prix un mois après</th><th>Résultat</th></tr></thead><tbody>${derniers}</tbody></table>`
+      : `<p>Pas encore de prévision vérifiable sur ce titre : chaque avis est contrôlé un mois après, puis posé sur la courbe (rond vert : tenu, rouge : raté).</p>`}
+      ${tauxG != null ? `<p class="petit">Tous titres confondus : <b>${tauxG} %</b> des ${G.n.toLocaleString("fr-FR")} fourchettes vérifiées ont été tenues${G.sens_n ? `, sens juste ${Math.round(G.sens_k / G.sens_n * 100)} fois sur 100` : ""}.</p>`
+        : F && F.n ? `<p class="petit">Tous titres confondus : ${Math.round(F.taux * 100)} % des fourchettes tenues sur ${F.n} vérifications.</p>` : ""}
+      <p class="muted petit">Méthode : modèle d'apprentissage entraîné sur l'historique des cours, testé année par année sur des périodes qu'il n'avait jamais vues. Cours de clôture du ${fmtDate(date)}. <a href="resultats.html">Voir tous les résultats</a></p></div>
+  </div>`;
 }
 function graphique(t){   // version 67 : sur téléphone, moins de passé pour que la prévision soit bien visible
   grapheComplet("g-detail", t, {niveaux:true, periode: innerWidth < 600 ? 21 : 63}); }
@@ -3465,8 +3547,10 @@ function ouvrir(tk, pousser=true){
         <div class="panel kpi"><div class="label">Score technique</div><div class="v num">${Math.round(t.score)} / 100</div><span class="pill ${SIG[t.signal]}" title="Tendance technique (moyennes, RSI, MACD…), indépendante de l'avis des IA">${esc(LIB[t.signal] || t.signal)}</span></div>
         <div class="panel kpi"><div class="label">Risque</div><div class="v">${esc(t.risque)}</div><div class="d">volatilité annuelle ${pctPlain(t.perf["volatilité annuelle"],0)}</div></div>
       </div>
+      ${bandeauTechnique(t)}
       ${coque("g-detail")}
       <div class="legend"><span style="--c:var(--accent)">Moyenne 50 jours</span><span style="--c:var(--warn)">Moyenne 200 jours</span><span style="--c:${sensDe(t) > 0 ? "var(--up)" : sensDe(t) < 0 ? "var(--down)" : "var(--muted)"}">Prévision : ligne = le plus probable, zone foncée = 1 fois sur 2, zone claire = 8 fois sur 10</span><span style="--c:var(--muted)">Stop-loss indicatif (tirets rouges)</span></div>
+      ${tableauPrevision(t)}
       <div class="panel"><div class="label" style="margin-bottom:10px">Lecture du radar</div><div class="lecture">${lecture(t)}</div></div>
     </div>
 
@@ -4705,6 +4789,7 @@ $("#consent").addEventListener("keydown", e => {   // le focus clavier reste dan
 });
 $("#accept").onclick = () => { try{ localStorage.setItem(CLE_AVERT, "1"); }catch(e){} $("#consent").hidden = true; document.body.style.overflow = ""; };
 
+/*__DEFI_JS__*/
 if(location.hash){
   const h = location.hash.slice(1);
   if(ONGLETS.includes(h)) ouvrirLegal(h);

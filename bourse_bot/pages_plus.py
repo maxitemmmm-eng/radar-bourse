@@ -187,6 +187,12 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("83", "Nouveau test de l'idée « rebond quand la peur est forte » : avis de hausse quand l'indice de la peur (VIX) dépasse un seuil, seuil choisi chaque année avec les seules années précédentes", False,
+     "Testé de 2016 à 2026 : +0,49 point en moyenne, gain net en 2020 (+4,8 points), mais 2022 recule encore légèrement (−0,06 point). Avec un seuil fixé après coup (35), aucune année ne recule, "
+     "mais ce serait choisir le réglage en connaissant les résultats : ce n'est pas un test honnête. Non adopté, à retester quand de nouvelles périodes de forte peur auront été vécues"),
+    ("82", "Déplacer le seuil hausse/baisse (au lieu de 50 sur 100) : par marché selon la part de hausses passée, un seuil unique, ou le seuil qui marchait le mieux sur chaque marché", False,
+     "Testé année par année (2018 à 2026) en n'apprenant que sur les années précédentes : seuil par marché −1,6 point en moyenne (jusqu'à −5,9), seuil unique −1,0 point, "
+     "meilleur seuil passé +0,1 point en moyenne mais −1,6 point en 2022 et 5 années sur 9 en recul. Non adopté : le seuil de 50 reste le plus fiable"),
     ("81", "Un « correcteur » appris par-dessus l'IA : un second modèle (régression logistique, puis arbres) qui corrige l'avis selon la peur du marché, la tendance, l'agitation et le type de titre", False,
      "Testé année par année en n'apprenant que sur les années précédentes (2018 à 2026) : la version logistique gagne 0,5 point en moyenne mais perd jusqu'à 2,5 points en 2022 "
      "et recule 5 années sur 9 ; la version à arbres perd 1 point en moyenne. Non adopté"),

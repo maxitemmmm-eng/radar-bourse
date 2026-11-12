@@ -336,6 +336,10 @@ def cmd_site(args):
         except Exception:
             pass
     chrono.append(("Préparation des données du site", _t.time()))
+    if os.environ.get("RADAR_GARDER_DONNEES"):   # outil de test : garder les données pour regénérer le site sans tout recalculer
+        import pickle
+        with open(os.environ["RADAR_GARDER_DONNEES"], "wb") as f:
+            pickle.dump(payload, f)
     chemin = site.ecrire(payload)
     chrono.append(("Écriture du site", _t.time()))
     try:

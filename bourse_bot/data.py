@@ -310,8 +310,14 @@ def tendances_crypto() -> dict[str, str]:
 
 
 def devise(ticker: str) -> str:
-    if ticker.endswith((".PA", ".AS", ".DE", ".MI", ".MC")) or ticker in ("^FCHI", "^STOXX50E"):
+    # version 83 : toutes les places de la zone euro (avant, Nokia à Helsinki ou AB InBev à Bruxelles s'affichaient en $)
+    if ticker.endswith((".PA", ".AS", ".DE", ".MI", ".MC", ".HE", ".BR", ".LS", ".VI", ".IR", ".F")) or ticker in ("^FCHI", "^STOXX50E"):
         return "€"
+    autres = {".L": "GBp", ".SW": "CHF", ".T": "¥", ".HK": "HK$", ".TO": "C$", ".AX": "A$", ".ST": "SEK", ".CO": "DKK", ".OL": "NOK",
+              ".NS": "₹", ".KS": "₩", ".TW": "NT$", ".SI": "S$"}
+    for suf, d in autres.items():
+        if ticker.endswith(suf):
+            return d
     return "$"
 
 

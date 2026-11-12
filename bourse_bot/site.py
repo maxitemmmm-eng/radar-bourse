@@ -226,6 +226,27 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
         item["perf_an"] = _arrondi(float(d["Close"].iloc[-1] / d["Close"].iloc[-min(len(d), 253)] - 1)) if len(d) > 200 else None
         titres.append(item)
 
+    # version 83 : les prévisions passées de l'IA sur chaque titre (fourchette annoncée et prix réel un mois après),
+    # posées sur le graphique de l'appli et comptées dans le tableau « fiabilité vérifiée »
+    passes_tous = {"n": 0, "k": 0, "sens_n": 0, "sens_k": 0}
+    try:
+        from . import graphique_pro
+        for item in titres:
+            ps = graphique_pro.passes(item, horizon)[-24:]
+            if not ps:
+                continue
+            dates = (item.get("serie") or {}).get("t") or []
+            item["passes_ia"] = [{"d0": p["d0"], "d1": dates[p["i1"]], "bas": _arrondi(p["bas"]), "haut": _arrondi(p["haut"]),
+                                  "pf": _arrondi(p["pf"]), "dans": p["dans"], "juste": p["juste"]} for p in ps]
+            for p in graphique_pro.passes(item, horizon):
+                passes_tous["n"] += 1
+                passes_tous["k"] += p["dans"]
+                if p["juste"] is not None:
+                    passes_tous["sens_n"] += 1
+                    passes_tous["sens_k"] += bool(p["juste"])
+    except Exception:
+        pass
+
     indices = []
     for t, nom in INDICES:
         d = indices_bruts.get(t)
@@ -271,7 +292,7 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
     resultats = suivi.pop("toutes", [])
     return propre({
         "genere_le": datetime.now().isoformat(timespec="seconds"),
-        "date_donnees": date_max, "demo": demo, "horizon": horizon,
+        "date_donnees": date_max, "demo": demo, "horizon": horizon, "passes_tous": passes_tous,
         "modele": None if evaluation is None else evaluation.to_dict(),
         "suivi": suivi, "indices": indices, "titres": titres,
         "live": {"finnhub": config.FINNHUB_CLE},
@@ -311,18 +332,35 @@ def _json_sur(payload: dict) -> str:
              .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029"))
 
 
+def _alleger(x):
+    """Version 82 : nombres raccourcis dans les données de l'accueil (0.015132736321391116 → 0.015133).
+    5 chiffres significatifs pour les petits nombres (taux, rendements), 7 pour les prix : invisible à l'écran,
+    mais la page d'accueil devient nettement plus légère et plus rapide à lire sur téléphone."""
+    if isinstance(x, float):
+        if x != x or x in (float("inf"), float("-inf")) or x == 0:
+            return x
+        return float(f"{x:.5g}") if abs(x) < 100 else float(f"{x:.7g}")
+    if isinstance(x, dict):
+        return {k: _alleger(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [_alleger(v) for v in x]
+    return x
+
+
 def _json_rapide(payload: dict) -> str:
     """Version 69 : les données de l'accueil passées par JSON.parse('…') au lieu d'un gros objet JavaScript.
     Le navigateur lit du JSON bien plus vite que du code (téléphones lents : l'accueil se fige moins au chargement).
     Aucun « < » ne reste dans la page (échappé en \\u003c), donc rien ne peut fermer la balise <script>."""
-    s = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), allow_nan=False).replace("<", "\\u003c")
+    s = json.dumps(_alleger(payload), ensure_ascii=False, separators=(",", ":"), allow_nan=False).replace("<", "\\u003c")
     lit = json.dumps(s, ensure_ascii=False).replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
     return f"JSON.parse({lit})"
 
 
 CHAMPS_DETAIL = ("serie", "rendements", "cone", "chandeliers", "backtest", "niveaux", "actus",
-                 "fondamentaux", "raisons_pour", "raisons_contre", "raisons_ia")
-TOUJOURS_COMPLETS = {"^FCHI"}  # premier graphique de l'accueil : affiché tout de suite (les autres sont chargés au clic)
+                 "fondamentaux", "raisons_pour", "raisons_contre", "raisons_ia", "passes_ia")
+TOUJOURS_COMPLETS = {"^FCHI"}
+# version 82 : champs calculés pour les pages fixes et l'historique, jamais lus par l'appli : retirés de la page d'accueil
+INUTILES_APPLI = ("quantiles", "extremes", "fiabilite_modele", "proba_brute", "proba_ia1", "proba_ia2")  # premier graphique de l'accueil : affiché tout de suite (les autres sont chargés au clic)
 
 
 def _decouper(payload: dict, dossier: str) -> dict:
@@ -338,7 +376,11 @@ def _decouper(payload: dict, dossier: str) -> dict:
         nom = f"donnees/{seo.slug(t['ticker'])}.json"
         with open(os.path.join(dossier, nom), "w", encoding="utf-8") as f:
             json.dump({k: t.get(k) for k in CHAMPS_DETAIL}, f, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
-        court = {k: v for k, v in t.items() if k not in CHAMPS_DETAIL}
+        court = {k: v for k, v in t.items() if k not in CHAMPS_DETAIL and k not in INUTILES_APPLI}
+        sp = court.get("spark")
+        if isinstance(sp, list) and len(sp) > 42:   # version 82 : 40 points suffisent pour une mini-courbe de quelques pixels
+            pas = len(sp) / 40
+            court["spark"] = [sp[int(i * pas)] for i in range(40)] + [sp[-1]]
         court["detail"] = nom
         leger["titres"].append(court)
     return leger
@@ -354,6 +396,9 @@ def _ecrire_anglais(gabarit: str, donnees: str, dossier: str, lib: str) -> None:
     seul le texte de l'interface est traduit (dictionnaire traductions_en), le code n'est jamais modifié."""
     from . import traduction_appli, traductions_en
     tete, corps = gabarit.split("<!--__CORPS__-->", 1)
+    # version 83 : le Défi du jour (dossier d'analyse) et la barre latérale ne sont écrits qu'en français : masqués dans l'appli anglaise
+    corps = corps.replace('<section aria-labelledby="h-defi" id="defi" class="dossier">', '<section aria-labelledby="h-defi" id="defi" class="dossier" hidden>', 1)
+    corps = corps.replace("<aside class='p-side'", "<aside class='p-side' hidden style='display:none'", 1)
     base = seo.url_site()
     alternates = None   # l'accueil déclare déjà en/index.html comme version anglaise : pas de liens de langue contradictoires
     debut, fin = tete.index("<!--META-->"), tete.index("<!--/META-->") + len("<!--/META-->")
@@ -391,6 +436,14 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
     except Exception as e:
         print(f"Défi 5 jours non mis à jour : {e}")
     gabarit = resources.files(__package__).joinpath("site_template.html").read_text(encoding="utf-8")
+    from . import defi_dossier   # version 83 : le Défi du jour, dossier d'analyse sérieux
+    from . import transitions, pronos_coque   # version 83 : mini-animations, et la même architecture que l'Académie
+    import re as _re
+    _m = _re.search(r'<svg class="logo".*?</svg>', gabarit, _re.S)
+    _logo = _re.sub(r"(id=|url\(#|href=)(['\"]?#?)(rb\w+)", lambda m: m.group(1) + m.group(2) + m.group(3) + "s", _m.group(0)) if _m else ""
+    gabarit = (gabarit.replace("<!--__DEFI__-->", defi_dossier.HTML, 1).replace("/*__DEFI_CSS__*/", defi_dossier.CSS + transitions.CSS + pronos_coque.CSS, 1)
+               .replace("/*__DEFI_JS__*/", defi_dossier.JS + transitions.CODE + pronos_coque.JS, 1)
+               .replace('<header class="top gutter">', pronos_coque.html(_logo) + '<header class="top gutter">', 1))
     # En ligne (robot GitHub), on découpe ; en local (ouverture du fichier sur le PC), tout reste
     # dans la page car les navigateurs bloquent la lecture de fichiers voisins en « file:// ».
     decouper = not pour_artifact and (os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("RADAR_DECOUPER") == "1")

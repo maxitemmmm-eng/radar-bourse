@@ -16,7 +16,7 @@ from datetime import datetime
 
 from . import config
 from .hebdo import CSS as _CSS_HEBDO
-from .transitions import CSS as _CSS_VT
+from .transitions import CSS as _CSS_VT, JS as _JS_VT
 from .graphique_pro import CSS as _CSS_GP
 from .trois_parties import CSS as _CSS_TROIS, barre as _barre_trois, partie_de as _partie_de
 
@@ -50,7 +50,14 @@ MOTS_CLES = ("radar bourse, bourse pour débutant, apprendre la bourse, formatio
              "prévision Toyota, prévision TSMC, prévision Alibaba, action japonaise, action chinoise, avis sûrs IA, volatilité prévue, "
              "prévision action IA gratuite, IA bourse fiable, site prédiction bourse sans inscription, portefeuille virtuel bourse gratuit, "
              "simulateur de trading sans argent réel, jeu bourse en ligne gratuit, si j'avais investi simulateur, comparateur d'actions gratuit, "
-             "calendrier résultats entreprises, risque de krach boursier aujourd'hui")
+             "calendrier résultats entreprises, risque de krach boursier aujourd'hui, "
+             "bourse aujourd'hui, prévisions boursières, prévision boursière semaine prochaine, krach IA, bulle IA krach, "
+             "l'action va-t-elle remonter, faut-il acheter cette action, cours action aujourd'hui, prévision crypto 2027, "
+             "prévision XRP, prévision Dash, prévision Filecoin, prévision Bitcoin Cash, prévision Polkadot")
+# version 82 : suffixe du ticker → code de la place tel que Google l'affiche (et que les gens le recopient)
+PLACES_CODES = {"PA": "EPA", "HK": "HKG", "TW": "TPE", "T": "TYO", "DE": "ETR", "F": "FRA", "L": "LON", "AS": "AMS", "MI": "BIT",
+                "SW": "SWX", "MC": "BME", "BR": "EBR", "LS": "ELI", "CO": "CPH", "ST": "STO", "HE": "HEL", "OL": "OSL",
+                "NS": "NSE", "BO": "BOM", "KS": "KRX", "SS": "SHA", "SZ": "SHE", "AX": "ASX", "TO": "TSE", "SA": "BVMF"}
 LIB_SIGNAL = {"ACHAT FORT": "haussier fort", "ACHAT": "haussier", "NEUTRE": "neutre",
               "VENTE": "baissier", "VENTE FORTE": "baissier fort"}
 
@@ -605,6 +612,7 @@ Conditions d'utilisation, méthodologie et aide : voir la <a href="{prefixe}inde
 <p class="muted">© {__import__("bourse_bot.credits", fromlist=["x"]).annees()} {NOM} · <a href="{prefixe}credits.html">Droits d'auteur et crédits</a> · Marques et noms de sociétés cités à des fins d'identification uniquement.</p></footer>
 </div>
 {SCRIPT_BOUTON}
+{_JS_VT}
 </body></html>
 """
 
@@ -625,11 +633,19 @@ def mots_titre(t: dict, langue: str = "fr") -> str:
     an = datetime.now().year
     crypto = t.get("marche") == "crypto" or t.get("ticker", "").endswith("-USD")
     etf = t.get("marche") == "etf"
+    # version 82 : les codes de place que les gens tapent vraiment (« epa: fgr », « hkg 9988 », « tpe 2330 »), vus dans Search Console
+    suffixe = t.get("ticker", "").rsplit(".", 1)[-1].upper() if "." in t.get("ticker", "") else ""
+    place = PLACES_CODES.get(suffixe)
+    codes = [f"{place}: {sym}", f"{place} {sym}"] if place and not crypto else []
     if langue == "en":
         mots = [f"{court} forecast", f"{court} price prediction", f"{sym} stock" if not crypto else f"{sym} price",
                 f"{court} {an} forecast", f"{court} volatility", f"{sym} forecast"]
         if crypto:
-            mots += [f"{court} crypto", f"{sym} USD", f"{court} price today"]
+            mots += [f"{court} crypto", f"{sym} USD", f"{court} price today", f"{court} prediction", f"will {court} go up"]
+        else:
+            mots += [f"{court} share price", f"{court} stock forecast", f"{court} forecast and analysis", f"{court} stock price today",
+                     f"is {court} a buy", f"will {court} stock go up"]
+        mots += codes
     else:
         mots = [f"prévision {court}", f"cours {court}", f"{court} bourse", f"prévision {sym}", f"{court} {an}",
                 f"{court} prévision {an}", f"{court} avis", f"volatilité {court}", f"avis IA {court}", f"{court} va-t-il monter"]
@@ -638,7 +654,11 @@ def mots_titre(t: dict, langue: str = "fr") -> str:
         elif etf:
             mots += [f"ETF {court}", f"cours ETF {court}"]
         else:
-            mots += [f"action {court}", f"cours action {court}", f"prévision action {court}", f"{sym} action", f"avis IA action {court}", f"volatilité action {court} prévision"]
+            mots += [f"action {court}", f"cours action {court}", f"prévision action {court}", f"{sym} action", f"avis IA action {court}", f"volatilité action {court} prévision",
+                     f"l'action {court} va-t-elle remonter", f"faut-il acheter l'action {court}", f"action {court} avis", f"cours {court} aujourd'hui"]
+        if crypto:
+            mots += [f"{court} va-t-il remonter", f"faut-il acheter du {court}", f"prévision {court} {an + 1}"]
+        mots += codes
     vus, out = set(), []
     for m in mots:
         k = m.lower()
@@ -1743,8 +1763,11 @@ def _faq_titre(t, nom, date, verdict):
     """Questions que les gens tapent vraiment sur Google, avec des réponses honnêtes tirées des chiffres du jour."""
     dev, p, pf = t["devise"], t.get("proba_hausse"), t.get("perf") or {}
     rq = t.get("risque_prevu") or {}
+    _tk = t.get("ticker", "")
+    _pl = PLACES_CODES.get(_tk.rsplit(".", 1)[-1].upper()) if "." in _tk else None
+    _code = f" ({_pl}: {_e(aff_tk(_tk).split('.')[0])})" if _pl else ""
     faq = [(f"Quel est le cours de {nom} aujourd'hui ?",
-            f"Au {_e(date)}, {_e(nom)} cote <b>{_px(t['prix'], dev)}</b>"
+            f"Au {_e(date)}, {_e(nom)}{_code} cote <b>{_px(t['prix'], dev)}</b>"
             + (f", soit {_pct(pf['1 mois'])} sur un mois" if pf.get("1 mois") is not None else "") + ". Cours mis à jour automatiquement plusieurs fois par jour.")]
     if p is not None:   # version 68 : toujours un avis (hausse ou baisse) et sa confiance, jamais « impossible à dire »
         from .hebdo import avis_ia
@@ -1757,6 +1780,17 @@ def _faq_titre(t, nom, date, verdict):
                "Personne ne peut le savoir avec certitude : c'est une probabilité, mesurée sur des années que l'IA n'avait jamais vues, "
                "et elle se trompe souvent sur le sens du prix.")
         faq.append((f"{nom} va-t-il monter le mois prochain ?", rep))
+        # version 82 : formulations vues dans Search Console (« l'action renault va-t-elle remonter », « faut il acheter action bayer »)
+        if t.get("marche") not in ("crypto", "etf") and not t.get("ticker", "").endswith("-USD"):
+            pf1 = pf.get("1 mois")
+            faq.append((f"L'action {nom} va-t-elle remonter ?",
+                        (f"Sur un mois, {_e(nom)} a fait {_pct(pf1)}. " if pf1 is not None else "")
+                        + f"Pour le mois qui vient, l'IA la voit <b>{sens_txt}</b> ({ch} chances sur 100, {LIB_CONF_FAQ[conf]}). "
+                        "Une baisse passée ne dit pas à elle seule qu'un rebond va venir : c'est une probabilité, pas une certitude."))
+            faq.append((f"Faut-il acheter l'action {nom} ?",
+                        f"{NOM} ne donne pas de conseil personnalisé : la réponse dépend de ta situation, de ton horizon et de ce que tu peux perdre. "
+                        f"Ce que le site peut dire : l'avis de l'IA à un mois ({sens_txt}, {LIB_CONF_FAQ[conf]}), l'agitation prévue et ses résultats passés sur ce titre, "
+                        "affichés plus haut. Ne mets jamais tout ton argent sur une seule action."))
         faq.append((f"Quelle est la prédiction {nom} pour {mois_an} ?",
                     f"Prédiction de l'IA pour {_e(nom)} en {mois_an} : <b>{sens_txt}</b> ({ch} chances sur 100, {LIB_CONF_FAQ[conf]})"
                     + (f", avec une agitation prévue d'environ ±{round(rq['mouvement'] * 100)} % sur un mois" if rq.get("mouvement") else "")

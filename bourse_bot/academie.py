@@ -131,6 +131,12 @@ html[data-aca="clair"] .a-nav a[aria-current]{box-shadow:inset 3px 0 0 #3fbfb1}
 .c-badge-m{display:flex;gap:10px;align-items:center;padding:10px 20px;font-size:13.5px;color:var(--a-muted);background:var(--a-card2)}
 .c-badge-m svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
 .c-badge-m.ok{color:var(--a-ok)}
+.c-plan{margin-top:20px;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;background:linear-gradient(120deg,var(--a-soft),var(--a-card) 60%)}
+.c-plan .ic{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;background:var(--a-prim);color:var(--a-on)}
+.c-plan .ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.c-plan h2{margin:2px 0 4px;font-size:19px}.c-plan p{margin:0}.c-plan .sur{font-size:13px;color:var(--a-prim);font-weight:600}
+.c-exam .a-btn svg{width:15px;height:15px;vertical-align:-2px}
+@media (max-width:640px){.c-plan{grid-template-columns:1fr}.c-plan .ic{display:none}}
 .c-exam{margin-top:16px;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center}
 .c-exam .ic{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;background:var(--a-or-soft);color:var(--a-or)}
 .c-exam .ic svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -186,6 +192,7 @@ html[data-aca="clair"] .a-nav a[aria-current]{box-shadow:inset 3px 0 0 #3fbfb1}
 .l-js .l-sol{display:none}
 .l-js .l-carte{display:none}.l-js .l-carte.active{display:block}
 .l-js .a-auteur{display:none}.l-js:has(.l-carte[data-type=intro].active) .a-auteur,.l-js:has(.l-fin.active) .a-auteur{display:flex}
+.l-fig{margin:18px 0;border:1px solid var(--a-line);border-radius:12px;padding:14px 12px 10px;background:var(--a-bg)}.l-fig svg{max-width:560px;margin:0 auto}.l-fig figcaption{font-size:14px;color:var(--a-muted);margin-top:8px;line-height:1.5}.l-fig figcaption b{display:block;color:var(--a-ink);font-size:14.5px;margin-bottom:2px}
 .l-graph{border:1px solid var(--a-line);border-radius:10px;padding:12px 10px 6px;margin:0 0 16px;background:var(--a-bg)}
 svg.g{width:100%;height:auto;display:block;overflow:visible}
 svg.g path,svg.g line{fill:none;stroke-linecap:round;stroke-linejoin:round}
@@ -407,6 +414,7 @@ def page(seo, base, titre, description, chemin, corps, jsonld=None, csp="", mots
 <body class="aca-app{' aca-lecon' if lecon else ''}">
 {contenu}
 {JS_STATS}
+{__import__("bourse_bot.transitions", fromlist=["JS"]).JS}
 </body></html>
 """
 
@@ -460,6 +468,10 @@ def parcours(chapitres, niveaux, verifie_le, nom):
     corps = (f"<header class='c-tete'><h1>Apprendre la Bourse, de zéro à l'autonomie</h1>"
              f"<p>{len(reguliers)} chapitres courts, répartis en {len(niveaux)} modules. Tu lis quelques lignes, tu réponds à une question, tu avances. "
              f"En chemin : {total_l} mini-leçons, {n_labos} simulateurs à manipuler et {n_cas} études de cas. Gratuit, sans compte, sans rien à vendre.</p></header>"
+             "<section class='a-carte c-plan' id='c-plan' aria-labelledby='plan-t'><span class='ic'>" + SVG["loupe"] + "</span><div><p class='sur' id='plan-sur'>Première visite</p>"
+             "<h2 id='plan-t'>Fais le point en 5 minutes</h2><p id='plan-p'>3 questions sur toi et un court diagnostic : tu sais par où commencer, "
+             "quels modules tu peux survoler et quand tu auras fini à ton rythme.</p></div>"
+             "<a class='a-btn' id='plan-a' href='formation/test-de-niveau.html'>Commencer le questionnaire</a></section>"
              "<section class='a-carte c-reprendre' aria-labelledby='rep-t'><div><p class='sur' id='rep-sur'>Pour commencer</p>"
              f"<h2 id='rep-t'>{_e(reguliers[0]['titre'])}</h2><p id='rep-p'>Module 1 · {len(reguliers[0]['sections'])} mini-leçons · environ {_min(reguliers[0])} min</p></div>"
              f"<a class='a-btn' id='rep-a' href='formation/{reguliers[0]['id']}.html'>Commencer</a></section>"
@@ -477,8 +489,9 @@ def parcours(chapitres, niveaux, verifie_le, nom):
              "<h2 class='c-h2' id='prog-t'>Tout le programme</h2>"
              f"<ol class='c-modules'>{modules}</ol>"
              f"<section class='a-carte c-exam' aria-labelledby='ex-t'><span class='ic'>{SVG['examen']}</span><div><h2 id='ex-t'>Examen final et certificat</h2>"
-             "<p>20 questions tirées de tout le programme. 15 bonnes réponses donnent le certificat de l'Académie.</p></div>"
-             "<a class='a-btn ghost' href='formation/examen.html'>Passer l'examen</a></section>"
+             "<p>Le dernier palier : 30 questions de niveau expert en 4 épreuves (lecture de graphiques, calculs, cas d'application, règles). "
+             "24 / 30 donnent le certificat. <span id='ex-etat'></span></p><p class='c-verrou' id='ex-verrou' hidden></p></div>"
+             "<a class='a-btn ghost' id='ex-a' href='formation/examen.html'>Passer l'examen</a></section>"
              "<section class='c-methode' aria-labelledby='m-t'><h2 id='m-t'>Comment fonctionne l'Académie</h2><ol>"
              "<li><b>Une mini-leçon</b> de quelques paragraphes, avec les mots techniques expliqués au survol.</li>"
              "<li><b>Un exemple chiffré, l'erreur à éviter ou le bon réflexe</b>, et parfois un simulateur à manipuler pour voir le mécanisme par toi-même.</li>"
@@ -532,6 +545,15 @@ def parcours(chapitres, niveaux, verifie_le, nom):
           "document.querySelector('.c-objs').hidden=!!m.length;qr.hidden=!m.length;qr.textContent=vus?vus+(vus>1?' chapitres correspondent.':' chapitre correspond.'):'Aucun chapitre ne correspond. Essaie un autre mot, ou regarde le lexique.';});"
           "document.querySelectorAll('[data-obj]').forEach(a=>{if(fait(a.dataset.obj))a.classList.add('fait');});"
           "document.querySelectorAll('.c-obj-n').forEach(e=>{const ids=JSON.parse(e.dataset.ids),k=ids.filter(fait).length;if(k)e.textContent=k+' / '+ids.length+(k===ids.length?' · terminé':' chapitres faits');if(k===ids.length)e.classList.add('fait');});"
+          # version 83 : le plan personnel et l'examen tout au bout du parcours
+          "const pl=d.plan,pf=d.profil;if(pl&&pf){document.getElementById('plan-sur').textContent='Ton plan';"
+          "document.getElementById('plan-t').textContent=pl.parJour+' min par jour · fin prévue vers le '+pl.fin;"
+          "document.getElementById('plan-p').textContent='Point de départ : module '+((d.niveau_test||{}).depart||1)+'. '+n+' chapitre'+(n>1?'s':'')+' validé'+(n>1?'s':'')+' sur '+liens.length+'. Tu peux refaire le questionnaire quand tu veux.';"
+          "const a=document.getElementById('plan-a');a.textContent='Refaire le questionnaire';a.classList.add('ghost');}"
+          "const toutFait=liens.every(a=>fait(a.dataset.chap)),ea=document.getElementById('ex-a'),ev=document.getElementById('ex-verrou'),ex=d.examen||{};"
+          "if(ex.v===2&&ex.reussi){document.getElementById('ex-etat').textContent='Certificat obtenu ('+ex.meilleur+' / '+ex.sur+').';}"
+          "else if(!toutFait){ea.innerHTML=CADENAS+' Verrouillé';ea.addEventListener('click',e=>{if(ev.hidden){e.preventDefault();ev.hidden=false;"
+          "ev.innerHTML='L\u2019examen se débloque quand tous les chapitres sont validés ('+n+' / '+liens.length+'). <a href=formation/examen.html>Ouvrir quand même</a>';}});}"
           "const jp=document.getElementById('jour-p');if(jp){const nr=Object.keys(d.ratees||{}).length;const fj=(d.entr||{}).jour===S.jour();"
           "if(fj)jp.textContent='Déjà fait aujourd\u2019hui, bravo. Tu peux en refaire une série quand tu veux.';"
           "else if(nr)jp.textContent='6 questions en 3 minutes. '+nr+(nr>1?' questions ratées t\u2019attendent':' question ratée t\u2019attend')+' en premier.';"
@@ -584,7 +606,7 @@ JS_LECON = """<script>
   const voix="speechSynthesis" in window&&"SpeechSynthesisUtterance" in window;
   function tais(){ if(voix){try{speechSynthesis.cancel()}catch(e){}} main.querySelectorAll("[data-ecoute].on").forEach(b=>{b.classList.remove("on"); b.lastChild.textContent="Écouter";}); }
   if(voix) main.querySelectorAll("[data-ecoute]").forEach(b=>{ b.hidden=false; b.addEventListener("click",()=>{ if(b.classList.contains("on")){tais();return;} tais();
-    const c=b.closest(".l-carte"), k=c.querySelector(".l-texte").cloneNode(true); k.querySelectorAll(".labo,table,.l-outils").forEach(x=>x.remove());
+    const c=b.closest(".l-carte"), k=c.querySelector(".l-texte").cloneNode(true); k.querySelectorAll(".labo,table,.l-outils,.l-fig").forEach(x=>x.remove());
     const u=new SpeechSynthesisUtterance((c.querySelector("h1,h2")||{textContent:""}).textContent+". "+k.textContent.replace(/\\s+/g," ")); u.lang="fr-FR"; u.rate=1; u.onend=u.onerror=()=>tais();
     b.classList.add("on"); b.lastChild.textContent="Arrêter"; try{speechSynthesis.speak(u)}catch(e){tais()} }); });
   addEventListener("pagehide",tais);
@@ -700,8 +722,11 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
     promesse = ("<p>Tu y trouveras aussi " + (f"{len(labos)} simulateur{'s' if len(labos) > 1 else ''} à manipuler et " if labos else "")
                 + "des exemples chiffrés. Un doute pendant un exercice ? Le bouton « Relire la leçon » te remet le texte sous les yeux.</p>") if (plus or labos) else ""
 
+    from . import academie_figures   # version 83 : schémas et graphiques dans les leçons
+    figs = academie_figures.figures(ch["id"])
+
     def extras(s):
-        h = "".join(f"<aside class='l-plus {t}'><b>{SVG[t]}{TITRES[t]}</b>{x}</aside>" for si, t, x in plus if si == s)
+        h = "".join(f for si, f in figs if si == s) + "".join(f"<aside class='l-plus {t}'><b>{SVG[t]}{TITRES[t]}</b>{x}</aside>" for si, t, x in plus if si == s)
         return h + "".join(academie_labo.bloc(l[1], l[2] if len(l) > 2 else None) for l in labos if l[0] == s)
     ecoute = f"<div class='l-outils'><button type='button' class='l-mini' data-ecoute hidden>{SVG['son']}<span>Écouter</span></button></div>"
     cartes = [f"<section class='l-carte' data-type='intro' data-g='intro'><p class='l-type'>Module {niv[0]} : {_e(niv[1])} · {num}</p>"
@@ -716,6 +741,9 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
         for (si, gx) in graphes:
             if si == s:
                 cartes.append(_carte_exo(gx, k, g)); k += 1
+    from .academie_application import APPLICATION   # version 83 : un exercice d'application plus exigeant, en plusieurs étapes
+    if ch["id"] in APPLICATION:
+        cartes.append(_carte_exo(APPLICATION[ch["id"]], k, "recap", type_txt="Exercice d'application · plusieurs étapes")); k += 1
     cartes.append("<section class='l-carte' data-type='recap' data-g='recap'><p class='l-type'>Récap</p><h2>Ce qu'il faut retenir</h2><div class='l-texte'><ul>"
                   + "".join(f"<li>{_e(x)}</li>" for x in ch["retenir"]) + "</ul></div></section>")
     enonce, correction = ch["exercice"]

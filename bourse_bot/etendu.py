@@ -25,7 +25,7 @@ _OHLC: dict = {}
 LISTE = os.path.join(os.path.dirname(__file__), "etendu_liste.json")
 
 PAYS = {  # suffixe Yahoo -> (pays FR, pays EN, devise)
-    "": ("États-Unis", "United States", "$"), "T": ("Japon", "Japan", "¥"), "L": ("Royaume-Uni", "United Kingdom", "£"),
+    "": ("États-Unis", "United States", "$"), "T": ("Japon", "Japan", "¥"), "L": ("Royaume-Uni", "United Kingdom", "GBp"),
     "HK": ("Hong Kong", "Hong Kong", "HK$"), "DE": ("Allemagne", "Germany", "€"), "NS": ("Inde", "India", "₹"),
     "SW": ("Suisse", "Switzerland", "CHF"), "ST": ("Suède", "Sweden", "SEK"), "TO": ("Canada", "Canada", "C$"),
     "KS": ("Corée du Sud", "South Korea", "₩"), "TW": ("Taïwan", "Taiwan", "NT$"), "OL": ("Norvège", "Norway", "NOK"),
