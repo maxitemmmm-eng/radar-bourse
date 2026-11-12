@@ -46,7 +46,10 @@ MOTS_CLES = ("radar bourse, bourse pour débutant, apprendre la bourse, formatio
              "si j'avais investi, intérêts composés, calcul plus-value flat tax, apprendre la bourse, krach boursier, "
              "risque de krach, bulle IA bourse, actu bourse, actu bitcoin, actualité crypto, CAC 40 aujourd'hui, prévision Nvidia, "
              "prévision LVMH, prévision Tesla, ETF, cryptomonnaie, investir en bourse débutant, actions internationales, "
-             "prévision Toyota, prévision TSMC, prévision Alibaba, action japonaise, action chinoise, avis sûrs IA, volatilité prévue")
+             "prévision Toyota, prévision TSMC, prévision Alibaba, action japonaise, action chinoise, avis sûrs IA, volatilité prévue, "
+             "prévision action IA gratuite, IA bourse fiable, site prédiction bourse sans inscription, portefeuille virtuel bourse gratuit, "
+             "simulateur de trading sans argent réel, jeu bourse en ligne gratuit, si j'avais investi simulateur, comparateur d'actions gratuit, "
+             "calendrier résultats entreprises, risque de krach boursier aujourd'hui")
 LIB_SIGNAL = {"ACHAT FORT": "haussier fort", "ACHAT": "haussier", "NEUTRE": "neutre",
               "VENTE": "baissier", "VENTE FORTE": "baissier fort"}
 
@@ -297,13 +300,23 @@ def liens_fr() -> list:
             ("Académie", "formation.html"), ("Toutes les actions", "toutes-les-actions.html"), ("Par thème", "themes.html"),
             ("Résultats vérifiés", "avis-surs-verifies.html"),
             ("Tous les titres suivis", "titres.html"), ("Prévisions du mois", "index.html#previsions"), (f"Prévisions {datetime.now().year}", "previsions.html"),
-            ("Classements", "classements.html"), ("Sélection IA du mois", "portefeuille.html"),
-            ("Pronostic du jour", "index.html#prono"), ("Simulateur boursier", "simulateur-boursier.html"), ("Comparer deux titres", "comparer.html"),
+            ("Actions que l'IA voit monter", "classements.html"), ("Sélection IA du mois", "portefeuille.html"),
+            ("Prédiction bitcoin par IA", "titres/btc-usd.html"), ("Avis IA : LVMH", "titres/mc-pa.html"), ("Avis IA : Nvidia", "titres/nvda.html"),
+            ("Avis IA : Tesla", "titres/tsla.html"), ("Avis IA : TotalEnergies", "titres/tte-pa.html"), ("Avis IA : Airbus", "titres/air-pa.html"),
+            ("Pronostic du jour", "index.html#prono"), ("Portefeuille virtuel gratuit", "index.html#portefeuille"),
+            ("Simulateur de trading sans argent réel", "simulateur-boursier.html"), ("Si j'avais investi…", "outils/si-javais-investi.html"),
+            ("Comparateur d'actions", "comparer.html"), ("Calendrier des résultats", "calendrier-resultats.html"),
             ("Outils gratuits", "outils.html"),
+            ("Entraînement du jour", "formation/entrainement.html"), ("Test de niveau", "formation/test-de-niveau.html"),
+            ("Acheter son premier ETF", "formation/etf-debutant.html"), ("PEA ou compte-titres", "formation/pea-cto-assurance-vie.html"),
+            ("Simulateur d'intérêts composés", "outils/interets-composes.html"), ("Calcul flat tax 2026 (31,4 %)", "outils/plus-value.html"),
+            ("La Bourse va-t-elle baisser ?", "questions-bourse.html#baisse"), ("Faut-il acheter du bitcoin maintenant ?", "questions-bourse.html#bitcoin"),
+            ("Combien rapportent 100 € par mois ?", "questions-bourse.html#cent-euros"), ("La Bourse, c'est risqué ?", "questions-bourse.html#risque"),
+            ("Reconnaître une arnaque au trading", "questions-bourse.html#arnaque"), ("Toutes les questions", "questions-bourse.html"),
             ("Résultats réels", "resultats.html"), ("Journal de l'IA", "journal-ia.html"), ("Ce que sait l'IA", "connaissances.html"),
             ("Fiche technique", "fiche-technique-ia.html"), ("Données ouvertes", "donnees-ouvertes.html"),
             ("Le point du jour", "point.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actu bourse", "actu-bourse.html"),
-            ("Actu bitcoin", "actu-bitcoin.html"), ("Krach boursier", "krach-boursier.html"), ("Carte des risques", "index.html#nuage"),
+            ("Actu bitcoin", "actu-bitcoin.html"), ("Risque de krach aujourd'hui", "krach-boursier.html"), ("Carte des risques", "index.html#nuage"),
             ("Quiz : examen de l'Académie", "formation/examen.html"), ("Guides", "guides.html"), ("Mini-cours", "apprendre.html"), ("Glossaire", "glossaire.html"), ("Les mini-robots", "robots.html"),
             ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"), ("Contact", "contact.html"),
             ("English", "en/index.html", 'hreflang="en" lang="en"')]
@@ -311,11 +324,16 @@ def liens_fr() -> list:
 
 N_MENU_FR = 7
 # version 69.1 : rangement du menu « Plus ▾ » par thème (pages françaises)
-GROUPES_FR = [("Prédictions de l'IA", ["titres.html", "index.html#previsions", "previsions.html", "classements.html", "portefeuille.html"]),
-              ("Jouer et s'entraîner", ["index.html#prono", "simulateur-boursier.html", "comparer.html", "outils.html"]),
+GROUPES_FR = [("Prédictions et IA", ["titres.html", "index.html#previsions", "previsions.html", "classements.html", "portefeuille.html", "titres/btc-usd.html",
+                                      "titres/mc-pa.html", "titres/nvda.html", "titres/tsla.html", "titres/tte-pa.html", "titres/air-pa.html"]),
+              ("Académie", ["formation.html", "formation/entrainement.html", "formation/test-de-niveau.html", "formation/examen.html", "formation/etf-debutant.html",
+                            "formation/pea-cto-assurance-vie.html", "outils/interets-composes.html", "outils/plus-value.html", "guides.html", "apprendre.html", "glossaire.html", "robots.html"]),
+              ("Outils et entraînement", ["index.html#prono", "index.html#portefeuille", "simulateur-boursier.html", "outils/si-javais-investi.html", "comparer.html",
+                                          "calendrier-resultats.html", "outils.html"]),
+              ("Vos questions", ["questions-bourse.html#baisse", "questions-bourse.html#bitcoin", "questions-bourse.html#cent-euros", "questions-bourse.html#risque",
+                                 "questions-bourse.html#arnaque", "questions-bourse.html"]),
               ("L'IA est-elle fiable ?", ["resultats.html", "journal-ia.html", "connaissances.html", "fiche-technique-ia.html", "donnees-ouvertes.html"]),
               ("Marchés et actualités", ["point.html", "bourse-cette-semaine.html", "actu-bourse.html", "actu-bitcoin.html", "krach-boursier.html", "index.html#nuage"]),
-              ("Apprendre", ["formation/examen.html", "guides.html", "apprendre.html", "glossaire.html", "robots.html"]),
               ("Le site", ["fonctionnalites.html", "a-propos.html", "contact.html", "en/index.html"])]
 
 
@@ -582,7 +600,7 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 <footer><p class="avert"><b>Rien n'est sûr en Bourse.</b> {NOM} est un projet éducatif et indépendant. Les avis sont calculés chaque jour par l'IA du site : ils peuvent se tromper
 et ne constituent pas un conseil en investissement. Tu peux perdre tout l'argent investi.
 Conditions d'utilisation, méthodologie et aide : voir la <a href="{prefixe}index.html#conditions">page d'accueil</a>.</p>
-<p class="muted"><a href="{prefixe}fonctionnalites.html">Fonctionnalités</a> · <a href="{prefixe}journal-ia.html">Journal de l'IA</a> · <a href="{prefixe}simulateur-boursier.html">Simulateur boursier</a> · <a href="{prefixe}outils.html">Outils gratuits</a> · <a href="{prefixe}a-propos.html">À propos</a> · <a href="{prefixe}contact.html">Contact</a> · <a href="{prefixe}donnees-ouvertes.html">Données ouvertes</a></p>
+<p class="muted"><a href="{prefixe}questions-bourse.html">Vos questions</a> · <a href="{prefixe}fonctionnalites.html">Fonctionnalités</a> · <a href="{prefixe}journal-ia.html">Journal de l'IA</a> · <a href="{prefixe}simulateur-boursier.html">Simulateur boursier</a> · <a href="{prefixe}outils.html">Outils gratuits</a> · <a href="{prefixe}a-propos.html">À propos</a> · <a href="{prefixe}contact.html">Contact</a> · <a href="{prefixe}donnees-ouvertes.html">Données ouvertes</a></p>
 <p class="muted">© {__import__("bourse_bot.credits", fromlist=["x"]).annees()} {NOM} · <a href="{prefixe}credits.html">Droits d'auteur et crédits</a> · Marques et noms de sociétés cités à des fins d'identification uniquement.</p></footer>
 </div>
 {SCRIPT_BOUTON}
@@ -613,13 +631,13 @@ def mots_titre(t: dict, langue: str = "fr") -> str:
             mots += [f"{court} crypto", f"{sym} USD", f"{court} price today"]
     else:
         mots = [f"prévision {court}", f"cours {court}", f"{court} bourse", f"prévision {sym}", f"{court} {an}",
-                f"{court} prévision {an}", f"{court} avis", f"volatilité {court}"]
+                f"{court} prévision {an}", f"{court} avis", f"volatilité {court}", f"avis IA {court}", f"{court} va-t-il monter"]
         if crypto:
             mots += [f"crypto {court}", f"prix {court}", f"{sym} prix", f"{court} euro", f"{sym} USD", f"prévision {court} crypto"]
         elif etf:
             mots += [f"ETF {court}", f"cours ETF {court}"]
         else:
-            mots += [f"action {court}", f"cours action {court}", f"prévision action {court}", f"{sym} action"]
+            mots += [f"action {court}", f"cours action {court}", f"prévision action {court}", f"{sym} action", f"avis IA action {court}", f"volatilité action {court} prévision"]
     vus, out = set(), []
     for m in mots:
         k = m.lower()
@@ -1598,7 +1616,7 @@ def _page_previsions(base, payload, dossier, csp, date):
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": r}} for q, r in faq]}
     corps += "<h2>Questions fréquentes</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{_e(r)}</p>" for q, r in faq)
     titre = f"Prévisions bourse et crypto {annees}, vérifiées | {NOM}"
-    desc = (f"Prévisions {annees} pour près de 300 actions et cryptos : agitation et chances de hausse à un mois par IA, "
+    desc = (f"Prévisions {annees} pour {len(payload.get('titres', []))} actions et cryptos : agitation et chances de hausse à un mois par IA, "
             "vérifiées publiquement, et écart habituel sur un an.")
     with open(os.path.join(dossier, "previsions.html"), "w", encoding="utf-8") as f:
         f.write(_page(base, titre, desc, "previsions.html", corps, jsonld, csp))
@@ -2536,11 +2554,19 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
         print(f"Thèmes non générés : {e}")
 
     try:   # version 70 : l'Académie, centre de formation gratuit pour débutants
+        try:   # version 78 : « Vos questions sur la Bourse » (FAQ honnête)
+            from . import questions
+            for chemin in questions.generer(__import__(__name__, fromlist=["x"]), base, dossier, csp):
+                urls.append((chemin, "weekly", "0.8"))
+        except Exception as e:
+            print(f"Page questions non générée : {e}")
         from . import formation
         for chemin in formation.generer(__import__(__name__, fromlist=["x"]), base, dossier, csp):
             if chemin != "formation/profil.html":   # page personnelle, sans intérêt pour Google
                 urls.append((chemin, "weekly", "0.9" if chemin == "formation.html" else "0.7"))
     except Exception as e:
+        if e.__class__.__name__ == "AcademieInvalide":   # version 77 : erreur dans le contenu du cours → on arrête tout, rien n'est publié
+            raise
         print(f"Académie non générée : {e}")
 
     try:   # version 68 : pages « prédiction crypto / prédiction bourse » (recherches « prédiction bitcoin », « bitcoin va-t-il monter »)

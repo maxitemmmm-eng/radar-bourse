@@ -130,7 +130,8 @@ def generer(seo, base, payload, dossier, csp, date) -> list:
             f.write(seo._page(base, titre, seo.desc_courte(desc), chemin, corps, jl, csp=csp,
                               alternates={"fr": chemin, "en": "en/crypto-prediction.html", "x-default": chemin},
                               mots=f"prédiction crypto, prédiction bitcoin, prévision bitcoin, bitcoin va-t-il monter, prédiction ethereum, "
-                                   f"crypto qui va monter, prédiction crypto {m.year}, prévision crypto {mois_an}"))
+                                   f"crypto qui va monter, prédiction crypto {m.year}, prévision crypto {mois_an}, prédiction bitcoin IA, crypto qui va exploser avis honnête, "
+                                   f"faut-il acheter du bitcoin maintenant, volatilité crypto prévision, site prédiction crypto sans inscription"))
         faits.append(chemin)
 
     # 2. Prédiction bourse (actions)
@@ -173,7 +174,9 @@ def generer(seo, base, payload, dossier, csp, date) -> list:
             f.write(seo._page(base, titre, seo.desc_courte(desc), chemin, corps, jl, csp=csp,
                               alternates={"fr": chemin, "en": "en/stock-market-prediction.html", "x-default": chemin},
                               mots=f"prédiction bourse, prévision bourse, actions qui vont monter, prédiction action, prédiction CAC 40, "
-                                   f"bourse va-t-elle monter, prévision bourse {mois_an}, prédiction bourse {m.year}"))
+                                   f"bourse va-t-elle monter, prévision bourse {mois_an}, prédiction bourse {m.year}, prévision action IA gratuite, IA bourse fiable, "
+                                   f"prédiction cours action demain, action qui va monter cette semaine, quelle action acheter en ce moment avis, "
+                                   f"prévision CAC 40 semaine prochaine, est-ce que la bourse va baisser, site prédiction bourse sans inscription"))
         faits.append(chemin)
     return faits
 

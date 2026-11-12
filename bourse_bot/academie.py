@@ -3,9 +3,25 @@
 Principe pédagogique : chaque chapitre = des mini-leçons, chacune suivie d'un mini-exercice corrigé tout de suite,
 puis un récap, un cas concret et un bilan. Les erreurs reviennent en fin de chapitre. Série de jours (flamme) et points.
 Présentation sobre : programme structuré en modules, plan du chapitre, retours clairs, aucun effet « jeu ».
+
+Version 77 : encadrés (exemple, erreur classique, bon réflexe), simulateurs dans les leçons, « relire la leçon » depuis un exercice,
+écoute audio, notes gardées, entraînement du jour, recherche dans le programme, sauvegarde et restauration de la progression.
 """
+import hashlib
 import html
 import json
+
+from . import academie_labo
+from .formation_plus import PLUS, LABOS, TITRES, OBJECTIFS, PRATIQUE
+
+
+def cle_q(q):
+    """Identifiant stable d'une question (ne change pas si l'ordre des chapitres change)."""
+    return "q" + hashlib.md5(str(q).encode("utf-8")).hexdigest()[:8]
+
+
+def _min(c):
+    return c["minutes"] + 3 + c.get("extra_min", 0)
 
 OBJECTIF_XP = 30
 
@@ -25,6 +41,7 @@ body.aca-app{--bg:var(--a-bg);--surface:var(--a-card);--surface-2:var(--a-card2)
 html[data-aca="sombre"] body.aca-app{color-scheme:dark}
 body.aca-app a{color:var(--a-prim)}
 body.aca-app :focus-visible{outline:2px solid var(--a-prim);outline-offset:2px}
+.sr{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .a-skip{position:absolute;left:-999px}.a-skip:focus{left:12px;top:12px;z-index:99;background:var(--a-card);padding:8px 12px}
 .a-btn,body.aca-app .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--a-prim);border-radius:8px;padding:10px 18px;
   font:inherit;font-weight:600;font-size:15px;text-decoration:none;cursor:pointer;background:var(--a-prim);color:var(--a-on);transition:background .15s,border-color .15s}
@@ -205,7 +222,61 @@ svg.g path,svg.g line{fill:none;stroke-linecap:round;stroke-linejoin:round}
   .l-bas.ok .l-retour,.l-bas.ko .l-retour{animation:l-entre .25s ease-out}
   .a-flamme.vive svg{animation:fl 1.8s ease-in-out infinite;transform-origin:50% 90%}@keyframes fl{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}}
 .def-lex{border-bottom-color:var(--a-prim)!important}
-"""
+/* ----- version 77 : encadrés, outils de leçon, entraînement, recherche ----- */
+.l-plus{--pc:var(--a-prim);margin:16px 0 0;padding:13px 16px 14px 18px;border-radius:12px;border:1px solid var(--a-line);border-left:4px solid var(--pc);background:var(--a-card);font-size:16px;line-height:1.65}
+.l-plus>b{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--pc);margin-bottom:3px}
+.l-plus>b svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.l-plus p{margin:0}.l-plus.piege{--pc:var(--a-ko)}.l-plus.geste{--pc:var(--a-ok)}.l-plus.savais{--pc:var(--a-or)}
+.l-outils{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.l-mini{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:99px;border:1px solid var(--a-line);font-size:13.5px;font-weight:600;color:var(--a-muted);cursor:pointer;background:var(--a-card)}
+.l-mini:hover{color:var(--a-ink);border-color:var(--a-muted)}.l-mini:focus-visible{outline:2px solid var(--a-prim);outline-offset:2px}.l-mini[hidden]{display:none}
+.l-mini svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.l-mini.on{color:var(--a-prim);border-color:var(--a-prim);background:var(--a-soft)}
+.l-relire{margin:0 0 16px;padding:14px 16px;border:1px dashed var(--a-muted);border-radius:12px;background:var(--a-bg);font-size:15.5px;line-height:1.65}
+.l-relire p{margin:0 0 10px}.l-relire>div>*:last-child{margin-bottom:0}
+.l-pratique{margin:0 0 18px;padding:13px 16px;border-radius:12px;border:1px solid var(--a-prim);background:var(--a-soft);font-size:15px;line-height:1.55}
+.l-pratique b{display:block;font-size:13px;color:var(--a-prim)}.l-pratique a{font-weight:600;white-space:nowrap}
+.l-notes-ok{font-size:12.5px;color:var(--a-muted);margin:4px 0 0;min-height:1.2em}
+.a-alerte{margin:0 0 18px;padding:12px 16px;border-radius:10px;border:1px solid var(--a-or);background:var(--a-or-soft);font-size:14.5px}
+.c-cherche{position:relative;margin:0 0 16px}
+.c-cherche input{box-sizing:border-box;width:100%;padding:12px 14px 12px 42px;border-radius:10px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font:inherit;font-size:15.5px}
+.c-cherche input:focus{border-color:var(--a-prim);outline:0;box-shadow:0 0 0 1px var(--a-prim)}
+.c-cherche svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;fill:none;stroke:var(--a-muted);stroke-width:2;stroke-linecap:round}
+.c-cherche p{margin:8px 2px 0;font-size:13.5px;color:var(--a-muted)}
+.c-jour{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;margin:0 0 14px}
+.c-jour .ic{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;background:var(--a-soft);color:var(--a-prim)}
+.c-jour .ic svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.c-jour h2{margin:0;font-size:18px}.c-jour p{margin:2px 0 0;color:var(--a-muted);font-size:14px}
+.c-objs{margin:0 0 30px}.c-objs h2,.c-h2{font-size:21px;margin:0 0 4px}.c-objs>p{margin:0 0 12px;color:var(--a-muted);font-size:14.5px}.c-h2{margin-bottom:12px}
+.c-obj{background:var(--a-card);border:1px solid var(--a-line);border-radius:12px;margin:0 0 8px;overflow:hidden}
+.c-obj summary{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:13px 18px;cursor:pointer;list-style:none}.c-obj summary::-webkit-details-marker{display:none}
+.c-obj summary:hover{background:var(--a-card2)}.c-obj summary b{display:block;font-weight:600}.c-obj summary small{color:var(--a-muted);font-size:13.5px}
+.c-obj-n{font-size:12.5px;font-weight:600;color:var(--a-muted);white-space:nowrap;padding:3px 9px;border-radius:99px;border:1px solid var(--a-line)}.c-obj-n.fait{background:var(--a-ok-soft);color:var(--a-ok);border-color:transparent}
+.c-obj[open] summary{border-bottom:1px solid var(--a-line)}.c-obj ol{margin:0;padding:12px 18px 14px 40px}.c-obj li{margin:5px 0}
+.c-obj a.fait{color:var(--a-muted)}.c-obj a.fait::after{content:" ✓";color:var(--a-ok);font-weight:700}
+@media (max-width:640px){.c-obj summary{grid-template-columns:1fr}.c-obj-n{justify-self:start}}
+.c-tag{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:99px;font-size:11.5px;font-weight:600;color:var(--a-prim);background:var(--a-soft);vertical-align:1px;white-space:nowrap}
+.e-tete{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 8px;font-size:14px;color:var(--a-muted)}
+.e-barre{height:6px;border-radius:99px;background:var(--a-card2);overflow:hidden;margin:0 0 20px}.e-barre i{display:block;height:100%;width:0;background:var(--a-prim);border-radius:99px;transition:width .4s cubic-bezier(.2,.8,.2,1)}
+.e-retour{margin:14px 0 0;padding:12px 16px;border-radius:10px;font-size:15px;line-height:1.55}.e-retour b{display:block}
+.e-retour.ok{background:var(--a-ok-soft);border-left:4px solid var(--a-ok)}.e-retour.ok b{color:var(--a-ok)}
+.e-retour.ko{background:var(--a-ko-soft);border-left:4px solid var(--a-ko)}.e-retour.ko b{color:var(--a-ko)}
+.e-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}.e-src{font-size:13px;color:var(--a-muted)}
+.pf-sauve{display:grid;gap:12px}.pf-sauve textarea{box-sizing:border-box;width:100%;min-height:90px;border-radius:10px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font-family:var(--m);font-size:12.5px;padding:10px}
+.pf-btns{display:flex;gap:10px;flex-wrap:wrap}
+@media (max-width:640px){.c-jour{grid-template-columns:auto 1fr}.c-jour .a-btn{grid-column:1/-1}}
+.l-confettis{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:40}.l-confettis i{position:absolute;top:-14px;width:9px;height:14px;border-radius:2px;opacity:0}
+@media (prefers-reduced-motion:no-preference){
+  .l-plus{animation:l-entre .35s ease-out both;animation-delay:.08s}
+  .l-choix button.juste{animation:l-pouls .45s ease-out}@keyframes l-pouls{0%{transform:scale(1)}40%{transform:scale(1.025)}100%{transform:scale(1)}}
+  .l-choix button.faux{animation:l-secoue .35s ease-out}@keyframes l-secoue{0%,100%{transform:none}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  .l-pts.bump{animation:l-bump .5s ease-out}@keyframes l-bump{0%{transform:scale(1)}35%{transform:scale(1.25);color:var(--a-ok)}100%{transform:scale(1)}}
+  .l-fin.active .statut .rond{animation:l-rond .6s cubic-bezier(.2,1.4,.4,1) both}@keyframes l-rond{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
+  .l-fin.active .bilan div{animation:l-entre .4s ease-out both}.l-fin.active .bilan div:nth-child(2){animation-delay:.08s}.l-fin.active .bilan div:nth-child(3){animation-delay:.16s}.l-fin.active .bilan div:nth-child(4){animation-delay:.24s}
+  .l-confettis i{animation:l-tombe var(--d,2.4s) cubic-bezier(.3,.6,.5,1) var(--r,0s) forwards}@keyframes l-tombe{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(105vh) rotate(var(--t,540deg))}}
+  .c-chaps>li{transition:opacity .2s}.e-retour{animation:l-entre .25s ease-out}}
+@media (prefers-reduced-motion:reduce){.l-confettis{display:none}}
+""" + academie_labo.CSS_LABO
 
 SVG = {
     "programme": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h10"/></svg>',
@@ -222,6 +293,13 @@ SVG = {
     "retour": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>',
     "cadenas": '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>',
     "loupe": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>',
+    "entrainement": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></svg>',
+    "son": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>',
+    "relire": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M8 7h7M8 11h7"/></svg>',
+    "ex": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>',
+    "piege": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2.5 20h19z"/><path d="M12 10v5M12 17.6v.1"/></svg>',
+    "geste": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 3 3 5-6"/></svg>',
+    "savais": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.1"/></svg>',
     "lune": '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>',
 }
 
@@ -236,7 +314,11 @@ JS_STATS = """<script>
   function jour(t){const d=t?new Date(t):new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
   function serie(d){const j=new Set(d.jours||[]);let n=0,t=Date.now();if(!j.has(jour(t)))t-=864e5;while(j.has(jour(t))){n++;t-=864e5;}return n;}
   function xp(d){let x=d.xp||0;if(!d.xp_migre){x+=d.points_lecons||0;Object.values(d).forEach(v=>{if(v&&typeof v==="object"&&v.score)x+=v.score*10;});}return x;}
-  window.acaStats={lire,jour,serie,xp,objectif:""" + str(OBJECTIF_XP) + """};
+  function ecrire(d){try{localStorage.setItem(CLE,JSON.stringify(d));return true}catch(e){return false}}
+  let dispo=true;try{localStorage.setItem("radar-test","1");localStorage.removeItem("radar-test")}catch(e){dispo=false}
+  if(!dispo){const z=document.querySelector(".a-col,.l-main");if(z){const a=document.createElement("p");a.className="a-alerte";a.setAttribute("role","status");
+    a.textContent="Ton navigateur bloque l'enregistrement (navigation privée, ou stockage désactivé) : tu peux suivre les cours, mais ta progression ne sera pas gardée.";z.prepend(a);}}
+  window.acaStats={lire,ecrire,dispo,jour,serie,xp,objectif:""" + str(OBJECTIF_XP) + """};
   const d=lire(),s=serie(d),x=xp(d),xj=(d.xp_jours||{})[jour()]||0, auj=(d.jours||[]).includes(jour());
   document.querySelectorAll("[data-a=serie]").forEach(e=>e.textContent=s);
   document.querySelectorAll("[data-a=serie-j]").forEach(e=>e.textContent=s+(s>1?" jours":" jour"));
@@ -250,7 +332,7 @@ JS_STATS = """<script>
 </script>"""
 
 MENU = (("Apprendre", (("programme", "formation.html", "Programme"), ("lexique", "glossaire.html", "Lexique"))),
-        ("S'entraîner", (("revision", "formation/revision.html", "Révisions"), ("test", "formation/test-de-niveau.html", "Test de niveau"),
+        ("S'entraîner", (("entrainement", "formation/entrainement.html", "Entraînement du jour"), ("revision", "formation/revision.html", "Révisions"), ("test", "formation/test-de-niveau.html", "Test de niveau"),
                          ("examen", "formation/examen.html", "Examen final"))),
         ("Mon suivi", (("profil", "formation/profil.html", "Ma progression"),)))
 TOUS = [x for _g, items in MENU for x in items]
@@ -277,8 +359,8 @@ def coque(seo, prefixe, chemin, corps):
     nav = "".join(f"<p class='a-groupe'>{g}</p><nav class='a-nav' aria-label='{g}'>"
                   + "".join(f"<a href='{prefixe}{h}'{' aria-current=\"page\"' if k == actif else ''}>{SVG[k]}<span>{t}</span></a>" for k, h, t in items)
                   + "</nav>" for g, items in MENU)
-    tabs = "".join(f"<a href='{prefixe}{h}'{' aria-current=\"page\"' if k == actif else ''}>{SVG[k]}<span>{t.replace('Test de niveau', 'Test').replace('Ma progression', 'Suivi')}</span></a>"
-                   for k, h, t in TOUS if k in ("programme", "revision", "test", "profil"))
+    tabs = "".join(f"<a href='{prefixe}{h}'{' aria-current=\"page\"' if k == actif else ''}>{SVG[k]}<span>{t.replace('Entraînement du jour', 'Du jour').replace('Ma progression', 'Suivi')}</span></a>"
+                   for k, h, t in TOUS if k in ("programme", "entrainement", "revision", "profil"))
     logo = f"<a class='a-logo' href='{prefixe}formation.html'>{seo.LOGO}<span><b>Radar Bourse</b><small>Académie</small></span></a>"
     suivi = (f"<div class='a-suivi'><div class='l1'><span class='a-flamme' title='Série de jours'>{SVG['flamme']}<span data-a='serie-j'>0 jour</span></span>"
              f"<span class='pts'><span data-a='xp'>0</span> pts</span></div><div class='a-jauge'><i data-a='jauge'></i></div>"
@@ -345,43 +427,67 @@ def parcours(chapitres, niveaux, verifie_le, nom):
     total_l = sum(len(c["sections"]) for c in chapitres)
     n_cas = len(chapitres) - len(reguliers)
     modules = ""
+
+    def tag(c):
+        return "<span class='c-tag'>avec simulateur</span>" if LABOS.get(c["id"]) else ""
+
+    def mots(c):
+        return _e((c["titre"] + " " + c["desc"] + " " + c["mots"] + " " + " ".join(t for t, _h in c["sections"])).lower())
     for n, titre_n, desc, coul in niveaux:
         chs = [c for c in reguliers if c["niveau"] == n]
         cas = next((c for c in chapitres if c.get("cas") and c["niveau"] == n), None)
         lignes = "".join(
-            f"<li><a href='formation/{c['id']}.html' data-chap='{c['id']}'><span class='c-idx'>{n}.{k + 1}</span>"
-            f"<span><b>{_e(c['titre'])}</b><small>{len(c['sections'])} mini-leçons et exercices · environ {c['minutes'] + 3} min</small></span>"
+            f"<li data-mots=\"{mots(c)}\"><a href='formation/{c['id']}.html' data-chap='{c['id']}'><span class='c-idx'>{n}.{k + 1}</span>"
+            f"<span><b>{_e(c['titre'])}</b><small>{len(c['sections'])} mini-leçons et exercices · environ {_min(c)} min</small>{tag(c)}</span>"
             f"<span class='c-etat'>À faire</span></a><p class='c-verrou' hidden></p></li>" for k, c in enumerate(chs))
         if cas:
-            lignes += (f"<li class='c-cas'><a href='formation/{cas['id']}.html' data-cas='{cas['id']}'><span class='c-idx'>{SVG['loupe']}</span>"
+            lignes += (f"<li class='c-cas' data-mots=\"{mots(cas)}\"><a href='formation/{cas['id']}.html' data-cas='{cas['id']}'><span class='c-idx'>{SVG['loupe']}</span>"
                        f"<span><b>{_e(cas['titre'])}</b><small>{_e(cas['desc'])}</small></span><span class='c-etat'>Bonus</span></a><p class='c-verrou' hidden></p></li>")
         modules += (f"<li class='c-module' style='--c:{coul}' id='niv{n}' data-niv='{n}'><div class='c-mtete'><span class='c-num' aria-hidden='true'>{n}</span>"
                     f"<div><h2>Module {n} : {_e(titre_n)}</h2><p>{_e(desc)}</p></div>"
                     f"<div class='c-mprog'><span class='txt'>0 / {len(chs)} chapitres</span><div class='barre'><i></i></div></div></div>"
                     f"<ol class='c-chaps'>{lignes}</ol>"
                     f"<div class='c-badge-m'>{SVG['examen']}<span>Attestation du module {n} : valide les {len(chs)} chapitres pour l'obtenir.</span></div></li>")
+    n_labos = sum(len(v) for v in LABOS.values())
+    par_id = {c["id"]: c for c in chapitres}
+    objectifs = "".join(
+        f"<details class='c-obj'><summary><span><b>{_e(t)}</b><small>{_e(d)}</small></span>"
+        f"<span class='c-obj-n' data-ids='{_e(json.dumps(ids))}'>{len(ids)} chapitres · environ {sum(_min(par_id[i]) for i in ids)} min</span></summary><ol>"
+        + "".join(f"<li><a href='formation/{i}.html' data-obj='{i}'>{_e(par_id[i]['titre'])}</a></li>" for i in ids) + "</ol></details>"
+        for t, d, ids in OBJECTIFS)
     corps = (f"<header class='c-tete'><h1>Apprendre la Bourse, de zéro à l'autonomie</h1>"
-             f"<p>{len(reguliers)} chapitres en {len(niveaux)} modules et {n_cas} études de cas à débloquer, {total_l} mini-leçons, chacune suivie d'un exercice corrigé. "
-             "Gratuit, sans compte : ta progression reste dans ce navigateur.</p></header>"
+             f"<p>{len(reguliers)} chapitres courts, répartis en {len(niveaux)} modules. Tu lis quelques lignes, tu réponds à une question, tu avances. "
+             f"En chemin : {total_l} mini-leçons, {n_labos} simulateurs à manipuler et {n_cas} études de cas. Gratuit, sans compte, sans rien à vendre.</p></header>"
              "<section class='a-carte c-reprendre' aria-labelledby='rep-t'><div><p class='sur' id='rep-sur'>Pour commencer</p>"
-             f"<h2 id='rep-t'>{_e(reguliers[0]['titre'])}</h2><p id='rep-p'>Module 1 · {len(reguliers[0]['sections'])} mini-leçons · environ {reguliers[0]['minutes'] + 3} min</p></div>"
+             f"<h2 id='rep-t'>{_e(reguliers[0]['titre'])}</h2><p id='rep-p'>Module 1 · {len(reguliers[0]['sections'])} mini-leçons · environ {_min(reguliers[0])} min</p></div>"
              f"<a class='a-btn' id='rep-a' href='formation/{reguliers[0]['id']}.html'>Commencer</a></section>"
+             f"<section class='a-carte c-jour' aria-labelledby='jour-t'><span class='ic'>{SVG['entrainement']}</span><div><h2 id='jour-t'>Entraînement du jour</h2>"
+             "<p id='jour-p'>6 questions en 3 minutes, piochées dans ce que tu as déjà vu. Tes erreurs passées reviennent en premier.</p></div>"
+             "<a class='a-btn ghost' href='formation/entrainement.html'>S'entraîner</a></section>"
              f"<div class='c-chiffres'><div class='fl'><b>{SVG['flamme']}<span data-a='serie'>0</span></b><span>jours de suite</span></div>"
              f"<div><b><span id='c-n'>0</span> / {len(reguliers)}</b><span>chapitres validés</span></div>"
              "<div><b data-a='xp'>0</b><span>points</span></div>"
              f"<div><b id='c-cas'>0 / {n_cas}</b><span>études de cas débloquées</span></div></div>"
+             f"<div class='c-cherche'>{SVG['loupe']}<label class='sr' for='c-q'>Chercher un sujet dans le programme</label>"
+             "<input id='c-q' type='search' autocomplete='off' placeholder='Chercher un sujet : PEA, dividende, bitcoin, frais…'><p id='c-q-res' role='status' hidden></p></div>"
+             f"<section class='c-objs' aria-labelledby='obj-t'><h2 id='obj-t'>Aller droit au but</h2>"
+             f"<p>Tu sais déjà ce que tu cherches ? Ces raccourcis te donnent les chapitres utiles, dans le bon ordre.</p>{objectifs}</section>"
+             "<h2 class='c-h2' id='prog-t'>Tout le programme</h2>"
              f"<ol class='c-modules'>{modules}</ol>"
              f"<section class='a-carte c-exam' aria-labelledby='ex-t'><span class='ic'>{SVG['examen']}</span><div><h2 id='ex-t'>Examen final et certificat</h2>"
              "<p>20 questions tirées de tout le programme. 15 bonnes réponses donnent le certificat de l'Académie.</p></div>"
              "<a class='a-btn ghost' href='formation/examen.html'>Passer l'examen</a></section>"
              "<section class='c-methode' aria-labelledby='m-t'><h2 id='m-t'>Comment fonctionne l'Académie</h2><ol>"
              "<li><b>Une mini-leçon</b> de quelques paragraphes, avec les mots techniques expliqués au survol.</li>"
-             "<li><b>Un exercice tout de suite après</b> : choix, vrai ou faux, calcul ou lecture de graphique, corrigé et expliqué.</li>"
-             "<li><b>Tes erreurs reviennent</b> à la fin du chapitre, puis dans les révisions, pour qu'elles ne se répètent pas.</li>"
+             "<li><b>Un exemple chiffré, l'erreur à éviter ou le bon réflexe</b>, et parfois un simulateur à manipuler pour voir le mécanisme par toi-même.</li>"
+             "<li><b>Un exercice tout de suite après</b> : choix, vrai ou faux, calcul ou lecture de graphique, corrigé et expliqué. Un doute ? Le bouton « Relire la leçon » est là.</li>"
+             "<li><b>Tes erreurs reviennent</b> à la fin du chapitre, puis dans l'entraînement du jour et les révisions, jusqu'à ce qu'elles ne se répètent plus.</li>"
              "<li><b>Un récap, un cas concret et un bilan</b> de 3 questions : 2 bonnes réponses valident le chapitre et <b>débloquent le suivant</b>.</li>"
              "<li><b>Chaque module terminé</b> donne une attestation et débloque une <b>étude de cas</b> : une histoire vraie (GameStop, FTX, le CAC 40…) ou un cas pratique complet.</li></ol>"
              "<p>Déjà à l'aise ? Le <a href='formation/test-de-niveau.html'>test de niveau</a> débloque directement les modules que tu maîtrises. "
              "Tu peux aussi ouvrir n'importe quel chapitre verrouillé si tu le souhaites : le verrou est un guide, pas une barrière.</p>"
+             "<p>Ta progression est enregistrée dans ce navigateur. Pour la retrouver sur un autre appareil, ou la mettre à l'abri, "
+             "utilise la <a href='formation/profil.html#sauvegarde'>sauvegarde</a> de la page « Ma progression ».</p>"
              f"<p>Chaque jour où tu fais au moins un exercice entretient ta <b>série</b> (la flamme). L'objectif conseillé : {OBJECTIF_XP} points par jour.</p>"
              f"<div class='a-auteur'><span class='av' aria-hidden='true'>M</span><p style='margin:0'>Écrit et tenu à jour par <b>maxitemmmm</b>, créateur de {nom}. "
              f"Chaque chiffre est relu à partir des sources officielles (AMF, impots.gouv.fr, service-public.fr, Banque de France), dernière relecture le {verifie_le}. "
@@ -418,6 +524,16 @@ def parcours(chapitres, niveaux, verifie_le, nom):
           "if(k){const a=document.querySelector('[data-chap=\"'+k+'\"],[data-cas=\"'+k+'\"]');if(a){document.getElementById('rep-sur').textContent='Chapitre en cours';"
           "document.getElementById('rep-t').textContent=a.querySelector('b').textContent;document.getElementById('rep-p').textContent='Tu t\\u2019étais arrêté à l\\u2019étape '+(enc[k].pos+1)+'.';"
           "const r=document.getElementById('rep-a');r.href=a.getAttribute('href');r.textContent='Reprendre';}}"
+          "const q=document.getElementById('c-q'),qr=document.getElementById('c-q-res');const norm=x=>x.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');"
+          "if(q)q.addEventListener('input',()=>{const m=norm(q.value.trim()).split(/\\s+/).filter(Boolean);let vus=0;"
+          "document.querySelectorAll('.c-module').forEach(mo=>{let k=0;mo.querySelectorAll('li[data-mots]').forEach(li=>{const t=norm(li.dataset.mots),ok=m.every(x=>t.includes(x));li.hidden=!ok;if(ok)k++;});mo.hidden=!!m.length&&!k;vus+=k;});"
+          "document.querySelector('.c-objs').hidden=!!m.length;qr.hidden=!m.length;qr.textContent=vus?vus+(vus>1?' chapitres correspondent.':' chapitre correspond.'):'Aucun chapitre ne correspond. Essaie un autre mot, ou regarde le lexique.';});"
+          "document.querySelectorAll('[data-obj]').forEach(a=>{if(fait(a.dataset.obj))a.classList.add('fait');});"
+          "document.querySelectorAll('.c-obj-n').forEach(e=>{const ids=JSON.parse(e.dataset.ids),k=ids.filter(fait).length;if(k)e.textContent=k+' / '+ids.length+(k===ids.length?' · terminé':' chapitres faits');if(k===ids.length)e.classList.add('fait');});"
+          "const jp=document.getElementById('jour-p');if(jp){const nr=Object.keys(d.ratees||{}).length;const fj=(d.entr||{}).jour===S.jour();"
+          "if(fj)jp.textContent='Déjà fait aujourd\u2019hui, bravo. Tu peux en refaire une série quand tu veux.';"
+          "else if(nr)jp.textContent='6 questions en 3 minutes. '+nr+(nr>1?' questions ratées t\u2019attendent':' question ratée t\u2019attend')+' en premier.';"
+          "else if(!n)jp.textContent='6 questions en 3 minutes sur les bases, pour te faire une idée avant même de commencer.';}"
           "});</script>")
     return corps + js
 
@@ -444,8 +560,10 @@ def _carte_exo(ex, k, groupe, bilan=False, type_txt=None):
         attrs = f"data-bonne='{ex['bonne']}' data-sol=\"{_e(sol)}\" data-melange='{0 if t == 'vf' or lettres else 1}'"
     graph = f"<div class='l-graph'>{ex['svg']}</div>" if t == "graphique" else ""
     titre = type_txt or {"qcm": "Exercice", "vf": "Exercice : vrai ou faux", "nombre": "Exercice : calcul", "graphique": "Exercice : lecture de graphique"}[t]
-    return (f"<section class='l-carte' data-type='exo' data-g='{groupe}' {attrs}{' data-bilan=\"1\"' if bilan else ''} data-expl=\"{_e(ex['expl'])}\">"
-            f"<p class='l-type'>{titre}</p><div class='l-exo'>{graph}<p class='l-q'>{_e(ex['q'])}</p>{zone}"
+    relire = ("" if bilan else f"<div class='l-outils'><button type='button' class='l-mini' data-relire hidden>{SVG['relire']}<span>Relire la leçon</span></button></div>"
+              "<div class='l-relire' hidden></div>")
+    return (f"<section class='l-carte' data-type='exo' data-g='{groupe}' data-k='{cle_q(ex['q'])}' {attrs}{' data-bilan=\"1\"' if bilan else ''} data-expl=\"{_e(ex['expl'])}\">"
+            f"<p class='l-type'>{titre}</p>{relire}<div class='l-exo'>{graph}<p class='l-q'>{_e(ex['q'])}</p>{zone}"
             f"<details class='l-sol'><summary>Voir la réponse</summary><p><b>{_e(sol)}</b>. {_e(ex['expl'])}</p></details></div></section>")
 
 
@@ -456,18 +574,38 @@ JS_LECON = """<script>
   const action=document.getElementById("l-action"), retour=document.getElementById("l-retour"), prog=document.querySelector(".l-prog i"), pts=document.getElementById("l-pts"), etp=document.getElementById("l-etape");
   const cartes=[...main.querySelectorAll(".l-carte:not(.l-fin)")]; const id=document.body.dataset.chap; const plan=[...document.querySelectorAll(".l-plan li")];
   let file=cartes.map((c,i)=>i), pos=0, etat="lire", choix=null, xp=0, justes=0, essais=0, bilanOK=0, bilanN=0, faites=new Set(), revues=new Set();
+  const ecrire=d=>acaStats.ecrire?acaStats.ecrire(d):false;
+  // version 77 : relire la leçon depuis l'exercice, écouter la leçon, garder ses notes
+  main.querySelectorAll("[data-relire]").forEach(b=>{const c=b.closest(".l-carte"), src=main.querySelector(".l-carte[data-type=lecon][data-g='"+c.dataset.g+"'] .l-texte"); if(!src) return; b.hidden=false;
+    const z=c.querySelector(".l-relire"); b.addEventListener("click",()=>{ if(z.hidden){ if(!z.firstChild){const k=src.cloneNode(true); k.querySelectorAll(".labo").forEach(x=>x.remove()); k.className=""; z.appendChild(k);}
+      z.hidden=false; b.classList.add("on"); b.lastChild.textContent="Masquer la leçon"; } else { z.hidden=true; b.classList.remove("on"); b.lastChild.textContent="Relire la leçon"; } }); });
+  const voix="speechSynthesis" in window&&"SpeechSynthesisUtterance" in window;
+  function tais(){ if(voix){try{speechSynthesis.cancel()}catch(e){}} main.querySelectorAll("[data-ecoute].on").forEach(b=>{b.classList.remove("on"); b.lastChild.textContent="Écouter";}); }
+  if(voix) main.querySelectorAll("[data-ecoute]").forEach(b=>{ b.hidden=false; b.addEventListener("click",()=>{ if(b.classList.contains("on")){tais();return;} tais();
+    const c=b.closest(".l-carte"), k=c.querySelector(".l-texte").cloneNode(true); k.querySelectorAll(".labo,table,.l-outils").forEach(x=>x.remove());
+    const u=new SpeechSynthesisUtterance((c.querySelector("h1,h2")||{textContent:""}).textContent+". "+k.textContent.replace(/\\s+/g," ")); u.lang="fr-FR"; u.rate=1; u.onend=u.onerror=()=>tais();
+    b.classList.add("on"); b.lastChild.textContent="Arrêter"; try{speechSynthesis.speak(u)}catch(e){tais()} }); });
+  addEventListener("pagehide",tais);
+  const br=document.getElementById("l-brouillon"), brOk=document.getElementById("l-notes-ok");
+  if(br){ try{br.value=(acaStats.lire().notes||{})[id]||""}catch(e){} let tm; br.addEventListener("input",()=>{ clearTimeout(tm); tm=setTimeout(()=>{ const d=acaStats.lire(); d.notes=d.notes||{};
+    if(br.value.trim()) d.notes[id]=br.value.slice(0,3000); else delete d.notes[id]; const ok=ecrire(d); if(brOk) brOk.textContent=ok?"Note enregistrée dans ce navigateur.":""; },500); }); }
+  function ratee(k,oui){ if(!k) return; try{ const d=acaStats.lire(); d.ratees=d.ratees||{}; if(oui){ d.ratees[k]=Date.now(); const ks=Object.keys(d.ratees); if(ks.length>60){ks.sort((a,b)=>d.ratees[a]-d.ratees[b]).slice(0,ks.length-60).forEach(x=>delete d.ratees[x]);} } else delete d.ratees[k]; ecrire(d); }catch(e){} }
+  function confettis(){ const z=document.createElement("div"); z.className="l-confettis"; z.setAttribute("aria-hidden","true"); const cs=["var(--a-prim)","var(--a-or)","var(--a-ok)","#7c9cf5","#e879a6"];
+    for(let i=0;i<36;i++){const e=document.createElement("i"); e.style.left=(Math.random()*100)+"%"; e.style.background=cs[i%cs.length]; e.style.setProperty("--d",(1.8+Math.random()*1.6)+"s"); e.style.setProperty("--r",(Math.random()*.5)+"s"); e.style.setProperty("--t",(260+Math.random()*620)+"deg"); z.appendChild(e);}
+    document.body.appendChild(z); setTimeout(()=>z.remove(),4500); }
   cartes.forEach(c=>{const ch=c.querySelector(".l-choix"); if(ch&&c.dataset.melange==="1"){const bs=[...ch.children]; bs.sort(()=>Math.random()-.5).forEach((b,i)=>{b.querySelector("kbd").textContent=i+1; ch.appendChild(b);});}
     if(ch) ch.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{ if(etat!=="repondre") return; ch.querySelectorAll("button").forEach(x=>{x.classList.remove("choisi");x.setAttribute("aria-pressed","false");});
       b.classList.add("choisi"); b.setAttribute("aria-pressed","true"); choix=b.dataset.j; action.disabled=false; }));
     const inp=c.querySelector(".l-nombre input"); if(inp) inp.addEventListener("input",()=>{ if(etat==="repondre") action.disabled=!inp.value.trim(); });
   });
-  const total=cartes.length;
+  const total=cartes.length; const BRAVOS=["Bonne réponse","Exact","C'est ça","Bien vu","Tout juste"];
   function majProg(){prog.style.width=Math.round(100*faites.size/total)+"%"; const g=cartes[file[Math.min(pos,file.length-1)]].dataset.g;
     plan.forEach(l=>{const k=l.dataset.g, cs=cartes.map((c,i)=>[c,i]).filter(([c])=>c.dataset.g===k); l.classList.toggle("fait",cs.every(([c,i])=>faites.has(i))); l.classList.toggle("ici",k===g&&!l.classList.contains("fait"));});
     etp.textContent="Étape "+Math.min(pos+1,file.length)+" sur "+file.length; pts.textContent=xp?"+"+xp+" points":"";}
   function bandeau(cls,html){bas.className="l-bas on "+cls; retour.innerHTML=html;}
   function montre(){
-    const c=cartes[file[pos]]; cartes.forEach(x=>x.classList.remove("active")); c.classList.add("active"); scrollTo({top:0});
+    const c=cartes[file[pos]]; cartes.forEach(x=>x.classList.remove("active")); c.classList.add("active"); scrollTo({top:0}); tais();
+    const zr=c.querySelector(".l-relire"); if(zr&&!zr.hidden){zr.hidden=true; const rb=c.querySelector("[data-relire]"); if(rb){rb.classList.remove("on"); rb.lastChild.textContent="Relire la leçon";}}
     const h=c.querySelector("h1,h2,.l-q"); if(h){h.tabIndex=-1; h.focus({preventScroll:true});}
     choix=null; bandeau("",""); const t=c.dataset.type;
     if(t==="exo"){ etat="repondre"; action.textContent="Vérifier"; action.disabled=true;
@@ -487,12 +625,13 @@ JS_LECON = """<script>
     const premier=!revues.has(i);
     if(c.dataset.bilan){bilanN+=premier?1:0; if(ok&&premier)bilanOK++;}
     if(premier) essais++;
-    if(ok){ if(premier)justes++; xp+=premier?10:5; faites.add(i); bandeau("ok","<b>Bonne réponse</b><p>"+c.dataset.expl+"</p>"); }
-    else { bandeau("ko","<b>Réponse attendue : "+c.dataset.sol+"</b><p>"+c.dataset.expl+"</p>"); if(!revues.has(i)){revues.add(i); file.push(i);} else faites.add(i); }
+    if(ok){ if(premier)justes++; xp+=premier?10:5; faites.add(i); bandeau("ok","<b>"+BRAVOS[(justes+pos)%BRAVOS.length]+"</b><p>"+c.dataset.expl+"</p>");
+      pts.classList.remove("bump"); void pts.offsetWidth; pts.classList.add("bump"); }
+    else { bandeau("ko","<b>Réponse attendue : "+c.dataset.sol+"</b><p>"+c.dataset.expl+"</p>"); ratee(c.dataset.k,true); if(!revues.has(i)){revues.add(i); file.push(i);} else faites.add(i); }
     etat="suite"; action.textContent="Continuer"; action.disabled=false; majProg(); setTimeout(()=>action.focus(),40);
   }
   function sauve(){ try{ const d=acaStats.lire(); d.encours=d.encours||{}; d.encours[id]={pos,file,faites:[...faites],revues:[...revues],xp,justes,essais,bilanOK,bilanN,t:Date.now()};
-    const j=acaStats.jour(); d.jours=[...new Set([...(d.jours||[]),j])].slice(-400); localStorage.setItem("radar-academie",JSON.stringify(d)); }catch(e){} }
+    const j=acaStats.jour(); d.jours=[...new Set([...(d.jours||[]),j])].slice(-400); ecrire(d); }catch(e){} }
   function suivant(){ const i=file[pos]; if(cartes[i].dataset.type!=="exo") faites.add(i); pos++; if(pos>=file.length) fin(); else { if(essais) sauve(); montre(); } }
   function fin(){
     const d=acaStats.lire(), j=acaStats.jour(), x=d[id]||{}; const deja=!!x.fait; const besoin=Math.ceil(bilanN*2/3); const valide=bilanOK>=besoin;
@@ -501,7 +640,7 @@ JS_LECON = """<script>
     d.xp=(d.xp||0)+gain; d.xp_jours=d.xp_jours||{}; d.xp_jours[j]=(d.xp_jours[j]||0)+gain; d.jours=[...new Set([...(d.jours||[]),j])].slice(-400);
     d[id]=Object.assign(x,{score:Math.max(x.score||0,bilanOK),total:bilanN,fait:deja||valide,etape:99,date:Date.now()}); d.serie_max=Math.max(d.serie_max||0,acaStats.serie(d));
     if(d.encours) delete d.encours[id];
-    try{localStorage.setItem("radar-academie",JSON.stringify(d))}catch(e){}
+    ecrire(d); tais(); if(valide&&!deja) confettis();
     const prec=essais?Math.round(100*justes/essais):100;
     // version 76 : ce que la validation débloque
     const deb=f_deb(d,valide,deja);
@@ -530,14 +669,14 @@ JS_LECON = """<script>
   montre();
   // version 76 : reprendre un chapitre là où on l'avait laissé
   document.addEventListener("DOMContentLoaded",()=>{ try{ const enc=(acaStats.lire().encours||{})[id];
-    if(enc&&enc.pos>0&&enc.file&&enc.file.length===enc.file.length&&enc.pos<enc.file.length&&Date.now()-enc.t<30*864e5){
+    if(enc&&enc.pos>0&&Array.isArray(enc.file)&&enc.file.length>=cartes.length&&enc.pos<enc.file.length&&!enc.file.some(i=>i>=cartes.length)&&Date.now()-enc.t<30*864e5){
       const intro=cartes[0].querySelector(".l-texte"); const box=document.createElement("div"); box.className="l-reprise";
       box.innerHTML="<p><b>Tu t'étais arrêté à l'étape "+(enc.pos+1)+" sur "+enc.file.length+".</b> Tes réponses et tes points sont gardés.</p>"
         +"<button class='a-btn' type='button'>Reprendre à l'étape "+(enc.pos+1)+"</button> <button class='a-btn ghost' type='button'>Recommencer depuis le début</button>";
       intro.appendChild(box); const [r,z]=box.querySelectorAll("button");
       r.onclick=()=>{ file=enc.file; pos=enc.pos; faites=new Set(enc.faites); revues=new Set(enc.revues); xp=enc.xp||0; justes=enc.justes||0; essais=enc.essais||0;
         bilanOK=enc.bilanOK||0; bilanN=enc.bilanN||0; if(file.some(i=>i>=cartes.length)){file=cartes.map((c,i)=>i);pos=0;} montre(); };
-      z.onclick=()=>{ box.remove(); try{const d=acaStats.lire(); if(d.encours){delete d.encours[id]; localStorage.setItem("radar-academie",JSON.stringify(d));}}catch(e){} action.focus(); };
+      z.onclick=()=>{ box.remove(); try{const d=acaStats.lire(); if(d.encours){delete d.encours[id]; ecrire(d);}}catch(e){} action.focus(); };
     } }catch(e){} });
 })();
 </script>"""
@@ -555,14 +694,22 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
     donnees = {"module": json.dumps([c["id"] for c in regs]), "niveau": str(niv[0]), "cas": cas_m["id"] if cas_m else "", "casTitre": cas_m["titre"] if cas_m else "",
                "suiteTitre": suiv_reg["titre"] if suiv_reg else ""}
     noms = [t.split(". ", 1)[1] if t[:1].isdigit() and ". " in t[:4] else t for t, _ in ch["sections"]]
+    plus, labos = PLUS.get(ch["id"], []), LABOS.get(ch["id"], [])
+    promesse = ("<p>Tu y trouveras aussi " + (f"{len(labos)} simulateur{'s' if len(labos) > 1 else ''} à manipuler et " if labos else "")
+                + "des exemples chiffrés. Un doute pendant un exercice ? Le bouton « Relire la leçon » te remet le texte sous les yeux.</p>") if (plus or labos) else ""
+
+    def extras(s):
+        h = "".join(f"<aside class='l-plus {t}'><b>{SVG[t]}{TITRES[t]}</b>{x}</aside>" for si, t, x in plus if si == s)
+        return h + "".join(academie_labo.bloc(l[1], l[2] if len(l) > 2 else None) for l in labos if l[0] == s)
+    ecoute = f"<div class='l-outils'><button type='button' class='l-mini' data-ecoute hidden>{SVG['son']}<span>Écouter</span></button></div>"
     cartes = [f"<section class='l-carte' data-type='intro' data-g='intro'><p class='l-type'>Module {niv[0]} : {_e(niv[1])} · {num}</p>"
               f"<h1>{_e(ch['titre'])}</h1><div class='l-texte'><p>{_e(ch['desc'])}</p>"
               f"<p><b>Dans ce chapitre</b> : {n_l} mini-leçons ({', '.join(_e(x) for x in noms)}), chacune suivie d'un exercice, "
-              f"puis un récap, un cas concret et un bilan de {len(ch['quiz'])} questions. Environ {ch['minutes'] + 3} minutes.</p></div></section>"]
+              f"puis un récap, un cas concret et un bilan de {len(ch['quiz'])} questions. Environ {_min(ch)} minutes.</p>{promesse}</div></section>"]
     k = 0
     for s, (t_aff, h2) in enumerate(zip(noms, lexique)):
         g = f"l{s}"
-        cartes.append(f"<section class='l-carte' data-type='lecon' data-g='{g}'><p class='l-type'>Mini-leçon {s + 1} sur {n_l}</p><h2>{_e(t_aff)}</h2><div class='l-texte'>{h2}</div></section>")
+        cartes.append(f"<section class='l-carte' data-type='lecon' data-g='{g}'><p class='l-type'>Mini-leçon {s + 1} sur {n_l}</p><h2>{_e(t_aff)}</h2>{ecoute}<div class='l-texte'>{h2}{extras(s)}</div></section>")
         cartes.append(_carte_exo(exos[s], k, g)); k += 1
         for (si, gx) in graphes:
             if si == s:
@@ -571,8 +718,9 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
                   + "".join(f"<li>{_e(x)}</li>" for x in ch["retenir"]) + "</ul></div></section>")
     enonce, correction = ch["exercice"]
     cartes.append(f"<section class='l-carte' data-type='pratique' data-g='cas'><p class='l-type'>Cas concret</p><h2>À toi de raisonner</h2><div class='l-texte'>{enonce}"
-                  "<label class='sr' for='l-brouillon'>Ton raisonnement</label><textarea id='l-brouillon' rows='3' placeholder='Écris ton raisonnement ici (facultatif)' "
+                  "<label class='sr' for='l-brouillon'>Ton raisonnement</label><textarea id='l-brouillon' rows='4' placeholder='Écris ton raisonnement ici (facultatif). Il est gardé : tu le retrouveras en revenant sur ce chapitre.' "
                   "style='width:100%;box-sizing:border-box;border-radius:10px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font:inherit;padding:12px'></textarea>"
+                  "<p class='l-notes-ok' id='l-notes-ok' role='status'></p>"
                   f"<div class='l-cor'><h3>Correction</h3>{correction}</div></div></section>")
     for q, choix, b, e in ch["quiz"]:
         cartes.append(_carte_exo({"type": "qcm", "q": q, "choix": choix, "bonne": b, "expl": e}, k, "bilan", bilan=True, type_txt="Bilan du chapitre")); k += 1
@@ -581,8 +729,9 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
            "<div class='bilan'><div><b data-f='bilan'>0</b><span>au bilan</span></div><div><b data-f='prec'>0</b><span>de bonnes réponses du premier coup</span></div>"
            "<div><b data-f='xp'>0</b><span>points gagnés</span></div><div><b data-f='serie' style='color:var(--a-or)'>0</b><span>de série</span></div></div>"
            "<ul class='l-deblocage' data-f='deblocage' hidden></ul>"
+           + (f"<p class='l-pratique'><b>Mets en pratique</b>{_e(PRATIQUE[ch['id']][0])} <a href='../{PRATIQUE[ch['id']][1]}'>J'y vais</a></p>" if ch["id"] in PRATIQUE else "") +
            "<p><button class='a-btn ghost' type='button' data-f='refaire' hidden>Recommencer le chapitre</button></p>"
-           "<p class='muted' style='font-size:14.5px'>Les notions de ce chapitre reviendront dans les <a href='revision.html'>révisions</a>, au bon moment pour ne pas les oublier.</p></section>")
+           "<p class='muted' style='font-size:14.5px'>Les notions de ce chapitre reviendront dans l'<a href='entrainement.html'>entraînement du jour</a> et les <a href='revision.html'>révisions</a>, au bon moment pour ne pas les oublier.</p></section>")
     plan = ("<aside class='l-plan' aria-label='Plan du chapitre'><h2>Plan du chapitre</h2><ol>"
             + "".join(f"<li data-g='l{s}'>{_e(x)}</li>" for s, x in enumerate(noms))
             + "<li data-g='recap'>Récap</li><li data-g='cas'>Cas concret</li><li data-g='bilan'>Bilan</li></ol>"
@@ -599,7 +748,7 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
              "<button class='a-btn' id='l-action' type='button'>Continuer</button></div></div>"
              f"<script>document.body.dataset.chap={json.dumps(ch['id'])};document.body.dataset.suite={json.dumps((suiv['id'] + '.html') if suiv else '../formation.html')};"
              f"Object.assign(document.body.dataset,{json.dumps(donnees, ensure_ascii=False)});</script>"
-             + JS_LECON)
+             + JS_LECON + (academie_labo.JS_LABO if labos else ""))
     return corps
 
 
@@ -623,6 +772,15 @@ def profil(niveaux, chapitres):
             "<section class='a-carte' style='margin-bottom:26px'><h2 style='font-size:18px;margin:0'>Les 4 dernières semaines</h2>"
             "<div class='pf-cal' id='pf-cal' aria-label='Jours où tu as fait au moins un exercice'></div><p class='muted' style='font-size:13.5px;margin:6px 0 0' data-a='serie-txt'></p></section>"
             f"<h2 style='font-size:20px'>Attestations et distinctions</h2><ul class='pf-liste'>{lignes}</ul>"
+            "<h2 style='font-size:20px;margin-top:34px' id='sauvegarde'>Sauvegarder ou transférer ma progression</h2>"
+            "<p class='muted'>Ta progression vit dans ce navigateur : si tu vides ses données ou si tu changes d'appareil, elle disparaît. "
+            "Enregistre-la dans un fichier, ou copie le code ci-dessous pour la recoller sur ton téléphone ou ton ordinateur.</p>"
+            "<div class='pf-sauve'><div class='pf-btns'><button class='a-btn' type='button' id='pf-dl'>Enregistrer dans un fichier</button>"
+            "<button class='a-btn ghost' type='button' id='pf-copie'>Copier le code</button>"
+            "<label class='a-btn ghost' for='pf-fich' style='cursor:pointer'>Restaurer depuis un fichier</label><input type='file' id='pf-fich' accept='.json,application/json' class='sr'></div>"
+            "<label class='sr' for='pf-code'>Code de sauvegarde à coller</label>"
+            "<textarea id='pf-code' placeholder='Pour restaurer : colle ici un code de sauvegarde, puis clique sur « Restaurer ce code ».' spellcheck='false'></textarea>"
+            "<div class='pf-btns'><button class='a-btn ghost' type='button' id='pf-resto'>Restaurer ce code</button></div><p id='pf-s-ok' class='muted' role='status' style='margin:0'></p></div>"
             "<h2 style='font-size:20px;margin-top:34px'>Réinitialiser</h2><p class='muted'>Efface toute ta progression de l'Académie sur ce navigateur.</p>"
             "<button class='a-btn ghost' type='button' id='pf-raz'>Effacer ma progression</button><p id='pf-raz-ok' class='muted' role='status'></p>"
             "<script>document.addEventListener('DOMContentLoaded',function(){const S=window.acaStats;if(!S)return;const d=S.lire(),ids=" + json.dumps([c["id"] for c in chapitres])
@@ -633,5 +791,97 @@ def profil(niveaux, chapitres):
             "function ok(li){li.classList.add('ok');const e=li.querySelector('.c-etat');e.textContent='Obtenu';e.classList.add('fait');}"
             "document.querySelectorAll('li[data-niv]').forEach(li=>{const k=+li.dataset.niv;if(ids.filter(i=>niv[i]===k).every(i=>d[i]&&d[i].fait))ok(li);});"
             "const c={serie7:rec>=7,serie30:rec>=30,xp1000:x>=1000,certif:!!(d.examen&&d.examen.reussi)};document.querySelectorAll('li[data-b]').forEach(li=>{if(c[li.dataset.b])ok(li);});"
+            "const so=document.getElementById('pf-s-ok'),code=document.getElementById('pf-code');"
+            "const paquet=()=>JSON.stringify({app:'radar-academie',v:1,date:new Date().toISOString(),d:S.lire()});"
+            "const enc=t=>btoa(unescape(encodeURIComponent(t))),dec=t=>decodeURIComponent(escape(atob(t.trim())));"
+            "document.getElementById('pf-dl').onclick=()=>{try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([paquet()],{type:'application/json'}));"
+            "a.download='academie-radar-bourse-'+S.jour()+'.json';document.body.appendChild(a);a.click();a.remove();so.textContent='Fichier enregistré. Garde-le : il permet de tout retrouver.';}catch(e){so.textContent='Enregistrement impossible sur cet appareil : utilise « Copier le code ».';}};"
+            "document.getElementById('pf-copie').onclick=()=>{const t=enc(paquet());code.value=t;code.select();"
+            "(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{so.textContent='Code copié. Colle-le dans cette même page sur ton autre appareil.';},()=>{so.textContent='Code affiché ci-dessus : sélectionne-le et copie-le.';});};"
+            "function restaure(txt){let o;try{o=JSON.parse(txt.trim().startsWith('{')?txt:dec(txt));}catch(e){so.textContent='Ce code ou ce fichier est illisible. Vérifie qu\\u2019il est complet.';return;}"
+            "const dd=o&&o.app==='radar-academie'&&o.d&&typeof o.d==='object'&&!Array.isArray(o.d)?o.d:null;if(!dd){so.textContent='Ce n\\u2019est pas une sauvegarde de l\\u2019Académie.';return;}"
+            "const na=ids.filter(i=>dd[i]&&dd[i].fait).length;if(na<n&&!restaure.ok){restaure.ok=1;so.textContent='Attention : cette sauvegarde contient '+na+' chapitres validés, tu en as '+n+' ici. Recommence la même action pour confirmer le remplacement.';return;}"
+            "if(S.ecrire(dd)){so.textContent='Progression restaurée ('+na+' chapitres validés). La page se recharge…';setTimeout(()=>location.reload(),900);}else so.textContent='Ce navigateur refuse d\\u2019enregistrer.';}"
+            "document.getElementById('pf-resto').onclick=()=>{if(!code.value.trim()){so.textContent='Colle d\\u2019abord un code de sauvegarde.';return;}restaure(code.value);};"
+            "document.getElementById('pf-fich').onchange=e=>{const f=e.target.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>restaure(String(fr.result));fr.readAsText(f);};"
             "const r=document.getElementById('pf-raz');let arme=false;r.onclick=()=>{if(!arme){arme=true;r.textContent='Confirmer l\\u2019effacement';return;}"
             "try{localStorage.removeItem('radar-academie')}catch(e){}document.getElementById('pf-raz-ok').textContent='Progression effacée.';r.textContent='Effacer ma progression';arme=false;};});</script>")
+
+
+# ------------------------------------------------------------------ l'entraînement du jour (version 77) ------------------------------------------------------------------
+def banque(chapitres, exos):
+    """Toutes les questions réutilisables hors chapitre (exercices et bilans), avec une clé stable."""
+    b, vus = [], set()
+    for c in chapitres:
+        qs = [dict(x) for x in exos.get(c["id"], []) if x["type"] in ("qcm", "vf", "nombre")]
+        qs += [{"type": "qcm", "q": q, "choix": ch, "bonne": bo, "expl": e} for q, ch, bo, e in c["quiz"]]
+        for x in qs:
+            k = cle_q(x["q"])
+            if k in vus:
+                continue
+            vus.add(k)
+            d = {"k": k, "t": x["type"], "q": x["q"], "e": x["expl"], "id": c["id"], "ch": c["titre"], "n": c["niveau"]}
+            if x["type"] == "nombre":
+                d.update(rep=x["rep"], tol=x["tol"], u=x["unite"], sol=f"{_nombre_fr(x['rep'])} {x['unite']}".strip())
+            else:
+                d.update(c=x["choix"], b=x["bonne"])
+            b.append(d)
+    return b
+
+
+def entrainement(chapitres, exos):
+    B = banque(chapitres, exos)
+    return ("<header class='c-tete'><h1>Entraînement du jour</h1>"
+            "<p>Six questions, trois minutes. Elles sont piochées dans les chapitres que tu as validés, et celles que tu as ratées reviennent en premier. "
+            "Chaque bonne réponse rapporte 5 points et entretient ta série.</p></header>"
+            "<div id='e-zone'><noscript><p class='a-alerte'>L'entraînement a besoin de JavaScript.</p></noscript></div>"
+            "<script>document.addEventListener('DOMContentLoaded',function(){const S=window.acaStats;if(!S)return;const B=" + json.dumps(B, ensure_ascii=False) + ";"
+            + r"""
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const z=document.getElementById('e-zone'); const N=6; let file=[],pos=0,ok=0,gain=0,choix=null,etat='';
+function tirage(){ const d=S.lire(); const fait=id=>!!(d[id]&&d[id].fait); const par={}; B.forEach(x=>par[x.k]=x);
+  const rat=Object.keys(d.ratees||{}).filter(k=>par[k]).sort((a,b)=>d.ratees[a]-d.ratees[b]).slice(0,3).map(k=>par[k]);
+  let pool=B.filter(x=>fait(x.id)); const decouverte=pool.length<12; if(decouverte) pool=B.filter(x=>x.n===1);
+  const pris=new Set(rat.map(x=>x.k)); pool=pool.filter(x=>!pris.has(x.k)).map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+  const chaps=new Set(rat.map(x=>x.id)); const reste=[]; // on varie les chapitres
+  for(const x of pool){ if(reste.length>=N-rat.length) break; if(!chaps.has(x.id)||pool.length<20){reste.push(x); chaps.add(x.id);} }
+  for(const x of pool){ if(reste.length>=N-rat.length) break; if(!reste.includes(x)) reste.push(x); }
+  return {qs:[...rat,...reste].slice(0,N), nr:rat.length, decouverte}; }
+function debut(){ const t=tirage(); file=t.qs; pos=0; ok=0; gain=0;
+  z.innerHTML="<section class='a-carte'><h2 style='margin:0 0 6px;font-size:20px'>"+(t.decouverte?"Série découverte":"Ta série du jour")+"</h2><p style='margin:0 0 14px;color:var(--a-muted)'>"
+    +(t.decouverte?"Tu n'as pas encore validé assez de chapitres : ces questions portent sur les bases du module 1. Pas grave si tu te trompes, c'est fait pour ça.":"Questions tirées de tes chapitres validés.")
+    +(t.nr?" "+t.nr+(t.nr>1?" questions que tu avais ratées ouvrent la série.":" question que tu avais ratée ouvre la série."):"")+"</p><button class='a-btn' type='button' id='e-go'>Commencer</button></section>";
+  document.getElementById('e-go').onclick=montre; document.getElementById('e-go').focus({preventScroll:true}); }
+function montre(){ const x=file[pos]; choix=null; etat='rep';
+  let zone; if(x.t==='nombre') zone="<div class='l-nombre'><label class='sr' for='e-n'>Ta réponse</label><input id='e-n' inputmode='decimal' autocomplete='off' placeholder='Ta réponse'><span>"+esc(x.u)+"</span></div>";
+  else { const ord=x.c.map((c,j)=>j); if(x.t==='qcm'&&!x.c.every(c=>c.length<=6)) ord.sort(()=>Math.random()-.5);
+    zone="<div class='l-choix"+(x.t==='vf'?" vf":"")+"' role='group' aria-label='Choisis une réponse'>"+ord.map((j,i)=>"<button type='button' data-j='"+j+"' aria-pressed='false'><kbd aria-hidden='true'>"+(i+1)+"</kbd><span>"+esc(x.c[j])+"</span></button>").join("")+"</div>"; }
+  z.innerHTML="<div class='e-tete'><span>Question "+(pos+1)+" sur "+file.length+"</span><span>"+esc(x.ch)+"</span></div><div class='e-barre'><i style='width:"+(100*pos/file.length)+"%'></i></div>"
+    +"<div class='l-exo'><p class='l-q' tabindex='-1'>"+esc(x.q)+"</p>"+zone+"<div id='e-ret' role='status' aria-live='polite'></div>"
+    +"<div class='e-actions'><button class='a-btn' type='button' id='e-ok' disabled>Vérifier</button></div></div>";
+  const b=document.getElementById('e-ok'); z.querySelectorAll('.l-choix button').forEach(bt=>bt.onclick=()=>{ if(etat!=='rep') return;
+    z.querySelectorAll('.l-choix button').forEach(o=>{o.classList.remove('choisi');o.setAttribute('aria-pressed','false');}); bt.classList.add('choisi'); bt.setAttribute('aria-pressed','true'); choix=+bt.dataset.j; b.disabled=false; });
+  const inp=document.getElementById('e-n'); if(inp){ inp.oninput=()=>{ if(etat==='rep') b.disabled=!inp.value.trim(); }; setTimeout(()=>inp.focus(),50); } else z.querySelector('.l-q').focus({preventScroll:true});
+  b.onclick=()=>{ if(etat==='rep') verifie(); else { pos++; pos>=file.length?fin():montre(); } }; }
+function verifie(){ const x=file[pos]; let juste; const inp=document.getElementById('e-n'); const r=document.getElementById('e-ret');
+  if(inp){ const v=parseFloat(inp.value.replace(/\s|€|%/g,'').replace(',','.')); if(isNaN(v)){ r.innerHTML="<div class='e-retour ko'><b>Entre un nombre</b>Par exemple 12 ou 12,5.</div>"; return; }
+    juste=Math.abs(v-x.rep)<=x.tol+1e-9; inp.disabled=true; }
+  else { juste=choix===x.b; z.querySelectorAll('.l-choix button').forEach(bt=>{ bt.disabled=true; bt.classList.remove('choisi'); const j=+bt.dataset.j; if(j===x.b) bt.classList.add('juste'); else if(j===choix) bt.classList.add('faux'); }); }
+  const d=S.lire(); d.ratees=d.ratees||{}; if(juste){ ok++; gain+=5; delete d.ratees[x.k]; } else d.ratees[x.k]=Date.now();
+  const j=S.jour(); d.jours=[...new Set([...(d.jours||[]),j])].slice(-400); if(juste){ if(!d.xp_migre){d.xp=S.xp(d); d.xp_migre=1;} d.xp=(d.xp||0)+5; d.xp_jours=d.xp_jours||{}; d.xp_jours[j]=(d.xp_jours[j]||0)+5; }
+  d.serie_max=Math.max(d.serie_max||0,S.serie(d)); S.ecrire(d);
+  const sol=x.t==='nombre'?x.sol:x.c[x.b];
+  r.innerHTML="<div class='e-retour "+(juste?"ok":"ko")+"'><b>"+(juste?"Bonne réponse":"Réponse attendue : "+esc(sol))+"</b>"+esc(x.e)+"</div>";
+  const act=z.querySelector('.e-actions'); if(!juste) act.insertAdjacentHTML('beforeend',"<a class='e-src' href='"+x.id+".html'>Revoir le chapitre « "+esc(x.ch)+" »</a>");
+  etat='suite'; const b=document.getElementById('e-ok'); b.textContent=pos+1<file.length?'Question suivante':'Voir mon résultat'; b.disabled=false; b.focus({preventScroll:true}); }
+function fin(){ const d=S.lire(); const j=S.jour(); d.entr=d.entr||{}; d.entr.n=(d.entr.jour===j?(d.entr.n||0):0)+1; d.entr.jour=j; d.entr.total=(d.entr.total||0)+1; S.ecrire(d);
+  const s=S.serie(d), nr=Object.keys(d.ratees||{}).length;
+  z.innerHTML="<section class='l-carte l-fin active'><div class='statut'><span class='rond'>"""
+            + SVG["check"].replace('"', "'") + r"""</span><div><h2 style='margin:0'>"+(ok===file.length?"Sans faute":ok>=file.length*2/3?"Belle série":"Série terminée")+"</h2>"
+    +"<p style='margin:2px 0 0;color:var(--a-muted)'>"+(ok===file.length?"Tout était juste du premier coup.":nr?nr+(nr>1?" questions reviendront":" question reviendra")+" dans une prochaine série, jusqu'à ce que ce soit acquis.":"Ce qui est faux aujourd'hui se retient mieux demain.")+"</p></div></div>"
+    +"<div class='bilan'><div><b>"+ok+" / "+file.length+"</b><span>bonnes réponses</span></div><div><b>+"+gain+"</b><span>points gagnés</span></div><div><b style='color:var(--a-or)'>"+s+(s>1?" jours":" jour")+"</b><span>de série</span></div><div><b>"+(d.entr.total||1)+"</b><span>séries faites en tout</span></div></div>"
+    +"<div class='e-actions'><button class='a-btn' type='button' id='e-encore'>Encore une série</button><a class='a-btn ghost' href='../formation.html'>Retour au programme</a><a class='a-btn ghost' href='revision.html'>Fiches de révision</a></div></section>";
+  document.getElementById('e-encore').onclick=debut; scrollTo({top:0}); }
+document.addEventListener('keydown',e=>{ if(etat==='rep'&&/^[1-6]$/.test(e.key)&&e.target.tagName!=='INPUT'){ const b=z.querySelectorAll('.l-choix button')[+e.key-1]; if(b) b.click(); }
+  if(e.key==='Enter'&&e.target.tagName==='INPUT'){ const b=document.getElementById('e-ok'); if(b&&!b.disabled) b.click(); } });
+debut();});</script>""")

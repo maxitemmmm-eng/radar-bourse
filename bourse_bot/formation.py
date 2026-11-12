@@ -1,6 +1,6 @@
 """Version 70 : l'Académie Radar Bourse, centre de formation gratuit pour débutants.
 
-5 niveaux, 27 chapitres, des bases jusqu'à l'investissement maîtrisé. Chaque chapitre : cours, « à retenir », quiz corrigé,
+8 modules, des bases jusqu'à l'investissement maîtrisé (le nombre de chapitres est toujours calculé, jamais écrit en dur). Chaque chapitre : cours, « à retenir », quiz corrigé,
 exercice avec correction, sources vérifiées. Progression gardée dans le navigateur (aucun compte), examen final et certificat.
 Pages : formation.html (la carte des niveaux), formation/<chapitre>.html, formation/examen.html.
 """
@@ -14,10 +14,12 @@ from .formation_cours_1 import COURS_1, COURS_2
 from .formation_cours_2 import COURS_3, COURS_4, COURS_5
 from .formation_cours_3 import COURS_6
 from .formation_cours_4 import COURS_7, EXOS_7
+from .formation_cours_6 import COURS_8, EXOS_8
 from . import formation_exos as _fx
 _fx.EXOS.update(EXOS_7)
+_fx.EXOS.update(EXOS_8)
 
-CHAPITRES = COURS_1 + COURS_2 + COURS_3 + COURS_4 + COURS_5 + COURS_6 + COURS_7
+CHAPITRES = COURS_1 + COURS_2 + COURS_3 + COURS_4 + COURS_5 + COURS_6 + COURS_7 + COURS_8
 # version 76 : une étude de cas à débloquer à la fin de chaque module
 from .formation_cours_5 import CAS as _CAS, EXOS_CAS as _EXOS_CAS
 _fx.EXOS.update(_EXOS_CAS)
@@ -33,13 +35,30 @@ NIVEAUX = [
     (5, "Investir comme un pro", "Diversifier, construire un portefeuille, fiscalité, psychologie.", "#d4495a"),
     (6, "Comprendre la crypto", "Blockchain, stablecoins, sécurité, fiscalité crypto 2026.", "#0ea5a4"),
     (7, "Aller plus loin", "Obligations, devises, secteurs, opérations sur actions, levier, documents réglementaires.", "#7c3aed"),
+    (8, "Élargir son horizon", "Or et matières premières, immobilier coté et SCPI, investissement responsable, puis ton plan d'action.", "#c2410c"),
 ]
-VERIFIE_LE = "11 novembre 2026"
+VERIFIE_LE = "12 novembre 2026"
+
+# version 77 : encadrés (exemple, erreur classique, bon réflexe) et simulateurs ajoutés aux mini-leçons
+from .formation_plus import PLUS as _PLUS, LABOS as _LABOS
+import re as _re
+for _c in CHAPITRES:
+    _mots = sum(len(_re.sub(r"<[^>]+>", " ", h).split()) for _i, _t, h in _PLUS.get(_c["id"], []))
+    _c["extra_min"] = round(_mots / 190) + len(_LABOS.get(_c["id"], []))
+
+
+def duree(ch):
+    """Durée affichée d'un chapitre, en minutes : lecture, exercices, encadrés et simulateurs."""
+    return ch["minutes"] + 3 + ch.get("extra_min", 0)
 MOTS_ACADEMIE = ("apprendre la bourse, bourse pour débutant, formation bourse gratuite, cours de bourse débutant, comment investir en bourse, "
                  "investir en bourse débutant, débuter en bourse, quiz bourse, exercices bourse, formation investissement gratuite, "
                  "comprendre la bourse, bourse expliquée simplement, apprendre à investir, éducation financière, "
                  "apprendre la crypto, formation crypto gratuite, crypto pour débutant, comprendre le bitcoin, cours d'analyse technique, "
-                 "lire un graphique boursier, cours finance gratuit, formation trading débutant")
+                 "lire un graphique boursier, cours finance gratuit, formation trading débutant, "
+                 "exercices bourse corrigés, cours de bourse en ligne gratuit avec certificat, comment acheter son premier ETF, ouvrir un PEA étudiant, "
+                 "investir 50 euros par mois, DCA ou investir d'un coup, comprendre le PER d'une action, effet de levier explication simple, "
+                 "SCPI ou foncière cotée, investir dans l'or débutant, label ISR greenwashing, fiscalité crypto 2026 débutant, lire un DIC ETF, "
+                 "simulateur intérêts composés gratuit, simulateur PEA ou compte-titres, calcul flat tax 2026, flat tax 31,4 %, prélèvements sociaux PEA 2026")
 
 CSS = """
 .aca-hero{padding:8px 0 4px}.aca-hero h1{margin-bottom:6px}
@@ -313,7 +332,7 @@ def _page_chapitre(seo, base, csp, ch, i):
     corps = (f"<style>{CSS}{CSS_LEX}{CSS_PAS}</style>{JS_PROGRES}"
              f"<p class='aca-fil'><a href='../formation.html'>Académie</a> › Niveau {niv[0]} : {_e(niv[1])} › Chapitre {i + 1} sur {len(CHAPITRES)}</p>"
              f"<article class='aca-cours'><header class='pp-tete'><h1>{_e(ch['titre'])}</h1><p class='muted' style='margin:0'>{_e(ch['desc'])}</p>"
-             f"<p class='pp-meta'><span><b>{n_lecons}</b> mini-leçons</span><span><b>{n_lecons}</b> exercices</span><span>environ <b>{ch['minutes'] + 3}</b> min</span></p></header>"
+             f"<p class='pp-meta'><span><b>{n_lecons}</b> mini-leçons</span><span><b>{n_lecons}</b> exercices</span><span>environ <b>{duree(ch)}</b> min</span></p></header>"
              f"<p class='pp-tout'><a href='#' id='pp-tout'>Tout afficher sur une seule page</a></p>"
              f"<div class='pp' id='pp'>{plan_html}<div class='pp-etapes'>{''.join(etapes)}</div></div>"
              f"{sources}{auteur}</article>{nav}"
@@ -321,7 +340,7 @@ def _page_chapitre(seo, base, csp, ch, i):
     chemin = f"formation/{ch['id']}.html"
     jl = {"@context": "https://schema.org", "@graph": [
         {"@type": "LearningResource", "name": ch["titre"], "description": ch["desc"], "inLanguage": "fr",
-         "learningResourceType": "Cours", "educationalLevel": f"Niveau {niv[0]} : {niv[1]}", "timeRequired": f"PT{ch['minutes'] + 3}M",
+         "learningResourceType": "Cours", "educationalLevel": f"Niveau {niv[0]} : {niv[1]}", "timeRequired": f"PT{duree(ch)}M",
          "isAccessibleForFree": True, "url": (base + chemin) if base else None,
          "author": {"@type": "Person", "name": "maxitemmmm"},
          "hasPart": [{"@type": "LearningResource", "name": t, "learningResourceType": "Mini-leçon"} for _a, t in plan[:n_lecons]],
@@ -385,10 +404,10 @@ def _page_hub(seo, base, csp):
     for n, nom, desc, coul in NIVEAUX:
         chs = [(i, c) for i, c in enumerate(CHAPITRES) if c["niveau"] == n]
         lis = "".join(f"<li><a href='formation/{c['id']}.html' data-chap='{c['id']}'><span class='aca-etat' aria-hidden='true'>{i + 1}</span>"
-                      f"<span>{_e(c['titre'])}<small class='aca-sous' data-n='{len(c['sections'])}'>{len(c['sections'])} mini-leçons, environ {c['minutes'] + 3} min</small></span></a></li>" for i, c in chs)
+                      f"<span>{_e(c['titre'])}<small class='aca-sous' data-n='{len(c['sections'])}'>{len(c['sections'])} mini-leçons, environ {duree(c)} min</small></span></a></li>" for i, c in chs)
         blocs.append(f"<section class='aca-niv' style='--c:{coul}' aria-labelledby='niv{n}'><header><span class='aca-num' aria-hidden='true'>{n}</span>"
                      f"<div><h2 id='niv{n}' style='scroll-margin-top:120px'>Niveau {n} : {_e(nom)}</h2><p>{_e(desc)}</p></div></header><ul class='aca-chaps'>{lis}</ul></section>")
-    total_min = sum(c["minutes"] for c in CHAPITRES)
+    total_min = sum(duree(c) for c in CHAPITRES)
     badges = "".join(f"<span class='aca-badge' data-niv='{n}'>Niveau {n} : {_e(nom)}</span>" for n, nom, *_ in NIVEAUX)
     corps = (f"<style>{CSS}{CSS_LEX}{CSS_PAS}</style>{JS_PROGRES}"
              "<div class='aca-hero'><h1>L'Académie : apprendre la Bourse de zéro</h1>"
@@ -405,7 +424,7 @@ def _page_hub(seo, base, csp):
              f"aria-valuemin='0' aria-valuemax='{len(CHAPITRES)}' aria-valuenow='0'><i id='aca-barre'></i></div>"
              "<a class='btn' id='aca-reprendre' href='formation/" + CHAPITRES[0]["id"] + ".html'>Commencer</a></div>"
              f"<div class='aca-badges' aria-label='Badges de niveau'>{badges}<span class='aca-badge' data-niv='examen'>Certificat de l'Académie</span></div>"
-             "<div class='aca-outils'><a href='formation/test-de-niveau.html'><b>Test de niveau</b><span>14 questions pour savoir par où commencer.</span></a>"
+             "<div class='aca-outils'><a href='formation/test-de-niveau.html'><b>Test de niveau</b><span>Quelques questions pour savoir par où commencer.</span></a>"
              "<a href='formation/revision.html'><b>Révisions express</b><span>Des fiches qui reviennent au bon moment pour tout retenir.</span></a>"
              "<a href='formation/examen.html'><b>Examen final</b><span>20 questions, et un certificat si tu réussis.</span></a>"
              "<a href='glossaire.html'><b>Glossaire</b><span>Tous les mots de la Bourse, expliqués simplement.</span></a></div>"
@@ -443,23 +462,44 @@ def _page_hub(seo, base, csp):
 
 
 def _page_examen(seo, base, csp):
-    banque = [dict(q=q, c=c, b=b, e=e, ch=ch["titre"]) for ch in CHAPITRES for q, c, b, e in ch["quiz"]]
+    """Version 77 : 20 questions réparties sur tous les modules (au moins 2 par module), tirées des bilans et des exercices ;
+    le résultat est détaillé par module, avec les chapitres à revoir."""
+    from .formation_exos import EXOS
+    banque = []
+    for ch in CHAPITRES:
+        for q, c, b, e in ch["quiz"]:
+            banque.append(dict(q=q, c=c, b=b, e=e, ch=ch["titre"], id=ch["id"], n=ch["niveau"]))
+        for x in EXOS.get(ch["id"], []):
+            if x["type"] == "qcm" and len(x["choix"]) >= 3:
+                banque.append(dict(q=x["q"], c=x["choix"], b=x["bonne"], e=x["expl"], ch=ch["titre"], id=ch["id"], n=ch["niveau"]))
+    n_reg = sum(1 for c in CHAPITRES if not c.get("cas"))
     corps = (f"<style>{CSS}</style>{JS_PROGRES}"
              "<p class='aca-fil'><a href='../formation.html'>Académie</a> › Examen final</p>"
-             "<h1>Examen final de l'Académie</h1><p>20 questions tirées au hasard dans tout le parcours. Il faut <b>15 bonnes réponses</b> pour obtenir le certificat. "
-             "Tu peux le repasser autant de fois que tu veux : les questions changent.</p>"
-             "<div class='aca-quiz' id='examen'></div><p class='aca-res' id='ex-res' role='status'></p><div id='certif'></div>"
-             "<script>(function(){const B=" + json.dumps(banque, ensure_ascii=False) + ";"
-             "const z=document.getElementById('examen');const tirage=B.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).slice(0,20).map(x=>x[1]);"
+             f"<h1>Examen final de l'Académie</h1><p>20 questions, avec au moins deux questions par module : impossible de réussir en ne connaissant qu'une partie du programme. "
+             "Il faut <b>15 bonnes réponses</b> pour obtenir le certificat. Tu peux le repasser autant de fois que tu veux : les questions changent à chaque fois.</p>"
+             "<p class='muted' id='ex-deja' hidden></p>"
+             "<div class='aca-quiz' id='examen'></div><p class='aca-res' id='ex-res' role='status'></p><div id='ex-detail'></div><div id='certif'></div>"
+             "<script>(function(){const B=" + json.dumps(banque, ensure_ascii=False) + ",NIV=" + json.dumps([[n, nom] for n, nom, *_ in NIVEAUX], ensure_ascii=False) + ";"
+             "const z=document.getElementById('examen');const mel=a=>a.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);"
+             "let tirage=[];const pris=new Set();NIV.forEach(([n])=>{mel(B.filter(x=>x.n===n)).slice(0,2).forEach(x=>{tirage.push(x);pris.add(x.q);});});"
+             "mel(B.filter(x=>!pris.has(x.q))).slice(0,Math.max(0,20-tirage.length)).forEach(x=>tirage.push(x));tirage=tirage.slice(0,20).sort((a,b)=>a.n-b.n);"
              "const esc=s=>String(s).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));"
-             "z.innerHTML=tirage.map((x,i)=>`<fieldset class='aca-q' data-bonne='${x.b}' style='border:0;padding:0'><legend class='sr'>Question ${i+1}</legend>"
+             "const d0=acaLire();if(d0.examen&&d0.examen.meilleur){const e=document.getElementById('ex-deja');e.hidden=false;e.textContent='Ton meilleur résultat : '+d0.examen.meilleur+' / 20'+(d0.examen.reussi?' (certificat obtenu).':'.');}"
+             "z.innerHTML=tirage.map((x,i)=>`<fieldset class='aca-q' data-bonne='${x.b}' data-i='${i}' style='border:0;padding:0'><legend class='sr'>Question ${i+1}</legend>"
              "<p>${i+1}. ${esc(x.q)}</p>${x.c.map((c,j)=>`<label><input type='radio' name='e${i}' value='${j}'> <span>${esc(c)}</span></label>`).join('')}"
-             "<p class='expl' hidden>${esc(x.e)} <i>(chapitre : ${esc(x.ch)})</i></p></fieldset>`).join('')+\"<button class='btn' type='button' id='ex-ok'>Corriger l'examen</button>\";"
-             "document.getElementById('ex-ok').onclick=()=>{let ok=0,rep=0;z.querySelectorAll('.aca-q').forEach(f=>{const c=f.querySelector('input:checked'),b=+f.dataset.bonne;"
-             "f.querySelectorAll('label').forEach((l,j)=>{l.classList.toggle('juste',j===b);l.classList.toggle('faux',!!c&&+c.value===j&&j!==b);});f.querySelector('.expl').hidden=false;if(c){rep++;if(+c.value===b)ok++;}});"
-             "const r=document.getElementById('ex-res');if(rep<20){r.textContent='Réponds aux 20 questions ('+rep+'/20).';return;}"
-             "const reussi=ok>=15;const d=acaLire();d.examen={meilleur:Math.max(ok,(d.examen||{}).meilleur||0),reussi:reussi||((d.examen||{}).reussi||false),date:Date.now()};acaEcrire(d);"
-             "r.textContent=ok+' / 20. '+(reussi?'Bravo, examen réussi !':'Il faut 15 bonnes réponses : relis les chapitres indiqués et réessaie.');"
+             "<p class='expl' hidden>${esc(x.e)} <i>(chapitre : <a href='${x.id}.html'>${esc(x.ch)}</a>)</i></p></fieldset>`).join('')+\"<button class='btn' type='button' id='ex-ok'>Corriger l'examen</button>\";"
+             "document.getElementById('ex-ok').onclick=()=>{let ok=0,rep=0;const par={},revoir=new Map();const r=document.getElementById('ex-res');"
+             "const fs=[...z.querySelectorAll('.aca-q')];rep=fs.filter(f=>f.querySelector('input:checked')).length;"
+             "if(rep<tirage.length){r.textContent='Réponds aux '+tirage.length+' questions avant de corriger ('+rep+'/'+tirage.length+').';const m=fs.find(f=>!f.querySelector('input:checked'));if(m)m.scrollIntoView({behavior:'smooth',block:'center'});return;}"
+             "fs.forEach(f=>{const c=f.querySelector('input:checked'),b=+f.dataset.bonne,x=tirage[+f.dataset.i];par[x.n]=par[x.n]||[0,0];par[x.n][1]++;"
+             "f.querySelectorAll('label').forEach((l,j)=>{l.classList.toggle('juste',j===b);l.classList.toggle('faux',+c.value===j&&j!==b);});f.querySelector('.expl').hidden=false;"
+             "f.querySelectorAll('input').forEach(i=>i.disabled=true);if(+c.value===b){ok++;par[x.n][0]++;}else revoir.set(x.id,x.ch);});"
+             "document.getElementById('ex-ok').hidden=true;"
+             "const reussi=ok>=15;const d=acaLire();d.examen={meilleur:Math.max(ok,(d.examen||{}).meilleur||0),reussi:reussi||((d.examen||{}).reussi||false),date:Date.now(),essais:((d.examen||{}).essais||0)+1};acaEcrire(d);"
+             "r.textContent=ok+' / 20. '+(reussi?'Bravo, examen réussi !':'Il faut 15 bonnes réponses. Les chapitres à revoir sont listés ci-dessous.');"
+             "document.getElementById('ex-detail').innerHTML=\"<div class='aca-ex'><h2 style='margin-top:0'>Ton résultat par module</h2><ul>\"+NIV.filter(([n])=>par[n]).map(([n,nom])=>'<li>Module '+n+' : '+esc(nom)+' — <b>'+par[n][0]+' / '+par[n][1]+'</b></li>').join('')+'</ul>'"
+             "+(revoir.size?'<p><b>À revoir :</b> '+[...revoir].map(([id,t])=>\"<a href='\"+id+\".html'>\"+esc(t)+'</a>').join(' · ')+'</p>':'<p>Aucune erreur : rien à revoir.</p>')"
+             "+\"<p><button class='btn ghost' type='button' onclick='location.reload()'>Repasser l'examen avec d'autres questions</button></p></div>\";"
              "if(reussi){const date=new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});"
              "document.getElementById('certif').innerHTML=`<div class='aca-certif'><p class='muted'>Certificat</p><h2>Académie Radar Bourse</h2>"
              "<p>Ce certificat atteste que</p><p><input id='nom-certif' placeholder='Ton prénom' aria-label='Ton prénom' style='font:inherit;font-size:22px;text-align:center;border:0;border-bottom:2px solid var(--line);background:transparent;color:var(--ink);padding:4px;width:100%;max-width:300px;box-sizing:border-box'></p>"
@@ -470,11 +510,28 @@ def _page_examen(seo, base, csp):
              "<nav class='aca-nav'><a class='btn ghost' href='../formation.html'>Retour à l'Académie</a></nav>")
     chemin = "formation/examen.html"
     return chemin, seo._page(base, f"Quiz Bourse : examen final pour débutants | {seo.NOM}",
-                             "Teste tes connaissances en Bourse : 20 questions corrigées tirées des 27 chapitres de l'Académie, et un certificat si tu réussis.",
+                             f"Teste tes connaissances en Bourse : 20 questions corrigées tirées des {n_reg} chapitres de l'Académie, résultat détaillé par module et certificat si tu réussis.",
                              chemin, corps, None, csp=csp, mots="quiz bourse, test connaissances bourse, qcm bourse débutant, " + MOTS_ACADEMIE)
 
 
+def _page_entrainement(seo, base, csp):
+    from . import academie
+    from .formation_exos import EXOS
+    chemin = "formation/entrainement.html"
+    return chemin, seo._page(base, f"Entraînement du jour : 6 questions de Bourse | {seo.NOM}",
+                             "Six questions corrigées par jour, tirées des chapitres que tu as validés : tes erreurs reviennent en premier jusqu'à ce qu'elles soient acquises.",
+                             chemin, academie.entrainement(CHAPITRES, EXOS), None, csp=csp, mots="quiz bourse quotidien, exercices bourse, s'entraîner bourse, " + MOTS_ACADEMIE)
+
+
+class AcademieInvalide(Exception):
+    """Le contrôle automatique du cours a trouvé une erreur : on ne publie pas (l'ancienne version du site reste en ligne)."""
+
+
 def generer(seo, base, dossier, csp) -> list:
+    from .verif_academie import verifier
+    problemes = verifier()
+    if problemes:   # version 77 : un cours cassé ou un chiffre faux ne part jamais en ligne
+        raise AcademieInvalide("Académie : " + " ; ".join(problemes[:8]))
     os.makedirs(os.path.join(dossier, "formation"), exist_ok=True)
     faits = []
     from .academie import SeoAcademie
@@ -491,7 +548,7 @@ def generer(seo, base, dossier, csp) -> list:
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(html_)
         faits.append(chemin)
-    for fab in (_page_test_niveau, _page_revision):
+    for fab in (_page_test_niveau, _page_revision, _page_entrainement):
         chemin, html_ = fab(seo, base, csp)
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(html_)
@@ -622,42 +679,88 @@ def _page_test_niveau(seo, base, csp):
              "<nav class='aca-nav'><a class='btn ghost' href='../formation.html'>Retour à l'Académie</a></nav>")
     chemin = "formation/test-de-niveau.html"
     return chemin, seo._page(base, f"Test de niveau en Bourse : par où commencer ? | {seo.NOM}",
-                             "Test gratuit de connaissances en Bourse : 14 questions des bases aux notions avancées, pour savoir à quel niveau commencer l'Académie Radar Bourse.",
+                             f"Test gratuit de connaissances en Bourse : {len(qs)} questions des bases aux notions avancées, pour savoir à quel niveau commencer l'Académie Radar Bourse.",
                              chemin, corps, None, csp=csp, mots="test niveau bourse, test connaissances bourse, quiz bourse débutant, " + MOTS_ACADEMIE)
 
 
-def _page_revision(seo, base, csp):
-    cartes = []
+def _cartes_revision():
+    """Version 77 : chaque carte a une clé stable (elle suit la carte même si l'ordre des chapitres change).
+    Les cartes viennent des bilans, des exercices (choix, vrai ou faux, calcul) et du lexique."""
+    from .academie import cle_q, _nombre_fr
+    from .formation_exos import EXOS
+    cartes, vus = [], set()
+
+    def ajoute(k, **c):
+        if k not in vus:
+            vus.add(k)
+            cartes.append(dict(k=k, **c))
     for c in CHAPITRES:
-        for r in c["retenir"]:
-            cartes.append(dict(r="À retenir", q=f"{c['titre']} : que faut-il retenir ?", a=r, ch=c["id"], t=c["titre"]))
         for q, choix, b, e in c["quiz"]:
-            cartes.append(dict(r="Question", q=q, a=f"{choix[b]}. {e}", ch=c["id"], t=c["titre"]))
+            ajoute(cle_q(q), r="Question", q=q, a=f"{choix[b]}. {e}", ch=c["id"], t=c["titre"])
+        for x in EXOS.get(c["id"], []):
+            if x["type"] == "qcm":
+                ajoute(cle_q(x["q"]), r="Question", q=x["q"], a=f"{x['choix'][x['bonne']]}. {x['expl']}", ch=c["id"], t=c["titre"])
+            elif x["type"] == "vf":
+                ajoute(cle_q(x["q"]), r="Vrai ou faux ?", q=x["q"], a=f"{x['choix'][x['bonne']]}. {x['expl']}", ch=c["id"], t=c["titre"])
+            elif x["type"] == "nombre":
+                ajoute(cle_q(x["q"]), r="Calcul", q=x["q"], a=f"{_nombre_fr(x['rep'])} {x['unite']}. {x['expl']}", ch=c["id"], t=c["titre"])
     for terme, defi in LEXIQUE.items():
-        cartes.append(dict(r="Définition", q=f"Que veut dire « {terme} » ?", a=defi, ch="", t="Lexique"))
+        ajoute(cle_q("lex:" + terme), r="Définition", q=f"Que veut dire « {terme} » ?", a=defi, ch="", t="Lexique")
+    return cartes
+
+
+def _anciennes_cles():
+    """Correspondance entre les anciens numéros de carte (versions 71 à 76) et les nouvelles clés, pour ne pas perdre ce qui était mémorisé."""
+    from .academie import cle_q
+    m, i = {}, 0
+    for c in CHAPITRES:
+        if c["niveau"] > 7:
+            continue
+        i += len(c["retenir"])           # les anciennes cartes « à retenir » n'existent plus
+        for q, *_ in c["quiz"]:
+            m[i] = cle_q(q)
+            i += 1
+    for terme in LEXIQUE:
+        m[i] = cle_q("lex:" + terme)
+        i += 1
+    return m
+
+
+def _page_revision(seo, base, csp):
+    cartes = _cartes_revision()
     corps = (f"<style>{CSS}{CSS_LEX}</style>{JS_PROGRES}"
              "<p class='aca-fil'><a href='../formation.html'>Académie</a> › Révisions express</p>"
              "<h1>Révisions express</h1>"
-             f"<p>{len(cartes)} cartes tirées de l'Académie. Lis la question, essaie de répondre dans ta tête, puis retourne la carte. "
-             "Les cartes que tu connais reviennent moins souvent, celles que tu rates reviennent vite : c'est la <b>répétition espacée</b>, "
-             "la méthode la plus efficace connue pour mémoriser durablement.</p>"
+             f"<p>{len(cartes)} cartes tirées de l'Académie. Lis la question, réponds dans ta tête, puis retourne la carte. "
+             "Les cartes que tu connais reviennent de moins en moins souvent, celles que tu rates reviennent vite : c'est la <b>répétition espacée</b>, "
+             "l'une des méthodes les mieux établies pour retenir durablement.</p>"
+             "<p><label><input type='checkbox' id='rev-vus'> Seulement les chapitres que j'ai validés</label></p>"
              "<p class='muted' id='rev-stat'></p><div class='carte-rev' id='rev' tabindex='0' role='button' aria-live='polite'></div>"
              "<div class='rev-btns'><button class='btn ghost' type='button' id='rev-non'>Je ne savais pas</button><button class='btn' type='button' id='rev-oui'>Je savais</button></div>"
-             "<script>(function(){const C=" + json.dumps(cartes, ensure_ascii=False) + ";"
+             "<p class='muted' style='font-size:13.5px;text-align:center'>Raccourcis : Espace pour retourner la carte, flèche droite « je savais », flèche gauche « je ne savais pas ».</p>"
+             "<script>(function(){const C=" + json.dumps(cartes, ensure_ascii=False) + ",ANC=" + json.dumps(_anciennes_cles()) + ";"
              "const esc=s=>String(s).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));"
-             "const d=acaLire();const R=d.revision||{};const maint=Date.now();"
-             "const due=k=>((R[k]||{}).quand||0)<=maint;let file=C.map((c,i)=>i).filter(i=>due(i)).sort(()=>Math.random()-.5);if(!file.length)file=C.map((c,i)=>i).sort(()=>Math.random()-.5);"
-             "let cur=null,face=false;const el=document.getElementById('rev');"
-             "const stat=()=>{const sues=Object.values(R).filter(x=>(x.boite||0)>=3).length;document.getElementById('rev-stat').textContent=sues+' carte(s) bien mémorisée(s) sur '+C.length+' · '+file.length+' à revoir aujourd\\'hui';};"
-             "const montre=()=>{cur=file[0];face=false;const c=C[cur];el.classList.remove('tourne');void el.offsetWidth;el.classList.add('tourne');"
-             "el.innerHTML=`<div><small>${esc(c.r)} · ${esc(c.t)}</small>${esc(c.q)}<small style='margin-top:12px'>Touche ou clique pour voir la réponse</small></div>`;stat();};"
-             "const retourne=()=>{if(cur===null)return;face=!face;const c=C[cur];el.classList.remove('tourne');void el.offsetWidth;el.classList.add('tourne');"
+             "const d=acaLire();let R=d.revision||{};"
+             "if(!d.rev_v2){const R2={};Object.keys(R).forEach(k=>{if(ANC[k])R2[ANC[k]]=R[k];});R=R2;d.revision=R;d.rev_v2=1;acaEcrire(d);}"
+             "const fait=id=>!id||!!(d[id]&&d[id].fait);const vus=document.getElementById('rev-vus');vus.checked=!!d.rev_vus;"
+             "const due=c=>((R[c.k]||{}).quand||0)<=Date.now();let file=[],cur=null,face=false;const el=document.getElementById('rev');"
+             "const base=()=>C.filter(c=>!vus.checked||fait(c.ch));"
+             "function charge(){const b=base();file=b.filter(due).sort(()=>Math.random()-.5);if(!file.length&&b.length){el.innerHTML=\"<div>Rien à revoir pour l'instant dans cette sélection.<small style='margin-top:12px'>Les cartes reviendront au bon moment. Décoche la case pour réviser tout le programme.</small></div>\";cur=null;stat();return;}"
+             "if(!b.length){el.innerHTML=\"<div>Valide d'abord un chapitre, ou décoche la case pour réviser tout le programme.</div>\";cur=null;stat();return;}montre();}"
+             "const stat=()=>{const b=base(),sues=b.filter(c=>((R[c.k]||{}).boite||0)>=3).length;document.getElementById('rev-stat').textContent=sues+' carte'+(sues>1?'s':'')+' bien mémorisée'+(sues>1?'s':'')+' sur '+b.length+' · '+file.length+' à revoir maintenant';};"
+             "const montre=()=>{cur=file[0];face=false;el.classList.remove('tourne');void el.offsetWidth;el.classList.add('tourne');"
+             "el.innerHTML=`<div><small>${esc(cur.r)} · ${esc(cur.t)}</small>${esc(cur.q)}<small style='margin-top:12px'>Touche ou clique pour voir la réponse</small></div>`;stat();};"
+             "const retourne=()=>{if(!cur)return;face=!face;const c=cur;el.classList.remove('tourne');void el.offsetWidth;el.classList.add('tourne');"
              "el.innerHTML=face?`<div><small>Réponse</small>${esc(c.a)}${c.ch?`<small style='margin-top:12px'><a href='${c.ch}.html'>Revoir le chapitre</a></small>`:''}</div>`:`<div><small>${esc(c.r)} · ${esc(c.t)}</small>${esc(c.q)}</div>`;};"
              "el.onclick=e=>{if(e.target.closest('a'))return;retourne();};el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();retourne();}};"
-             "const note=ok=>{if(cur===null)return;const x=R[cur]||{boite:0};x.boite=ok?Math.min((x.boite||0)+1,5):0;"
-             "const jours=[0,1,3,7,16,35][x.boite];x.quand=Date.now()+jours*864e5;R[cur]=x;d.revision=R;acaEcrire(d);"
-             "file.shift();if(!ok)file.splice(Math.min(3,file.length),0,cur);if(!file.length){el.innerHTML=\"<div>Bravo, plus rien à revoir aujourd'hui.<small style='margin-top:12px'>Reviens demain : les cartes reviendront au bon moment.</small></div>\";cur=null;stat();return;}montre();};"
-             "document.getElementById('rev-oui').onclick=()=>note(true);document.getElementById('rev-non').onclick=()=>note(false);montre();})();</script>"
+             "const note=ok=>{if(!cur)return;const x=R[cur.k]||{boite:0};x.boite=ok?Math.min((x.boite||0)+1,5):0;"
+             "const jours=[0,1,3,7,16,35][x.boite];x.quand=Date.now()+jours*864e5;R[cur.k]=x;d.revision=R;const j=new Date();const jj=j.getFullYear()+'-'+String(j.getMonth()+1).padStart(2,'0')+'-'+String(j.getDate()).padStart(2,'0');"
+             "d.jours=[...new Set([...(d.jours||[]),jj])].slice(-400);acaEcrire(d);"
+             "const c=file.shift();if(!ok)file.splice(Math.min(3,file.length),0,c);if(!file.length){el.innerHTML=\"<div>Bravo, plus rien à revoir pour l'instant.<small style='margin-top:12px'>Reviens demain : les cartes reviendront au bon moment.</small></div>\";cur=null;stat();return;}montre();};"
+             "document.getElementById('rev-oui').onclick=()=>note(true);document.getElementById('rev-non').onclick=()=>note(false);"
+             "vus.onchange=()=>{d.rev_vus=vus.checked?1:0;acaEcrire(d);charge();};"
+             "document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')note(true);else if(e.key==='ArrowLeft')note(false);else if(e.key===' '&&e.target!==el){e.preventDefault();retourne();}});"
+             "charge();})();</script>"
              "<nav class='aca-nav'><a class='btn ghost' href='../formation.html'>Retour à l'Académie</a></nav>")
     chemin = "formation/revision.html"
     return chemin, seo._page(base, f"Fiches de révision Bourse : flashcards gratuites | {seo.NOM}",

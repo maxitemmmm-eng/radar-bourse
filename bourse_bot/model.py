@@ -481,30 +481,6 @@ def _ajouter_rangs(jeu: pd.DataFrame) -> pd.DataFrame:
     return ajouter_transversal(jeu, par_date=True)
 
 
-def _ajouter_memoire(m: pd.DataFrame, horizon: int) -> None:
-    """Version 58 : « mémoire du titre » (voir comprendre.MEMOIRE). Un mois ne compte qu'une fois terminé : décalage de
-    `horizon` séances, aucune information du futur."""
-    futur = m["rendement_futur"]
-    chute = (futur < -0.10).astype(float).where(futur.notna()).shift(horizon)
-    lv = m["vol_futur"].where(np.isfinite(m["vol_futur"]))
-    v = lv.shift(horizon)
-    surprise = (lv - np.log(m["vol_20j"].where(m["vol_20j"] > 0))).shift(horizon)
-    m["mem_chute"] = chute.expanding(min_periods=60).mean()
-    m["mem_chute_r"] = chute.ewm(halflife=250, min_periods=60).mean()
-    m["mem_vol"] = v.expanding(min_periods=60).mean()
-    m["mem_vol_r"] = v.ewm(halflife=250, min_periods=60).mean()
-    m["mem_surprise"] = surprise.ewm(halflife=120, min_periods=40).mean()
-
-
-def ajouter_normale(m: pd.DataFrame) -> None:
-    """Version 63 : « l'écart à sa normale » — l'agitation récente comparée à celle de l'année passée du même titre
-    (médiane sur 250 séances) et des 3 derniers mois. Seulement le passé. Testé sur 257 322 cas jamais vus (2014-2026) :
-    « plus ou moins agité ? » 70,25 % → 70,52 % (marge +0,07 à +0,44 point), erreur plus faible 11 années sur 13."""
-    lv = np.log(m["vol_20j"].clip(lower=1e-4))
-    m["vol_normale"] = lv - np.log(m["vol_20j"].rolling(250, min_periods=120).median().clip(lower=1e-4))
-    m["vol_normale_60"] = lv - np.log(m["vol_20j"].rolling(60, min_periods=40).mean().clip(lower=1e-4))
-
-
 def construire_jeu(donnees: dict[str, pd.DataFrame], marches: dict[str, str], horizon: int) -> pd.DataFrame:
     morceaux = []
     futurs = {t: d["Close"].shift(-horizon) / d["Close"] - 1 for t, d in donnees.items()}
@@ -525,8 +501,6 @@ def construire_jeu(donnees: dict[str, pd.DataFrame], marches: dict[str, str], ho
             m["ecart_futur"] = np.nan
         m["ticker"] = ticker
         m["marche"] = marches.get(ticker, "?")
-        _ajouter_memoire(m, horizon)
-        ajouter_normale(m)
         morceaux.append(m.iloc[252:])
     jeu = pd.concat(morceaux).sort_index()
     # rang du rendement futur parmi tous les titres du même jour (cible des IA « classement »)
@@ -1090,60 +1064,6 @@ def entrainer_et_predire(donnees, marches, horizon: int = config.HORIZON_PREDICT
 
 
 DOSSIER_MODELES = ".cache_modeles"
-_POUR_ETENDU: dict | None = None
-
-
-def predire_autres(lignes: list) -> dict:
-    """Version 67.5 : l'avis des IA du site pour des titres qu'elles ne suivent pas (fiches simples).
-    lignes : une ligne d'indicateurs par titre (dernier jour). Les classements entre titres sont calculés comme si
-    chaque titre faisait partie des titres du site, sans changer l'avis donné à ces derniers. La « mémoire » du titre
-    (son passé de prévisions) n'existe pas pour eux : elle est laissée vide, comme pour un titre nouveau."""
-    P = _POUR_ETENDU
-    if not P or not lignes:
-        return {}
-    actuel = P["actuel"]
-    X = pd.concat(lignes).reset_index(drop=True)
-    X["est_crypto"] = 0.0
-    for c in COLS_RANG:
-        if c in actuel.columns and c in X.columns:
-            ref = np.sort(actuel[c].dropna().to_numpy(dtype=float))
-            v = X[c].to_numpy(dtype=float)
-            X[f"rang_{c}"] = np.where(np.isfinite(v), (np.searchsorted(ref, v, "right") + 1) / (len(ref) + 1), np.nan) if len(ref) else np.nan
-    for c in ("ret_126j", "mom_ajuste_126"):
-        if c in actuel.columns and c in X.columns:
-            ref = np.sort(actuel.loc[actuel["est_crypto"] == 0, c].dropna().to_numpy(dtype=float))
-            v = X[c].to_numpy(dtype=float)
-            X[f"rangm_{c}"] = np.where(np.isfinite(v), (np.searchsorted(ref, v, "right") + 1) / (len(ref) + 1), np.nan) if len(ref) else np.nan
-    for c in ("marche_largeur", "marche_dispersion"):
-        if c in actuel.columns:
-            X[c] = float(actuel[c].iloc[0])
-    for c in actuel.columns:
-        if c not in X.columns:
-            X[c] = np.nan
-    X = X[list(actuel.columns)]
-    final, _q1, _q2 = P["decision"](X)
-    out = {}
-    for t, p in zip(X["ticker"], final):
-        if np.isfinite(p):
-            out[t] = {"proba": float(p)}
-    if P.get("risque"):
-        try:
-            modele, vs = P["risque"]
-            lp = modele.predict(X[vs])
-            for t, l in zip(X["ticker"], lp):
-                if t in out and np.isfinite(l):
-                    out[t]["vol"] = float(np.exp(l))
-        except Exception:
-            pass
-    return out
-
-
-def _signature_risque():
-    try:
-        from . import autoreglage
-        return autoreglage.signature()
-    except Exception:
-        return ""
 
 
 def _cle_modeles(variables, par_marche, params, mode, calibs, evaluation):
@@ -1152,7 +1072,7 @@ def _cle_modeles(variables, par_marche, params, mode, calibs, evaluation):
     import hashlib
     sig = json.dumps([sorted(variables), bool(par_marche), params or {}, mode, sorted(k for k, v in calibs.items() if v is not None),
                       getattr(evaluation, "date_evaluation", ""), datetime.now().strftime("%Y-%m-%d"),
-                      bool((evaluation.risque or {}).get("prouve")), sorted(VARIABLES), _signature_risque()], sort_keys=True, default=str)
+                      bool((evaluation.risque or {}).get("prouve")), sorted(VARIABLES)], sort_keys=True, default=str)
     return hashlib.sha256(sig.encode()).hexdigest()[:20]
 
 
@@ -1205,17 +1125,8 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
         ligne = d[FEATURES].iloc[[-1]].copy()
         ligne["est_crypto"] = float(marches.get(ticker) == "crypto")
         ligne["ticker"] = ticker
-        try:    # version 63 : écart à sa normale, au dernier jour
-            n = d[["vol_20j"]].iloc[-260:].copy()
-            ajouter_normale(n)
-            ligne["vol_normale"], ligne["vol_normale_60"] = float(n["vol_normale"].iloc[-1]), float(n["vol_normale_60"].iloc[-1])
-        except Exception:
-            ligne["vol_normale"], ligne["vol_normale_60"] = np.nan, np.nan
         dernieres.append(ligne)
     actuel = pd.concat(dernieres).reset_index(drop=True)
-    for c in comprendre.MEMOIRE:   # version 58 : la mémoire de chaque titre, à jour au dernier mois terminé
-        if c in jeu.columns:
-            actuel[c] = actuel["ticker"].map(jeu.groupby("ticker")[c].last())
     ajouter_transversal(actuel, par_date=False)
     garde = actuel["ticker"].isin(list(donnees)).to_numpy()
     tks = actuel["ticker"].to_numpy()
@@ -1244,26 +1155,6 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
             utiliser_ia=bool((evaluation.risque or {}).get("prouve")), mod=(cache or {}).get("risque"))
     except Exception:
         evaluation.risque_titres, mod_risque = {}, None
-    try:   # version 63 : avis sûrs (écart net entre l'agitation prévue et l'agitation récente)
-        av = (evaluation.risque or {}).get("avis_surs") or {}
-        seuil, seuil_t = av.get("seuil"), (av.get("tres") or {}).get("seuil")
-        if seuil and np.isfinite(seuil):
-            for r in evaluation.risque_titres.values():
-                if r.get("recent"):
-                    r["sur"] = bool(abs(np.log(r["recent"])) >= seuil)
-                    if seuil_t and np.isfinite(seuil_t):
-                        r["tres_sur"] = bool(abs(np.log(r["recent"])) >= seuil_t)
-                        if (av.get("tres") or {}).get("accord"):   # version 66 : accord avec la règle « retour vers sa normale »
-                            nm = r.get("normale")
-                            r["tres_sur"] = bool(r["tres_sur"] and nm is not None and (nm < 0) == (r["recent"] > 1))
-    except Exception:
-        pass
-    try:   # version 48 : l'agitation sur une semaine (modèle simple, testé sur les vrais cours)
-        for t, mv in comprendre.agitation_semaine(donnees).items():
-            if t in evaluation.risque_titres:
-                evaluation.risque_titres[t]["semaine"] = mv
-    except Exception:
-        pass
     mod_chute = (cache or {}).get("chute")
     try:   # risque de forte chute, seulement s'il a fait ses preuves sur des années jamais vues
         if ((evaluation.risque or {}).get("chute") or {}).get("prouve"):
@@ -1273,9 +1164,6 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
                     evaluation.risque_titres[t]["chute"] = pv
     except Exception:
         mod_chute = None
-    global _POUR_ETENDU   # version 67.5 : de quoi donner l'avis de la même IA aux 2 000+ actions des fiches simples
-    _POUR_ETENDU = {"decision": decision, "actuel": actuel,
-                    "risque": mod_risque if bool((evaluation.risque or {}).get("prouve")) else None}
     if not cache:
         _sauver_modeles({"cle": cle, "ia1": ia1, "ia2": ia2, "vs_q": vs_q, "mods_q": mods_q, "rel": modele_rel,
                          "risque": mod_risque, "refs": locals().get("refs"), "chute": mod_chute})

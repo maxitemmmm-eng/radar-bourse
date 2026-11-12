@@ -25,8 +25,19 @@ def _jl_faq(faq):
 
 def fonctionnalites(payload):
     n = len(payload.get("titres", []))
+    try:   # version 77 : plus aucun nombre écrit en dur (ils finissaient par se contredire d'une page à l'autre)
+        from .langues import NOMS_LANGUES
+        n_langues = len(NOMS_LANGUES)
+    except Exception:
+        n_langues = 28
+    try:
+        from .formation import CHAPITRES
+        from .formation_plus import LABOS
+        n_chap, n_labos = sum(1 for c in CHAPITRES if not c.get("cas")), sum(len(v) for v in LABOS.values())
+    except Exception:
+        n_chap, n_labos = 40, 13
     return [
-        ("Prévisions à un mois pour près de 300 titres", f"{n} actions, ETF et cryptos analysés chaque heure : de combien le prix peut bouger, "
+        (f"Prévisions à un mois pour {n} titres", f"{n} actions, ETF et cryptos analysés chaque heure : de combien le prix peut bouger, "
          "le risque d'une forte chute, et les chances de faire mieux que son marché.", "index.html#previsions", "fonction:previsions"),
         ("Simulateur boursier et portefeuille virtuel", "10 000 € fictifs pour acheter et vendre sans risque, suivre tes gains et comparer avec l'IA.",
          "simulateur-boursier.html", "simulateur-boursier.html"),
@@ -42,8 +53,10 @@ def fonctionnalites(payload):
         ("Classements du jour", "Les titres les plus agités, les plus calmes, les plus à risque, par marché.", "classements.html", "classements.html"),
         ("Résultats réels publiés", "Chaque prévision est vérifiée après coup et publiée, ratés compris.", "resultats.html", "resultats.html"),
         ("Suivi du risque de chute", "Chaque mois, les titres jugés à risque : ont-ils vraiment chuté ?", "suivi-chute.html", "suivi-chute.html"),
+        ("L'Académie : apprendre de zéro", f"{n_chap} chapitres courts avec exercices corrigés, {n_labos} simulateurs à manipuler, "
+         "un entraînement de 3 minutes par jour, des fiches de révision et un examen final avec certificat.", "formation.html", "formation.html"),
         ("Guides et mini-cours", "Plus de 90 guides honnêtes et 8 mini-cours pour débuter en Bourse et en crypto.", "guides.html", "guides.html"),
-        ("En 14 langues", "Les prévisions en anglais, espagnol, allemand, arabe, chinois, japonais…", "en/index.html", "fonction:langues"),
+        (f"En {n_langues} langues", "Les prévisions en anglais, espagnol, allemand, arabe, chinois, japonais…", "en/index.html", "fonction:langues"),
     ]
 
 
@@ -66,7 +79,7 @@ def _page_fonctionnalites(base, payload, csp):
              "<p><a class='btn' href='index.html'>Ouvrir l'appli</a></p>")
     jl = seo._jsonld_liste(base, "Les fonctionnalités de Radar Bourse", chemin, [(t, l) for t, _, l, _ in F])
     return chemin, seo._page(base, f"Fonctionnalités : prévisions IA, simulateur boursier, outils | {NOM}",
-                             "Tout ce que fait Radar Bourse : prévisions IA pour près de 300 actions et cryptos, simulateur boursier avec "
+                             f"Tout ce que fait Radar Bourse : prévisions IA pour {len(payload.get('titres', []))} actions et cryptos, Académie gratuite, simulateur boursier avec "
                              "portefeuille virtuel, outils gratuits, comparateur, guides. Gratuit et sans compte.", chemin, corps, jl, csp=csp)
 
 

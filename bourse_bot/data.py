@@ -142,58 +142,18 @@ def _yahoo(tickers: list[str], progres=None, periode_forcee: str | None = None) 
 # ----------------------------------------------------------------------------
 # Sources de secours (si Yahoo ne répond pas pour un titre)
 # ----------------------------------------------------------------------------
-def _json_web(url: str, timeout: int = 15):
-    """Lit une adresse JSON. On essaie d'abord « requests » (certificats à jour via certifi : sur certains PC
-    Windows, urllib échoue sur les certificats et la source de secours ne marchait jamais), puis urllib."""
-    try:
-        import requests
-        r = requests.get(url, headers={"User-Agent": "radar-bourse"}, timeout=timeout)
-        if r.ok:
-            return r.json()
-    except Exception:
-        pass
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "radar-bourse"})
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return json.load(r)
-    except Exception:
-        return None
-
-
-def _cryptocompare(ticker: str) -> pd.DataFrame:
-    """Deuxième secours pour les cryptos (CryptoCompare, sans clé) : jusqu'à ~5 ans de bougies quotidiennes."""
-    if not ticker.endswith("-USD"):
-        return pd.DataFrame()
-    sym = config.symbole_binance(ticker)[:-4]
-    j = _json_web(f"https://min-api.cryptocompare.com/data/v2/histoday?fsym={sym}&tsym=USD&limit=2000")
-    lignes = ((j or {}).get("Data") or {}).get("Data") if isinstance(j, dict) else None
-    if not lignes:
-        return pd.DataFrame()
-    df = pd.DataFrame(lignes)
-    if not {"time", "open", "high", "low", "close"} <= set(df.columns):
-        return pd.DataFrame()
-    df = df[df["close"] > 0]
-    out = pd.DataFrame({"Open": df["open"], "High": df["high"], "Low": df["low"], "Close": df["close"],
-                        "Volume": df.get("volumeto", 0)}).astype(float)
-    out.index = pd.to_datetime(df["time"], unit="s").dt.normalize()
-    return _nettoyer(out)
-
-
-def _secours_crypto(ticker: str) -> pd.DataFrame:
-    """Binance d'abord ; si l'historique est absent ou court, CryptoCompare. On garde le plus long."""
-    a = _binance(ticker)
-    if len(a) >= 700:
-        return a
-    b = _cryptocompare(ticker)
-    return b if len(b) > len(a) else a
-
-
 def _binance(ticker: str) -> pd.DataFrame:
     """Cryptos : bougies quotidiennes Binance (point d'accès public de données de marché)."""
     if not ticker.endswith("-USD"):
         return pd.DataFrame()
     symbole = config.symbole_binance(ticker)
-    lignes = _json_web(f"https://data-api.binance.vision/api/v3/klines?symbol={symbole}&interval=1d&limit=1000")
+    url = f"https://data-api.binance.vision/api/v3/klines?symbol={symbole}&interval=1d&limit=1000"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "radar-bourse"})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            lignes = json.load(r)
+    except Exception:
+        return pd.DataFrame()
     if not isinstance(lignes, list) or not lignes:
         return pd.DataFrame()
     df = pd.DataFrame([l[:6] for l in lignes], columns=["t", "Open", "High", "Low", "Close", "Volume"])
@@ -247,26 +207,12 @@ def telecharger_plusieurs(tickers: list[str], max_age_h: float | None = None, pr
         SOURCES_UTILISEES.update({t: "Démo" for t in tickers})
         return {t: cours_synthetiques(t) for t in tickers}
 
-    # un fichier en cache presque vide (ex. Toncoin : Yahoo ne renvoie que le jour même) n'est pas gardé :
-    # on retente le téléchargement, et les sources de secours, à chaque fois
-    resultats = {t: df for t in tickers if len(df := _lire_cache(t, max_age_h)) >= 30}
+    resultats = {t: df for t in tickers if not (df := _lire_cache(t, max_age_h)).empty}
     for t in resultats:
         SOURCES_UTILISEES.setdefault(t, "Yahoo (cache récent)")
-    # version 48 : certaines cryptos ne passent pas par Yahoo (symboles ambigus) : Binance, puis CryptoCompare
-    for t in [t for t in tickers if t in getattr(config, "CRYPTOS_SANS_YAHOO", ()) and t not in resultats]:
-        df = _secours_crypto(t)
-        if len(df) >= 260:
-            df.to_csv(_chemin_cache(t))
-            resultats[t] = df
-            SOURCES_UTILISEES[t] = "Binance / CryptoCompare"
-        elif not (vieux := _lire_cache(t, None)).empty:
-            resultats[t] = vieux
-            SOURCES_UTILISEES[t] = "ancien cache"
-    tickers = [t for t in tickers if t not in getattr(config, "CRYPTOS_SANS_YAHOO", ()) or t in resultats]
-    sans_yahoo = set(getattr(config, "CRYPTOS_SANS_YAHOO", ()))
     # Mise à jour express : pour les titres déjà en mémoire (moins de 10 jours), on ne télécharge que le
     # dernier mois et on le colle à l'historique. Bien plus rapide, et Yahoo bloque moins.
-    anciens = {t: df for t in tickers if t not in resultats and t not in sans_yahoo and len(df := _lire_cache(t, 24 * 10)) > 200}
+    anciens = {t: df for t in tickers if t not in resultats and len(df := _lire_cache(t, 24 * 10)) > 200}
     if anciens:
         recents = _yahoo(list(anciens), periode_forcee="1mo")
         for t, neuf in recents.items():
@@ -301,7 +247,7 @@ def telecharger_plusieurs(tickers: list[str], max_age_h: float | None = None, pr
             return (maintenant - dernier.normalize()).days > (4 if t.endswith("-USD") else 8)
         for t in a_telecharger:   # secours : Binance pour les cryptos, Stooq pour le reste
             if douteux(frais.get(t), t):
-                df = _secours_crypto(t) if t.endswith("-USD") else _stooq(t)
+                df = _binance(t) if t.endswith("-USD") else _stooq(t)
                 if len(df) >= 260 and (frais.get(t) is None or not douteux(df, t)):
                     frais[t] = df
                     SOURCES_UTILISEES[t] = "Binance" if t.endswith("-USD") else "Stooq"
@@ -322,16 +268,6 @@ def telecharger(ticker: str) -> pd.DataFrame:
 # ----------------------------------------------------------------------------
 # Titres "en tendance"
 # ----------------------------------------------------------------------------
-def nom_propre(nom: str) -> str:
-    """Version 56 : noms Yahoo plus propres (« BrightSpring Health Services, I » → « BrightSpring Health Services »,
-    « Nokia Corporation Sponsored » → « Nokia Corporation »)."""
-    n = re.sub(r"\s+", " ", str(nom or "")).strip()
-    n = re.sub(r"\s+(Sponsored|Sponsored ADR|ADR|American Depositary Shares?|Common Stock|Class [A-Z]( Common Stock)?)$", "", n, flags=re.I)
-    n = re.sub(r",?\s+[A-Za-z]{1,2}\.?$", "", n) if re.search(r",\s*[A-Za-z]{1,2}\.?$", n) else n   # « …, I » coupé par Yahoo
-    n = re.sub(r"[,;\s]+$", "", n)
-    return n or str(nom)
-
-
 def tendances_actions(n: int = 15) -> dict[str, str]:
     """Plus fortes hausses et titres les plus échangés du jour (marché US, via Yahoo)."""
     if DEMO:
@@ -346,7 +282,7 @@ def tendances_actions(n: int = 15) -> dict[str, str]:
                 prix = q.get("regularMarketPrice") or 0
                 capi = q.get("marketCap") or 0
                 if q.get("quoteType", "EQUITY") == "EQUITY" and prix >= 5 and capi >= 2e9:
-                    out[q["symbol"]] = nom_propre(q.get("longName") or q.get("shortName") or q["symbol"])
+                    out[q["symbol"]] = q.get("shortName") or q["symbol"]
     except Exception:
         pass  # le screener Yahoo change parfois de format : on continue sans
     return out
@@ -374,7 +310,7 @@ def tendances_crypto() -> dict[str, str]:
 
 
 def devise(ticker: str) -> str:
-    if ticker.endswith(config.SUFFIXES_EURO) or ticker in ("^FCHI", "^STOXX50E"):
+    if ticker.endswith((".PA", ".AS", ".DE", ".MI", ".MC")) or ticker in ("^FCHI", "^STOXX50E"):
         return "€"
     return "$"
 
