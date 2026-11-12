@@ -111,12 +111,12 @@ jobs:
       # version 69.2 : GitHub limite l'attente à 10 minutes ; si la publication n'a pas fini, on réessaie une fois
       - id: deploiement
         continue-on-error: true
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
         with:
           timeout: 600000
       - id: deploiement2
         if: steps.deploiement.outcome == 'failure'
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
         with:
           timeout: 600000
 
