@@ -637,6 +637,7 @@ def suivre(complet, rid):
     """Version 76 : suit l'exécution sans s'arrêter sur une erreur passagère de GitHub (avant : « failed to get jobs: HTTP 502 » = échec).
     Renvoie (conclusion, jobs) ; conclusion = "success", "failure", "cancelled"… ou None si GitHub est resté injoignable très longtemps."""
     debut, dernier_texte, injoignable = time.time(), "", 0
+    dernier_affichage = debut
     while time.time() - debut < 4 * 3600:
         etat = _etat_run(complet, rid)
         if etat is None:
@@ -650,10 +651,21 @@ def suivre(complet, rid):
         jobs = {j.get("name"): j for j in etat.get("jobs", [])}
         en_cours = [n for n, j in jobs.items() if j.get("status") != "completed"]
         faits = [n for n, j in jobs.items() if j.get("status") == "completed"]
-        texte = (f"En cours : {', '.join(en_cours)}" if en_cours else ("Fin" if faits else "Préparation…")) + (f" · terminé : {', '.join(faits)}" if faits else "")
-        if texte != dernier_texte:
-            info(f"{datetime.now().strftime('%H:%M')} · {texte}")
-            dernier_texte = texte
+        # version 79 : on affiche l'étape précise en cours, en mots simples, et le temps écoulé
+        noms = {"Analyser les marchés et générer le site": "le robot refait la sélection de l'IA, calcule les prévisions et fabrique les pages",
+                "Installer les dépendances": "préparation", "Run actions/upload-pages-artifact@v3": "envoi du site vers l'hébergeur",
+                "Run actions/deploy-pages@v4": "mise en ligne des pages", "Prévenir les moteurs de recherche": "envoi aux moteurs de recherche"}
+        etape_txt = ""
+        for n in en_cours:
+            for st in jobs[n].get("steps") or []:
+                if st.get("status") == "in_progress":
+                    nom = st.get("name", "")
+                    etape_txt = noms.get(nom, "") or ("sauvegarde de l'historique" if nom.startswith("Sauvegarder") else "")
+        texte = ("Publication des pages" if "publier" in en_cours else "Construction du site" if en_cours else ("Fin" if faits else "Préparation…")) \
+            + (f" : {etape_txt}" if etape_txt else "")
+        if texte != dernier_texte or time.time() - dernier_affichage > 600:   # un signe de vie toutes les 10 minutes
+            info(f"{datetime.now().strftime('%H:%M')} · {texte} (depuis {int((time.time() - debut) // 60)} min)")
+            dernier_texte, dernier_affichage = texte, time.time()
         if etat.get("status") == "completed":
             return etat.get("conclusion"), {n: j.get("conclusion") for n, j in jobs.items()}
         time.sleep(45)
@@ -661,7 +673,7 @@ def suivre(complet, rid):
 
 
 def publier(complet, login):
-    etape(10, "Publication (environ 1 heure : le robot recalcule tout le site)")
+    etape(10, "Publication (environ 1 heure : le robot recalcule tout, pour la meilleure qualité)")
     depuis = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if SIMULATION:
         run([GH, "workflow", "run", "radar.yml", "-R", complet])
@@ -687,7 +699,9 @@ def publier(complet, login):
         stop("La mise à jour automatique ne démarre pas. Ouvre https://github.com/"
              f"{complet}/actions, active les workflows si GitHub le demande, puis relance ce script.")
 
-    info("Le robot GitHub télécharge les cours, entraîne le modèle et construit le site.")
+    info("Le robot GitHub télécharge les cours, calcule les prévisions et construit le site.")
+    info("Comme à chaque nouvelle version, l'IA refait sa sélection complète : environ 1 heure, pour la meilleure qualité.")
+    info("Si une mise à jour automatique est déjà en cours sur GitHub, la tienne attend qu'elle finisse.")
     info("Tu peux suivre ici. Si tu fermes la fenêtre, ce n'est pas grave : GitHub continue tout seul.")
     rid = str(r["databaseId"])
     conclusion, jobs = suivre(complet, rid)

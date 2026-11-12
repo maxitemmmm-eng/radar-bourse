@@ -256,6 +256,22 @@ body.titre-ouvert{overflow:hidden}
 .te-carte[aria-selected="true"] .te-entrer{opacity:1}
 .te-carte[aria-selected="true"]::before{content:"▶";position:absolute;left:-26px;top:50%;transform:translateY(-50%);color:#44e09c;font-size:16px}
 @media (max-width:980px){.te-carte[aria-selected="true"]::before{display:none}}
+@media (min-width:900px){.te-boite{width:min(1040px,100%)}.te-choix{grid-template-columns:repeat(3,1fr)}}
+.te-jour{margin:24px auto 0;max-width:1040px;text-align:left}
+.te-jour-titre{margin:0 0 8px;font-size:13px;font-weight:700;color:#9fb0cc;letter-spacing:.04em}
+.te-tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+@media (max-width:640px){.te-tuiles{grid-template-columns:1fr 1fr}}
+.te-tuile{display:block;padding:12px 14px;border-radius:14px;border:1px solid rgba(134,168,255,.18);background:rgba(17,28,52,.7);color:#e8eef8;text-decoration:none;transition:border-color .15s,transform .15s}
+.te-tuile:hover,.te-tuile:focus-visible{border-color:#44e09c;transform:translateY(-2px);outline:none}
+.te-tuile small{display:block;font-size:12px;color:#9fb0cc}.te-tuile b{display:block;font-size:19px;font-variant-numeric:tabular-nums;margin:2px 0}
+.te-tuile span{font-size:12.5px;color:#b9c6dc}.te-tuile .up{color:#44e09c}.te-tuile .down{color:#ff7a7a}
+.te-question{margin-top:10px;padding:12px 14px;border-radius:14px;border:1px solid rgba(134,168,255,.18);background:rgba(17,28,52,.7);display:grid;grid-template-columns:1fr auto;gap:4px 14px;align-items:center}
+.te-q-sur{margin:0;font-size:12px;color:#9fb0cc;grid-column:1/-1}.te-q{margin:0;font-size:15px;color:#e8eef8}
+.te-q-choix{display:flex;gap:6px}.te-q-choix button{font:inherit;font-size:13.5px;font-weight:700;padding:6px 14px;border-radius:99px;border:1px solid rgba(134,168,255,.35);background:transparent;color:#e8eef8;cursor:pointer}
+.te-q-choix button:hover,.te-q-choix button:focus-visible{border-color:#44e09c;outline:none}
+.te-q-choix button.ok{background:#1d6b47;border-color:#44e09c}.te-q-choix button.ko{background:#6b1d24;border-color:#ff7a7a}
+.te-q-rep{margin:0;grid-column:1/-1;font-size:13.5px;color:#b9c6dc}.te-q-rep:empty{display:none}
+@media (max-width:640px){.te-question{grid-template-columns:1fr}}
 .te-raccourcis{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:22px auto 0;max-width:760px}
 .te-raccourcis a{padding:7px 13px;border-radius:99px;border:1px solid rgba(134,168,255,.25);color:#cfd9ea;text-decoration:none;font-size:13.5px;background:rgba(17,28,52,.6)}
 .te-raccourcis a:hover,.te-raccourcis a:focus-visible{border-color:#44e09c;color:#fff;outline:none}
@@ -1040,7 +1056,17 @@ html.calme *{animation:none!important;transition:none!important}
         <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M4 18 L24 9 L44 18 L24 27 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 22 V32 C16 36 32 36 36 32 V22" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M44 18 V30" stroke="#f2c14e" stroke-width="3" stroke-linecap="round"/></svg>
         <b>L'Académie</b><span>Apprendre la Bourse et la crypto de zéro : des leçons courtes avec exercices corrigés, des simulateurs à manipuler, un entraînement de 3 minutes par jour et un examen final avec certificat.</span>
         <em id="te-aca-info">Gratuit, sans compte</em><i class="te-entrer">Entrer ›</i></a>
+      <a class="te-carte" href="#prono" data-choix="defi" role="option" aria-selected="false">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 8h20v8a10 10 0 0 1-20 0z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M14 11H8a6 6 0 0 0 7 8M34 11h6a6 6 0 0 1-7 8M24 26v8M16 40h16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+        <b>Le Défi du jour</b><span>Choisis hausse ou baisse sur quelques titres, puis compare ton score à celui de l'IA. Une partie par jour, sans argent réel.</span>
+        <em id="te-defi-info">Une nouvelle partie chaque jour</em><i class="te-entrer">Jouer ›</i></a>
     </div>
+    <section class="te-jour" aria-label="Aujourd'hui en un coup d'œil">
+      <p class="te-jour-titre">Aujourd'hui</p>
+      <div class="te-tuiles" id="te-tuiles"></div>
+      <div class="te-question" id="te-question" hidden><p class="te-q-sur">Question du jour</p><p class="te-q" id="te-q"></p>
+        <div class="te-q-choix"><button type="button" data-r="1">Vrai</button><button type="button" data-r="0">Faux</button></div><p class="te-q-rep" id="te-q-rep" role="status"></p></div>
+    </section>
     <nav class="te-raccourcis" aria-label="Raccourcis">
       <a href="prediction-crypto.html">Prédiction crypto</a><a href="prediction-bourse.html">Prédiction bourse</a><a href="#prono" data-ferme="1">Pronostic du jour</a>
       <a href="toutes-les-actions.html">Toutes les actions</a><a href="formation/test-de-niveau.html">Test de niveau</a><a href="formation/revision.html">Révisions express</a>
@@ -4601,9 +4627,51 @@ document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#legal"
     try{ const a = JSON.parse(localStorage.getItem("radar-academie") || "{}") || {}; const f = Object.values(a).filter(x => x && x.fait).length;
       if(f) $("#te-aca-info").textContent = `${f} ${"chapitre(s) validé(s) · reprends où tu en étais"}`; }catch(e){}
     const fermer = () => { z.hidden = true; document.body.classList.remove("titre-ouvert"); try{ sessionStorage.setItem("radar-titre-vu", "1"); }catch(e){} };
+    // version 81 : « Aujourd'hui » — le climat du jour, le bitcoin, l'agitation, la fiabilité vérifiée, ta série ; et une question du jour
+    if(document.documentElement.lang === "en"){ const j = z.querySelector(".te-jour"); if(j) j.hidden = true; }
+    else try{
+      const T = (DATA.titres || []).filter(t => t.marche !== "tendances" && t.proba_hausse != null);
+      const fmtP = (v, dev) => v == null ? "–" : v.toLocaleString("fr-FR", {maximumFractionDigits: v >= 1000 ? 0 : 2}) + (dev === "EUR" || dev === "€" ? " €" : dev === "USD" || dev === "$" ? " $" : dev ? " " + dev : "");
+      const tuiles = [];
+      if(T.length){ const h = T.filter(t => t.proba_hausse >= .5).length, pc = Math.round(h / T.length * 100);
+        tuiles.push(`<a class="te-tuile" href="prediction-bourse.html"><small>Climat du jour</small><b class="${pc >= 50 ? "up" : "down"}">${pc} %</b><span>des titres vus en hausse par l'IA sur un mois</span></a>`); }
+      const btc = (DATA.titres || []).find(t => t.ticker === "BTC-USD");
+      if(btc){ const p = btc.proba_hausse;
+        tuiles.push(`<a class="te-tuile" href="titres/btc-usd.html"><small>Bitcoin</small><b>${fmtP(btc.prix, btc.devise)}</b><span class="${p >= .5 ? "up" : "down"}">${p == null ? "Avis indisponible" : (p >= .5 ? "↑ " : "↓ ") + Math.round(p * 100) + " chances sur 100 de hausse"}</span></a>`); }
+      const mv = T.map(t => (t.risque_prevu || {}).mouvement).filter(v => v > 0).sort((a, b) => a - b);
+      if(mv.length){ const med = mv[Math.floor(mv.length / 2)];
+        tuiles.push(`<a class="te-tuile" href="krach-boursier.html"><small>Agitation prévue</small><b>±${Math.round(med * 100)} %</b><span>pour un titre typique le mois prochain</span></a>`); }
+      const fo = (DATA.suivi || {}).fourchette || {};
+      if(fo.nb >= 30) tuiles.push(`<a class="te-tuile" href="resultats.html"><small>Fiabilité vérifiée</small><b>${Math.round(fo.taux * 100)} %</b><span>des fourchettes tenues sur ${fo.nb.toLocaleString("fr-FR")} vérifiées</span></a>`);
+      else if((DATA.suivi || {}).nb_verifiees) tuiles.push(`<a class="te-tuile" href="resultats.html"><small>Résultats vérifiés</small><b>${DATA.suivi.nb_verifiees.toLocaleString("fr-FR")}</b><span>prévisions vérifiées un mois après</span></a>`);
+      try{ const a = JSON.parse(localStorage.getItem("radar-academie") || "{}") || {}; const jours = new Set(a.jours || []);
+        const j = d => { const x = new Date(d); return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0"); };
+        let s = 0, t0 = Date.now(); if(!jours.has(j(t0))) t0 -= 864e5; while(jours.has(j(t0))){ s++; t0 -= 864e5; }
+        if(s > 0) tuiles.push(`<a class="te-tuile" href="formation.html"><small>Ta série à l'Académie</small><b>${s} jour${s > 1 ? "s" : ""}</b><span>Fais un exercice aujourd'hui pour la garder</span></a>`);
+      }catch(e2){}
+      $("#te-tuiles").innerHTML = tuiles.slice(0, 4).join("");
+      const QS = [["Un ETF permet d'acheter en une fois un panier de nombreuses entreprises.", 1, "Un ETF copie un indice : en une seule opération, tu détiens un petit bout de dizaines ou de milliers d'entreprises."],
+        ["Le dividende d'une action est garanti chaque année.", 0, "Il est voté chaque année par l'assemblée générale : il peut baisser ou être supprimé."],
+        ["Si un placement perd 50 %, il doit regagner 100 % pour revenir au point de départ.", 1, "1 000 € → 500 € : il faut doubler pour retrouver 1 000 €."],
+        ["Dans un PEA, les gains ne sont pas imposés tant que l'argent reste dans le plan.", 1, "Achats, ventes et dividendes ne sont pas taxés tant que l'argent reste dans le PEA."],
+        ["Échanger une crypto contre une autre crypto est imposé en France au moment de l'échange.", 0, "Non : l'impôt est reporté jusqu'à la sortie en euros (ou au paiement d'un bien)."],
+        ["Quand les taux d'intérêt montent, le prix des obligations déjà émises baisse en général.", 1, "Les nouvelles obligations rapportent plus : les anciennes valent moins."],
+        ["Avec un effet de levier de 5, une baisse de 20 % fait perdre toute la mise.", 1, "5 × 20 % = 100 % de la mise."],
+        ["Une IA de Bourse sérieuse peut prédire le cours de demain avec certitude.", 0, "Aucune ne le peut : à un jour, le hasard domine. Méfie-toi de qui promet le contraire."],
+        ["La diversification réduit le risque lié à une seule entreprise.", 1, "Avec 50 entreprises, la faillite de l'une ne pèse que 2 % du total."],
+        ["Le bitcoin verse des dividendes à ses détenteurs.", 0, "Une crypto n'est pas une entreprise : elle ne fait pas de bénéfices et ne verse rien."],
+        ["En 2026, la flat tax sur les gains d'un compte-titres est de 31,4 %.", 1, "12,8 % d'impôt sur le revenu + 18,6 % de prélèvements sociaux."],
+        ["Une phrase de récupération crypto peut être donnée au support d'une plateforme sérieuse.", 0, "Jamais : celui qui a ta phrase de récupération a tes cryptos."]];
+      const jour = Math.floor(Date.now() / 864e5), q = QS[jour % QS.length], box = $("#te-question");
+      $("#te-q").textContent = "Vrai ou faux ? " + q[0]; box.hidden = false;
+      box.querySelectorAll("button").forEach(b => b.onclick = () => { const bon = +b.dataset.r === q[1];
+        box.querySelectorAll("button").forEach(x => { x.disabled = true; if(+x.dataset.r === q[1]) x.classList.add("ok"); else if(x === b) x.classList.add("ko"); });
+        $("#te-q-rep").innerHTML = (bon ? "<b>Bien vu.</b> " : "<b>Raté.</b> ") + q[2] + " <a href='formation.html' style='color:#86a8ff'>Apprendre à l'Académie</a>"; });
+    }catch(e){}
     cartes.forEach((c, j) => { c.addEventListener("mouseenter", () => choisir(j)); c.addEventListener("click", e => {
       try{ localStorage.setItem("radar-dernier-espace", c.dataset.choix); sessionStorage.setItem("radar-titre-vu", "1"); }catch(e2){}
-      if(c.dataset.choix === "radar"){ e.preventDefault(); fermer(); } }); });
+      if(c.dataset.choix === "radar"){ e.preventDefault(); fermer(); }
+      else if(c.dataset.choix === "defi"){ fermer(); } }); });
     z.addEventListener("keydown", e => {
       if(e.key === "ArrowRight" || e.key === "ArrowDown"){ e.preventDefault(); choisir(i + 1); }
       else if(e.key === "ArrowLeft" || e.key === "ArrowUp"){ e.preventDefault(); choisir(i - 1); }

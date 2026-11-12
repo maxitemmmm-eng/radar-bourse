@@ -1542,6 +1542,8 @@ EN = {
 "Vos questions": "Your questions", "La Bourse va-t-elle baisser ?": "Will the stock market fall?", "Faut-il acheter du bitcoin maintenant ?": "Should I buy bitcoin now?",
 "Combien rapportent 100 € par mois ?": "What does €100 a month earn?", "La Bourse, c'est risqué ?": "Is the stock market risky?",
 "Reconnaître une arnaque au trading": "Spotting a trading scam", "Toutes les questions": "All questions",
+"Le Défi du jour": "Daily challenge", "Choisis hausse ou baisse sur quelques titres, puis compare ton score à celui de l'IA. Une partie par jour, sans argent réel.": "Pick up or down on a few assets, then compare your score with the AI's. One game a day, no real money.",
+"Une nouvelle partie chaque jour": "A new game every day", "Jouer ›": "Play ›",
 "Gratuit, sans compte": "Free, no sign-up", "Entrée": "Enter", "Pronos": "Forecasts", "Plus": "More", "Raccourcis": "Shortcuts", "Prédiction bourse": "Stock market prediction", "Pronostic du jour": "Daily prediction", "Test de niveau": "Level test", "Révisions express": "Quick revision", "Examen final": "Final exam", "Apprendre": "Learn", "Les trois parties du site": "The three parts of the site", "Entrer ›": "Enter ›", "pour choisir ·": "to choose ·", "pour valider": "to confirm",
 "Aller directement au site": "Go straight to the site", "titres suivis · mis à jour chaque heure": "assets tracked · updated hourly",
 "chapitre(s) validé(s) · reprends où tu en étais": "chapter(s) completed · pick up where you left off",

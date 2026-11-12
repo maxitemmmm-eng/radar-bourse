@@ -17,6 +17,7 @@ from datetime import datetime
 from . import config
 from .hebdo import CSS as _CSS_HEBDO
 from .transitions import CSS as _CSS_VT
+from .graphique_pro import CSS as _CSS_GP
 from .trois_parties import CSS as _CSS_TROIS, barre as _barre_trois, partie_de as _partie_de
 
 NOM = "Radar Bourse"
@@ -185,7 +186,7 @@ html.texte-115 body{font-size:18px}html.texte-130 body{font-size:20px}
 .marque-sur svg{width:13px;height:13px}.marque-sur.tres{color:var(--surface);background:var(--up)}
 .avis-sur{border-left:3px solid var(--up);padding:8px 12px;background:var(--up-soft);border-radius:0 8px 8px 0}
 .badge-sur{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:700;background:var(--up);color:var(--surface)}
-""" + _CSS_HEBDO.replace("\n", "") + _CSS_TROIS.replace("\n", "") + _CSS_VT.replace("\n", "") + """th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:13px;color:var(--muted)}
+""" + _CSS_HEBDO.replace("\n", "") + _CSS_TROIS.replace("\n", "") + _CSS_VT.replace("\n", "") + _CSS_GP.replace("\n", "") + """th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:13px;color:var(--muted)}
 @media print{.top,.nav-ligne,.plus,.theme-btn,.ouvrir,.partager-page,footer .muted{display:none!important}body{background:#fff;color:#000}.carte{border-color:#bbb}a{color:#000}}"""
 
 LOGO = '<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id=\'rbf\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'1\'><stop offset=\'0\' stop-color=\'#1c3576\'/><stop offset=\'1\' stop-color=\'#0a1330\'/></linearGradient><linearGradient id=\'rbl\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#86a8ff\'/><stop offset=\'1\' stop-color=\'#44e09c\'/></linearGradient><linearGradient id=\'rbs\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#44e09c\' stop-opacity=\'0\'/><stop offset=\'1\' stop-color=\'#44e09c\' stop-opacity=\'.85\'/></linearGradient></defs><rect width=\'64\' height=\'64\' rx=\'15\' fill=\'url(#rbf)\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'22.00\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.28\' stroke-width=\'2.00\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'12.50\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.18\' stroke-width=\'2.00\'/><path d=\'M19.67 15.58 A22.00 22.00 0 0 1 42.3 16.76\' fill=\'none\' stroke=\'url(#rbs)\' stroke-width=\'3.20\' stroke-linecap=\'round\'/><polyline points=\'9.0,47.0 18.0,39.5 26.0,42.5 34.5,31.0 40.5,33.5 44.72,18.65\' fill=\'none\' stroke=\'url(#rbl)\' stroke-width=\'5.00\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'8.00\' fill=\'#44e09c\' fill-opacity=\'.2\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'4.50\' fill=\'#44e09c\'/></svg>'
@@ -317,7 +318,7 @@ def liens_fr() -> list:
             ("Fiche technique", "fiche-technique-ia.html"), ("Données ouvertes", "donnees-ouvertes.html"),
             ("Le point du jour", "point.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actu bourse", "actu-bourse.html"),
             ("Actu bitcoin", "actu-bitcoin.html"), ("Risque de krach aujourd'hui", "krach-boursier.html"), ("Carte des risques", "index.html#nuage"),
-            ("Quiz : examen de l'Académie", "formation/examen.html"), ("Guides", "guides.html"), ("Mini-cours", "apprendre.html"), ("Glossaire", "glossaire.html"), ("Les mini-robots", "robots.html"),
+            ("Quiz : examen de l'Académie", "formation/examen.html"), ("Guides", "guides.html"), ("Mini-cours", "apprendre.html"), ("Lexique de la Bourse", "glossaire.html"), ("Les mini-robots", "robots.html"),
             ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"), ("Contact", "contact.html"),
             ("English", "en/index.html", 'hreflang="en" lang="en"')]
 
@@ -743,6 +744,19 @@ LIBS_COURBE_EN = {"prevision": "forecast →", "cours": "price over the last 6 m
                   "aria": "Chart: price over the last six months and the fan of forecasts for the next month"}
 
 
+def _graphique_titre(t, horizon):
+    """Version 81 : graphique interactif (le graphique fixe reste en secours, sans JavaScript)."""
+    fixe = courbe_svg(t, LIBS_COURBE_FR)
+    try:
+        from . import graphique_pro
+        from .hebdo import avis_ia
+        sens = avis_ia(t)[1] if t.get("cone") else 0
+        return graphique_pro.bloc(t, fixe, horizon, t.get("_gp_stats"), sens) + "<script src='../graphique-pro.js' defer></script>"
+    except Exception as e:
+        print(f"Graphique interactif indisponible pour {t.get('ticker')} : {e}")
+        return fixe
+
+
 def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     dev, prix, p = t["devise"], t["prix"], t.get("proba_hausse")
     cone, f = t.get("cone"), t.get("fourchette") or []
@@ -903,7 +917,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
   <div class="k"><b>{round(t['score'])} / 100</b><span>score technique ({LIB_SIGNAL.get(t['signal'], '')})</span></div>
   <div class="k"><b>{'pas d’avis net' if sur10 is not None and t.get("avis_net") is False else f'{sur10} sur 10' if sur10 is not None else '–'}</b><span>chances d'être plus haut dans {horizon} séances</span></div>
 </div>
-{courbe_svg(t, LIBS_COURBE_FR)}
+{_graphique_titre(t, horizon)}
 {__import__("bourse_bot.hebdo", fromlist=["x"]).reponse_courte_html(t, modele, True, _px)}
 <h2>En résumé</h2>
 <p>Pour le mois qui vient, le radar voit {_e(nom)} <b>{verdict}</b>.
@@ -915,7 +929,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
 {"Fourchette élargie par prudence : l'entreprise publie ses résultats avant l'échéance." if t.get("fourchette_elargie") else ""}</p>
 {agitation}{_avis_passes(t)}
 {f"<h2>Pourquoi cet avis ?</h2><p class='muted'>Ce qui a le plus pesé dans le calcul des deux IA.</p><ul>{pourquoi}</ul>" if pourquoi else ""}
-<p><a class="btn" href="{lien_app}">Voir le graphique interactif et le simulateur</a></p>
+<p><a class="btn" href="{lien_app}">Ouvrir dans l'appli : simulateur et analyse complète</a></p>
 {f"<h2>Ce que montrent les indicateurs</h2><ul>{raisons}</ul>" if raisons else ""}
 {f"<h2>Niveaux à surveiller</h2><div class='carte'><table>{niveaux}</table></div>" if niveaux else ""}
 {f"<h2>Dernières actualités</h2><ul>{actus}</ul>" if actus else ""}
@@ -1105,6 +1119,53 @@ def _exemple_du_jour(mot, payload):
     return ""
 
 
+def _page_lexique(base, titre, description, chemin, corps, jsonld, csp):
+    """Version 80 : pages du Lexique dans la coque de l'Académie."""
+    import sys
+    from . import academie
+    mots = "lexique bourse, glossaire bourse débutant, définition bourse, vocabulaire de la bourse, mots de la bourse expliqués, lexique crypto, définition ETF, définition PEA"
+    return academie.page(sys.modules[__name__], base, titre, description, chemin, corps + academie.CSS_LEXIQUE, jsonld, csp=csp, mots=mots)
+
+
+def _corps_lexique():
+    """Tous les mots : ceux du glossaire (page dédiée) et ceux de l'Académie (lien vers le chapitre où ils sont expliqués)."""
+    import re as _re
+    from .formation import LEXIQUE, CHAPITRES
+    termes = [(m, d, f"glossaire/{slug(m)}.html", "analyse", "Page complète") for m, d in GLOSSAIRE]
+    deja = [m.lower() for m, _ in GLOSSAIRE]
+    for m, d in LEXIQUE.items():
+        if any(m.lower() == x or x.startswith(m.lower() + " ") for x in deja):
+            continue
+        motif = _re.compile(r"(?<![\w-])" + _re.escape(m) + r"(?![\w-])", 0 if m.isupper() else _re.I)
+        ch = next((c for c in CHAPITRES if not c.get("cas") and any(motif.search(_re.sub("<[^>]+>", " ", h)) for _t, h in c["sections"])), None)
+        termes.append((m[:1].upper() + m[1:], d, f"formation/{ch['id']}.html" if ch else "formation.html", "bases",
+                       f"Expliqué dans : {ch['titre']}" if ch else "Voir l'Académie"))
+    import unicodedata
+    cle = lambda t: unicodedata.normalize("NFD", t[0]).encode("ascii", "ignore").decode().lower()
+    termes.sort(key=cle)
+    lettres = sorted({cle(t)[0].upper() for t in termes})
+    blocs = ""
+    for L in lettres:
+        lignes = "".join(f"<li class='lx-t' data-cat='{c}' data-txt=\"{_e((m + ' ' + d).lower())}\"><a href='{h}'><b>{_e(m)}</b><span>{_e(d)}</span>"
+                         f"<small>{_e(lien)}</small></a></li>" for m, d, h, c, lien in termes if cle((m,))[0].upper() == L)
+        blocs += f"<section class='lx-lettre' id='lettre-{L}' aria-labelledby='h-{L}'><h2 id='h-{L}'>{L}</h2><ul>{lignes}</ul></section>"
+    n_b = sum(1 for t in termes if t[3] == "bases")
+    corps = (f"<header class='c-tete'><h1>Lexique de la Bourse</h1><p>{len(termes)} mots expliqués simplement : les bases vues dans les chapitres, "
+             "et les termes d'analyse et d'IA utilisés sur le site. Chaque mot renvoie vers sa page complète ou le chapitre qui l'explique.</p></header>"
+             "<div class='lx-outils'><label class='sr' for='lx-q'>Chercher un mot</label><input id='lx-q' type='search' placeholder='Chercher un mot : ETF, dividende, RSI…' autocomplete='off'>"
+             f"<div class='lx-filtres' role='group' aria-label='Filtrer'><button type='button' data-f='tous' aria-pressed='true'>Tous ({len(termes)})</button>"
+             f"<button type='button' data-f='bases' aria-pressed='false'>Les bases ({n_b})</button>"
+             f"<button type='button' data-f='analyse' aria-pressed='false'>Analyse et IA ({len(termes) - n_b})</button></div>"
+             "<nav class='lx-az' aria-label='Lettres'>" + "".join(f"<a href='#lettre-{L}'>{L}</a>" for L in lettres) + "</nav></div>"
+             f"<p class='muted lx-vide' id='lx-vide' hidden>Aucun mot trouvé. Essaie un autre mot, ou pose la question dans <a href='questions-bourse.html'>Vos questions</a>.</p>{blocs}"
+             "<script>(function(){const q=document.getElementById('lx-q'),bs=[...document.querySelectorAll('.lx-filtres button')],ts=[...document.querySelectorAll('.lx-t')];let f='tous';"
+             "const norm=s=>s.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();"
+             "function maj(){const v=norm(q.value.trim());let n=0;ts.forEach(t=>{const ok=(f==='tous'||t.dataset.cat===f)&&(!v||norm(t.dataset.txt).includes(v));t.hidden=!ok;if(ok)n++;});"
+             "document.querySelectorAll('.lx-lettre').forEach(s=>s.hidden=!s.querySelector('.lx-t:not([hidden])'));document.getElementById('lx-vide').hidden=n>0;}"
+             "q.addEventListener('input',maj);bs.forEach(b=>b.addEventListener('click',()=>{f=b.dataset.f;bs.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));maj();}));})();</script>")
+    return corps, termes
+
+
 def _pages_glossaire(base, payload, dossier, csp, date):
     from .glossaire_plus import PLUS
     os.makedirs(os.path.join(dossier, "glossaire"), exist_ok=True)
@@ -1128,8 +1189,8 @@ def _pages_glossaire(base, payload, dossier, csp, date):
         chemin = f"glossaire/{slug(mot)}.html"
         court = mot.split(" (")[0]
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
-            f.write(_page(base, f"{court} : définition simple et exemple | {NOM}", (definition[:150] + "…") if len(definition) > 155 else definition,
-                          chemin, corps, jsonld, csp))
+            f.write(_page_lexique(base, f"{court} : définition simple et exemple | {NOM}", (definition[:150] + "…") if len(definition) > 155 else definition,
+                                  chemin, "<div class='lx-mot'>" + corps.replace("<a href='../glossaire.html'>Glossaire</a>", "<a href='../glossaire.html'>Lexique</a>") + "</div>", jsonld, csp))
         faits.append(chemin)
     return faits
 
@@ -2329,6 +2390,13 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     # Une page par titre
     duels = _duels_dispos(payload.get("titres", []))
     liens = []
+    try:   # version 81 : le graphique interactif des fiches (un seul fichier JavaScript partagé)
+        from . import graphique_pro
+        graphique_pro.ecrire_js(dossier)
+        _gp_stats = graphique_pro.stats_globales(payload, horizon)
+    except Exception as e:
+        print(f"Graphique interactif : {e}")
+        _gp_stats = None
     for t in payload.get("titres", []):
         voisins = [x for x in payload.get("titres", []) if x.get("marche") == t.get("marche") and x["ticker"] != t["ticker"]]
         # version 65 : d'abord les titres du même secteur (tous marchés d'actions), puis ceux du même marché
@@ -2337,7 +2405,7 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
         meme = sorted(meme, key=lambda x: (x.get("marche") != t.get("marche"), -(x.get("score") or 0)))[:6]
         voisins = meme + [x for x in sorted(voisins, key=lambda x: -(x.get("score") or 0)) if x not in meme][:max(0, 8 - len(meme))]
         t = dict(t, _duels=[((y if x["ticker"] == t["ticker"] else x), _chemin_duel(x, y)) for x, y in duels if t["ticker"] in (x["ticker"], y["ticker"])])
-        t = dict(t, _image_ok=_image_titre(t, os.path.join(dossier, "partage", f"{slug(t['ticker'])}.png"), date), _verif=verif)
+        t = dict(t, _image_ok=_image_titre(t, os.path.join(dossier, "partage", f"{slug(t['ticker'])}.png"), date), _verif=verif, _gp_stats=_gp_stats)
         chemin, page = _page_titre(base, t, horizon, date, csp, payload.get("modele"), payload.get("suivi"), voisins)
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(page)
@@ -2448,15 +2516,14 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
             urls.append((chemin, "weekly", "0.6"))
     except Exception as e:
         print(f"Pages du glossaire non générées : {e}")
-    corps = ("<h1>Glossaire de la Bourse et de l'analyse technique</h1>"
-             "<p class='muted'>Les mots utilisés sur Radar Bourse, expliqués simplement. Clique sur un mot pour sa page complète.</p><dl>"
-             + "".join(f"<dt id='{slug(m)}'><a href='glossaire/{slug(m)}.html'>{_e(m)}</a></dt><dd>{_e(d)}</dd>" for m, d in GLOSSAIRE) + "</dl>")
-    jsonld = {"@context": "https://schema.org", "@type": "DefinedTermSet", "name": f"Glossaire {NOM}",
-              "inLanguage": "fr-FR", "hasDefinedTerm": [{"@type": "DefinedTerm", "name": m, "description": d} for m, d in GLOSSAIRE]}
+    # version 80 : le Lexique fait partie de l'Académie (même coque, même présentation), avec recherche, filtres et index alphabétique
+    corps, termes = _corps_lexique()
+    jsonld = {"@context": "https://schema.org", "@type": "DefinedTermSet", "name": f"Lexique de la Bourse {NOM}",
+              "inLanguage": "fr-FR", "hasDefinedTerm": [{"@type": "DefinedTerm", "name": m, "description": d} for m, d, *_ in termes]}
     with open(os.path.join(dossier, "glossaire.html"), "w", encoding="utf-8") as f:
-        f.write(_page(base, f"Glossaire : RSI, MACD, moyennes mobiles, PER… | {NOM}",
-                      "Définitions simples des indicateurs boursiers : RSI, MACD, Bollinger, Ichimoku, stop-loss, PER, VIX et plus.",
-                      "glossaire.html", corps, jsonld, csp))
+        f.write(_page_lexique(base, f"Lexique de la Bourse : {len(termes)} mots expliqués simplement | {NOM}",
+                              "Lexique de la Bourse pour débutants : action, ETF, PEA, dividende, volatilité, RSI, MACD, PER, flat tax… chaque mot expliqué simplement.",
+                              "glossaire.html", corps, jsonld, csp))
 
     # Mini-cours « Apprendre la Bourse »
     from .lecons import LECONS

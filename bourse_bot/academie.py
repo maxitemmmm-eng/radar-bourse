@@ -343,6 +343,8 @@ def _e(s):
 
 
 def onglet_de(chemin):
+    if chemin.startswith("glossaire"):
+        return "lexique"
     return next((k for k, h, _ in TOUS if h == chemin), "programme")
 
 
@@ -885,3 +887,28 @@ function fin(){ const d=S.lire(); const j=S.jour(); d.entr=d.entr||{}; d.entr.n=
 document.addEventListener('keydown',e=>{ if(etat==='rep'&&/^[1-6]$/.test(e.key)&&e.target.tagName!=='INPUT'){ const b=z.querySelectorAll('.l-choix button')[+e.key-1]; if(b) b.click(); }
   if(e.key==='Enter'&&e.target.tagName==='INPUT'){ const b=document.getElementById('e-ok'); if(b&&!b.disabled) b.click(); } });
 debut();});</script>""")
+
+
+# version 80 : présentation du Lexique, alignée sur le reste de l'Académie
+CSS_LEXIQUE = """<style>
+.lx-outils{position:sticky;top:0;z-index:5;background:var(--a-bg);padding:14px 0 10px;margin:18px 0 6px;border-bottom:1px solid var(--a-line)}
+.lx-outils input{box-sizing:border-box;width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-ink);font:inherit;font-size:16px}
+.lx-outils input:focus{outline:0;border-color:var(--a-prim);box-shadow:0 0 0 1px var(--a-prim)}
+.lx-filtres{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 8px}
+.lx-filtres button{font:inherit;font-size:14px;font-weight:600;padding:6px 12px;border-radius:99px;border:1px solid var(--a-line);background:var(--a-card);color:var(--a-muted);cursor:pointer}
+.lx-filtres button[aria-pressed=true]{background:var(--a-prim);border-color:var(--a-prim);color:var(--a-on)}
+.lx-az{display:flex;flex-wrap:wrap;gap:2px}
+.lx-az a,body.aca-app .lx-az a{min-width:28px;text-align:center;padding:3px 4px;border-radius:6px;text-decoration:none;color:var(--a-muted);font-weight:600;font-size:14px}
+.lx-az a:hover{background:var(--a-card2);color:var(--a-ink)}
+.lx-lettre{scroll-margin-top:170px}.lx-lettre h2{font-size:22px;margin:26px 0 10px;color:var(--a-prim)}
+.lx-lettre ul{list-style:none;margin:0;padding:0;background:var(--a-card);border:1px solid var(--a-line);border-radius:12px;overflow:hidden}
+.lx-t+.lx-t{border-top:1px solid var(--a-line)}
+.lx-t a,body.aca-app .lx-t a{display:grid;grid-template-columns:200px 1fr;gap:4px 18px;padding:12px 18px;text-decoration:none;color:var(--a-ink)}
+.lx-t a:hover{background:var(--a-card2)}
+.lx-t b{font-weight:600}.lx-t span{color:var(--a-ink);font-size:15px;line-height:1.5}
+.lx-t small{grid-column:2;color:var(--a-prim);font-size:13px;font-weight:600}
+@media (max-width:640px){.lx-t a,body.aca-app .lx-t a{grid-template-columns:1fr}.lx-t small{grid-column:1}}
+.lx-mot h1{font-size:clamp(26px,4vw,34px)}.lx-mot h2{font-size:20px;margin-top:28px}.lx-mot>p:first-of-type b{font-size:18px;font-weight:500}
+.lx-mot ul.liste{columns:1!important;display:block!important;padding-left:20px}.lx-mot ul.liste li{margin:6px 0;border:0!important;padding:0!important}
+.lx-mot{max-width:720px}
+</style>"""

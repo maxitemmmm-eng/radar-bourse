@@ -187,6 +187,11 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("81", "Un « correcteur » appris par-dessus l'IA : un second modèle (régression logistique, puis arbres) qui corrige l'avis selon la peur du marché, la tendance, l'agitation et le type de titre", False,
+     "Testé année par année en n'apprenant que sur les années précédentes (2018 à 2026) : la version logistique gagne 0,5 point en moyenne mais perd jusqu'à 2,5 points en 2022 "
+     "et recule 5 années sur 9 ; la version à arbres perd 1 point en moyenne. Non adopté"),
+    ("81", "Quand l'IA hésite (chances entre 48 et 52 sur 100), suivre la tendance : celle du titre sur 1 ou 6 mois, celle du marché ou la moyenne 200 jours", False,
+     "228 443 avis jugés de 2016 à 2026 : au mieux +0,1 point au total (tendance d'un mois), mais 4 années sur 11 reculent. Non adopté"),
     ("76", "Quand la peur est très forte sur les marchés (indice VIX au-dessus de 30), donner un avis de rebond (hausse)", False,
      "228 443 avis jugés de 2016 à 2026 : 56,36 % de bonnes réponses au lieu de 55,78 % au total, mais une année recule légèrement (−0,06 point), "
      "et l'idée repose sur peu d'épisodes (5,7 % des avis, surtout 2020 et 2022). Règle du site : jamais moins bien sur aucune année. Non adopté, à retester avec plus de recul"),
