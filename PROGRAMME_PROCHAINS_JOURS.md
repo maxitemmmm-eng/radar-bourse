@@ -15,7 +15,7 @@ Mis à jour le 12 novembre 2026, version 83. Une ligne cochée = fait.
 
 ## Demain (13/11)
 - [ ] Vérifier dans Search Console que la page « Vos questions » est découverte (rubrique Pages).
-- [ ] Ajouter 6 questions de plus à « Vos questions » à partir des vraies recherches qui arrivent sur le site (Search Console → Performances → Requêtes).
+- [x] Ajouter 6 questions de plus à « Vos questions » à partir des vraies recherches qui arrivent sur le site (version 85).
 - [ ] Traduire « Vos questions » en anglais (`en/questions.html`) : beaucoup de visites viennent déjà des pages anglaises.
 
 ## Dans 2 à 3 jours (14-15/11)

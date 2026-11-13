@@ -187,6 +187,8 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("85", "Effet calendrier : quand l'IA hésite, suivre la tendance habituelle du mois de l'année (certains mois montent plus souvent que d'autres)", False,
+     "Testé de 2018 à 2026 avec les seules années passées : −0,4 point en moyenne, recul 5 années sur 9 (jusqu'à −3,4 points en 2025). Les « bons mois » du passé ne se répètent pas. Non adopté"),
     ("84", "Mettre en avant seulement les 10 % d'avis les plus tranchés (« avis très net »)", False,
      "Testé de 2018 à 2026, seuil fixé avec les seules années passées : 60,4 % de bons sens en moyenne contre 54,3 % pour tous les avis, et mieux 8 années sur 9. "
      "Mais en 2021 ces avis tranchés ont fait moins bien que les autres (54,6 % contre 55,7 %) : pas de badge qui promettrait plus que la réalité. Non adopté"),

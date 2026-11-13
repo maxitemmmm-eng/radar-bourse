@@ -19,7 +19,9 @@ MOTS = ("est-ce que la bourse va baisser, faut-il acheter du bitcoin maintenant,
         "comment reconnaître une arnaque trading, quelle action acheter en ce moment avis, action qui va monter cette semaine, prédiction cours action demain, "
         "IA bourse fiable, prévision action IA gratuite, prévision CAC 40 semaine prochaine, crypto qui va exploser avis honnête, risque de krach boursier aujourd'hui, "
         "site prédiction bourse sans inscription, investir 50 euros par mois, DCA ou investir d'un coup, calcul flat tax 2026, flat tax 31,4 %, "
-        "cours de bourse en ligne gratuit avec certificat, simulateur de trading sans argent réel")
+        "cours de bourse en ligne gratuit avec certificat, simulateur de trading sans argent réel, "
+        "l'action va-t-elle remonter, faut-il acheter une action qui a baissé, krach IA, bulle IA bourse, bourse aujourd'hui, prévision crypto 2030, "
+        "prévision XRP 2030, que veut dire EPA bourse, code bourse NYSE HKG, prévisions boursières fiables")
 
 
 def questions():
@@ -81,6 +83,32 @@ def questions():
         ("apprendre", "Où apprendre la Bourse gratuitement, avec un certificat ?",
          "L'<a href='formation.html'>Académie Radar Bourse</a> est gratuite et sans compte : des leçons courtes avec exercices corrigés, des études de cas, un "
          "<a href='formation/entrainement.html'>entraînement du jour</a> et un <a href='formation/examen.html'>examen final</a> qui donne un certificat."),
+        # version 85 : six questions de plus, tirées des recherches qui arrivent vraiment sur le site (Search Console)
+        ("remonter", "Une action qui a beaucoup baissé va-t-elle remonter ?",
+         "Pas forcément. Une forte baisse ne rend pas une action « pas chère » : elle peut refléter de vrais problèmes (ventes en recul, dette, procès), et certaines "
+         "ne remontent jamais. Une perte de 50 % demande une hausse de 100 % pour revenir au point de départ. Avant de « renforcer », demande-toi si tu l'achèterais aujourd'hui "
+         "à ce prix sans l'avoir déjà. Sur chaque fiche, l'IA donne son avis à un mois (par exemple <a href='titres/rno-pa.html'>Renault</a> ou <a href='titres/af-pa.html'>Air France-KLM</a>), "
+         "et le chapitre <a href='formation/psychologie-investisseur.html'>psychologie de l'investisseur</a> explique pourquoi on s'accroche à une perte."),
+        ("krach-ia", "Y a-t-il une bulle et un risque de krach de l'IA ?",
+         "Personne ne peut dater un krach. Ce qu'on sait : les valeurs liées à l'IA ont beaucoup monté et pèsent lourd dans les grands indices américains, donc une déception "
+         "toucherait beaucoup de portefeuilles. Les bulles passées (internet en 2000) ont fait perdre plus de 70 % à certains indices technologiques. Le niveau de risque du jour "
+         "est sur <a href='krach-boursier.html'>risque de krach aujourd'hui</a> ; l'histoire des krachs est dans <a href='formation/krachs-et-cycles.html'>krachs et cycles</a>."),
+        ("aujourdhui", "Que fait la Bourse aujourd'hui ?",
+         "Les grands indices, les plus fortes hausses et baisses du jour et l'avis de l'IA sont résumés dans <a href='point.html'>le point du jour</a>, mis à jour automatiquement, "
+         "et sur <a href='index.html'>l'accueil</a> avec les cours. Pour la vue d'ensemble de la semaine : <a href='bourse-cette-semaine.html'>la semaine en Bourse</a>."),
+        ("prevision-longue", "Peut-on prévoir le prix d'une crypto en 2030 ou 2050 ?",
+         "Non. Les sites qui affichent un prix précis pour le XRP, le Polkadot ou le Bitcoin en 2030 prolongent une tendance ou un calcul arbitraire, sans aucune preuve que ça marche. "
+         "Sur des années, une crypto peut être multipliée par dix ou disparaître. Radar Bourse ne prévoit qu'à un mois et publie ses ratés : voir "
+         "<a href='prediction-crypto.html'>prédiction crypto</a> et <a href='resultats.html'>résultats réels</a>."),
+        ("codes", "Que veulent dire « EPA: », « NYSE: » ou « HKG: » devant le nom d'une action ?",
+         "C'est le code de la Bourse où l'action est cotée, suivi de son symbole : EPA pour Euronext Paris (EPA: MC = LVMH), NYSE et NASDAQ pour New York, HKG pour Hong Kong, "
+         "TPE pour Taïwan, TYO pour Tokyo. Une même entreprise peut être cotée sur plusieurs places, dans des devises différentes. Toutes les actions suivies sont sur "
+         "<a href='toutes-les-actions.html'>toutes les actions</a>."),
+        ("previsions-fiables", "Les prévisions boursières sont-elles fiables ?",
+         "Sur le sens du prix à court terme, aucune prévision n'est très fiable : même les meilleurs modèles ont raison un peu plus d'une fois sur deux. On prévoit beaucoup mieux "
+         "l'agitation (de combien un prix risque de bouger) que la direction. Une prévision sérieuse donne une probabilité, une fourchette et ses résultats passés, ratés compris. "
+         "C'est ce que fait le <a href='resultats.html'>tableau des résultats</a> de Radar Bourse ; le chapitre <a href='formation/utiliser-ia-intelligemment.html'>utiliser une IA intelligemment</a> "
+         "explique comment les lire."),
         ("sans-argent", "Où s'entraîner sans argent réel ?",
          "Avec le <a href='simulateur-boursier.html'>simulateur boursier</a> (10 000 € fictifs), le <a href='index.html#portefeuille'>portefeuille virtuel</a> et le "
          "<a href='index.html#prono'>pronostic du jour</a>, où tu affrontes l'IA. Tout est gratuit, sans inscription."),
@@ -90,14 +118,26 @@ def questions():
 def generer(seo, base, dossier, csp):
     import os
     qs = questions()
-    blocs = "".join(f"<section class='q-bloc' id='{a}' style='scroll-margin-top:110px'><h2>{_e(q)}</h2><p>{r}</p></section>" for a, q, r in qs)
+    # version 85 : chaque question s'ouvre et se ferme avec une petite animation (le texte reste dans la page pour Google)
+    blocs = "".join(f"<details class='q-bloc' id='{a}'><summary><h2>{_e(q)}</h2><span class='q-plus' aria-hidden='true'></span></summary>"
+                    f"<div class='q-rep'><p>{r}</p></div></details>" for a, q, r in qs)
     sommaire = "".join(f"<li><a href='#{a}'>{_e(q)}</a></li>" for a, q, _ in qs)
     corps = ("<style>.q-sommaire{columns:2 280px;gap:24px;padding-left:18px;margin:18px 0 26px}.q-sommaire li{margin:4px 0;break-inside:avoid}"
-             ".q-bloc{border-top:1px solid var(--line);padding-top:6px}.q-bloc h2{font-size:21px}.q-bloc p{max-width:72ch}</style>"
+             ".q-bloc{border:1px solid var(--line);border-radius:12px;margin:10px 0;background:var(--surface);scroll-margin-top:110px;transition:border-color .2s}"
+             ".q-bloc[open]{border-color:var(--accent)}.q-bloc summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 18px}"
+             ".q-bloc summary::-webkit-details-marker{display:none}.q-bloc summary:hover h2{color:var(--accent)}.q-bloc h2{font-size:19px;margin:0;transition:color .15s}"
+             ".q-plus{flex:none;width:22px;height:22px;position:relative}.q-plus::before,.q-plus::after{content:'';position:absolute;left:4px;right:4px;top:10px;height:2px;border-radius:2px;background:currentColor;transition:transform .3s cubic-bezier(.2,.8,.2,1)}"
+             ".q-plus::after{transform:rotate(90deg)}.q-bloc[open] .q-plus::after{transform:rotate(0)}"
+             ".q-rep{padding:0 18px 6px}.q-rep p{max-width:72ch;margin-top:0}.q-bloc[open] .q-rep{animation:qOuvre .35s cubic-bezier(.2,.8,.2,1)}"
+             "@keyframes qOuvre{from{opacity:0;transform:translateY(-6px)}}@media (prefers-reduced-motion:reduce){.q-bloc[open] .q-rep{animation:none}.q-plus::before,.q-plus::after{transition:none}}"
+             ".q-outils{display:flex;gap:10px;margin:0 0 6px}</style>"
              "<h1>Vos questions sur la Bourse, la crypto et l'IA</h1>"
              "<p class='muted'>Les questions que l'on nous pose le plus, avec des réponses honnêtes : quand personne ne peut savoir, on le dit. "
              "Ce ne sont pas des conseils personnalisés.</p>"
-             f"<ol class='q-sommaire'>{sommaire}</ol>{blocs}")
+             f"<ol class='q-sommaire'>{sommaire}</ol><p class='q-outils'><button class='btn ghost' type='button' id='q-tout'>Tout ouvrir</button></p>{blocs}"
+             "<script>(function(){const ds=[...document.querySelectorAll('.q-bloc')];const ouvrir=()=>{const h=decodeURIComponent(location.hash.slice(1));const d=h&&document.getElementById(h);"
+             "if(d&&d.tagName==='DETAILS'){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'});}};addEventListener('hashchange',ouvrir);ouvrir();"
+             "const b=document.getElementById('q-tout');b.onclick=()=>{const o=!ds.every(d=>d.open);ds.forEach(d=>d.open=o);b.textContent=o?'Tout fermer':'Tout ouvrir';};})();</script>")
     import re
     jl = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": re.sub(r"<[^>]+>", "", r)}} for _a, q, r in qs]}
