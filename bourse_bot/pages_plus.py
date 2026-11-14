@@ -187,6 +187,17 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("89", "« Avis sûrs » plus exigeants : l'IA ne se dit sûre (plus calme ou plus agité le mois prochain) que lorsque son avis est encore plus net", True,
+     "Testé de 2016 à 2026, seuil de chaque année appris sur les années d'avant : 82,3 % de bonnes réponses (marge 80,8 % à 84,1 %) au lieu de 80,4 %, "
+     "mieux chaque année (+1,4 à +2,6 points), au-dessus de 80 % 9 années sur 11. En échange, l'IA se dit sûre un peu moins souvent (44 % des cas au lieu de 52 %). Adopté"),
+    ("88", "Fourchettes réglées à la fois selon le marché et selon l'agitation prévue (18 variantes essayées)", False,
+     "La plupart rapprochent les fourchettes de leur promesse en moyenne, mais presque toutes s'en éloignent au moins une année. Une seule variante tient toutes les années, "
+     "parmi 18 essayées : ce serait sans doute de la chance, et elle élargit les fourchettes 5 années sur 9. Non adopté"),
+    ("87", "Fourchettes de prix réglées marché par marché (actions américaines, européennes, cryptos…) au lieu d'un seul réglage pour tous, entièrement ou à moitié", False,
+     "Testé de 2018 à 2026 avec les seules années passées : les fourchettes sont un peu plus étroites et plus proches de la promesse (8 fois sur 10) en moyenne "
+     "(écart moyen 3,1 → 2,7 points), mais il reste toujours au moins une année où elles s'en éloignent (2023). Non adopté"),
+    ("87", "Mélanger les deux IA avec un dosage différent pour chaque marché", False,
+     "Sur chaque marché et chaque année, le meilleur dosage trouvé sur le passé est celui d'aujourd'hui : aucun changement possible. L'IA est déjà au bon réglage"),
     ("86", "Effet « valeurs calmes » : quand l'IA hésite, pencher pour la hausse sur les titres les moins agités de leur marché (ils montent souvent plus régulièrement)", False,
      "Testé de 2018 à 2026 avec les seules années passées : −0,02 point en moyenne, recul 4 années sur 9 (jusqu'à −0,4 point en 2022). Aucun gain réel. Non adopté"),
     ("85", "Effet calendrier : quand l'IA hésite, suivre la tendance habituelle du mois de l'année (certains mois montent plus souvent que d'autres)", False,

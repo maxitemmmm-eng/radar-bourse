@@ -172,6 +172,7 @@ def _analyser(donnees, noms, marche_de, args):
                     a.accord_ia = evaluation.accord_titres.get(a.ticker)
                     a.risque_prevu = evaluation.risque_titres.get(a.ticker)
                     a.raisons_ia = evaluation.explications.get(a.ticker, [])
+                    a.experts = evaluation.experts_titres.get(a.ticker)   # version 88 : l'avis de chacun des 5 experts
                     a.indice_ref = config.benchmark_de(a.ticker, a.marche)
                     tech = bool(model.technique_haussiere(donnees[a.ticker].iloc[[-1]]).iloc[0])
                     # signal fort : IA confiante, tendance technique haussière ET les deux IA d'accord
@@ -330,6 +331,11 @@ def cmd_site(args):
     except Exception as e:
         console.print(f"[yellow]Contrôle des prévisions indisponible : {e}[/yellow]")
     if not args.demo and os.environ.get("RADAR_SELECTION") == "1":
+        try:   # version 88 : le journal des experts « entreprise » et « actualités » (pour les tester plus tard)
+            from . import moteur2
+            moteur2.enregistrer_journal(payload, config.DOSSIER_HISTORIQUE)
+        except Exception as e:
+            console.print(f"[yellow]Journal des experts non enregistré : {e}[/yellow]")
         seo.archiver_point(payload)   # le point du jour est archivé chaque soir
         try:
             seo.archiver_semaine(payload)   # et le résumé de la semaine en cours

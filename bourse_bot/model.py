@@ -32,7 +32,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 from . import comprendre, config
-from .indicators import FEATURES
+from .indicators import FEATURES, TECHNIQUES_MAISON
 
 COLS_RANG = ["ret_21j", "ret_63j", "ret_126j", "vol_20j", "force_relative_63j", "dist_plus_haut"]
 # Version 19 : comme les professionnels, les règles du manuel sont aussi utilisées en CLASSEMENT entre titres
@@ -408,6 +408,8 @@ class Evaluation:
     avis_net: dict = field(default_factory=dict)       # à partir de quel écart à 50 % un avis est fiable
     risque_titres: dict = field(default_factory=dict)  # {ticker: agitation prévue}
     explications: dict = field(default_factory=dict)   # {ticker: [les raisons de l'avis]}
+    experts_titres: dict = field(default_factory=dict)  # version 88 : {ticker: {expert: probabilité de hausse}}
+    experts_poids: dict = field(default_factory=dict)   # version 88 : poids donné à chaque expert par le juge
 
     @property
     def avantage(self) -> float:
@@ -448,6 +450,7 @@ class Evaluation:
                 "comparaison": self.comparaison, "fourchette": self.fourchette,
                 "relatif": self.relatif, "ic": self.ic, "brier": self.brier, "ia": self.ia,
                 "accord": self.accord, "champion": self.champion, "controles": self.controles,
+                "experts_poids": self.experts_poids,
                 "date_evaluation": self.date_evaluation, "horizon": config.HORIZON_PREDICTION,
                 "risque": {k: v for k, v in (self.risque or {}).items() if k != "variables"}, "avis_net": self.avis_net}
 
@@ -485,7 +488,7 @@ def construire_jeu(donnees: dict[str, pd.DataFrame], marches: dict[str, str], ho
     morceaux = []
     futurs = {t: d["Close"].shift(-horizon) / d["Close"] - 1 for t, d in donnees.items()}
     for ticker, d in donnees.items():
-        m = d[FEATURES].copy()
+        m = d[FEATURES + [c for c in TECHNIQUES_MAISON if c in d.columns]].copy()   # version 88 : + techniques maison
         m["est_crypto"] = float(marches.get(ticker) == "crypto")
         futur = futurs[ticker]
         m["rendement_futur"] = futur
@@ -527,6 +530,32 @@ CONFIGS = [   # (nom, variables, un modèle par marché ?, réglages)
     ("Une IA par ambiance (calme / nerveux), indicateurs de base", VARIABLES_BASE + ["vix"], False, {"groupes": "ambiance"}),
     ("Indicateurs de base comparés entre titres du même jour", VARIABLES_BASE, False, {"rangs_jour": True}),
 ]
+# ---------------------------------------------------------------------------------------------------------------
+# Version 88 : « Prediction Engine 2.0 » — un comité de 5 experts spécialisés et un juge.
+# Chaque expert ne voit qu'une famille d'informations. Le juge apprend, sur la période la plus RÉCENTE de
+# l'apprentissage (jamais vue par les experts), quel poids donner à chacun : un expert qui se trompe en ce moment
+# perd du poids. Le comité n'est utilisé sur le site que s'il bat le modèle en place de façon prouvée (95 %).
+# Les experts « entreprise » (comptes) et « actualités » n'ont pas d'historique fiable sur les années passées :
+# ils sont affichés et leurs chiffres sont enregistrés chaque soir (voir experts.py), pour être testés plus tard.
+# ---------------------------------------------------------------------------------------------------------------
+GROUPES_EXPERTS = {
+    "technique": ["dist_sma50", "dist_sma200", "pente_sma50", "adx", "rsi", "macd_hist_norm", "bb_position", "dist_ema50_200", "stoch_k",
+                  "aroon", "donchian_pos", "supertrend", "ichimoku", "roc_10", "div_rsi", "cx_croisement_moyennes_50_200", "cx_croisement_moyennes_10mois"],
+    "statistique": ["ret_5j", "ret_21j", "ret_63j", "ret_126j", "vol_20j", "atr_pct", "bb_largeur", "drawdown", "dist_plus_haut", "mom_ajuste_63",
+                    "mom_ajuste_126", "cx_asymetrie_60j", "cx_faible_volatilite_60j", "cx_volatilite_propre_60j", "cx_loterie_1m", "rang_ret_126j", "rang_vol_20j"],
+    "sentiment": ["volume_ratio", "obv_pente", "mfi", "cmf", "dist_vwap20", "fng", "robots_consensus", "cx_choc_volume_5j", "force_relative_63j",
+                  "marche_tendance", "marche_vol", "marche_largeur", "marche_dispersion", "rang_force_relative_63j"],
+    "economie": ["vix", "vix_chg", "vix_structure", "taux_chg", "dollar_chg", "courbe_taux", "petrole_chg", "cuivre_chg", "spread_credit",
+                 "spread_credit_chg", "conditions_fin", "chomage_tendance", "marche_tendance", "marche_vol"],
+    "maison": TECHNIQUES_MAISON + ["cx_momentum_regulier_12m", "cx_cassure_6m", "cx_retournement_1m", "cx_plus_haut_52s_52s", "cx_nuit_12m"],
+}
+NOMS_EXPERTS = {"technique": "Analyse technique", "statistique": "Analyse statistique", "sentiment": "Sentiment du marché",
+                "economie": "Économie et événements", "maison": "Techniques maison"}
+CONFIG_EXPERTS = ("Comité de 5 experts et un juge (Prediction Engine 2.0)",
+                  sorted({v for g in GROUPES_EXPERTS.values() for v in g} | {"est_crypto"}), False,
+                  {"experts": {k: v + ["est_crypto"] for k, v in GROUPES_EXPERTS.items()}})
+CONFIGS.append(CONFIG_EXPERTS)
+
 NOM_RECETTE = "Recette de l'entraînement approfondi"
 
 
@@ -601,7 +630,52 @@ class Predicteur:
         garde = df[(place >= z).to_numpy() | ecart.isna().to_numpy()]
         return garde if garde["cible"].nunique() == 2 else df
 
+    def _fit_experts(self, df):
+        """Version 88 : chaque expert apprend sur les 80 % les plus anciens de la période ; le juge apprend sur les
+        20 % les plus récents (avec un trou d'un mois entre les deux, pour qu'aucun résultat futur ne fuie).
+        Puis, sauf pendant les tests (experts_refit=False), les experts réapprennent sur toute la période."""
+        groupes = {k: [v for v in vs if v in df.columns] for k, vs in self.params["experts"].items()}
+        groupes = {k: vs for k, vs in groupes.items() if len(vs) >= 2}
+        prm = {k: v for k, v in self.params.items() if k not in ("experts", "experts_refit")}
+        prm.setdefault("iterations", 160)
+        dates = np.array(sorted(pd.Index(df.index).unique()))
+        coupe = int(len(dates) * 0.8)
+        self.experts, self.juge = {}, None
+        if coupe > 60:
+            a = df[df.index <= dates[max(coupe - 25, 1)]]
+            b = df[df.index > dates[coupe]]
+            if len(a) >= 3000 and len(b) >= 1000 and b["cible"].nunique() == 2:
+                exp_a = {k: Predicteur(vs, False, self.algo, prm).fit(a) for k, vs in groupes.items()}
+                # juge prudent : chaque expert pèse selon sa réussite récente (au-dessus du hasard), jamais en négatif.
+                # (Un juge « libre » testé sur les vraies données était instable : il inversait parfois un expert.)
+                yb = b["cible"].to_numpy()
+                self.juge = {k: max(0.0, _auc(yb, e.predict_proba(b)) - 0.5) for k, e in exp_a.items()}
+                if not sum(self.juge.values()):
+                    self.juge = None
+                self.experts = exp_a
+        if self.params.get("experts_refit", True) or not self.experts:
+            self.experts = {k: Predicteur(vs, False, self.algo, prm).fit(df) for k, vs in groupes.items()}
+        self.vars_commun = sorted({v for e in self.experts.values() for v in e.vars_commun})
+        return self
+
+    @staticmethod
+    def _logits(avis):
+        cles = sorted(avis)
+        P = np.clip(np.column_stack([avis[k] for k in cles]), 1e-4, 1 - 1e-4)
+        return np.log(P / (1 - P))
+
+    def avis_experts(self, df) -> dict:
+        """Ce que dit chaque expert (probabilité de hausse), et le poids que le juge lui donne."""
+        if not getattr(self, "experts", None):
+            return {}
+        avis = {k: e.predict_proba(df) for k, e in self.experts.items()}
+        brut = self.juge or {k: 1.0 for k in avis}
+        tot = sum(brut.values()) or 1.0
+        return {"avis": avis, "poids": {k: brut.get(k, 0.0) / tot for k in avis}}
+
     def fit(self, df):
+        if self.params.get("experts"):
+            return self._fit_experts(df)
         membres = self.params.get("membres")
         if membres:   # comité de plusieurs recettes : on fait la moyenne de leurs avis
             self.sous = [Predicteur([v for v in m["variables"] if v in df.columns], bool(m.get("par_marche")), self.algo,
@@ -633,6 +707,12 @@ class Predicteur:
         return df["est_crypto"].to_numpy()
 
     def predict_proba(self, df):
+        if getattr(self, "experts", None):
+            avis = {k: e.predict_proba(df) for k, e in self.experts.items()}
+            if self.juge:
+                tot = sum(self.juge.values())
+                return sum(self.juge[k] * avis[k] for k in avis) / tot
+            return np.mean(list(avis.values()), axis=0)
         if getattr(self, "sous", None):
             return np.mean([p.predict_proba(df) for p in self.sous], axis=0)
         df = self._comparer_jour(df)
@@ -659,6 +739,8 @@ def predictions_hors_echantillon(jeu, horizon, variables, par_marche, n_plis=6, 
                                  garder_ticker=False):
     """Prévisions « walk-forward » : chaque période n'est prédite que par des IA entraînées avant elle."""
     etiquete = jeu.dropna(subset=["cible"])
+    if params and params.get("experts"):
+        params = {**params, "experts_refit": False}
     morceaux = []
     for train, test in _plis(etiquete, horizon, n_plis):
         if len(train) < 2000 or test.empty or train["cible"].nunique() < 2:
@@ -1122,7 +1204,7 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
     # dernière ligne de chaque titre, classements recalculés entre ces dernières lignes
     dernieres = []
     for ticker, d in tous.items():
-        ligne = d[FEATURES].iloc[[-1]].copy()
+        ligne = d[FEATURES + [c for c in TECHNIQUES_MAISON if c in d.columns]].iloc[[-1]].copy()
         ligne["est_crypto"] = float(marches.get(ticker) == "crypto")
         ligne["ticker"] = ticker
         dernieres.append(ligne)
@@ -1144,6 +1226,21 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
         return (calibs["final"].predict(b) if calibs.get("final") is not None else b), q1, q2
 
     final, p1, p2 = decision(actuel)
+    mod_exp = (cache or {}).get("experts_info")
+    try:   # version 88 : ce que dit chacun des 5 experts (affiché sur les fiches ; ne vote que si le comité a fait ses preuves)
+        if getattr(ia1, "experts", None):
+            info = ia1.avis_experts(actuel)
+        else:
+            if mod_exp is None:
+                mod_exp = Predicteur(CONFIG_EXPERTS[1], False, "ia1", dict(CONFIG_EXPERTS[3])).fit(etiquete)
+            info = mod_exp.avis_experts(actuel)
+        # chaque expert est recentré sur son avis médian du jour : on montre s'il est plus optimiste ou plus pessimiste
+        # pour CE titre que pour les autres (ses chiffres bruts penchent tous un peu vers la hausse, comme le marché sur la durée)
+        med = {k: float(np.median(np.asarray(v)[garde])) for k, v in info["avis"].items()}
+        evaluation.experts_titres = {t: {k: float(0.5 + v[i] - med[k]) for k, v in info["avis"].items()} for i, (t, g) in enumerate(zip(tks, garde)) if g}
+        evaluation.experts_poids = {k: float(v) for k, v in info["poids"].items()}
+    except Exception:
+        evaluation.experts_titres, evaluation.experts_poids = {}, {}
     try:   # les raisons de chaque avis
         refs = cache["refs"] if cache and cache.get("refs") else comprendre.references(etiquete, actuel.columns)
         evaluation.explications = comprendre.expliquer(lambda df: decision(df)[0], actuel, refs, garde)
@@ -1166,7 +1263,7 @@ def _predire(jeu, tous, donnees, marches, variables, par_marche, calibs, mode, e
         mod_chute = None
     if not cache:
         _sauver_modeles({"cle": cle, "ia1": ia1, "ia2": ia2, "vs_q": vs_q, "mods_q": mods_q, "rel": modele_rel,
-                         "risque": mod_risque, "refs": locals().get("refs"), "chute": mod_chute})
+                         "risque": mod_risque, "refs": locals().get("refs"), "chute": mod_chute, "experts_info": mod_exp})
     if p2 is not None:
         c1, c2 = calibs["ia1"].predict(p1), calibs["ia2"].predict(p2)
         evaluation.proba_ia1 = {t: float(v) for t, v, g in zip(tks, c1, garde) if g}

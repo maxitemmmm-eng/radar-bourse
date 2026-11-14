@@ -226,6 +226,26 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
         item["perf_an"] = _arrondi(float(d["Close"].iloc[-1] / d["Close"].iloc[-min(len(d), 253)] - 1)) if len(d) > 200 else None
         titres.append(item)
 
+    # version 88 : Prediction Engine 2.0 — trois horizons, hausse / stable / baisse, détecteur de situations risquées
+    try:
+        from . import moteur2
+        par_marche_vol = {}
+        for item in titres:
+            v = (item.get("perf") or {}).get("volatilité annuelle")
+            if v is not None:
+                par_marche_vol.setdefault(item.get("marche"), []).append(v)
+        for item in titres:
+            d = donnees.get(item["ticker"])
+            if d is None:
+                continue
+            crypto = item.get("marche") == "crypto" or item["ticker"].endswith("-USD")
+            item["horizons"] = moteur2.horizons(d["Close"], item, crypto)
+            v, autres = (item.get("perf") or {}).get("volatilité annuelle"), par_marche_vol.get(item.get("marche"), [])
+            rang = (sum(x <= v for x in autres) / len(autres)) if (v is not None and len(autres) >= 10) else None
+            item["situation"] = moteur2.situation(item, d, rang)
+    except Exception as e:
+        print(f"Prediction Engine 2.0 indisponible cette fois : {e}")
+
     # version 83 : les prévisions passées de l'IA sur chaque titre (fourchette annoncée et prix réel un mois après),
     # posées sur le graphique de l'appli et comptées dans le tableau « fiabilité vérifiée »
     passes_tous = {"n": 0, "k": 0, "sens_n": 0, "sens_k": 0}
@@ -293,6 +313,7 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
     return propre({
         "genere_le": datetime.now().isoformat(timespec="seconds"),
         "date_donnees": date_max, "demo": demo, "horizon": horizon, "passes_tous": passes_tous,
+        "detecteur": __import__("bourse_bot.moteur2", fromlist=["x"]).DETECTEUR,
         "modele": None if evaluation is None else evaluation.to_dict(),
         "suivi": suivi, "indices": indices, "titres": titres,
         "live": {"finnhub": config.FINNHUB_CLE},
@@ -357,7 +378,7 @@ def _json_rapide(payload: dict) -> str:
 
 
 CHAMPS_DETAIL = ("serie", "rendements", "cone", "chandeliers", "backtest", "niveaux", "actus",
-                 "fondamentaux", "raisons_pour", "raisons_contre", "raisons_ia", "passes_ia")
+                 "fondamentaux", "raisons_pour", "raisons_contre", "raisons_ia", "passes_ia", "experts", "horizons")
 TOUJOURS_COMPLETS = {"^FCHI"}
 # version 82 : champs calculés pour les pages fixes et l'historique, jamais lus par l'appli : retirés de la page d'accueil
 INUTILES_APPLI = ("quantiles", "extremes", "fiabilite_modele", "proba_brute", "proba_ia1", "proba_ia2")  # premier graphique de l'accueil : affiché tout de suite (les autres sont chargés au clic)

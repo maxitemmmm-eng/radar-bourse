@@ -803,7 +803,7 @@ class Moteur:
         Ce n'est pas pour l'entraîner davantage sur ces crises (elle apprendrait l'histoire par cœur),
         mais pour connaître ses points faibles et prévenir sur le site quand le marché leur ressemble."""
         np, pd, model = self.np, self.pd, self.model
-        if "membres" in (e.get("params") or {}):
+        if {"membres", "experts"} & set(e.get("params") or {}):
             e = {"variables": model.VARIABLES_BASE, "par_marche": False, "params": {}}
         et = jeu.dropna(subset=["cible"])
         dates = np.array(sorted(et.index.unique()))
@@ -869,7 +869,7 @@ class Moteur:
         """À quel horizon l'IA est-elle la plus fiable ? Même recette, testée à 1 semaine, 1 mois et 3 mois,
         sur la zone de recherche (les années sous clé ne sont pas utilisées)."""
         np, model = self.np, self.model
-        if "membres" in (e.get("params") or {}):
+        if {"membres", "experts"} & set(e.get("params") or {}):
             e = {"variables": model.VARIABLES_BASE, "par_marche": False, "params": {}}
         self.log("🔭 Examen des horizons : à quelle échéance l'IA est-elle la plus fiable ?")
         out = []
@@ -908,7 +908,7 @@ class Moteur:
         vus, res = set(exclus), []
         for e in sorted(memoire, key=lambda e: -(e["auc_recherche"] - moy[e.get("date") or "ancien"])):
             sig = self._signature(e)
-            if sig in vus or "membres" in (e.get("params") or {}):
+            if sig in vus or {"membres", "experts"} & set(e.get("params") or {}):
                 continue
             vus.add(sig)
             res.append(e)

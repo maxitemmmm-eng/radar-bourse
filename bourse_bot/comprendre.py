@@ -172,7 +172,10 @@ def evaluer_risque(jeu, horizon, variables_base, n_plis=5):
             "ic_gain": ic, "prouve": bool(ic and ic[0] > 0), "variables": vs}
 
 
-CIBLE_SURS = 0.80   # taux visé SUR LE PASSÉ pour choisir le seuil des « avis sûrs »
+CIBLE_SURS = 0.82   # taux visé SUR LE PASSÉ pour choisir le seuil des « avis sûrs »
+# version 89 : 0,80 → 0,82. Testé sur les vrais cours (2016-2026, seuil de chaque année appris sur les années d'avant) :
+# 82,3 % de bonnes réponses (marge 80,8 % à 84,1 %, donc au-dessus de 80 % même au pire de la marge) contre 80,4 %,
+# mieux CHAQUE année (+1,4 à +2,6 points), au-dessus de 80 % 9 années sur 11 ; en échange, avis sûrs sur 44 % des cas au lieu de 52 %.
 
 
 def _seuil_surs(d: np.ndarray, juste: np.ndarray, cible: float = CIBLE_SURS, mini: int = 2000) -> float:

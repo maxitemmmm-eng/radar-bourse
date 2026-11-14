@@ -452,6 +452,25 @@ body.titre-ouvert{overflow:hidden}
 .fiab-gros{display:flex;gap:12px;align-items:baseline;margin:8px 0}.fiab-gros b{font-size:26px;font-family:var(--f-mono)}.fiab-gros span{color:var(--muted);font-size:13px}
 .petit{font-size:12.5px;margin:8px 0 0}
 /*__DEFI_CSS__*/
+.m2{margin:12px 0}.m2-tete{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}.m2-tete h3{margin:0;font-size:18px}
+.m2-alerte{border:1px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent);border-radius:10px;padding:10px 12px;font-size:13.5px;margin:6px 0 12px}
+.m2-h{display:inline-flex;gap:4px;padding:4px;border-radius:10px;background:var(--bg);border:1px solid var(--line);margin-bottom:10px}
+.m2-h button{font:inherit;font-size:13.5px;padding:6px 12px;border:0;border-radius:7px;background:none;color:var(--muted);cursor:pointer}
+.m2-h button[aria-selected=true]{background:var(--accent);color:#fff;font-weight:600}
+.m2-tri{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--line);gap:2px}
+.m2-tri i{display:block;width:var(--w);transition:width .6s cubic-bezier(.2,.8,.2,1)}.m2-tri .h{background:var(--up)}.m2-tri .s{background:var(--muted);opacity:.55}.m2-tri .b{background:var(--down)}
+.m2-tri-l{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;margin:6px 0 4px;flex-wrap:wrap}.m2-tri-l small{color:var(--muted)}
+.m2-f{font-size:13.5px;margin:6px 0 2px}.m2-src{font-size:12.5px;color:var(--muted);margin:0 0 6px}.m2-src.ia{color:var(--up)}
+.m2-anim{animation:m2In .35s ease}@keyframes m2In{from{opacity:0;transform:translateY(5px)}}
+.m2 h4{margin:14px 0 6px;font-size:15px}.m2-ex{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.m2-ex li{display:grid;grid-template-columns:minmax(150px,1.3fr) minmax(90px,1fr) minmax(120px,auto) 70px;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13.5px}
+.m2-ex li div small{display:block;color:var(--muted);font-size:11.5px}.m2-poids{color:var(--muted);font-size:12px;text-align:right}
+.m2-jauge{position:relative;height:8px;border-radius:4px;background:var(--line)}.m2-jauge::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--muted)}
+.m2-jauge i{position:absolute;top:0;bottom:0;border-radius:4px;left:50%;width:calc(var(--d));background:var(--up)}.m2-jauge i.down{left:auto;right:50%;width:calc(var(--d) * -1);background:var(--down)}
+.m2-info{border-style:dashed!important}.m2-txt{font-size:12.5px}.m2-attente{font-size:12px;color:var(--warn)}
+.m2-juge{font-size:13px;color:var(--muted);margin:10px 0 0}
+@media (max-width:640px){.m2-ex li{grid-template-columns:1fr auto}.m2-jauge,.m2-poids{display:none}}
+@media (prefers-reduced-motion:reduce){.m2-anim{animation:none}.m2-tri i{transition:none}}
 .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
 .fact{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px}
 .fact .v{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:15px}
@@ -3298,6 +3317,47 @@ function tableauPrevision(t){
       <p class="muted petit">Méthode : modèle d'apprentissage entraîné sur l'historique des cours, testé année par année sur des périodes qu'il n'avait jamais vues. Cours de clôture du ${fmtDate(date)}. <a href="resultats.html">Voir tous les résultats</a></p></div>
   </div>`;
 }
+/* ---------- version 88 : Prediction Engine 2.0 (5 experts, un juge, 3 horizons, détecteur de situations risquées) ---------- */
+const NOMS_EXPERTS = {technique:["Analyse technique","RSI, MACD, moyennes mobiles, tendances"], statistique:["Analyse statistique","rendements passés, volatilité, pires baisses"],
+  sentiment:["Sentiment du marché","volumes, peur et avidité, force face au marché"], economie:["Économie et événements","taux, pétrole, dollar, peur des marchés (VIX)"],
+  maison:["Techniques maison","5 indicateurs inventés par Radar Bourse"]};
+function m2Vue(t, k){
+  const h = (t.horizons || {})[k]; if(!h) return "";
+  return `<div class="m2-tri" role="img" aria-label="Hausse ${h.hausse} %, stable ${h.stable} %, baisse ${h.baisse} %">
+      <i class="h" style="--w:${h.hausse}%"></i><i class="s" style="--w:${h.stable}%"></i><i class="b" style="--w:${h.baisse}%"></i></div>
+    <div class="m2-tri-l"><span class="up"><b>${h.hausse} %</b> hausse</span><span><b>${h.stable} %</b> stable <small>(±${Math.round(h.seuil * 100)} %)</small></span><span class="down"><b>${h.baisse} %</b> baisse</span></div>
+    <p class="m2-f">8 chances sur 10 entre <b class="num">${px(h.bas, t.devise)}</b> et <b class="num">${px(h.haut, t.devise)}</b>.</p>
+    <p class="m2-src ${h.source === "ia" ? "ia" : ""}">${h.source === "ia" ? "Avis de l'IA, testé sur des années qu'elle n'avait jamais vues." : `Estimation statistique, pas un avis de l'IA : sur 5 ans, ce titre a fini plus haut ${h.part_hausse_passee} fois sur 100 sur cette durée. L'IA n'a pas encore prouvé sa fiabilité à cet horizon ; l'entraînement de nuit l'examine.`}</p>`;
+}
+function moteurPanel(t){
+  const H = t.horizons || {}, X = t.experts || {}, S = t.situation || {}, P = (DATA.modele || {}).experts_poids || {}, D = DATA.detecteur || {};
+  if(!Object.keys(H).length && !Object.keys(X).length) return "";
+  const comite = /Comité de 5 experts/.test((DATA.modele || {}).configuration || "");
+  const ordre = [["7","7 jours"],["30","30 jours"],["90","90 jours"]].filter(([k]) => H[k]);
+  const vue = k => m2Vue(t, k);
+  const experts = Object.keys(NOMS_EXPERTS).filter(k => X[k] != null).map(k => { const p = X[k], ec = p - .5, w = P[k];
+    return `<li><div><b>${NOMS_EXPERTS[k][0]}</b><small>${NOMS_EXPERTS[k][1]}</small></div>
+      <div class="m2-jauge" aria-hidden="true"><i style="--d:${Math.max(-50, Math.min(50, ec * 400)).toFixed(1)}%" class="${ec >= 0 ? "up" : "down"}"></i></div>
+      <span class="${Math.abs(ec) < .005 ? "muted" : ec >= 0 ? "up" : "down"}">${Math.abs(ec) < .005 ? "→ neutre" : ec >= 0 ? "↑ plus optimiste" : "↓ plus pessimiste"}</span>
+      <span class="m2-poids">${w != null ? `poids ${Math.round(w * 100)} %` : ""}</span></li>`; }).join("");
+  const F = t.fondamentaux || {}, fv = F.valeurs || {};
+  const info = `<li class="m2-info"><div><b>Entreprise</b><small>bénéfices, dettes, chiffre d'affaires</small></div><div class="m2-txt">${fv.trailingPE ? `PER ${fv.trailingPE.toFixed(1).replace(".", ",")}` : ""}${fv.dividendYield ? ` · dividende ${Number(fv.dividendYield).toFixed(1).replace(".", ",")} %` : ""}${!fv.trailingPE && !fv.dividendYield ? "Pas de chiffres pour ce titre" : ""}</div><span class="m2-attente">en cours de preuve</span><span></span></li>
+    <li class="m2-info"><div><b>Actualités</b><small>annonces, événements</small></div><div class="m2-txt">Tonalité des 7 derniers jours : ${ton(t.tonalite)}</div><span class="m2-attente">en cours de preuve</span><span></span></li>`;
+  return `<section class="panel m2" aria-labelledby="m2-t">
+    <div class="m2-tete"><h3 id="m2-t">Prediction Engine 2.0</h3><span class="muted">5 experts, 1 juge, 3 horizons</span></div>
+    ${S.risquee ? `<div class="m2-alerte" role="note"><b>⚠ Situation où l'IA est moins fiable</b> : ${S.raisons.map(esc).join(" ; ")}. Dans ces situations, sur des années jamais vues, elle a vu juste ${Math.round((D.signale || .525) * 1000) / 10} % du temps, contre ${Math.round((D.ailleurs || .574) * 1000) / 10} % ailleurs (${esc(D.annees || "9 années sur 11")}). Son avis reste affiché, mais prends-le avec plus de recul.</div>` : ""}
+    ${ordre.length ? `<div class="m2-h" role="tablist" aria-label="Horizon">${ordre.map(([k, l]) => `<button type="button" role="tab" data-h="${k}" aria-selected="${k === "30"}">${l}</button>`).join("")}</div>
+    <div class="m2-vue" id="m2-vue">${vue(H["30"] ? "30" : ordre[0][0])}</div>` : ""}
+    ${experts ? `<h4>Ce que dit chaque expert <small class="muted" style="font-weight:400">(par rapport à ce qu'il pense des autres titres aujourd'hui)</small></h4><ul class="m2-ex">${experts}${info}</ul>
+    <p class="m2-juge"><b>Le juge</b> : ${comite ? "il pèse chaque expert selon sa réussite récente sur des données qu'aucun expert n'avait vues, et sa décision est l'avis affiché en haut." : "le comité d'experts est en examen. L'avis affiché en haut vient de l'IA en place, qui reste la plus fiable tant que le comité n'a pas prouvé qu'il fait mieux (test automatique chaque soir, avec 95 % de certitude exigés)."} Les experts « entreprise » et « actualités » n'ont pas d'historique fiable sur les années passées : leurs chiffres sont enregistrés chaque soir pour être testés plus tard.</p>` : ""}
+  </section>`;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest(".m2-h button"); if(!b || !courant) return;
+  b.parentElement.querySelectorAll("button").forEach(x => x.setAttribute("aria-selected", x === b));
+  const v = document.getElementById("m2-vue"); if(!v || !(courant.horizons || {})[b.dataset.h]) return;
+  v.innerHTML = m2Vue(courant, b.dataset.h); v.classList.remove("m2-anim"); void v.offsetWidth; v.classList.add("m2-anim");
+});
 function graphique(t){   // version 67 : sur téléphone, moins de passé pour que la prévision soit bien visible
   grapheComplet("g-detail", t, {niveaux:true, periode: innerWidth < 600 ? 21 : 63}); }
 function redessinerTout(){ for(const [id, g] of Object.entries(GRAPHS)) grapheComplet(id, g.t, g.opts); if(typeof rendreCarte === "function") rendreCarte(); }
@@ -3542,6 +3602,7 @@ function ouvrir(tk, pousser=true){
 
     <div class="dpane" data-dpane="prev">
       ${resumeSimple(t)}
+      ${moteurPanel(t)}
       <div class="forecast">
         <div class="panel kpi"><div class="label">Dans un mois, le plus probable</div><div class="v num">${t.cone ? px(t.cone.mediane.at(-1), t.devise) : '–'}${t.signal_fort?'<span class="badge-fort">Signal fort</span>':''}</div><div class="d">${f && f.length ? `8 chances sur 10 entre ${px(f[0], t.devise)} et ${px(f[1], t.devise)}` : ''}</div></div>
         <div class="panel kpi"><div class="label">Score technique</div><div class="v num">${Math.round(t.score)} / 100</div><span class="pill ${SIG[t.signal]}" title="Tendance technique (moyennes, RSI, MACD…), indépendante de l'avis des IA">${esc(LIB[t.signal] || t.signal)}</span></div>

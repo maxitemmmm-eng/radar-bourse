@@ -269,6 +269,29 @@ def calculer(df: pd.DataFrame, benchmark: pd.DataFrame | None = None,
     d["mom_ajuste_63"] = d["ret_63j"] / (vol_long * np.sqrt(63 / 252)).replace(0, np.nan)
     d["mom_ajuste_126"] = d["ret_126j"] / (vol_long * np.sqrt(126 / 252)).replace(0, np.nan)
 
+    d = d.copy()   # regroupe les colonnes en mémoire (plus rapide)
+    # Version 88 : les « techniques maison » de Radar Bourse, utilisées par le comité d'experts (pas par les autres recettes).
+    # Elles ne sont gardées par l'IA que si l'examen sur des années jamais vues prouve qu'elles aident.
+    r1 = c.pct_change()
+    # 1. Propreté de la tendance (inspirée du ratio d'efficacité de Kaufman) : chemin net ÷ chemin parcouru sur 20 jours.
+    #    1 = le prix est allé droit au but ; 0 = il a beaucoup zigzagué pour rien.
+    d["rb_proprete_20j"] = (c - c.shift(20)).abs() / c.diff().abs().rolling(20).sum().replace(0, np.nan)
+    # 2. Excès par rapport à ses propres habitudes : la hausse (ou baisse) du dernier mois comparée à toutes celles
+    #    que CE titre a connues sur 3 ans (score z). +2 = un mois rarement vu aussi fort pour lui.
+    m21 = d["ret_21j"]
+    d["rb_exces_habitudes"] = (m21 - m21.rolling(756, min_periods=250).mean()) / m21.rolling(756, min_periods=250).std().replace(0, np.nan)
+    # 3. Pression acheteuse : part des volumes échangés les jours de hausse sur 20 jours (0,5 = équilibre).
+    vol = d["Volume"].astype(float) if "Volume" in d else pd.Series(np.nan, index=d.index)
+    v_hausse = vol.where(r1 > 0, 0.0).rolling(20).sum()
+    d["rb_pression_achat"] = v_hausse / vol.rolling(20).sum().replace(0, np.nan)
+    # 4. Choc récent : la plus forte baisse en 5 jours, en nombre d'« agitations habituelles » du titre.
+    sd = r1.rolling(60, min_periods=30).std()
+    d["rb_choc_5j"] = (c / c.rolling(5).max() - 1) / (sd * np.sqrt(5)).replace(0, np.nan)
+    # 5. Régularité des gains : part des semaines en hausse sur les 26 dernières (une hausse faite de petites étapes
+    #    régulières n'a pas le même sens qu'un seul bond).
+    sem = c.pct_change(5)
+    d["rb_regularite_26s"] = (sem > 0).astype(float).rolling(130, min_periods=60).mean()
+
     # Les mini-robots (stratégies classiques) : leur avis moyen devient un indicateur pour l'IA
     from . import robots
     robots.ajouter(d, crypto)
@@ -295,3 +318,5 @@ from .connaissances import COLONNES as _COLONNES_CONNAISSANCES  # noqa: E402
 FEATURES += _COLONNES_CONNAISSANCES
 FEATURES += ["robots_consensus"]   # version 26 : l'avis moyen des mini-robots
 FEATURES += ["mom_ajuste_63", "mom_ajuste_126"]   # version 31 : momentum corrigé du risque
+# version 88 : techniques maison, réservées au comité d'experts (les autres recettes restent identiques)
+TECHNIQUES_MAISON = ["rb_proprete_20j", "rb_exces_habitudes", "rb_pression_achat", "rb_choc_5j", "rb_regularite_26s"]
