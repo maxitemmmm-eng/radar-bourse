@@ -24,6 +24,20 @@ MOTS = ("est-ce que la bourse va baisser, faut-il acheter du bitcoin maintenant,
         "prévision XRP 2030, que veut dire EPA bourse, code bourse NYSE HKG, prévisions boursières fiables")
 
 
+CSS_ACCORDEON = ("<style>.q-sommaire{columns:2 280px;gap:24px;padding-left:18px;margin:18px 0 26px}.q-sommaire li{margin:4px 0;break-inside:avoid}"
+             ".q-bloc{border:1px solid var(--line);border-radius:12px;margin:10px 0;background:var(--surface);scroll-margin-top:110px;transition:border-color .2s}"
+             ".q-bloc[open]{border-color:var(--accent)}.q-bloc summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 18px}"
+             ".q-bloc summary::-webkit-details-marker{display:none}.q-bloc summary:hover h2{color:var(--accent)}.q-bloc h2{font-size:19px;margin:0;transition:color .15s}"
+             ".q-plus{flex:none;width:22px;height:22px;position:relative}.q-plus::before,.q-plus::after{content:'';position:absolute;left:4px;right:4px;top:10px;height:2px;border-radius:2px;background:currentColor;transition:transform .3s cubic-bezier(.2,.8,.2,1)}"
+             ".q-plus::after{transform:rotate(90deg)}.q-bloc[open] .q-plus::after{transform:rotate(0)}"
+             ".q-rep{padding:0 18px 6px}.q-rep p{max-width:72ch;margin-top:0}.q-bloc[open] .q-rep{animation:qOuvre .35s cubic-bezier(.2,.8,.2,1)}"
+             "@keyframes qOuvre{from{opacity:0;transform:translateY(-6px)}}@media (prefers-reduced-motion:reduce){.q-bloc[open] .q-rep{animation:none}.q-plus::before,.q-plus::after{transition:none}}"
+             ".q-outils{display:flex;gap:10px;margin:0 0 6px}</style>")
+JS_ACCORDEON = ("<script>(function(){const ds=[...document.querySelectorAll('.q-bloc')];const ouvrir=()=>{const h=decodeURIComponent(location.hash.slice(1));const d=h&&document.getElementById(h);"
+             "if(d&&d.tagName==='DETAILS'){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'});}};addEventListener('hashchange',ouvrir);ouvrir();"
+             "const b=document.getElementById('q-tout');b.onclick=()=>{const o=!ds.every(d=>d.open);ds.forEach(d=>d.open=o);b.textContent=o?b.dataset.fermer:b.dataset.ouvrir;};})();</script>")
+
+
 def questions():
     total, verse = _cent_euros()
     gain = total - verse
@@ -122,29 +136,21 @@ def generer(seo, base, dossier, csp):
     blocs = "".join(f"<details class='q-bloc' id='{a}'><summary><h2>{_e(q)}</h2><span class='q-plus' aria-hidden='true'></span></summary>"
                     f"<div class='q-rep'><p>{r}</p></div></details>" for a, q, r in qs)
     sommaire = "".join(f"<li><a href='#{a}'>{_e(q)}</a></li>" for a, q, _ in qs)
-    corps = ("<style>.q-sommaire{columns:2 280px;gap:24px;padding-left:18px;margin:18px 0 26px}.q-sommaire li{margin:4px 0;break-inside:avoid}"
-             ".q-bloc{border:1px solid var(--line);border-radius:12px;margin:10px 0;background:var(--surface);scroll-margin-top:110px;transition:border-color .2s}"
-             ".q-bloc[open]{border-color:var(--accent)}.q-bloc summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 18px}"
-             ".q-bloc summary::-webkit-details-marker{display:none}.q-bloc summary:hover h2{color:var(--accent)}.q-bloc h2{font-size:19px;margin:0;transition:color .15s}"
-             ".q-plus{flex:none;width:22px;height:22px;position:relative}.q-plus::before,.q-plus::after{content:'';position:absolute;left:4px;right:4px;top:10px;height:2px;border-radius:2px;background:currentColor;transition:transform .3s cubic-bezier(.2,.8,.2,1)}"
-             ".q-plus::after{transform:rotate(90deg)}.q-bloc[open] .q-plus::after{transform:rotate(0)}"
-             ".q-rep{padding:0 18px 6px}.q-rep p{max-width:72ch;margin-top:0}.q-bloc[open] .q-rep{animation:qOuvre .35s cubic-bezier(.2,.8,.2,1)}"
-             "@keyframes qOuvre{from{opacity:0;transform:translateY(-6px)}}@media (prefers-reduced-motion:reduce){.q-bloc[open] .q-rep{animation:none}.q-plus::before,.q-plus::after{transition:none}}"
-             ".q-outils{display:flex;gap:10px;margin:0 0 6px}</style>"
+    corps = (CSS_ACCORDEON +
              "<h1>Vos questions sur la Bourse, la crypto et l'IA</h1>"
              "<p class='muted'>Les questions que l'on nous pose le plus, avec des réponses honnêtes : quand personne ne peut savoir, on le dit. "
-             "Ce ne sont pas des conseils personnalisés.</p>"
-             f"<ol class='q-sommaire'>{sommaire}</ol><p class='q-outils'><button class='btn ghost' type='button' id='q-tout'>Tout ouvrir</button></p>{blocs}"
-             "<script>(function(){const ds=[...document.querySelectorAll('.q-bloc')];const ouvrir=()=>{const h=decodeURIComponent(location.hash.slice(1));const d=h&&document.getElementById(h);"
-             "if(d&&d.tagName==='DETAILS'){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'});}};addEventListener('hashchange',ouvrir);ouvrir();"
-             "const b=document.getElementById('q-tout');b.onclick=()=>{const o=!ds.every(d=>d.open);ds.forEach(d=>d.open=o);b.textContent=o?'Tout fermer':'Tout ouvrir';};})();</script>")
+             "Ce ne sont pas des conseils personnalisés. <a href='en/questions.html' hreflang='en' lang='en'>English version</a></p>"
+             f"<ol class='q-sommaire'>{sommaire}</ol><p class='q-outils'><button class='btn ghost' type='button' id='q-tout' data-ouvrir='Tout ouvrir' data-fermer='Tout fermer'>Tout ouvrir</button></p>{blocs}"
+             + JS_ACCORDEON)
     import re
     jl = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": re.sub(r"<[^>]+>", "", r)}} for _a, q, r in qs]}
     chemin = "questions-bourse.html"
     page = seo._page(base, f"Vos questions sur la Bourse et l'IA : réponses honnêtes | {seo.NOM}",
                      "La Bourse va-t-elle baisser ? Faut-il acheter du bitcoin ? Combien rapportent 100 € par mois ? Une IA de bourse est-elle fiable ? "
-                     "Des réponses honnêtes, chiffrées et sans promesse.", chemin, corps, jl, csp=csp, mots=MOTS)
+                     "Des réponses honnêtes, chiffrées et sans promesse.", chemin, corps, jl, csp=csp, mots=MOTS,
+                     alternates={"fr": chemin, "en": "en/questions.html", "x-default": chemin})
     with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
         f.write(page)
-    return [chemin]
+    from . import questions_en   # version 86 : la même page en anglais
+    return [chemin] + questions_en.generer(base, dossier, csp)

@@ -187,6 +187,8 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("86", "Effet « valeurs calmes » : quand l'IA hésite, pencher pour la hausse sur les titres les moins agités de leur marché (ils montent souvent plus régulièrement)", False,
+     "Testé de 2018 à 2026 avec les seules années passées : −0,02 point en moyenne, recul 4 années sur 9 (jusqu'à −0,4 point en 2022). Aucun gain réel. Non adopté"),
     ("85", "Effet calendrier : quand l'IA hésite, suivre la tendance habituelle du mois de l'année (certains mois montent plus souvent que d'autres)", False,
      "Testé de 2018 à 2026 avec les seules années passées : −0,4 point en moyenne, recul 5 années sur 9 (jusqu'à −3,4 points en 2025). Les « bons mois » du passé ne se répètent pas. Non adopté"),
     ("84", "Mettre en avant seulement les 10 % d'avis les plus tranchés (« avis très net »)", False,

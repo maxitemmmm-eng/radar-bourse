@@ -16,7 +16,7 @@ Mis à jour le 12 novembre 2026, version 83. Une ligne cochée = fait.
 ## Demain (13/11)
 - [ ] Vérifier dans Search Console que la page « Vos questions » est découverte (rubrique Pages).
 - [x] Ajouter 6 questions de plus à « Vos questions » à partir des vraies recherches qui arrivent sur le site (version 85).
-- [ ] Traduire « Vos questions » en anglais (`en/questions.html`) : beaucoup de visites viennent déjà des pages anglaises.
+- [x] Traduire « Vos questions » en anglais (`en/questions.html`) : fait en version 86.
 
 ## Dans 2 à 3 jours (14-15/11)
 - [ ] Une page « avis IA » par grande action plus lisible en tête de fiche (1 phrase claire : hausse ou baisse, confiance, fourchette), pour LVMH, Nvidia, Tesla, TotalEnergies, Airbus d'abord.

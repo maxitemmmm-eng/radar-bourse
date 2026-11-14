@@ -69,7 +69,7 @@ def _page(base, titre, description, chemin, corps, csp, alternates, mots=None):
             [("All stocks and cryptos", "en/index.html"), ("If I had invested…", "en/tools/if-i-had-invested.html"),
              ("Crypto converter", "en/tools/crypto-converter.html"), ("Compound interest", "en/tools/compound-interest.html"),
              ("Capital gains", "en/tools/capital-gains.html"), ("Guides", "en/guides.html"),
-             ("Stocks by theme", "en/themes.html"), ("AI calls checked in public", "en/verified-calls.html"), ("Version française", "index.html", 'hreflang="fr" lang="fr"')],
+             ("Stocks by theme", "en/themes.html"), ("Your questions", "en/questions.html"), ("AI calls checked in public", "en/verified-calls.html"), ("Version française", "index.html", 'hreflang="fr" lang="fr"')],
             ("Open the app", "app-en.html"), aria_nav="Site pages", aria_theme="Light / dark theme", aller="Skip to content")}
 <div class="w">
 <main id="contenu" tabindex="-1">
