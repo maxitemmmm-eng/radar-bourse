@@ -17,6 +17,13 @@ from datetime import datetime
 from . import config
 from .hebdo import CSS as _CSS_HEBDO
 from .transitions import CSS as _CSS_VT, JS as _JS_VT
+_CSS_VERDICT = (".v-carte{border:1px solid var(--line);border-left:4px solid var(--up);border-radius:12px;padding:14px 18px;margin:14px 0;background:var(--surface)}"
+                ".v-carte.v-down{border-left-color:var(--down)}.v-sur{margin:0;font-size:13px;color:var(--muted)}"
+                ".v-phrase{font-size:20px;margin:4px 0 10px;line-height:1.35}.v-tri{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;background:var(--line)}"
+                ".v-tri i{display:block}.v-tri .h{background:var(--up)}.v-tri .s{background:var(--muted);opacity:.5}.v-tri .b{background:var(--down)}"
+                ".v-leg{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:13px;margin:6px 0 0}"
+                ".v-alerte{margin:10px 0 0;font-size:13.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--warn)}"
+                ".v-note{margin:8px 0 0;font-size:12.5px;color:var(--muted)}")
 from .graphique_pro import CSS as _CSS_GP
 from .trois_parties import CSS as _CSS_TROIS, barre as _barre_trois, partie_de as _partie_de
 
@@ -193,7 +200,7 @@ html.texte-115 body{font-size:18px}html.texte-130 body{font-size:20px}
 .marque-sur svg{width:13px;height:13px}.marque-sur.tres{color:var(--surface);background:var(--up)}
 .avis-sur{border-left:3px solid var(--up);padding:8px 12px;background:var(--up-soft);border-radius:0 8px 8px 0}
 .badge-sur{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:700;background:var(--up);color:var(--surface)}
-""" + _CSS_HEBDO.replace("\n", "") + _CSS_TROIS.replace("\n", "") + _CSS_VT.replace("\n", "") + _CSS_GP.replace("\n", "") + """th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:13px;color:var(--muted)}
+""" + _CSS_VERDICT + _CSS_HEBDO.replace("\n", "") + _CSS_TROIS.replace("\n", "") + _CSS_VT.replace("\n", "") + _CSS_GP.replace("\n", "") + """th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:13px;color:var(--muted)}
 @media print{.top,.nav-ligne,.plus,.theme-btn,.ouvrir,.partager-page,footer .muted{display:none!important}body{background:#fff;color:#000}.carte{border-color:#bbb}a{color:#000}}"""
 
 LOGO = '<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id=\'rbf\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'1\'><stop offset=\'0\' stop-color=\'#1c3576\'/><stop offset=\'1\' stop-color=\'#0a1330\'/></linearGradient><linearGradient id=\'rbl\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#86a8ff\'/><stop offset=\'1\' stop-color=\'#44e09c\'/></linearGradient><linearGradient id=\'rbs\' x1=\'0\' y1=\'0\' x2=\'1\' y2=\'0\'><stop offset=\'0\' stop-color=\'#44e09c\' stop-opacity=\'0\'/><stop offset=\'1\' stop-color=\'#44e09c\' stop-opacity=\'.85\'/></linearGradient></defs><rect width=\'64\' height=\'64\' rx=\'15\' fill=\'url(#rbf)\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'22.00\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.28\' stroke-width=\'2.00\'/><circle cx=\'30.0\' cy=\'35.0\' r=\'12.50\' fill=\'none\' stroke=\'#86a8ff\' stroke-opacity=\'.18\' stroke-width=\'2.00\'/><path d=\'M19.67 15.58 A22.00 22.00 0 0 1 42.3 16.76\' fill=\'none\' stroke=\'url(#rbs)\' stroke-width=\'3.20\' stroke-linecap=\'round\'/><polyline points=\'9.0,47.0 18.0,39.5 26.0,42.5 34.5,31.0 40.5,33.5 44.72,18.65\' fill=\'none\' stroke=\'url(#rbl)\' stroke-width=\'5.00\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'8.00\' fill=\'#44e09c\' fill-opacity=\'.2\'/><circle cx=\'44.72\' cy=\'18.65\' r=\'4.50\' fill=\'#44e09c\'/></svg>'
@@ -931,6 +938,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     corps = f"""{fil}
 <h1>{"Action " if titre.startswith("Action ") else ""}{_e(nom)} ({_e(aff_tk(tk))}) : cours, prévision et analyse</h1>
 <p class="muted">Mise à jour automatique · cours au {_e(date)}{f" · entreprise d'origine : {_e(config.PAYS_MONDE[tk])}, cotée à New York en dollars" if tk in config.PAYS_MONDE else ""}</p>
+{_verdict_titre(t, nom)}
 <div class="carte grille">
   <div class="k"><b>{_px(prix, dev)}</b><span>dernier cours</span></div>
   <div class="k"><b>{_pct(perf.get('1 mois'))}</b><span>sur 1 mois</span></div>
@@ -1757,6 +1765,31 @@ def _profil(fd):
 
 
 LIB_CONF_FAQ = {"faible": "confiance faible", "moyenne": "confiance moyenne", "forte": "confiance forte"}
+
+
+def _verdict_titre(t, nom):
+    """Version 91 : l'avis de l'IA en une phrase, tout en haut de la fiche (ce que cherche le visiteur venu de Google)."""
+    if t.get("proba_hausse") is None:
+        return ""
+    try:
+        from .hebdo import avis_ia
+        pa, sens, conf = avis_ia(t)
+    except Exception:
+        return ""
+    ch = round((pa if sens > 0 else 1 - pa) * 100)
+    cls = "up" if sens > 0 else "down"
+    h = (t.get("horizons") or {}).get("30") or {}
+    tri = (f"<div class='v-tri' role='img' aria-label='Hausse {h['hausse']} %, stable {h['stable']} %, baisse {h['baisse']} %'>"
+           f"<i class='h' style='width:{h['hausse']}%'></i><i class='s' style='width:{h['stable']}%'></i><i class='b' style='width:{h['baisse']}%'></i></div>"
+           f"<p class='v-leg'><span class='up'>{h['hausse']} % hausse</span><span>{h['stable']} % stable (±{round(h['seuil'] * 100)} %)</span>"
+           f"<span class='down'>{h['baisse']} % baisse</span></p>") if h.get("hausse") is not None else ""
+    S = t.get("situation") or {}
+    alerte = (f"<p class='v-alerte'>⚠ Situation où l'IA est moins fiable : {_e(' ; '.join(S.get('raisons') or []))}.</p>") if S.get("risquee") else ""
+    return (f"<section class='v-carte v-{cls}' aria-label=\"L'avis de l'IA en une phrase\"><p class='v-sur'>L'avis de l'IA pour le mois qui vient</p>"
+            f"<p class='v-phrase'>L'IA voit {_e(nom)} <b class='{cls}'>{'à la hausse' if sens > 0 else 'à la baisse'}</b> : "
+            f"{ch} chances sur 100, {LIB_CONF_FAQ.get(conf, 'confiance faible')}.</p>{tri}{alerte}"
+            "<p class='v-note'>Une probabilité testée sur des années jamais vues, pas une certitude ni un conseil.</p></section>")
+
 
 
 def _faq_titre(t, nom, date, verdict):

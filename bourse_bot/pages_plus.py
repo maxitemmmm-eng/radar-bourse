@@ -187,6 +187,10 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("90", "Avis sûrs : combiner l'IA de l'agitation avec un second modèle (classifieur « plus ou moins agité ? ») pour en donner plus sans perdre en justesse", False,
+     "Testé de 2016 à 2026 : justesse quasi identique (82,8 % contre 82,5 %) mais encore moins d'avis sûrs (41,6 à 43,5 % des cas au lieu de 43,9 %), et certaines années reculent. Non adopté"),
+    ("90", "Avis sûrs : un seuil différent pour chaque marché", False,
+     "Testé de 2016 à 2026 : justesse presque égale (82,6 % contre 82,5 %), mais moins d'avis sûrs (40,5 % des cas au lieu de 43,9 %, jusqu'à 30 % une année). Non adopté"),
     ("89", "« Avis sûrs » plus exigeants : l'IA ne se dit sûre (plus calme ou plus agité le mois prochain) que lorsque son avis est encore plus net", True,
      "Testé de 2016 à 2026, seuil de chaque année appris sur les années d'avant : 82,3 % de bonnes réponses (marge 80,8 % à 84,1 %) au lieu de 80,4 %, "
      "mieux chaque année (+1,4 à +2,6 points), au-dessus de 80 % 9 années sur 11. En échange, l'IA se dit sûre un peu moins souvent (44 % des cas au lieu de 52 %). Adopté"),
