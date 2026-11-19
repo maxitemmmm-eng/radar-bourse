@@ -43,8 +43,8 @@ PAGES = {
     "suivi-chute.html": ("Le risque de chute, vérifié", "Les titres jugés à risque ont-ils vraiment chuté ?", "courbe_bas"),
     "previsions.html": ("Prévisions bourse et crypto", "Ce que l'IA prévoit pour le mois qui vient", "courbe"),
     "portefeuille.html": ("La sélection IA du mois", "10 actions suivies en public, ratés compris", "barres"),
-    "titres.html": ("Tous les titres suivis", "Près de 300 actions, ETF et cryptos", "radar"),
-    "fonction:previsions": ("Prévisions à un mois", "Près de 300 actions, ETF et cryptos, chaque heure", "radar"),
+    "titres.html": ("Tous les titres suivis", "__NB_IA__ actions, ETF et cryptos", "radar"),
+    "fonction:previsions": ("Prévisions à un mois", "__NB_IA__ actions, ETF et cryptos, chaque heure", "radar"),
     "fonction:fourchette": ("À combien dans un mois ?", "Une fourchette de prix probable, vérifiée", "cone"),
     "fonction:arene": ("L'Arène : toi contre l'IA", "Remonte le temps et devine la suite", "manette"),
     "fonction:prono": ("Ton pronostic du jour", "Plus haut ou plus bas demain ? Reviens voir", "cible"),
@@ -186,6 +186,10 @@ def signer(dr, W: int, H: int, police, y: int | None = None) -> None:
 
 
 def dessiner(chemin_png: str, titre: str, sous_titre: str, motif: str, nom: str = "Radar Bourse") -> bool:
+    from . import chiffres   # version 92 : les nombres viennent de la source unique
+    titre, sous_titre = chiffres.appliquer(titre), chiffres.appliquer(sous_titre)
+    if "__NB_" in titre + sous_titre:
+        return False
     try:
         from PIL import Image, ImageDraw
     except Exception:

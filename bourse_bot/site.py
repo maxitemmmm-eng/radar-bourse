@@ -213,6 +213,11 @@ def construire(analyses, donnees, evaluation, suivi, indices_bruts, demo=False, 
         lr = np.log(d["Close"]).diff().dropna().iloc[-750:]
         item["rendements"] = [round(float(v), 5) for v in lr if np.isfinite(v)]
         item["jours_an"] = 365 if a.ticker.endswith("-USD") else 252
+        try:   # version 94 : saisonnalité (rendement de chaque mois, 10 ans au plus)
+            from . import visuels_pro
+            item["saison"] = visuels_pro.saison(d["Close"])
+        except Exception:
+            item["saison"] = None
         x = d.iloc[-1]
         item["au_dessus_200"] = bool(x["Close"] > x["sma200"]) if x["sma200"] == x["sma200"] else None
         item["indice_nom"] = config.NOM_BENCHMARK.get(a.indice_ref, a.indice_ref)
@@ -378,7 +383,7 @@ def _json_rapide(payload: dict) -> str:
 
 
 CHAMPS_DETAIL = ("serie", "rendements", "cone", "chandeliers", "backtest", "niveaux", "actus",
-                 "fondamentaux", "raisons_pour", "raisons_contre", "raisons_ia", "passes_ia", "experts", "horizons")
+                 "fondamentaux", "raisons_pour", "raisons_contre", "raisons_ia", "passes_ia", "experts", "horizons", "saison")
 TOUJOURS_COMPLETS = {"^FCHI"}
 # version 82 : champs calculés pour les pages fixes et l'historique, jamais lus par l'appli : retirés de la page d'accueil
 INUTILES_APPLI = ("quantiles", "extremes", "fiabilite_modele", "proba_brute", "proba_ia1", "proba_ia2")  # premier graphique de l'accueil : affiché tout de suite (les autres sont chargés au clic)
@@ -403,12 +408,24 @@ def _decouper(payload: dict, dossier: str) -> dict:
             pas = len(sp) / 40
             court["spark"] = [sp[int(i * pas)] for i in range(40)] + [sp[-1]]
         court["detail"] = nom
+        # version 95 : page d'accueil plus légère : chiffres arrondis à ce qui s'affiche (4 ou 5 chiffres significatifs)
+        def _arr(v, n):
+            if isinstance(v, float) and v == v and v not in (float("inf"), float("-inf")):
+                return float(f"{v:.{n}g}")
+            if isinstance(v, dict):
+                return {k: _arr(x, n) for k, x in v.items()}
+            if isinstance(v, list):
+                return [_arr(x, n) for x in v]
+            return v
+        for cle, n in (("perf", 4), ("risque_prevu", 4), ("previsions", 6), ("horizons", 5), ("experts", 3)):
+            if cle in court:
+                court[cle] = _arr(court[cle], n)
         leger["titres"].append(court)
     return leger
 
 
 TITRE_APP_EN = "Radar Bourse: free AI stock and crypto forecasts, checked"
-DESCRIPTION_APP_EN = ("Free one-month AI forecasts for nearly 300 stocks, ETFs and cryptos: chances of a rise, price ranges, "
+DESCRIPTION_APP_EN = ("Free one-month AI forecasts for __NB_IA__ stocks, ETFs and cryptos: chances of a rise, price ranges, "
                       "volatility, live prices and measured reliability.")
 
 
@@ -444,6 +461,8 @@ def _ecrire_anglais(gabarit: str, donnees: str, dossier: str, lib: str) -> None:
         html = html.replace(_fr, _en)   # version 65 : les liens de l'appli anglaise vont vers les pages anglaises
     html = html.replace("/*__DATA__*/null", donnees, 1)
     html = html.replace("</body>", traduction_appli.SCRIPT_DONNEES_EN + "\n</body>", 1)
+    from . import chiffres
+    html = chiffres.appliquer(html, "en")
     with open(os.path.join(dossier, "app-en.html"), "w", encoding="utf-8") as f:
         f.write(html)
 
@@ -457,20 +476,26 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
     except Exception as e:
         print(f"Défi 5 jours non mis à jour : {e}")
     gabarit = resources.files(__package__).joinpath("site_template.html").read_text(encoding="utf-8")
+    from . import chiffres   # version 92 : une seule source de vérité pour tous les chiffres publics
+    _c = chiffres.calculer(payload)
+    payload = {**payload, "chiffres": {k: v for k, v in _c.items() if k != "sources"}}
     from . import defi_dossier   # version 83 : le Défi du jour, dossier d'analyse sérieux
     from . import transitions, pronos_coque   # version 83 : mini-animations, et la même architecture que l'Académie
+    from . import visuels_pro   # version 94 : bulles, jauges, profil, saisonnalité
+    from . import visite_guidee   # version 95 : visite guidée pour les nouveaux venus
     import re as _re
     _m = _re.search(r'<svg class="logo".*?</svg>', gabarit, _re.S)
     _logo = _re.sub(r"(id=|url\(#|href=)(['\"]?#?)(rb\w+)", lambda m: m.group(1) + m.group(2) + m.group(3) + "s", _m.group(0)) if _m else ""
-    gabarit = (gabarit.replace("<!--__DEFI__-->", defi_dossier.HTML, 1).replace("/*__DEFI_CSS__*/", defi_dossier.CSS + transitions.CSS + pronos_coque.CSS, 1)
-               .replace("/*__DEFI_JS__*/", defi_dossier.JS + transitions.CODE + pronos_coque.JS, 1)
+    gabarit = (gabarit.replace("<!--__DEFI__-->", defi_dossier.HTML, 1).replace("/*__DEFI_CSS__*/", defi_dossier.CSS + transitions.CSS + pronos_coque.CSS + visuels_pro.CSS + visite_guidee.CSS, 1)
+               .replace("/*__DEFI_JS__*/", defi_dossier.JS + transitions.CODE + pronos_coque.JS + visuels_pro.JS + visite_guidee.js(), 1)
+               .replace('  <section aria-labelledby="h-ctx" class="expert">', visuels_pro.HTML + '  <section aria-labelledby="h-ctx" class="expert">', 1)
                .replace('<header class="top gutter">', pronos_coque.html(_logo) + '<header class="top gutter">', 1))
     # En ligne (robot GitHub), on découpe ; en local (ouverture du fichier sur le PC), tout reste
     # dans la page car les navigateurs bloquent la lecture de fichiers voisins en « file:// ».
     decouper = not pour_artifact and (os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("RADAR_DECOUPER") == "1")
     if os.path.isdir(os.path.join(dossier, "donnees")):
         shutil.rmtree(os.path.join(dossier, "donnees"))
-    pour_page = {k: v for k, v in payload.items() if k != "resultats"}
+    pour_page = {k: v for k, v in payload.items() if k not in ("resultats", "registre")}
     # jeu « Remonte le temps » : fichier à part en ligne (chargé seulement si on joue), intégré sinon
     try:
         with open(os.path.join(config.DOSSIER_HISTORIQUE, "jeu_temps.json"), encoding="utf-8") as f:
@@ -516,6 +541,7 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
                 + "\n</body>\n</html>\n")
     os.makedirs(dossier, exist_ok=True)
     chemin = os.path.join(dossier, "index.html")
+    html = chiffres.appliquer(html, "fr")
     with open(chemin, "w", encoding="utf-8") as f:
         f.write(html)
     if not pour_artifact:
@@ -534,6 +560,12 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
         elif os.path.exists(cname):
             os.remove(cname)
         _ecrire_anglais(gabarit, donnees, dossier, lib)
+        try:   # version 92 : chiffres.json public + contrôle des anciens chiffres écrits à la main
+            chiffres.ecrire_json(dossier)
+            for x in chiffres.controler(dossier):
+                print(f"Chiffre incohérent à corriger : {x}")
+        except Exception as e:
+            print(f"Contrôle des chiffres impossible : {e}")
         ancien = os.path.join(dossier, "donnees.json")
         if os.path.exists(ancien):
             os.remove(ancien)

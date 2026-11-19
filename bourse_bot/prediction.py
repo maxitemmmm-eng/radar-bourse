@@ -91,7 +91,7 @@ def generer(seo, base, payload, dossier, csp, date) -> list:
         hausse = sum(1 for t in cryptos if avis_ia(t)[1] > 0)
         btc = par_tk.get("BTC-USD")
         eth = par_tk.get("ETH-USD")
-        intro = (f"<p>Pour le mois qui vient, l'IA voit <b>{hausse} cryptos sur {len(cryptos)}</b> à la hausse "
+        intro = (f"<p>Pour le mois qui vient, sur les <b>{len(cryptos)}</b> cryptos suivies, l'IA en voit <b>{hausse}</b> à la hausse "
                  f"et <b>{len(cryptos) - hausse}</b> à la baisse. " + (f"En résumé, {_phrase(seo, btc)}." if btc else "") + "</p>")
         faq = []
         if btc:

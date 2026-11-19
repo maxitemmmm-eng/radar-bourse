@@ -50,8 +50,8 @@ def questions():
          "Nobody knows reliably: over a week, price moves are largely random. Radar Bourse's AI gives a <b>one-month</b> view with its chances and confidence, "
          "and publishes its misses on <a href='verified-calls.html'>verified calls</a>."),
         ("reliable-ai", "Is an AI stock predictor reliable?",
-         "An AI can help, but none can read the future. On years it had never seen, Radar Bourse's AI got the direction right about 51 times out of 100 when its confidence "
-         "was low and 58 times out of 100 when it was high. It is much better at forecasting how <b>agitated</b> a price will be. Be wary of any service that promises more without publishing its misses."),
+         "An AI can help, but none can read the future. On years it had never seen, Radar Bourse's AI got the direction right "
+         + __import__("bourse_bot.questions", fromlist=["x"])._fiab(True) + ". It is much better at forecasting how <b>agitated</b> a price will be. Be wary of any service that promises more without publishing its misses."),
         ("tomorrow", "Can you predict a stock price for tomorrow?",
          "Not reliably: over one day, noise dominates. So Radar Bourse doesn't forecast day by day; it gives a one-month view and a likely <b>price range</b>, free and without sign-up. "
          "Examples: <a href='stocks/nvda.html'>Nvidia</a>, <a href='stocks/tsla.html'>Tesla</a>, <a href='stocks/mc-pa.html'>LVMH</a>, <a href='stocks/air-pa.html'>Airbus</a>."),

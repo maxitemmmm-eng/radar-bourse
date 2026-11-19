@@ -275,7 +275,15 @@ def cmd_site(args):
         except Exception as e:
             console.print(f"[yellow]Fondamentaux indisponibles cette fois : {e}[/yellow]")
     if not args.demo:
-        historique.enregistrer(analyses)
+        _lignes_jour = historique.enregistrer(analyses)
+        if os.environ.get("RADAR_SCELLER") == "1":   # version 92 : le soir (robot de 22 h 30), les prévisions publiées sont scellées
+            try:
+                from . import registre
+                b = registre.sceller(_lignes_jour, getattr(evaluation, "configuration", "") if evaluation else "")
+                if b:
+                    console.print(f"Registre : bloc {b['bloc']} scellé ({b['nb']} prévisions, empreinte {b['empreinte_bloc'][:12]}…)")
+            except Exception as e:
+                console.print(f"[yellow]Registre non scellé : {e}[/yellow]")
         try:
             historique.noter_actus(analyses)
         except Exception:
@@ -300,9 +308,17 @@ def cmd_site(args):
         from . import etendu
         marge = ((getattr(evaluation, "avis_net", None) or {}).get("marge") or 0.02) if evaluation else 0.02
         etendu.predire(bruts, max(0.02, float(marge)), payload.get("modele"))   # version 67.5 : l'avis de l'IA pour chaque fiche simple
-        payload["nb_etendu"] = len(etendu.charger())
+        _E = etendu.charger()
+        payload["nb_etendu"] = len(_E)
+        payload["nb_etendu_ia"] = sum(1 for v in _E.values() if (v.get("ia") or {}).get("p") is not None)   # version 92 : compté, jamais supposé
     except Exception:
         payload["nb_etendu"] = 0
+        payload["nb_etendu_ia"] = 0
+    try:   # version 92 : registre public — performance par modèle, sur les seules prévisions scellées et échues
+        from . import registre
+        payload["registre"] = registre.performance({} if args.demo else bruts)
+    except Exception as e:
+        console.print(f"[yellow]Registre illisible : {e}[/yellow]")
     try:   # le portefeuille public « mieux que le marché » : choisi au calcul complet du soir, suivi ensuite chaque heure
         if args.demo or os.environ.get("RADAR_SELECTION") == "1":
             portefeuille_public.choisir(analyses, bruts)

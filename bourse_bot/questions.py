@@ -38,6 +38,18 @@ JS_ACCORDEON = ("<script>(function(){const ds=[...document.querySelectorAll('.q-
              "const b=document.getElementById('q-tout');b.onclick=()=>{const o=!ds.every(d=>d.open);ds.forEach(d=>d.open=o);b.textContent=o?b.dataset.fermer:b.dataset.ouvrir;};})();</script>")
 
 
+def _fiab(en: bool = False) -> str:
+    """Version 92 : les chiffres viennent de la source unique (examen du soir), plus jamais écrits à la main."""
+    from . import chiffres
+    C = chiffres.get()
+    f, F = C.get("sens_confiance_faible"), C.get("sens_confiance_forte")
+    if f is None or F is None:
+        return ("a little more than half the time" if en else "un peu plus d'une fois sur deux")
+    if en:
+        return f"about {round(f * 100)} times out of 100 when its confidence was low and {round(F * 100)} times out of 100 when it was high"
+    return f"environ {round(f * 100)} fois sur 100 quand sa confiance était faible et {round(F * 100)} fois sur 100 quand elle était forte"
+
+
 def questions():
     total, verse = _cent_euros()
     gain = total - verse
@@ -71,8 +83,8 @@ def questions():
          "ses chances et sa confiance ; les titres qu'elle voit monter sont dans les <a href='classements.html'>classements</a>, et ses erreurs sont publiées sur "
          "<a href='resultats.html'>résultats réels</a>."),
         ("fiable", "Une IA de Bourse est-elle fiable ?",
-         "Une IA peut aider, mais aucune ne lit l'avenir. Sur des années qu'elle n'avait jamais vues, celle de Radar Bourse a eu raison sur le sens du prix environ "
-         "51 fois sur 100 quand sa confiance était faible et 58 fois sur 100 quand elle était forte. Elle est bien meilleure pour prévoir l'<b>agitation</b>. "
+         "Une IA peut aider, mais aucune ne lit l'avenir. Sur des années qu'elle n'avait jamais vues, celle de Radar Bourse a eu raison sur le sens du prix "
+         + _fiab() + ". Elle est bien meilleure pour prévoir l'<b>agitation</b>. "
          "Tout est vérifiable sur <a href='resultats.html'>résultats réels</a> et <a href='journal-ia.html'>le journal de l'IA</a>. Méfie-toi de tout service qui promet plus "
          "sans publier ses ratés."),
         ("demain", "Peut-on prédire le cours d'une action demain ?",

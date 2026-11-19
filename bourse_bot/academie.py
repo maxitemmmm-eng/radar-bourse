@@ -169,6 +169,7 @@ html[data-aca="clair"] .a-nav a[aria-current]{box-shadow:inset 3px 0 0 #3fbfb1}
 .l-plan .note{font-size:12.5px;margin-top:14px;color:var(--a-muted)}
 .l-main{max-width:680px;min-width:0}
 .l-carte{margin:0 0 28px}
+/*__COUV__*/
 .l-type{font-size:13px;font-weight:600;color:var(--a-prim);margin:0 0 6px}
 .l-carte h1,.l-carte h2{font-size:28px;line-height:1.2;margin:0 0 14px}
 .l-texte{font-size:17px;line-height:1.75}.l-texte p{margin:0 0 14px}
@@ -781,7 +782,10 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
         h = "".join(f for si, f in figs if si == s) + "".join(f"<aside class='l-plus {t}'><b>{SVG[t]}{TITRES[t]}</b>{x}</aside>" for si, t, x in plus if si == s)
         return h + "".join(academie_labo.bloc(l[1], l[2] if len(l) > 2 else None) for l in labos if l[0] == s)
     ecoute = f"<div class='l-outils'><button type='button' class='l-mini' data-ecoute hidden>{SVG['son']}<span>Écouter</span></button></div>"
-    cartes = [f"<section class='l-carte' data-type='intro' data-g='intro'><p class='l-type'>Module {niv[0]} : {_e(niv[1])} · {num}</p>"
+    from . import visuels_pro   # version 95 : couverture illustrée et pastilles (durée, exercices), comme sur les grandes académies
+    couv = visuels_pro.couverture_lecon(ch["id"], int(niv[0]) if str(niv[0]).isdigit() else 1,
+                                        [f"Module {niv[0]}", f"≈ {_min(ch)} min", f"{n_l} mini-leçons", f"{len(ch['quiz'])} questions de bilan"])
+    cartes = [f"<section class='l-carte' data-type='intro' data-g='intro'>{couv}<p class='l-type'>Module {niv[0]} : {_e(niv[1])} · {num}</p>"
               f"<h1>{_e(ch['titre'])}</h1><div class='l-texte'><p>{_e(ch['desc'])}</p>"
               f"<p><b>Dans ce chapitre</b> : {n_l} mini-leçons ({', '.join(_e(x) for x in noms)}), chacune suivie d'un exercice, "
               f"puis un récap, un cas concret et un bilan de {len(ch['quiz'])} questions. Environ {_min(ch)} minutes.</p>{promesse}</div></section>"]
@@ -992,3 +996,8 @@ CSS_LEXIQUE = """<style>
 .lx-mot ul.liste{columns:1!important;display:block!important;padding-left:20px}.lx-mot ul.liste li{margin:6px 0;border:0!important;padding:0!important}
 .lx-mot{max-width:720px}
 </style>"""
+
+
+# version 95 : couvertures illustrées des leçons
+from .visuels_pro import CSS_COUV as _CSS_COUV  # noqa: E402
+CSS = CSS.replace("/*__COUV__*/", _CSS_COUV)

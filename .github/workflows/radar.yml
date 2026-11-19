@@ -33,6 +33,8 @@ jobs:
       TELEGRAM_CHAT: ${{ secrets.TELEGRAM_CHAT }}
       TELEGRAM_CHAINE: ${{ vars.TELEGRAM_CHAINE }}
       RADAR_ALERTES: ${{ github.event.schedule == '30 22 * * *' && '1' || '0' }}
+      # version 92 : le registre public scelle seulement les prévisions du calcul du soir (une fois par jour)
+      RADAR_SCELLER: ${{ github.event.schedule == '30 22 * * *' && '1' || '0' }}
       # Le soir (et au lancement manuel), l'IA compare ses 3 façons de prévoir ; la journée, elle réutilise le choix
       # Le soir, au lancement manuel et après chaque nouvelle version : sélection complète de l'IA (la qualité passe avant la vitesse)
       RADAR_SELECTION: ${{ (github.event.schedule == '30 22 * * *' || github.event_name == 'workflow_dispatch' || github.event_name == 'push') && '1' || '0' }}

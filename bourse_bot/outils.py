@@ -173,7 +173,8 @@ function calc(){
 </script>""".replace("__D__", _json(D))
     page = seo._page(base, f"Si j'avais investi 100 € dans le bitcoin, une action… : simulateur gratuit | {NOM}",
                      "Combien vaudrait aujourd'hui 100 € investis il y a 1 an dans le bitcoin, Apple, LVMH ou un ETF ? Simulateur gratuit "
-                     "sur les vrais cours, en une fois ou chaque mois (DCA).", chemin, CSS_OUTIL + corps + JS_COMMUN + JS_LIENS_PARTAGE + js,
+                     "sur les vrais cours, en une fois ou chaque mois (DCA).", chemin, CSS_OUTIL + corps + __import__("bourse_bot.visite_guidee", fromlist=["x"]).bloc_suite(
+                         __import__("bourse_bot.visite_guidee", fromlist=["x"]).SUITE_OUTIL, "../") + JS_COMMUN + JS_LIENS_PARTAGE + js,
                      _jsonld(base, chemin, nom, "Simulateur gratuit sur les vrais cours : combien vaudrait aujourd'hui un investissement passé.", faq), csp=csp,
                      alternates={"fr": chemin, "en": "en/tools/if-i-had-invested.html", "x-default": chemin})
     return chemin, page

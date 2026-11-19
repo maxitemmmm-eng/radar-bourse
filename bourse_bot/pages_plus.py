@@ -24,7 +24,8 @@ def _jl_faq(faq):
 
 
 def fonctionnalites(payload):
-    n = len(payload.get("titres", []))
+    from . import chiffres   # version 92 : le même compte partout (hors « tendances »)
+    n = chiffres.get().get("nb_ia") or len([t for t in payload.get("titres", []) if t.get("marche") != "tendances"])
     try:   # version 77 : plus aucun nombre écrit en dur (ils finissaient par se contredire d'une page à l'autre)
         from .langues import NOMS_LANGUES
         n_langues = len(NOMS_LANGUES)
@@ -79,7 +80,7 @@ def _page_fonctionnalites(base, payload, csp):
              "<p><a class='btn' href='index.html'>Ouvrir l'appli</a></p>")
     jl = seo._jsonld_liste(base, "Les fonctionnalités de Radar Bourse", chemin, [(t, l) for t, _, l, _ in F])
     return chemin, seo._page(base, f"Fonctionnalités : prévisions IA, simulateur boursier, outils | {NOM}",
-                             f"Tout ce que fait Radar Bourse : prévisions IA pour {len(payload.get('titres', []))} actions et cryptos, Académie gratuite, simulateur boursier avec "
+                             f"Tout ce que fait Radar Bourse : prévisions IA pour {__import__('bourse_bot.chiffres', fromlist=['x']).get().get('nb_ia')} actions et cryptos, Académie gratuite, simulateur boursier avec "
                              "portefeuille virtuel, outils gratuits, comparateur, guides. Gratuit et sans compte.", chemin, corps, jl, csp=csp)
 
 
@@ -122,9 +123,12 @@ def _page_simulateur(base, csp):
 
 def _page_a_propos(base, payload, csp):
     chemin = "a-propos.html"
-    n = len(payload.get("titres", []))
-    ne = payload.get("nb_etendu") or 0
-    total = f"{n + ne:,}".replace(",", "\u202f") if ne else str(n)
+    from . import chiffres   # version 92 : l'IA analyse N titres chaque heure ; les fiches simples ont un avis une fois par jour
+    C = chiffres.get()
+    n, ne, nei = C.get("nb_ia", 0), C.get("nb_etendu", 0), C.get("nb_etendu_ia") or 0
+    total = chiffres.nb_fr(n)
+    plus = (f" S'y ajoutent {chiffres.nb_fr(ne)} fiches simples (grandes actions du monde entier) ; une fois par jour, l'IA donne aussi son avis"
+            f" sur celles dont les cours sont complets ({chiffres.nb_fr(nei)} aujourd'hui)." if ne and nei else (f" Plus {chiffres.nb_fr(ne)} fiches simples : cours, tendance et agitation." if ne else ""))
     # version 70 : page réécrite, plus humaine — qui, pourquoi, comment, et ce qu'on ne fera jamais
     corps = ("<h1>À propos de Radar Bourse</h1>"
              "<p class='muted'>Un projet indépendant, gratuit et sans publicité, mené sous le pseudonyme <b>maxitemmmm</b>.</p>"
@@ -136,7 +140,7 @@ def _page_a_propos(base, payload, csp):
              "<p>La réponse, aujourd'hui, est nuancée. Deviner si un prix va monter le mois prochain reste très difficile (l'IA fait un peu mieux que le hasard, pas beaucoup plus). "
              "En revanche, prévoir de combien un prix va bouger, ou le risque d'une forte chute, ça marche nettement mieux. Le site est construit autour de cette honnêteté.</p>"
              "<h2>Ce que tu trouves ici</h2><ul>"
-             f"<li><b>Le Radar</b> : l'avis de l'IA sur {total} actions, ETF et cryptos, mis à jour chaque heure, toujours avec son niveau de confiance.</li>"
+             f"<li><b>Le Radar</b> : l'avis de l'IA sur {total} actions, ETF et cryptos, mis à jour chaque heure, toujours avec son niveau de confiance.{plus}</li>"
              "<li><b>L'Académie</b> : un parcours gratuit pour apprendre la Bourse de zéro, avec quiz, exercices et certificat. <a href='formation.html'>Commencer</a>.</li>"
              "<li><b>Les preuves</b> : chaque avis important est contrôlé un mois plus tard, en public. <a href='avis-surs-verifies.html'>Voir les avis vérifiés</a>.</li></ul>"
              "<h2>Comment ça marche, concrètement</h2><ul>"
@@ -187,6 +191,10 @@ def _page_contact(base, csp):
 
 
 IDEES_TESTEES = [   # (version, idée, verdict, détail) — tout est testé sur des années que l'IA n'avait jamais vues
+    ("93", "Avis sûrs : un « juge de confiance » qui apprend, selon le contexte (agitation du marché, peur, type de titre, mouvements récents…), quand l'avis de l'IA a le plus de chances d'être juste", False,
+     "Testé de 2016 à 2026 sur 257 322 cas jamais vus : à justesse égale (82 %), il donnait des avis sûrs dans 41 % des cas contre 46 % pour la règle actuelle (l'écart net entre l'agitation prévue et l'agitation récente), et il faisait moins bien 9 années sur 11. Non adopté."),
+    ("93", "Avis sûrs : tenir compte de la précision passée de l'IA sur chaque titre (écart divisé par son erreur habituelle)", False,
+     "Même justesse (82,5 à 82,9 %) mais moins d'avis sûrs (41,9 à 42,8 % des cas au lieu de 43,9 %), et plusieurs années reculent. Non adopté."),
     ("90", "Avis sûrs : combiner l'IA de l'agitation avec un second modèle (classifieur « plus ou moins agité ? ») pour en donner plus sans perdre en justesse", False,
      "Testé de 2016 à 2026 : justesse quasi identique (82,8 % contre 82,5 %) mais encore moins d'avis sûrs (41,6 à 43,5 % des cas au lieu de 43,9 %), et certaines années reculent. Non adopté"),
     ("90", "Avis sûrs : un seuil différent pour chaque marché", False,

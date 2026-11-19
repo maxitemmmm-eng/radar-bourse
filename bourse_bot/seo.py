@@ -37,9 +37,11 @@ def description_accueil(payload: dict | None = None) -> str:
     rq = (((payload or {}).get("modele") or {}).get("risque") or {})
     av, sr = rq.get("avis_surs") or {}, rq.get("sens_recent") or {}
     if (av.get("taux") or 0) > 0.75:   # version 63 : le chiffre des avis sûrs
-        d = (f"Avis de l'IA sur 2 500 actions et cryptos ({round(av['taux'] * 100)} % de réussite sur ses avis sûrs) "
-             "et Académie gratuite pour apprendre la Bourse de zéro.")
-        if len(d) <= 160:
+        from . import chiffres   # version 92 : chiffre réel, et on dit sur quoi porte la réussite (l'agitation, pas le sens)
+        n = chiffres.nb_fr(chiffres._plancher(chiffres.get().get("nb_avis_ia"))) if chiffres.get() else None
+        d = (f"Avis de l'IA sur plus de {n} actions et cryptos, {round(av['taux'] * 100)} % de réussite mesurée sur ses avis sûrs d'agitation, "
+             "et Académie gratuite pour apprendre la Bourse.") if n else ""
+        if d and len(d) <= 160:
             return d
     if (sr.get("taux") or 0) > 0.6:
         d = (f"Prévisions bourse et crypto par IA, gratuites : {round(sr['taux'] * 100)} % de réussite sur l'agitation du mois suivant, "
@@ -172,6 +174,10 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px 6px;border-bottom:1p
 main>p:first-of-type,main>.carte:first-of-type{margin-top:6px}
 .avert{font-size:13.5px;color:var(--muted);border-top:1px solid var(--line);margin-top:40px;padding-top:14px}
 footer .muted{font-size:13.5px}
+.pied{margin-top:48px;border-top:1px solid var(--line);padding:18px 0 26px;display:grid;gap:10px}
+.pied-liens{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:14px}.pied-liens a{color:var(--ink);text-decoration:none;opacity:.85}.pied-liens a:hover{opacity:1;text-decoration:underline}
+.pied-legal{font-size:12.5px;color:var(--muted);margin:0;max-width:80ch;line-height:1.5}.pied-legal a{color:inherit}
+.pied-credits{font-size:11.5px;color:var(--muted);opacity:.75;margin:0}.pied-credits a{color:inherit;text-decoration:none}.pied-credits a:hover{text-decoration:underline}
 dt{font-weight:700;margin-top:16px}dd{margin:4px 0 0}nav.fil{font-size:14px}
 html.contraste{--muted:#2f3b4c;--line:#8795a8}html.contraste[data-theme="dark"]{--muted:#c3cede;--line:#4b5d78}
 html.lisible body{letter-spacing:.02em;word-spacing:.08em;line-height:1.75}
@@ -220,12 +226,8 @@ def ecrire_css(dossier: str) -> str:
     nom = nom_css()
     with open(os.path.join(dossier, nom), "w", encoding="utf-8") as f:
         f.write(CSS_PAGE)
-    for ancien in os.listdir(dossier):   # les anciennes versions ne servent plus
-        if ancien.startswith("style-") and ancien.endswith(".css") and ancien != nom:
-            try:
-                os.remove(os.path.join(dossier, ancien))
-            except OSError:
-                pass
+    # version 96 : on ne supprime plus les anciennes versions : des pages qui n'auraient pas été regénérées
+    # (ex. les fiches simples si leur téléchargement échoue) resteraient sinon sans mise en forme
     return nom
 
 
@@ -330,6 +332,7 @@ def liens_fr() -> list:
             ("Reconnaître une arnaque au trading", "questions-bourse.html#arnaque"), ("Toutes les questions", "questions-bourse.html"),
             ("Résultats réels", "resultats.html"), ("Journal de l'IA", "journal-ia.html"), ("Ce que sait l'IA", "connaissances.html"),
             ("Fiche technique", "fiche-technique-ia.html"), ("Données ouvertes", "donnees-ouvertes.html"),
+            ("Mon espace", "mon-espace.html"), ("Registre des prévisions", "registre-previsions.html"), ("Les chiffres du site", "chiffres-du-site.html"),
             ("Le point du jour", "point.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actu bourse", "actu-bourse.html"),
             ("Actu bitcoin", "actu-bitcoin.html"), ("Risque de krach aujourd'hui", "krach-boursier.html"), ("Carte des risques", "index.html#nuage"),
             ("Quiz : examen de l'Académie", "formation/examen.html"), ("Guides", "guides.html"), ("Mini-cours", "apprendre.html"), ("Lexique de la Bourse", "glossaire.html"), ("Les mini-robots", "robots.html"),
@@ -343,11 +346,11 @@ GROUPES_FR = [("Prédictions et IA", ["titres.html", "index.html#previsions", "p
                                       "titres/mc-pa.html", "titres/nvda.html", "titres/tsla.html", "titres/tte-pa.html", "titres/air-pa.html"]),
               ("Académie", ["formation.html", "formation/entrainement.html", "formation/test-de-niveau.html", "formation/examen.html", "formation/etf-debutant.html",
                             "formation/pea-cto-assurance-vie.html", "outils/interets-composes.html", "outils/plus-value.html", "guides.html", "apprendre.html", "glossaire.html", "robots.html"]),
-              ("Outils et entraînement", ["index.html#prono", "index.html#portefeuille", "simulateur-boursier.html", "outils/si-javais-investi.html", "comparer.html",
+              ("Outils et entraînement", ["mon-espace.html", "index.html#prono", "index.html#portefeuille", "simulateur-boursier.html", "outils/si-javais-investi.html", "comparer.html",
                                           "calendrier-resultats.html", "outils.html"]),
               ("Vos questions", ["questions-bourse.html#baisse", "questions-bourse.html#bitcoin", "questions-bourse.html#cent-euros", "questions-bourse.html#risque",
                                  "questions-bourse.html#arnaque", "questions-bourse.html"]),
-              ("L'IA est-elle fiable ?", ["resultats.html", "journal-ia.html", "connaissances.html", "fiche-technique-ia.html", "donnees-ouvertes.html"]),
+              ("L'IA est-elle fiable ?", ["resultats.html", "registre-previsions.html", "journal-ia.html", "connaissances.html", "fiche-technique-ia.html", "chiffres-du-site.html", "donnees-ouvertes.html"]),
               ("Marchés et actualités", ["point.html", "bourse-cette-semaine.html", "actu-bourse.html", "actu-bitcoin.html", "krach-boursier.html", "index.html#nuage"]),
               ("Le site", ["fonctionnalites.html", "a-propos.html", "contact.html", "en/index.html"])]
 
@@ -612,11 +615,9 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 {corps}
 </main>
 {barre_partage(base, chemin, titre)}
-<footer><p class="avert"><b>Rien n'est sûr en Bourse.</b> {NOM} est un projet éducatif et indépendant. Les avis sont calculés chaque jour par l'IA du site : ils peuvent se tromper
-et ne constituent pas un conseil en investissement. Tu peux perdre tout l'argent investi.
-Conditions d'utilisation, méthodologie et aide : voir la <a href="{prefixe}index.html#conditions">page d'accueil</a>.</p>
-<p class="muted"><a href="{prefixe}questions-bourse.html">Vos questions</a> · <a href="{prefixe}fonctionnalites.html">Fonctionnalités</a> · <a href="{prefixe}journal-ia.html">Journal de l'IA</a> · <a href="{prefixe}simulateur-boursier.html">Simulateur boursier</a> · <a href="{prefixe}outils.html">Outils gratuits</a> · <a href="{prefixe}a-propos.html">À propos</a> · <a href="{prefixe}contact.html">Contact</a> · <a href="{prefixe}donnees-ouvertes.html">Données ouvertes</a></p>
-<p class="muted">© {__import__("bourse_bot.credits", fromlist=["x"]).annees()} {NOM} · <a href="{prefixe}credits.html">Droits d'auteur et crédits</a> · Marques et noms de sociétés cités à des fins d'identification uniquement.</p></footer>
+<footer class="pied"><nav class="pied-liens" aria-label="Pied de page"><a href="{prefixe}questions-bourse.html">Vos questions</a><a href="{prefixe}fonctionnalites.html">Fonctionnalités</a><a href="{prefixe}journal-ia.html">Journal de l'IA</a><a href="{prefixe}simulateur-boursier.html">Simulateur</a><a href="{prefixe}outils.html">Outils gratuits</a><a href="{prefixe}mon-espace.html">Mon espace</a><a href="{prefixe}a-propos.html">À propos</a><a href="{prefixe}contact.html">Contact</a></nav>
+<p class="pied-legal"><b>Rien n'est sûr en Bourse.</b> Projet éducatif et indépendant : les avis de l'IA peuvent se tromper et ne sont pas des conseils en investissement ; on peut perdre tout l'argent investi. <a href="{prefixe}index.html#conditions">Conditions</a></p>
+<p class="pied-credits">© {__import__("bourse_bot.credits", fromlist=["x"]).annees()} {NOM} · <a href="{prefixe}credits.html">Crédits et sources</a> · <a href="{prefixe}donnees-ouvertes.html">Données ouvertes</a> · marques citées à des fins d'identification</p></footer>
 </div>
 {SCRIPT_BOUTON}
 {_JS_VT}
@@ -649,6 +650,8 @@ def mots_titre(t: dict, langue: str = "fr") -> str:
                 f"{court} {an} forecast", f"{court} volatility", f"{sym} forecast"]
         if crypto:
             mots += [f"{court} crypto", f"{sym} USD", f"{court} price today", f"{court} prediction", f"will {court} go up"]
+            for al in getattr(config, "ALIAS_CRYPTO", {}).get(t.get("ticker", ""), []):
+                mots += [f"{al} price prediction", f"{al} price"]
         else:
             mots += [f"{court} share price", f"{court} stock forecast", f"{court} forecast and analysis", f"{court} stock price today",
                      f"is {court} a buy", f"will {court} stock go up"]
@@ -658,6 +661,8 @@ def mots_titre(t: dict, langue: str = "fr") -> str:
                 f"{court} prévision {an}", f"{court} avis", f"volatilité {court}", f"avis IA {court}", f"{court} va-t-il monter"]
         if crypto:
             mots += [f"crypto {court}", f"prix {court}", f"{sym} prix", f"{court} euro", f"{sym} USD", f"prévision {court} crypto"]
+            for al in getattr(config, "ALIAS_CRYPTO", {}).get(t.get("ticker", ""), []):   # version 93 : anciens noms et surnoms
+                mots += [f"prévision {al}", f"cours {al}"]
         elif etf:
             mots += [f"ETF {court}", f"cours ETF {court}"]
         else:
@@ -782,6 +787,9 @@ def _graphique_titre(t, horizon):
     except Exception as e:
         print(f"Graphique interactif indisponible pour {t.get('ticker')} : {e}")
         return fixe
+
+
+PROFILS: dict = {}   # version 94 : profil de chaque titre (visuels_pro.profils), calculé une fois
 
 
 def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
@@ -939,13 +947,14 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
 <h1>{"Action " if titre.startswith("Action ") else ""}{_e(nom)} ({_e(aff_tk(tk))}) : cours, prévision et analyse</h1>
 <p class="muted">Mise à jour automatique · cours au {_e(date)}{f" · entreprise d'origine : {_e(config.PAYS_MONDE[tk])}, cotée à New York en dollars" if tk in config.PAYS_MONDE else ""}</p>
 {_verdict_titre(t, nom)}
+{_graphique_titre(t, horizon)}
 <div class="carte grille">
   <div class="k"><b>{_px(prix, dev)}</b><span>dernier cours</span></div>
   <div class="k"><b>{_pct(perf.get('1 mois'))}</b><span>sur 1 mois</span></div>
   <div class="k"><b>{round(t['score'])} / 100</b><span>score technique ({LIB_SIGNAL.get(t['signal'], '')})</span></div>
   <div class="k"><b>{'pas d’avis net' if sur10 is not None and t.get("avis_net") is False else f'{sur10} sur 10' if sur10 is not None else '–'}</b><span>chances d'être plus haut dans {horizon} séances</span></div>
 </div>
-{_graphique_titre(t, horizon)}
+{__import__("bourse_bot.visuels_pro", fromlist=["x"]).bloc_fiche(PROFILS.get(tk), t.get("saison"), nom)}
 {__import__("bourse_bot.hebdo", fromlist=["x"]).reponse_courte_html(t, modele, True, _px)}
 <h2>En résumé</h2>
 <p>Pour le mois qui vient, le radar voit {_e(nom)} <b>{verdict}</b>.
@@ -985,6 +994,11 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     jsonld = {"@context": "https://schema.org", "@graph": [{k: v for k, v in g.items() if k != "@context"} for g in graphe]}
     img = f"partage/{slug(tk)}.png" if t.get("_image_ok") else "partage.png"
     from . import langues as _lg
+    try:   # version 95 : « Et maintenant ? » — donner envie d'une deuxième page
+        from . import visite_guidee
+        corps += visite_guidee.suite_fiche(t, voisins[0] if voisins else None)
+    except Exception:
+        pass
     corps += f"<p class='muted'>Cette page dans d'autres langues : {_lg.selecteur('../', 'fr', _lg.alternates_titre(slug(tk)))}</p>"
     return chemin, _page(base, titre, desc, chemin, corps, jsonld, csp,
                          alternates=__import__("bourse_bot.langues", fromlist=["x"]).alternates_titre(slug(tk)), image=img,
@@ -1705,7 +1719,7 @@ def _page_previsions(base, payload, dossier, csp, date):
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": r}} for q, r in faq]}
     corps += "<h2>Questions fréquentes</h2>" + "".join(f"<h3>{_e(q)}</h3><p>{_e(r)}</p>" for q, r in faq)
     titre = f"Prévisions bourse et crypto {annees}, vérifiées | {NOM}"
-    desc = (f"Prévisions {annees} pour {len(payload.get('titres', []))} actions et cryptos : agitation et chances de hausse à un mois par IA, "
+    desc = (f"Prévisions {annees} pour {len([t for t in payload.get('titres', []) if t.get('marche') != 'tendances'])} actions et cryptos : agitation et chances de hausse à un mois par IA, "
             "vérifiées publiquement, et écart habituel sur un an.")
     with open(os.path.join(dossier, "previsions.html"), "w", encoding="utf-8") as f:
         f.write(_page(base, titre, desc, "previsions.html", corps, jsonld, csp))
@@ -1953,7 +1967,7 @@ def _image_partage(payload: dict, chemin: str) -> None:
     Version 53 : même style que les images des autres pages, avec le nombre de titres du jour."""
     try:
         from .visuels import dessiner
-        n = len(payload.get("titres", []))
+        n = len([t for t in payload.get("titres", []) if t.get("marche") != "tendances"])   # version 92 : même compte que partout
         if dessiner(chemin, "Prévisions bourse et crypto par IA", f"{n} actions, ETF et cryptos · simulateur boursier · outils gratuits", "radar"):
             return
     except Exception:
@@ -2131,9 +2145,12 @@ def _icones(dossier: str) -> None:
 
 
 def liens_icones(prefixe: str = "") -> str:
-    return (f'<link rel="icon" href="{prefixe}favicon.ico" sizes="48x48">\n'
-            f'<link rel="icon" href="{prefixe}favicon.svg" type="image/svg+xml">\n'
-            f'<link rel="icon" type="image/png" sizes="96x96" href="{prefixe}icone-96.png">')
+    # version 93 : Google montre encore un globe gris à la place du logo. On met d'abord une image PNG carrée de 192 px
+    # (multiple de 48, ce que Google recommande), puis les autres formats pour les navigateurs.
+    return (f'<link rel="icon" type="image/png" sizes="192x192" href="{prefixe}icone-192.png">\n'
+            f'<link rel="icon" type="image/png" sizes="96x96" href="{prefixe}icone-96.png">\n'
+            f'<link rel="icon" href="{prefixe}favicon.ico" sizes="48x48">\n'
+            f'<link rel="icon" href="{prefixe}favicon.svg" type="image/svg+xml">')
 
 
 MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre",
@@ -2464,6 +2481,11 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     except Exception as e:
         print(f"Graphique interactif : {e}")
         _gp_stats = None
+    try:   # version 94 : profils (5 ou 6 critères de 0 à 100) pour les fiches
+        from . import visuels_pro
+        PROFILS.clear(); PROFILS.update(visuels_pro.profils(payload.get("titres", [])))
+    except Exception as e:
+        print(f"Profils des titres : {e}")
     for t in payload.get("titres", []):
         voisins = [x for x in payload.get("titres", []) if x.get("marche") == t.get("marche") and x["ticker"] != t["ticker"]]
         # version 65 : d'abord les titres du même secteur (tous marchés d'actions), puis ceux du même marché
@@ -2725,6 +2747,15 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
         urls += pages_plus.generer(payload, dossier, csp, base)
     except Exception as e:
         print(f"Pages fonctionnalités / à propos / contact non générées : {e}")
+    try:   # version 92 : registre public des prévisions (empreintes enchaînées) et page « les chiffres du site »
+        import sys as _sys
+        from . import registre, chiffres
+        urls += registre.page(_sys.modules[__name__], base, payload, dossier, csp)
+        urls += chiffres.page(_sys.modules[__name__], base, payload, dossier, csp)
+        from . import mon_espace   # version 93 : « Mon espace », l'équivalent d'un compte, sans inscription
+        urls += mon_espace.page(_sys.modules[__name__], base, dossier, csp)
+    except Exception as e:
+        print(f"Registre / chiffres du site non générés : {e}")
     try:   # version 57 : krach boursier, actu bourse, actu bitcoin (+ mémoire quotidienne du marché)
         from . import pages_marche
         urls += pages_marche.generer(payload, dossier, csp, base)
@@ -2968,12 +2999,13 @@ def _accueil_resume(payload: dict) -> str:
 def liens_accueil(payload: dict) -> str:
     """Liens texte vers chaque page de titre, ajoutés en bas de l'accueil (Google suit les liens)."""
     items = "".join(f'<a href="titres/{slug(t["ticker"])}.html">{_e(t["nom"])}</a>' for t in payload.get("titres", []))
-    return _accueil_resume(payload) + (f'<nav class="seo-liens" aria-label="Pages des titres"><b>Analyses détaillées :</b> {items} '
+    n = len(payload.get("titres", []))   # version 95 : la liste reste lisible par Google mais repliée (plus discret à l'écran)
+    return _accueil_resume(payload) + (f'<details class="seo-pli"><summary>Toutes les analyses détaillées ({n} titres) et les pages du site</summary><nav class="seo-liens" aria-label="Pages des titres">{items} '
             f'· <a href="titres.html">tous les titres</a> · <a href="outils.html">outils gratuits</a> · <a href="outils/si-javais-investi.html">si j\'avais investi…</a> · <a href="outils/convertisseur.html">convertisseur crypto</a> · <a href="apprendre.html">apprendre la Bourse</a> · <a href="glossaire.html">glossaire</a>'
             + ' · <a href="bourse-cette-semaine.html">la Bourse cette semaine</a> · <a href="avis-surs-verifies.html">avis de l\'IA vérifiés</a>'
             + "".join(f' · <a href="themes/{c}.html">{_e(h[:1].lower() + h[1:])}</a>' for c, h in __import__("bourse_bot.hebdo", fromlist=["x"]).themes_noms())
             + "".join(f' · <a href="marches/{m[0]}.html">{_e(m[1].lower())}</a>' for k, m in MARCHES.items()
-                      if any(t.get("marche") == k for t in payload.get("titres", []))) + '</nav>')
+                      if any(t.get("marche") == k for t in payload.get("titres", []))) + '</nav></details>')
 
 
 def jsonld_accueil() -> dict:
@@ -3153,6 +3185,23 @@ def _page_resultats(base, payload, dossier, csp):
                 if p > ref else
                 "le radar ne fait pas mieux que la référence naïve sur cette période. C'est fréquent : la Bourse est très difficile à prévoir."
             ) + f" Période vérifiée : du {date_longue(D['premiere'])} au {date_longue(D['derniere'])}.</p>")
+        # version 92 (audit) : 455 prédictions faites sur quelques jours ne valent pas 455 cas indépendants. On le dit.
+        try:
+            jours = len({r.get("date") for r in (payload.get("resultats") or []) if r.get("date")})
+            types = D.get("par_type") or []
+            gros = max(types, key=lambda m: m["nb"]) if types else None
+            part = gros["nb"] / max(1, sum(m["nb"] for m in types)) if gros else 0
+            if S.get("nb_verifiees") and (jours and jours < 40 or part > .5):
+                corps += ("<div class='carte' style='border-left:4px solid #e0b444'><p style='margin:0'><b>À lire avant de juger.</b> "
+                          + (f"Ces {S['nb_verifiees']:,} prédictions ont été faites sur seulement <b>{jours} jour{'s' if jours > 1 else ''} de marché</b>. ".replace(",", "\u202f") if jours else "")
+                          + (f"{round(part * 100)} % d'entre elles portent sur un seul type de titre ({_e(gros['nom'].lower())}), qui bougent souvent tous ensemble. " if part > .5 else "")
+                          + "En pratique, cela vaut beaucoup moins que des centaines de cas indépendants : ces chiffres ne prouvent encore rien, ni en bien ni en mal.")
+                if F.get("taux") is not None and F.get("nb", 0) >= 50 and F["taux"] < .7:
+                    corps += (f" La fourchette, elle, <b>n'a pas tenu sa promesse</b> sur cette période ({_taux(F['taux'])} au lieu de 80 %) : "
+                              "les mouvements ont été plus forts que prévu. C'est affiché tel quel et suivi dans la durée.")
+                corps += "</p></div>"
+        except Exception:
+            pass
         if D.get("par_mois"):
             corps += ("<h2>Mois par mois</h2><div class='carte'><table><tr><td><b>Mois</b></td><td><b>Vérifiées</b></td><td><b>Justes</b></td></tr>"
                       + "".join(f"<tr><td>{_lien_mois(m['nom'], D)}</td><td class='m'>{m['nb']}</td><td class='m'>{_taux(m['precision'])}</td></tr>" for m in D["par_mois"][-12:])
@@ -3363,8 +3412,11 @@ def _page_fiche_ia(base, payload, dossier, csp):
              "<li><b>Champion contre challenger</b> : une nouvelle version ne remplace l'ancienne que si elle fait mieux, de façon prouvée.</li>"
              "<li><b>Calibrage</b> : les fourchettes sont corrigées pour tenir leur promesse. Neuf autres corrections ont été testées sur 515 000 cas réels ; aucune ne faisait mieux.</li></ul>"
              "<h2>Ce que l'IA ne sait pas faire</h2><ul>"
-             "<li>Dire si un prix sera plus haut ou plus bas dans un mois : sur ce point, elle ne fait pas mieux que des règles simples. Le site le dit sur chaque fiche.</li>"
-             "<li>Prévoir les événements imprévisibles : annonces, crises, décisions politiques, piratages.</li>"
+             + (f"<li>Dire avec assurance si un prix sera plus haut ou plus bas dans un mois : elle fait à peine mieux que la réponse la plus simple "
+                f"({p(M.get('precision'))} contre {p(M.get('precision_base'))}), soit environ une bonne réponse de plus tous les {round(1 / max(0.005, (M.get('precision') or 0) - (M.get('precision_base') or 0)))} avis. Le site le dit sur chaque fiche.</li>"
+                if (M.get("precision") or 0) - (M.get("precision_base") or 0) >= 0.005 else
+                "<li>Dire si un prix sera plus haut ou plus bas dans un mois : sur ce point, elle ne fait pas mieux que des règles simples. Le site le dit sur chaque fiche.</li>")
+             + "<li>Prévoir les événements imprévisibles : annonces, crises, décisions politiques, piratages.</li>"
              "<li>Garantir l'avenir : des résultats passés, même testés honnêtement, peuvent ne pas se répéter.</li></ul>"
              "<h2>Surveillance</h2><ul>"
              "<li>Le site est recalculé toutes les heures ; s'il prend du retard, il est relancé automatiquement et un bandeau prévient les visiteurs.</li>"

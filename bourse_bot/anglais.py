@@ -191,6 +191,11 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
         urls.append((chemin, "daily", "0.5"))
 
     avec_p = sorted([t for t in titres if t.get("proba_hausse") is not None and t.get("avis_net") is not False], key=lambda t: -t["proba_hausse"])
+    # version 92 : l'audit a trouvé « Model unavailable today » alors que le modèle tournait (aucun avis net ce jour-là).
+    # On montre alors les chances les plus hautes, en disant clairement que la confiance est faible.
+    faible_seul = not avec_p
+    if faible_seul:
+        avec_p = sorted([t for t in titres if t.get("proba_hausse") is not None and t.get("marche") != "tendances"], key=lambda t: -t["proba_hausse"])
     lien = lambda t: f"<a href='stocks/{seo.slug(t['ticker'])}.html'>{_e(langues.nom_intl(t['nom']))}</a>"
     top = "".join(f"<tr><td>{lien(t)} <span class='muted'>({_e(t['ticker'])})</span></td><td class='m'>{round(t['proba_hausse'] * 100)}%</td></tr>"
                   for t in avec_p[:10])
@@ -210,7 +215,8 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
 <p class="muted">French, European and US stocks, ETFs and major cryptocurrencies, analysed automatically every hour. Free, no sign-up, educational.</p>
 <p><a class="btn" href="../app-en.html">Open the interactive app</a> <a class="btn ghost" href="guides.html">Beginner guides</a></p>
 <h2>Highest probability of rising over the next month</h2>
-<div class="carte"><table>{top or "<tr><td>Model unavailable today.</td></tr>"}</table></div>
+{"<p class='muted'>No confident view today: the AI hesitates on every asset, so these chances are only slightly above 50 and come with low confidence.</p>" if faible_seul and top else ""}
+<div class="carte"><table>{top or "<tr><td>No forecast published today (data check in progress).</td></tr>"}</table></div>
 <h2>Strong signals today</h2>
 <p>{", ".join(lien(t) for t in forts[:12]) if forts else "None today: the radar does not invent signals when conditions are not met."}</p>
 <h2>How reliable is it?</h2>{fiab or "<p>Statistical forecasts are often wrong.</p>"}

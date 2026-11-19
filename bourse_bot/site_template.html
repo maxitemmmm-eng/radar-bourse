@@ -5,9 +5,10 @@
 <meta property="og:title" content="Radar Bourse">
 <meta property="og:description" content="Prévisions statistiques à un mois, cours en direct et fiabilité mesurée. Projet éducatif, pas un conseil en investissement.">
 <!--/META-->
+<link rel="icon" type="image/png" sizes="192x192" href="icone-192.png">
+<link rel="icon" type="image/png" sizes="96x96" href="icone-96.png">
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="icon" type="image/png" sizes="96x96" href="icone-96.png">
 <script type="speculationrules">{"prefetch":[{"where":{"selector_matches":"a[href$='.html']:not([target])"},"eagerness":"moderate"}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -179,6 +180,7 @@ tbody tr:last-child td{border-bottom:0}
 .seo-resume p{margin:0}
 .seo-resume a{color:var(--accent)}
 .seo-liens{font-size:12.5px;color:var(--muted);line-height:1.9}
+.seo-pli{font-size:12.5px;color:var(--muted)}.seo-pli summary{cursor:pointer;opacity:.85}.seo-pli[open] summary{margin-bottom:8px}
 .seo-liens a{color:var(--muted);margin-right:10px;white-space:nowrap}
 .fav,.share{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:600;white-space:nowrap}
 .fav[aria-pressed="true"]{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
@@ -475,6 +477,9 @@ body.titre-ouvert{overflow:hidden}
 .fact{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px}
 .fact .v{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:15px}
 .disclaimer{font-size:12.5px;color:var(--muted);max-width:75ch}
+.credits-pied{font-size:12px;color:var(--muted);opacity:.8}.credits-pied summary{cursor:pointer;list-style:none}.credits-pied summary::-webkit-details-marker{display:none}
+.credits-pied summary::after{content:" +";opacity:.7}.credits-pied[open] summary::after{content:" −"}.credits-pied .disclaimer{margin:8px 0 0}
+.credits-ligne{font-size:11px;color:var(--muted);opacity:.6;margin:0}.credits-ligne a{color:inherit}
 footer{margin-top:56px;border-top:2px solid var(--ink);padding-block:28px 48px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
 .pied{min-width:0;display:grid;grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));gap:24px 36px}
 @media (max-width:1000px){.pied{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -584,6 +589,8 @@ footer a{color:var(--accent);text-underline-offset:3px}
 .bref{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px 24px 18px;margin-top:6px;box-shadow:inset 0 3px 0 var(--accent)}
 .bref h3{font-size:13.5px;font-family:var(--f-body);font-weight:600;color:var(--muted);margin:0 0 10px}
 .bref p{font-family:var(--f-display);font-size:clamp(17px,1.6vw,19.5px);line-height:1.55;margin:0}
+.bref-pli{margin-top:10px}.bref-pli summary{cursor:pointer;font:600 13.5px var(--f-body);color:var(--muted)}.bref-pli[open] summary{margin-bottom:8px}
+.bref-pli p{font-size:16px}
 .bref .sig{font-family:var(--f-body);font-size:12.5px;color:var(--muted);margin-top:14px}
 /* version 64 : les avis très sûrs du jour, directement dans l'encadré de l'accueil */
 /* version 66.1 : les sections loin sous l'écran ne sont mises en page qu'à l'approche (accueil plus rapide sur téléphone) */
@@ -712,9 +719,14 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .src{font-size:12px;color:var(--muted);margin-left:4px}
 
 /* Bandeau d'avertissement (premier passage) */
-.consent{position:fixed;inset:0;z-index:35;background:rgba(5,10,20,.55);display:grid;place-items:center;padding:16px;overflow-y:auto}
-.consent-boite{background:var(--surface);color:var(--ink);border-radius:14px;max-width:560px;width:100%;padding:24px;box-shadow:0 24px 60px rgba(5,10,20,.35);border-top:4px solid var(--warn)}
-.consent-boite h2{font-size:28px;margin-bottom:10px}
+/* version 95 : l'accueil ne bloque plus la page : une carte en bas, qu'on peut lire en regardant déjà le site */
+.consent{position:fixed;right:16px;bottom:16px;z-index:35;width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow-y:auto}
+.consent-boite{background:var(--surface);color:var(--ink);border-radius:14px;width:100%;padding:18px 20px 16px;box-shadow:0 18px 50px rgba(5,10,20,.45);border:1px solid var(--line);border-top:4px solid var(--accent)}
+.consent-boite h2{font-size:21px;margin:0 0 8px}
+.consent-petit{font-size:13px!important;color:var(--muted)}.consent-petit .lnk{font-size:inherit;padding:0}
+.consent-plus{font-size:13.5px;margin:0 0 6px}.consent-plus summary{cursor:pointer;color:var(--muted)}.consent-plus ul{margin-top:8px}
+@media (prefers-reduced-motion:no-preference){.consent:not([hidden]){animation:consent-monte .5s cubic-bezier(.2,.8,.2,1) both .6s}@keyframes consent-monte{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}}
+@media (max-width:640px){.consent{right:8px;left:8px;bottom:calc(76px + env(safe-area-inset-bottom));width:auto}}
 .consent-boite p{margin:0 0 10px;font-size:15px}
 .consent-boite ul{margin:0 0 12px;padding-left:20px;display:grid;gap:8px;font-size:15px}
 .consent-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}
@@ -1067,6 +1079,17 @@ html.calme *{animation:none!important;transition:none!important}
 .affiner summary{cursor:pointer;font-weight:600}
 .aff-grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 14px;margin-top:10px;align-items:end}
 .aff-grille label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.scan-ex{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}.scan-ex .chip{font-size:13px}
+@media (max-width:560px){.aff-grille{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 10px}.aff-grille label{font-size:12px;min-width:0}.aff-grille select{font-size:13px;padding:6px;min-width:0;width:100%}.aff-grille .btn{min-width:0;white-space:normal}.scan-ex{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}.scan-ex .chip{white-space:nowrap;flex:0 0 auto}}
+.scan-outils{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+.scan-sauver{display:flex;flex-wrap:wrap;gap:6px;align-items:center;flex:1 1 320px}.scan-sauver label{font-size:13px}
+.scan-sauver input{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 8px;flex:1 1 140px;min-width:0}
+#scan-msg{flex-basis:100%;margin:0;font-size:13px}#scan-msg:empty{display:none}
+.scan-mes{display:flex;flex-wrap:wrap;gap:6px;flex-basis:100%}.scan-mes:empty{display:none}
+.scan-mes span{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.scan-mes button{font:inherit;font-size:13px;background:none;border:0;color:var(--ink);padding:5px 10px;cursor:pointer}
+.scan-mes button+button{border-left:1px solid var(--line);color:var(--muted);padding:5px 9px}
+.scan-mes button:focus-visible,.scan-ex .chip:focus-visible{outline:2px solid var(--accent,#5aa9ff);outline-offset:2px}
 .aff-grille select{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 8px}
 </style>
 <!--__CORPS__-->
@@ -1081,7 +1104,7 @@ html.calme *{animation:none!important;transition:none!important}
     <div class="te-choix" role="listbox" aria-label="Choisis ton espace">
       <a class="te-carte" href="#contenu" data-choix="radar" role="option" aria-selected="true">
         <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="none" stroke="currentColor" stroke-width="2.5" opacity=".35"/><circle cx="24" cy="24" r="10" fill="none" stroke="currentColor" stroke-width="2.5" opacity=".25"/><path d="M24 24 L38 12" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="35" cy="15" r="3.5" fill="#44e09c"/></svg>
-        <b>Le Radar</b><span>Les avis de l'IA sur plus de 2 500 actions et cryptos : hausse ou baisse, agitation, risque de chute.</span>
+        <b>Le Radar</b><span>Les avis de l'IA sur plus de __NB_AVIS_IA__ actions et cryptos : hausse ou baisse, agitation, risque de chute.</span>
         <em id="te-radar-info">Mis à jour chaque heure</em><i class="te-entrer">Entrer ›</i></a>
       <a class="te-carte" href="formation.html" data-choix="academie" role="option" aria-selected="false">
         <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M4 18 L24 9 L44 18 L24 27 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 22 V32 C16 36 32 36 36 32 V22" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M44 18 V30" stroke="#f2c14e" stroke-width="3" stroke-linecap="round"/></svg>
@@ -1163,20 +1186,22 @@ html.calme *{animation:none!important;transition:none!important}
   <div class="hero">
    <div>
     <h2>Hausse ou baisse ? L'avis de l'IA, action par action.</h2>
-    <p class="intro">Tape le nom d'une action ou d'une crypto : l'IA te dit si elle la voit <b class="up">monter ↑</b> ou <b class="down">baisser ↓</b> le mois prochain, avec ses chances et son niveau de confiance. Elle prévoit aussi de combien le prix peut bouger. Tous ses résultats sont vérifiés en public, ratés compris. Gratuit, sans compte, pas un conseil.</p>
+    <p class="intro">Tape le nom d'une action ou d'une crypto : l'IA te dit si elle la voit <b class="up">monter ↑</b> ou <b class="down">baisser ↓</b> le mois prochain, avec ses chances et sa confiance. Ses résultats sont vérifiés en public, ratés compris.</p>
     <button class="hero-cherche" id="hero-cherche" type="button"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M11 11l3.6 3.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg> Chercher une action ou une crypto <kbd>Apple, Bitcoin, LVMH…</kbd></button>
     <div class="populaires" id="populaires" aria-label="Les plus recherchés, avec l'avis de l'IA" hidden></div>
     <div class="hero-liens"><a class="btn" href="formation.html">Débutant ? Commence par l'Académie</a><a class="btn ghost" href="prediction-crypto.html">Prédiction crypto</a><a class="btn ghost" href="prediction-bourse.html">Actions que l'IA voit monter</a><a class="btn ghost" href="#prono">Ton pronostic du jour</a><a class="btn ghost" id="lien-tg" hidden target="_blank" rel="noopener noreferrer">Alertes sur Telegram</a></div>
     <div class="preuves" id="preuves" hidden></div>
    </div>
-   <aside class="bref" id="bref" aria-labelledby="bref-t" hidden><h3 id="bref-t">Aujourd'hui en bref</h3><p id="bref-txt"></p>
+   <aside class="bref" id="bref" aria-labelledby="bref-t" hidden><h3 id="bref-t">Le radar du jour</h3>
+     <div class="radar-une" id="radar-une"></div>
+     <details class="bref-pli"><summary>Lire le résumé du jour</summary><p id="bref-txt"></p></details>
      <div class="bref-surs" id="bref-surs" hidden></div><p class="sig" id="bref-sig"></p></aside>
   </div>
   <div class="alerte-fav" id="alerte-fav" hidden role="status"></div>
   <div class="depart" id="depart" hidden>
     <h2 style="font-size:18px">Nouveau ? Par où commencer</h2>
     <ol>
-      <li><span aria-hidden="true">1</span><div><b>Cherche une action ou une crypto</b><p>Tape son nom en haut (Apple, Bitcoin, LVMH…). Plus de 2 500 titres ont leur fiche, expliquée avec des mots simples.</p></div></li>
+      <li><span aria-hidden="true">1</span><div><b>Cherche une action ou une crypto</b><p>Tape son nom en haut (Apple, Bitcoin, LVMH…). Plus de __NB_FICHES__ titres ont leur fiche, expliquée avec des mots simples.</p></div></li>
       <li><span aria-hidden="true">2</span><div><b>Lis l'avis de l'IA</b><p><span class="up">↑ hausse</span> ou <span class="down">↓ baisse</span>, avec ses chances sur 100 et sa confiance : <i>faible</i> (elle hésite), <i>moyenne</i> ou <i>forte</i>.</p></div></li>
       <li><span aria-hidden="true">3</span><div><b>Vérifie si elle a raison</b><p>Chaque avis est contrôlé un mois plus tard, en public. <a href="avis-surs-verifies.html" class="lien-site">Voir les avis vérifiés</a>.</p></div></li>
       <li><span aria-hidden="true">4</span><div><b>Entraîne-toi sans risque</b><p>Le portefeuille virtuel te donne 10 000 € fictifs pour tester tes idées sans perdre un centime.</p></div></li>
@@ -1397,16 +1422,34 @@ html.calme *{animation:none!important;transition:none!important}
       <button class="chip expert" data-m="rocket" aria-pressed="false">Décollage</button>
       <input class="search" id="q" type="search" placeholder="Rechercher un titre…" aria-label="Rechercher un titre">
     </div>
-    <details class="affiner" id="affiner"><summary>Filtrer selon mes critères <span class="muted" id="aff-nb"></span></summary>
+    <details class="affiner" id="affiner"><summary>Scanner : filtrer selon mes critères <span class="muted" id="aff-nb"></span></summary>
+      <div class="scan-ex" role="group" aria-label="Exemples de critères"><span class="muted">Exemples :</span>
+        <button class="chip" type="button" data-ex="agit=calme&amp;div=2">Calmes qui versent un dividende</button>
+        <button class="chip" type="button" data-ex="tend=haut&amp;avis=hausse">Tendance de fond et IA plutôt à la hausse</button>
+        <button class="chip" type="button" data-ex="fiab=oui&amp;avis=net">Là où l'IA est la plus fiable</button>
+        <button class="chip" type="button" data-ex="chute=bas&amp;agit=calme">Faible risque de chute</button></div>
       <div class="aff-grille">
         <label>Agitation prévue<select data-f="agit"><option value="">Toutes</option><option value="calme">Le tiers le plus calme</option><option value="moyen">Le tiers du milieu</option><option value="fort">Le tiers le plus agité</option></select></label>
         <label>Avis des IA<select data-f="avis"><option value="">Tous</option><option value="net">Confiance moyenne ou forte</option><option value="hausse">Plutôt à la hausse</option><option value="baisse">Plutôt à la baisse</option></select></label>
         <label>Face à son marché<select data-f="marche"><option value="">Tous</option><option value="mieux">Plutôt mieux</option><option value="moins">Plutôt moins bien</option></select></label>
         <label>Dividende<select data-f="div"><option value="">Peu importe</option><option value="2">Au moins 2 %</option><option value="4">Au moins 4 %</option><option value="0">Sans dividende</option></select></label>
         <label>PER<select data-f="per"><option value="">Peu importe</option><option value="bas">Moins de 15</option><option value="moyen">De 15 à 30</option><option value="haut">Plus de 30</option></select></label>
+        <label>Tendance de fond<select data-f="tend"><option value="">Peu importe</option><option value="haut">Au-dessus de sa moyenne 200 jours</option><option value="bas">En dessous de sa moyenne 200 jours</option></select></label>
+        <label>Risque de forte chute<select data-f="chute"><option value="">Peu importe</option><option value="bas">Parmi les moins risqués</option><option value="haut">Parmi les plus risqués</option></select></label>
+        <label>Fiabilité de l'IA ici<select data-f="fiab"><option value="">Peu importe</option><option value="oui">Cacher les situations où elle est moins fiable</option></select></label>
+        <label>Dernier mois<select data-f="m1"><option value="">Peu importe</option><option value="haut">A monté de plus de 10 %</option><option value="bas">A baissé de plus de 10 %</option></select></label>
+        <label>Résultats d'entreprise<select data-f="res"><option value="">Peu importe</option><option value="bientot">Publiés dans les 14 jours</option><option value="non">Pas dans les 14 jours</option></select></label>
+        <label>Taille (actions en € ou $)<select data-f="capi"><option value="">Peu importe</option><option value="grande">Plus de 10 milliards</option><option value="petite">Moins de 10 milliards</option></select></label>
         <button class="btn ghost" id="aff-raz" type="button">Effacer les critères</button>
       </div>
-      <p class="muted" style="font-size:12.5px;margin:6px 0 0">Les chiffres d'entreprise (dividende, PER) viennent de Yahoo Finance et ne concernent que les actions. Un filtre trie des chiffres : il ne dit pas quoi acheter.</p>
+      <div class="scan-outils">
+        <form id="scan-form" class="scan-sauver"><label for="scan-nom" class="muted">Garder ces critères sous le nom</label>
+          <input id="scan-nom" maxlength="40" placeholder="ex. Mes calmes à dividende" autocomplete="off"><button class="btn ghost" type="submit">Enregistrer</button></form>
+        <button class="btn ghost" type="button" id="scan-lien">Copier le lien</button><button class="btn ghost" type="button" id="scan-csv">Télécharger la liste (CSV)</button>
+        <p id="scan-msg" class="muted" role="status" aria-live="polite"></p>
+        <div id="scan-mes" class="scan-mes"></div>
+      </div>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 0">Les chiffres d'entreprise (dividende, PER, taille) viennent de Yahoo Finance et ne concernent que les actions. « Moins fiable » : marché nerveux, titre très agité, IA hésitante ou mouvement de plus de 25 % en un mois (sur les années testées, l'IA y voyait juste moins souvent). Tes critères enregistrés restent sur cet appareil, sans compte. Un filtre trie des chiffres : il ne dit pas quoi acheter.</p>
     </details>
     <div class="tablewrap"><table>
       <thead><tr>
@@ -1505,9 +1548,10 @@ html.calme *{animation:none!important;transition:none!important}
     </div>
     <p class="disclaimer"><b>Rien n'est sûr en Bourse.</b> Radar Bourse est un projet éducatif. Les informations publiées sont générées automatiquement, peuvent contenir des erreurs et ne constituent ni un conseil en investissement, ni une recommandation personnalisée, ni une incitation à acheter ou vendre. Investir comporte un risque de perte totale du capital. L'éditeur décline toute responsabilité quant à l'usage fait de ces informations.</p>
     <!--__LIENS_SEO__-->
-    <p class="disclaimer" id="sources-txt"></p>
-    <p class="disclaimer">Graphiques réalisés avec <a href="https://www.tradingview.com/lightweight-charts/" target="_blank" rel="noopener noreferrer">TradingView Lightweight Charts™</a>, hébergé sur ce site (licence Apache 2.0).</p>
-    <p class="disclaimer"><span>© 2026 Radar Bourse. Tous droits réservés.</span> <span>Marques et noms de sociétés cités à des fins d'identification uniquement.</span> <a class="lien-site" href="credits.html">Droits d'auteur et crédits</a> · <a class="lien-site" href="donnees-ouvertes.html">Données ouvertes</a></p>
+    <details class="credits-pied"><summary>© 2026 Radar Bourse · sources des données et crédits</summary>
+      <p class="disclaimer" id="sources-txt"></p>
+      <p class="disclaimer">Marques et noms de sociétés cités à des fins d'identification uniquement. <a class="lien-site" href="credits.html">Droits d'auteur et crédits</a> · <a class="lien-site" href="donnees-ouvertes.html">Données ouvertes</a></p></details>
+    <p class="credits-ligne">Graphiques : <a href="https://www.tradingview.com/lightweight-charts/" target="_blank" rel="noopener noreferrer">TradingView Lightweight Charts™</a> (licence Apache 2.0)</p>
   </footer>
 </div></main>
 
@@ -1695,27 +1739,22 @@ html.calme *{animation:none!important;transition:none!important}
 
 <button class="retour-haut" id="retour-haut" hidden aria-label="Revenir en haut de la page">↑</button>
 
-<div class="consent" id="consent" hidden role="dialog" aria-modal="true" aria-labelledby="consent-t" aria-describedby="consent-d">
+<div class="consent" id="consent" hidden role="region" aria-labelledby="consent-t">
   <div class="consent-boite">
     <h2 id="consent-t">Bienvenue sur Radar Bourse</h2>
     <div id="consent-d">
-      <ol class="bienvenue-etapes" aria-label="Comment ça marche">
-        <li><b aria-hidden="true">1</b><span>Tu cherches une action ou une crypto.</span></li>
-        <li><b aria-hidden="true">2</b><span>L'IA te dit si elle la voit monter ou baisser, et à quel point elle est sûre.</span></li>
-        <li><b aria-hidden="true">3</b><span>Ses résultats sont vérifiés en public, ratés compris.</span></li>
-      </ol>
-      <p>C'est un <b>projet éducatif et gratuit</b>. Quatre choses à savoir avant de commencer :</p>
-      <ul>
+      <p>Cherche une action ou une crypto : l'IA te dit si elle la voit monter ou baisser, à quel point elle est sûre, et ses résultats passés sont vérifiés en public.</p>
+      <p class="consent-petit"><b>Projet éducatif, pas de conseil :</b> l'IA se trompe souvent et investir peut faire perdre de l'argent. En continuant, tu acceptes les <button class="lnk" data-legal="conditions">conditions d'utilisation</button> (dont la limitation de responsabilité). Aucun cookie publicitaire, aucun compte.</p>
+      <details class="consent-plus"><summary>Les 4 choses à savoir</summary><ul>
         <li><b>Rien n'est sûr.</b> L'IA se trompe souvent, et le site montre exactement combien.</li>
         <li><b>Ce ne sont pas des conseils.</b> Tu restes seul·e responsable de tes décisions.</li>
         <li><b>Investir peut faire perdre de l'argent</b>, parfois tout. N'investis que ce que tu peux te permettre de perdre.</li>
         <li><b>Nous ne sommes pas responsables</b> des pertes, des erreurs ou retards de données, ni des décisions prises à partir du site. Investir est réservé aux personnes majeures.</li>
-      </ul>
-      <p class="muted" style="font-size:13.5px">En cliquant sur « J'ai compris, c'est parti », tu acceptes les conditions d'utilisation, dont la limitation de responsabilité (article 10). Aucun cookie publicitaire, aucun compte, rien à acheter.</p>
+      </ul></details>
     </div>
     <div class="consent-actions">
-      <button class="btn ghost" data-legal="conditions">Lire les conditions</button>
-      <button class="btn" id="accept">J'ai compris, c'est parti</button>
+      <button class="btn ghost" id="visite-go" type="button">Visite guidée (1 min)</button>
+      <button class="btn" id="accept" type="button">J'ai compris, c'est parti</button>
     </div>
   </div>
 </div>
@@ -2172,7 +2211,7 @@ function votesRobots(t){
     if(e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
     const cible = e.target, tag = (cible.tagName || "").toLowerCase();
     if(["input", "textarea", "select"].includes(tag) || cible.isContentEditable) return;
-    if(!$("#sheet").hidden || !$("#consent").hidden) return;
+    if(!$("#sheet").hidden) return;
     e.preventDefault(); $("#rech").focus();
   });
 })();
@@ -2265,6 +2304,7 @@ function pfAfficher(){
     <div class="pf-actions"><span class="muted" style="font-size:12.5px">Argent fictif · sans frais · cours en $ convertis en € au taux du jour. Entraînement uniquement.</span>
       <button class="mini-btn" id="pf-export" title="Crée un fichier sur ton appareil avec ton portefeuille, tes favoris et tes paris">Sauvegarder dans un fichier</button>
       <label class="mini-btn" style="display:inline-block">Restaurer un fichier<input type="file" id="pf-import" accept=".json,application/json" class="sr"></label>
+      <a class="mini-btn" href="mon-espace.html" title="Profil, favoris, scanners, Académie, et transfert vers un autre appareil">Mon espace</a>
       <span id="pf-raz-zone"><button class="mini-btn danger" id="pf-raz">Recommencer à zéro</button></span></div>`;
   $("#pf-export").onclick = exporterSauvegarde;
   $("#pf-import").onchange = e => { const f = e.target.files && e.target.files[0]; if(f) importerSauvegarde(f); e.target.value = ""; };
@@ -2748,7 +2788,7 @@ let filtre = "all", tri = {k:"score", asc:false};
 const val = (t,k) => ({ticker:t.ticker, prix:t.prix, j1:t.perf["1 jour"], m1:t.perf["1 mois"], m3:t.perf["3 mois"], score:t.score,
   signal:t.score, proba:t.proba_hausse ?? -1, marche:t.proba_marche ?? -1, risque:(t.risque_prevu && t.risque_prevu.mouvement != null ? t.risque_prevu.mouvement * 100 : RISK[t.risque]), rocket:t.potentiel_hausse?1:0, actus:t.tonalite ?? -9})[k];
 /* Filtre selon mes critères (version 33) */
-const CRIT = {agit:"", avis:"", marche:"", div:"", per:""};
+const CRIT = {agit:"", avis:"", marche:"", div:"", per:"", tend:"", chute:"", fiab:"", m1:"", res:"", capi:""};
 // seuils d'agitation qui s'adaptent aux titres du jour (un tiers des titres dans chaque groupe)
 const MVS = T.map(t => t.risque_prevu && t.risque_prevu.mouvement).filter(v => v != null).sort((a, b) => a - b);
 const S1 = MVS.length ? MVS[Math.floor(MVS.length / 3)] : .05, S2 = MVS.length ? MVS[Math.floor(MVS.length * 2 / 3)] : .12;
@@ -2761,8 +2801,57 @@ function critere(t){
   if(CRIT.marche && (pm == null || t.marche_net === false || (CRIT.marche === "mieux" ? pm < .5 : pm >= .5))) return false;
   if(CRIT.div && (t.div == null || (CRIT.div === "0" ? t.div > .05 : t.div < +CRIT.div))) return false;
   if(CRIT.per && (t.per == null || t.per <= 0 || (CRIT.per === "bas" ? t.per >= 15 : CRIT.per === "moyen" ? (t.per < 15 || t.per > 30) : t.per <= 30))) return false;
+  // version 92 : le scanner — uniquement sur des chiffres réellement suivis ; un titre sans la donnée est écarté, jamais deviné
+  if(CRIT.tend && (t.au_dessus_200 == null || (CRIT.tend === "haut") !== !!t.au_dessus_200)) return false;
+  const ch = t.risque_prevu && t.risque_prevu.chute;
+  if(CRIT.chute && (ch == null || (CRIT.chute === "bas" ? ch >= C1 : ch < C2))) return false;
+  if(CRIT.fiab && (!t.situation || t.situation.risquee !== false || p == null)) return false;
+  const m1 = t.perf && t.perf["1 mois"];
+  if(CRIT.m1 && (m1 == null || (CRIT.m1 === "haut" ? m1 <= .10 : m1 >= -.10))) return false;
+  if(CRIT.res){ const j = t.resultats_le ? (new Date(t.resultats_le) - new Date()) / 864e5 : null;
+    const bientot = j != null && j >= -1 && j <= 14; if((CRIT.res === "bientot") !== bientot) return false; }
+  // capitalisation en milliards dans la devise du titre : comparée seulement pour les titres en euros ou en dollars
+  if(CRIT.capi && (t.capi == null || !["€", "$"].includes(t.devise) || (CRIT.capi === "grande" ? t.capi < 10 : t.capi >= 10))) return false;
   return true;
 }
+const CHS = T.map(t => t.risque_prevu && t.risque_prevu.chute).filter(v => v != null).sort((a, b) => a - b);
+const C1 = CHS.length ? CHS[Math.floor(CHS.length / 3)] : .1, C2 = CHS.length ? CHS[Math.floor(CHS.length * 2 / 3)] : .2;
+const SCAN_CLE = "radar-scanner";
+const scanTexte = () => Object.entries(CRIT).filter(([, v]) => v).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
+function scanAppliquer(txt){
+  Object.keys(CRIT).forEach(k => CRIT[k] = "");
+  (txt || "").split("&").forEach(x => { const [k, v] = x.split("="); if(k in CRIT && v != null) CRIT[k] = decodeURIComponent(v); });
+  document.querySelectorAll("#affiner select[data-f]").forEach(s => { s.value = CRIT[s.dataset.f]; if(s.value !== CRIT[s.dataset.f]){ s.value = ""; CRIT[s.dataset.f] = ""; } });
+  rendre();
+}
+function scanLire(){ try { return JSON.parse(localStorage.getItem(SCAN_CLE) || "[]").filter(x => x && x.nom && typeof x.c === "string").slice(0, 20); } catch(e){ return []; } }
+function scanEcrire(L){ try { localStorage.setItem(SCAN_CLE, JSON.stringify(L.slice(0, 20))); return true; } catch(e){ return false; } }
+function scanMes(){
+  const L = scanLire(), z = $("#scan-mes");
+  z.innerHTML = L.length ? `<span class="muted" style="border:0;font-size:13px">Mes scanners :</span>` + L.map((x, i) =>
+    `<span><button type="button" data-scan="${i}" title="Appliquer ces critères">${esc(x.nom)}</button><button type="button" data-scan-x="${i}" aria-label="Supprimer ${esc(x.nom)}">×</button></span>`).join("") : "";
+  z.querySelectorAll("[data-scan]").forEach(b => b.onclick = () => { scanAppliquer(L[+b.dataset.scan].c); scanMsg(`« ${L[+b.dataset.scan].nom} » appliqué.`); });
+  z.querySelectorAll("[data-scan-x]").forEach(b => b.onclick = () => { const n = L[+b.dataset.scanX].nom; L.splice(+b.dataset.scanX, 1); scanEcrire(L); scanMes(); scanMsg(`« ${n} » supprimé.`); });
+}
+const scanMsg = m => { $("#scan-msg").textContent = m; };
+$("#scan-form").addEventListener("submit", ev => { ev.preventDefault();
+  const nom = $("#scan-nom").value.trim(), c = scanTexte();
+  if(!c){ scanMsg("Choisis d'abord au moins un critère."); return; }
+  if(!nom){ scanMsg("Donne-lui un nom pour le retrouver."); $("#scan-nom").focus(); return; }
+  const L = scanLire().filter(x => x.nom !== nom); L.unshift({nom, c});
+  scanMsg(scanEcrire(L) ? `« ${nom} » enregistré sur cet appareil.` : "Ton navigateur bloque l'enregistrement : utilise plutôt « Copier le lien »."); $("#scan-nom").value = ""; scanMes(); });
+$("#scan-lien").addEventListener("click", () => { const c = scanTexte();
+  const u = location.href.split("#")[0] + (c ? "#scan=" + encodeURIComponent(c) : "#tous");
+  (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => scanMsg("Lien copié : il rouvre l'appli avec ces critères."), () => scanMsg(u)); });
+$("#scan-csv").addEventListener("click", () => {
+  const L = T.filter(critere), q = v => `"${String(v ?? "").replace(/"/g, '""')}"`, n = (v, d = 4) => v == null ? "" : (+v).toFixed(d);
+  const lignes = [["titre", "nom", "marche", "cours", "devise", "date_cours", "chances_hausse", "confiance", "agitation_prevue_1_mois", "risque_chute", "perf_1_mois", "au_dessus_moyenne_200j", "dividende_pct", "per"].join(",")]
+    .concat(L.map(t => [q(t.ticker), q(t.nom), q(t.marche), n(t.prix, 6), q(t.devise), q(t.date_cours), n(t.proba_hausse), q(t.avis_net === false ? "faible" : t.confiance),
+      n(t.risque_prevu && t.risque_prevu.mouvement), n(t.risque_prevu && t.risque_prevu.chute), n(t.perf && t.perf["1 mois"]), t.au_dessus_200 == null ? "" : t.au_dessus_200 ? 1 : 0, n(t.div, 2), n(t.per, 1)].join(",")));
+  const url = URL.createObjectURL(new Blob(["\ufeff" + lignes.join("\n")], {type: "text/csv;charset=utf-8"}));
+  const a = document.createElement("a"); a.href = url; a.download = `radar-scanner-${(DATA.date_donnees || "").slice(0, 10)}.csv`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000); scanMsg(`${L.length} titre${L.length > 1 ? "s" : ""} exporté${L.length > 1 ? "s" : ""}. Source : Radar Bourse, données du ${(DATA.date_donnees || "").slice(0, 10)}.`); });
+document.querySelectorAll(".scan-ex [data-ex]").forEach(b => b.onclick = () => { scanAppliquer(b.dataset.ex); scanMsg(`Exemple appliqué : ${b.textContent}. Ce n'est pas une recommandation.`); });
 document.querySelectorAll("#affiner select[data-f]").forEach(s => s.addEventListener("change", () => { CRIT[s.dataset.f] = s.value; rendre(); }));
 $("#aff-raz").addEventListener("click", () => { document.querySelectorAll("#affiner select[data-f]").forEach(s => { s.value = ""; CRIT[s.dataset.f] = ""; }); rendre(); });
 function rendre(){
@@ -2794,6 +2883,8 @@ document.querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
   document.querySelectorAll("th").forEach(x => x.removeAttribute("aria-sort"));
   th.setAttribute("aria-sort", tri.asc ? "ascending" : "descending"); rendre(); });
 rendre();
+scanMes();
+{ const h = decodeURIComponent(location.hash.slice(1)); if(h.startsWith("scan=")){ $("#affiner").open = true; scanAppliquer(h.slice(5)); setTimeout(() => $("#tous").scrollIntoView({block: "start"}), 300); } }
 pfAfficher();
 
 /* ---------- Détail ---------- */
@@ -3651,6 +3742,8 @@ function ouvrir(tk, pousser=true){
     ${t.fondamentaux ? `<div class="dpane" data-dpane="entreprise" hidden>${blocFondamentaux(t)}</div>` : ""}
 
     <div class="dpane" data-dpane="analyse" hidden>
+      <div class="vp-carte">${window.vpProfil ? vpProfil(t) : ""}${window.vpJaugeTech ? vpJaugeTech(t) : ""}</div>
+      ${window.vpSaison ? vpSaison(t) : ""}
       <div class="panel"><div class="label" style="margin-bottom:8px">Pourquoi ce signal</div><ul class="reasons">
         ${t.alertes.map(r=>`<li><span>🔔</span><span>${esc(r.replace(/^🚀 /,""))}</span></li>`).join("")}
         ${t.raisons_pour.map(r=>`<li><span class="up">✓</span><span>${esc(r)}</span></li>`).join("")}
@@ -4841,14 +4934,10 @@ document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#legal"
 const CLE_AVERT = "radar-bourse-avertissement-v2";   // v2 : point sur la responsabilité, réaffiché une fois à tous
 let dejaVu = false;
 try{ dejaVu = localStorage.getItem(CLE_AVERT) === "1"; }catch(e){}
-$("#consent").hidden = dejaVu;
-if(!dejaVu){ document.body.style.overflow = "hidden"; setTimeout(() => $("#accept").focus(), 50); }
-$("#consent").addEventListener("keydown", e => {   // le focus clavier reste dans l'avertissement
-  if(e.key !== "Tab" || !$("#legal").hidden) return;
-  const f = [...$("#consent").querySelectorAll("button")], i = f.indexOf(document.activeElement);
-  if(e.shiftKey && i <= 0){ e.preventDefault(); f.at(-1).focus(); } else if(!e.shiftKey && i === f.length - 1){ e.preventDefault(); f[0].focus(); }
-});
-$("#accept").onclick = () => { try{ localStorage.setItem(CLE_AVERT, "1"); }catch(e){} $("#consent").hidden = true; document.body.style.overflow = ""; };
+$("#consent").hidden = dejaVu;   // version 95 : plus de fenêtre bloquante, la page reste utilisable
+const accepter = () => { try{ localStorage.setItem(CLE_AVERT, "1"); }catch(e){} $("#consent").hidden = true; };
+$("#accept").onclick = accepter;
+$("#visite-go").onclick = () => { accepter(); if(window.visiteGuidee) visiteGuidee(); };
 
 /*__DEFI_JS__*/
 if(location.hash){

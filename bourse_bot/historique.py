@@ -36,7 +36,7 @@ def _num(v):
         return np.nan
 
 
-def enregistrer(analyses) -> None:
+def enregistrer(analyses) -> list:
     os.makedirs(config.DOSSIER_HISTORIQUE, exist_ok=True)
     lignes = []
     aujourd_hui = pd.Timestamp.now().normalize()
@@ -70,6 +70,7 @@ def enregistrer(analyses) -> None:
     # une seule prédiction par titre et par jour de cotation (on garde la plus récente)
     tout = tout.drop_duplicates(subset=["date", "ticker"], keep="last")
     tout[COLS].to_csv(FICHIER, index=False)
+    return lignes   # version 92 : le soir, ces mêmes lignes sont scellées dans le registre public
 
 
 def _type(ticker: str) -> str:
