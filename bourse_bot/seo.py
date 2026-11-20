@@ -999,7 +999,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
         corps += visite_guidee.suite_fiche(t, voisins[0] if voisins else None)
     except Exception:
         pass
-    corps += f"<p class='muted'>Cette page dans d'autres langues : {_lg.selecteur('../', 'fr', _lg.alternates_titre(slug(tk)))}</p>"
+    corps += f"<p class='muted'>Cette page dans d'autres langues : {_lg.selecteur('../', 'fr', _lg.alternates_titre_tous(slug(tk)))}</p>"
     return chemin, _page(base, titre, desc, chemin, corps, jsonld, csp,
                          alternates=__import__("bourse_bot.langues", fromlist=["x"]).alternates_titre(slug(tk)), image=img,
                          mots=mots_titre(t))

@@ -302,10 +302,16 @@ def chemin_accueil(lg: str) -> str:
     return {"fr": "", "en": "en/index.html"}.get(lg, f"{lg}/index.html")
 
 
-def alternates_titre(s: str) -> dict:
+def alternates_titre_tous(s: str) -> dict:
     d = {lg: chemin_titre(lg, s) for lg in TOUTES}
     d["x-default"] = d["fr"]
     return d
+
+
+def alternates_titre(s: str) -> dict:
+    """Version 97 : seules les fiches française et anglaise sont proposées à Google (voir _page : les fiches traduites
+    automatiquement dans 26 autres langues restent lisibles mais ne sont plus indexées)."""
+    return {"fr": chemin_titre("fr", s), "en": chemin_titre("en", s), "x-default": chemin_titre("fr", s)}
 
 
 def alternates_accueil() -> dict:
@@ -378,7 +384,13 @@ def _page(lg, base, titre, desc, chemin, corps, csp, alternates, faq=None, mots=
     if faq:   # version 63 : foire aux questions balisée (résultats enrichis de Google)
         jsonld["@graph"].append({"@type": "FAQPage", "inLanguage": lg, "mainEntity": [
             {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": r}} for q, r in faq]})
-    tete = seo.balises_tete(base, titre, desc, chemin, jsonld=jsonld, alternates=alternates, langue=lg)
+    # version 97 : ~12 000 fiches traduites automatiquement (26 langues × tous les titres) ressemblaient à du contenu fabriqué
+    # en masse, ce que les mises à jour de Google pénalisent sur tout le site. Elles restent en ligne pour les visiteurs,
+    # mais ne sont plus proposées à l'index ; les pages d'accueil de chaque langue, elles, restent indexées.
+    fiche = "/stocks/" in chemin
+    tete = seo.balises_tete(base, titre, desc, chemin, jsonld=jsonld, alternates=None if fiche else alternates, langue=lg)
+    if fiche:
+        tete = re.sub(r'<meta name="robots" content="[^"]*">', '<meta name="robots" content="noindex, follow">', tete, 1)
     tete = re.sub(r'<meta name="keywords"[^>]*>\n?', "", tete)   # version 63 : pas de mots-clés français sur les pages étrangères
     if mots:   # version 69 : des mots-clés dans la langue de la page
         tete = f'<meta name="keywords" content="{seo._e(mots)}">\n' + tete
@@ -448,7 +460,7 @@ def _page_titre(lg, base, t, horizon, date, csp="", taux_surs=None):
     court = re.sub(r"\s*\(.*?\)", "", nom).strip() or nom
     sym = tk.split("-")[0].split(".")[0].lstrip("^")
     return chemin, _page(lg, base, L["titre_page"].format(nom=nom, tk=tk) + f" | {NOM}", L["desc"].format(nom=nom, tk=tk),
-                         chemin, corps, csp, alternates_titre(s), mots=mots_lg(lg, [court] + ([sym] if sym.lower() != court.lower() else []), tk))
+                         chemin, corps, csp, alternates_titre_tous(s), mots=mots_lg(lg, [court] + ([sym] if sym.lower() != court.lower() else []), tk))
 
 
 def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
@@ -469,7 +481,7 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
             chemin, page = _page_titre(lg, base, t, horizon, date, csp, taux_surs)
             with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
                 f.write(page)
-            urls.append((chemin, "daily", "0.4"))
+            # version 97 : plus dans le plan du site (non indexées)
         lien = lambda t: f"<a href='stocks/{seo.slug(t['ticker'])}.html'>{_e(nom_intl(t['nom']))}</a>"
         rq = sorted([t for t in titres if (t.get("risque_prevu") or {}).get("chute") is not None],
                     key=lambda t: -t["risque_prevu"]["chute"])[:10]

@@ -46,7 +46,9 @@ def _page(base, titre, description, chemin, corps, csp, alternates, mots=None):
     jsonld = {"@context": "https://schema.org", "@type": "WebPage", "name": titre, "description": description,
               "inLanguage": "en", "dateModified": datetime.now().isoformat(timespec="seconds"),
               "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None}}
-    tete = seo.balises_tete(base, titre, description, chemin, image=seo._image_de(chemin), jsonld=jsonld, alternates=alternates, langue="en")
+    # version 97 : sur les fiches, Google ne voit que le lien vers la version française ; les autres langues restent dans le sélecteur
+    alt_tete = ({k: alternates[k] for k in ("fr", "en", "x-default") if k in alternates} if alternates and "/stocks/" in chemin else alternates)
+    tete = seo.balises_tete(base, titre, description, chemin, image=seo._image_de(chemin), jsonld=jsonld, alternates=alt_tete, langue="en")
     tete = tete.replace(f'<meta name="keywords" content="{_e(seo.MOTS_CLES)}">',
                         f'<meta name="keywords" content="{_e(mots) if mots else "stock forecast, crypto forecast, technical analysis, RSI, MACD, S&amp;P 500, CAC 40, Bitcoin, stock prediction, market outlook"}">')
     csp = seo.csp_avec_stats(csp)
@@ -168,7 +170,7 @@ def _page_titre(base, t, horizon, date, csp, modele):
 <h2>Reliability</h2>{fiab or "<p>Statistical forecast: it is often wrong.</p>"}
 """
     return chemin, _page(base, titre, desc, chemin, corps, csp,
-                         langues.alternates_titre(s), mots=seo.mots_titre(t, "en"))
+                         langues.alternates_titre_tous(s), mots=seo.mots_titre(t, "en"))
 
 
 def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
