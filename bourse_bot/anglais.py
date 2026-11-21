@@ -45,7 +45,7 @@ def _page(base, titre, description, chemin, corps, csp, alternates, mots=None):
     titre, description = seo.titre_court(titre), seo.desc_courte(description)
     jsonld = {"@context": "https://schema.org", "@type": "WebPage", "name": titre, "description": description,
               "inLanguage": "en", "dateModified": datetime.now().isoformat(timespec="seconds"),
-              "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None}}
+              "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None}, "publisher": seo._AUTEUR(base)}
     # version 97 : sur les fiches, Google ne voit que le lien vers la version française ; les autres langues restent dans le sélecteur
     alt_tete = ({k: alternates[k] for k in ("fr", "en", "x-default") if k in alternates} if alternates and "/stocks/" in chemin else alternates)
     tete = seo.balises_tete(base, titre, description, chemin, image=seo._image_de(chemin), jsonld=jsonld, alternates=alt_tete, langue="en")
@@ -168,6 +168,10 @@ def _page_titre(base, t, horizon, date, csp, modele):
 </table></div>
 {f"<h2>Levels to watch</h2><div class='carte'><table>{niveaux}</table></div>" if niveaux else ""}
 <h2>Reliability</h2>{fiab or "<p>Statistical forecast: it is often wrong.</p>"}
+<h2>Who made this analysis?</h2>
+<div class="carte"><p>An automatic calculation by the {NOM} AI, an independent, free, ad-free project run solo under the pen name maxitemmmm. The same rules for every asset, updated every hour. Forecasts are sealed in a public register before the outcome is known, then checked one month later, misses included.</p>
+<p><a href="../../fiche-technique-ia.html" hreflang="fr">How the AI works</a> · <a href="../../registre-previsions.html" hreflang="fr">The sealed register</a> · <a href="../../a-propos.html" hreflang="fr">About</a></p>
+<p class="muted">Information, not investment advice: investing carries a risk of capital loss.</p></div>
 """
     return chemin, _page(base, titre, desc, chemin, corps, csp,
                          langues.alternates_titre_tous(s), mots=seo.mots_titre(t, "en"))

@@ -448,12 +448,18 @@ def balises_tete(base: str, titre: str, description: str, chemin: str = "", imag
         jsonld = {"@context": "https://schema.org", "@graph": [
             {"@type": "WebPage", "name": titre, "description": description, "url": url,
              "inLanguage": "en" if langue == "en" else "fr-FR", "isPartOf": {"@id": base + "#site"},
-             "primaryImageOfPage": img},
+             "primaryImageOfPage": img, "publisher": _AUTEUR(base)},
             _jsonld_fil(base, [(NOM, ""), (titre.split(" : ")[0].split(" | ")[0][:60], chemin)])]}
     if jsonld:
         data = json.dumps(jsonld, ensure_ascii=False).replace("</", "<\\/")
         lignes.append(f'<script type="application/ld+json">{data}</script>')
     return "\n".join(lignes)
+
+
+def _AUTEUR(base):
+    """Version 99 : qui publie (données structurées). Même texte que la page À propos."""
+    return {"@type": "Organization", "name": NOM, "url": (base or "") + "a-propos.html",
+            "description": "Projet indépendant, gratuit et sans publicité, mené sous le pseudonyme maxitemmmm."}
 
 
 _VOLATIL = re.compile(r"\d{4}-\d{2}-\d{2}(?:T[\d:.+Z-]*)?|\d{1,2}/\d{1,2}(?:/\d{2,4})?|\d{1,2}[h:]\d{2}(?::\d{2})?"
@@ -983,6 +989,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
 """
     jsonld = {"@context": "https://schema.org", "@type": "WebPage", "name": titre, "description": desc,
               "inLanguage": "fr-FR", "dateModified": datetime.now().isoformat(timespec="seconds"),
+              "author": _AUTEUR(base), "publisher": _AUTEUR(base),
               "isPartOf": {"@type": "WebSite", "name": NOM, "url": base or None},
               "about": ({"@type": "Corporation", "name": nom, "tickerSymbol": aff_tk(tk)} if titre.startswith("Action ")
                         else {"@type": "Thing", "name": f"{nom} ({aff_tk(tk)})"})}
@@ -994,6 +1001,15 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     jsonld = {"@context": "https://schema.org", "@graph": [{k: v for k, v in g.items() if k != "@context"} for g in graphe]}
     img = f"partage/{slug(tk)}.png" if t.get("_image_ok") else "partage.png"
     from . import langues as _lg
+    # version 99 : mise à jour de Google (novembre 2026) — pour un sujet « argent », Google regarde qui écrit et si c'est
+    # vérifiable. On le dit clairement sur chaque fiche, avec les preuves à un clic (texte vrai : voir a-propos.html).
+    corps += ("<aside class='carte' aria-labelledby='h-qui'><h2 id='h-qui'>Qui a fait cette analyse ?</h2>"
+              f"<p>Un calcul automatique de l'IA de {NOM}, un projet indépendant, gratuit et sans publicité, mené en solo sous le pseudonyme "
+              "<a href='../a-propos.html'>maxitemmmm</a>. Les mêmes règles pour tous les titres, mises à jour chaque heure. "
+              "Les prévisions sont scellées dans un registre public avant de connaître le résultat, puis contrôlées un mois plus tard, ratés compris.</p>"
+              "<p><a href='../fiche-technique-ia.html'>Comment l'IA calcule</a> · <a href='../registre-previsions.html'>Le registre scellé</a> · "
+              "<a href='../resultats.html'>Les résultats réels</a> · <a href='../a-propos.html'>À propos</a></p>"
+              "<p class='muted'>Une information, pas un conseil en investissement : investir comporte un risque de perte en capital.</p></aside>")
     try:   # version 95 : « Et maintenant ? » — donner envie d'une deuxième page
         from . import visite_guidee
         corps += visite_guidee.suite_fiche(t, voisins[0] if voisins else None)
