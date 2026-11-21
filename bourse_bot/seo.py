@@ -2767,7 +2767,7 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     except Exception as e:
         print(f"Outils non générés : {e}")
     try:
-        _page_404(base, dossier, csp)
+        _page_404(base, dossier, csp, payload)
     except Exception as e:
         print(f"Page 404 non générée : {e}")
     # Résultats réels, image du jour à partager, version anglaise
@@ -3435,7 +3435,7 @@ def _page_fiche_ia(base, payload, dossier, csp):
     return True
 
 
-def _page_404(base, dossier, csp):
+def _page_404(base, dossier, csp, payload=None):
     """Version 51 : une vraie page « introuvable » au design du site (au lieu de la page brute de GitHub).
     Elle peut s'afficher à n'importe quelle profondeur : tous ses liens partent de l'adresse du site (<base>)."""
     corps = ("<h1>Cette page n'existe pas (ou plus)</h1>"
@@ -3445,6 +3445,24 @@ def _page_404(base, dossier, csp):
              "<li><a href='titres.html'>Tous les titres suivis</a></li><li><a href='guides.html'>Les guides</a></li>"
              "<li><a href='resultats.html'>Les résultats réels de l'IA</a></li><li><a href='en/index.html' hreflang='en' lang='en'>English version</a></li>"
              "</ul></div><p><a class='btn' href='index.html'>Ouvrir l'appli</a></p>")
+    # version 98 : Search Console signale des visiteurs qui arrivent sur d'anciennes adresses. On leur propose tout de suite
+    # le titre le plus proche de l'adresse demandée, et une recherche parmi tous les titres suivis.
+    liste = [[slug(t["ticker"]), t.get("nom", ""), aff_tk(t["ticker"])] for t in (payload or {}).get("titres", []) if t.get("marche") != "tendances"]
+    if liste:
+        corps = corps.replace("<div class='carte'>", "<div class='carte' id='p404-sugg' hidden></div>"
+                              "<div class='carte'><label for='p404-q'><b>Chercher un titre</b></label>"
+                              "<input id='p404-q' type='search' autocomplete='off' placeholder='LVMH, Bitcoin, Apple…' "
+                              "style='width:100%;margin:8px 0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit'>"
+                              "<ul class='liste' id='p404-res'></ul></div><div class='carte'>", 1)
+        corps += ("<script>(function(){const L=" + json.dumps(liste, ensure_ascii=False).replace("</", "<\\/") + ";"
+                  "const n=s=>s.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();"
+                  "const lien=x=>`<li><a href='titres/${x[0]}.html'>${x[1].replace(/[<>&]/g,'')} <span class='muted'>(${x[2]})</span></a></li>`;"
+                  "const bout=(location.pathname.split('/').pop()||'').replace(/\\.html$/,''),cle=n(bout);"
+                  "if(cle){let m=L.find(x=>x[0]===bout)||L.find(x=>n(x[0])===cle)||L.find(x=>cle.length>2&&(n(x[0]).startsWith(cle)||cle.startsWith(n(x[0]))));"
+                  "const z=document.getElementById('p404-sugg');if(m){z.hidden=false;z.innerHTML=`<p style='margin:0'>Tu cherchais peut-être : <a href='titres/${m[0]}.html'><b>${m[1].replace(/[<>&]/g,'')}</b></a> ?</p>`;}}"
+                  "const q=document.getElementById('p404-q'),r=document.getElementById('p404-res');"
+                  "q.addEventListener('input',()=>{const v=n(q.value);r.innerHTML=v.length<2?'':L.filter(x=>n(x[1]+' '+x[2]).includes(v)).slice(0,8).map(lien).join('')||'<li class=muted>Aucun titre trouvé</li>';});"
+                  "})();</script>")
     page = _page(base, f"Page introuvable | {NOM}", "Cette page n'existe pas ou plus sur Radar Bourse.", "404.html", corps,
                  csp=csp.replace("base-uri 'none'", "base-uri 'self'"))   # <base> doit être autorisé sur cette page seulement
     page = re.sub(r'<meta name="robots" content="[^"]*">', '<meta name="robots" content="noindex">', page, 1)
