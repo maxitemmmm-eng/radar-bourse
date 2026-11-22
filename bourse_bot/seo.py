@@ -509,10 +509,29 @@ def _dates_modif(dossier: str, chemins: list, aujourdhui: str) -> dict:
 def script_stats() -> str:
     """Compteur de visites GoatCounter (anonyme, sans cookie) si configuré."""
     code = config.GOATCOUNTER
-    if not code:
-        return ""
-    return (f'<script data-goatcounter="https://{code}.goatcounter.com/count" '
-            'async src="https://gc.zgo.at/count.js"></script>')
+    # version 100 : les navigateurs pilotés par un programme (navigator.webdriver) ne sont plus comptés : le pic de robots
+    # du 18/11 (1 041 « visites » au hasard) faussait les chiffres. Les vrais visiteurs restent comptés comme avant.
+    compteur = (f"<script>if(!navigator.webdriver){{var g=document.createElement('script');g.async=true;"
+                f"g.dataset.goatcounter='https://{code}.goatcounter.com/count';g.src='https://gc.zgo.at/count.js';"
+                f"document.head.appendChild(g);}}</script>") if code else ""
+    return compteur + ACCUEIL_IA
+
+
+# version 100 : ChatGPT est la 1re source de visites venues d'un autre site. Quelqu'un qui arrive d'un assistant IA
+# a souvent lu une seule réponse : on lui montre en une carte ce qui rend le site différent (une fois par visite, refermable).
+ACCUEIL_IA = r"""<script>(function(){try{
+var r=document.referrer||'';if(!/(chatgpt\.com|chat\.openai\.com|perplexity\.ai|claude\.ai|copilot\.microsoft\.com|gemini\.google\.com|chat\.mistral\.ai)/.test(r))return;
+if(sessionStorage.getItem('rb-ia'))return;sessionStorage.setItem('rb-ia','1');
+var en=(document.documentElement.lang||'').indexOf('en')===0,fr=(document.documentElement.lang||'fr').indexOf('fr')===0;if(!en&&!fr)return;
+var t=en?['Welcome! You came from an AI assistant.','Here, every forecast is sealed before the outcome and checked a month later, misses included. Free, no ads, no account.','Take the 1-minute tour','See the real results','/en/index.html','/resultats.html','Close']
+:['Bienvenue ! Tu arrives depuis un assistant IA.','Ici, chaque prévision est scellée avant le résultat puis vérifiée un mois plus tard, ratés compris. Gratuit, sans pub, sans compte.','Découvrir le site en 1 minute','Voir les résultats réels','/index.html#visite','/resultats.html','Fermer'];
+function go(){var c=document.getElementById('consent');if(c&&!c.hidden)return;var d=document.createElement('aside');d.setAttribute('role','region');d.setAttribute('aria-label',t[0]);
+d.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:60;max-width:440px;margin:0 auto;padding:14px 16px;border-radius:14px;background:var(--surface,var(--card,#13223a));color:var(--ink,#e8eef7);border:1px solid var(--line,#2a3b55);box-shadow:0 10px 30px rgba(0,0,0,.35);font-size:15px;line-height:1.45';
+d.innerHTML='<b style="display:block;margin-bottom:4px">'+t[0]+'</b><span>'+t[1]+'</span><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><a class="btn" href="'+t[4]+'">'+t[2]+'</a><a class="btn ghost" href="'+t[5]+'">'+t[3]+'</a></div>'
++'<button type="button" aria-label="'+t[6]+'" style="position:absolute;top:6px;right:8px;background:none;border:0;color:inherit;font-size:22px;line-height:1;cursor:pointer;padding:4px 8px">×</button>';
+d.querySelector('button').onclick=function(){d.remove()};document.addEventListener('keydown',function(e){if(e.key==='Escape')d.remove()},{once:true});document.body.appendChild(d);}
+if(document.body)setTimeout(go,900);else document.addEventListener('DOMContentLoaded',function(){setTimeout(go,900)});
+}catch(e){}})();</script>"""
 
 
 def csp_avec_stats(csp: str) -> str:
@@ -2872,6 +2891,42 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
                 f.write(f"google-site-verification: {nom}")
     with open(os.path.join(dossier, "robots.txt"), "w", encoding="utf-8") as f:
         f.write("User-agent: *\nAllow: /\n" + (f"Sitemap: {base}sitemap.xml\n" if base else ""))
+
+    # version 100 : ChatGPT est devenu la 1re source de visites venues d'ailleurs (GoatCounter, novembre 2026).
+    # llms.txt = un sommaire en texte simple pour les assistants IA (format proposé sur llmstxt.org). Que du vrai.
+    with open(os.path.join(dossier, "llms.txt"), "w", encoding="utf-8") as f:
+        u = base or ""
+        f.write(f"""# {NOM}
+
+> Site français gratuit, sans publicité et sans compte : l'avis d'une IA sur environ 460 actions, ETF et cryptos
+> (probabilité de hausse à un mois, fourchette de prix probable, agitation prévue), mis à jour chaque heure.
+> Projet indépendant mené sous le pseudonyme maxitemmmm. Ce n'est pas un conseil en investissement.
+
+Points importants pour bien citer le site :
+- Deviner le sens (hausse ou baisse) à un mois reste difficile : l'IA fait un peu mieux que le hasard, pas beaucoup plus.
+- Prévoir l'ampleur des mouvements (fourchette, agitation) fonctionne nettement mieux.
+- Les prévisions sont scellées dans un registre public avant le résultat, puis vérifiées un mois plus tard, ratés compris.
+
+## Prévisions
+- [Prédiction bourse du mois]({u}prediction-bourse.html): actions vues en hausse ou en baisse
+- [Prédiction crypto du mois]({u}prediction-crypto.html): bitcoin, ether et autres cryptos
+- [Tous les titres suivis]({u}titres.html): une fiche par action, ETF ou crypto
+
+## Preuves et méthode
+- [Résultats réels de l'IA]({u}resultats.html)
+- [Registre scellé des prévisions]({u}registre-previsions.html)
+- [Fiche technique de l'IA]({u}fiche-technique-ia.html)
+- [À propos]({u}a-propos.html)
+
+## Apprendre et simuler
+- [Formation gratuite à la Bourse]({u}formation.html)
+- [Simulateur boursier (argent fictif)]({u}simulateur-boursier.html)
+- [Si j'avais investi…]({u}outils/si-javais-investi.html)
+- [Vos questions sur la Bourse]({u}questions-bourse.html)
+
+## English
+- [English version]({u}en/index.html)
+""")
 
     # Hors connexion (version 33) : le réseau d'abord (cours toujours frais), la copie gardée seulement sans réseau
     with open(os.path.join(dossier, "sw.js"), "w", encoding="utf-8") as f:
