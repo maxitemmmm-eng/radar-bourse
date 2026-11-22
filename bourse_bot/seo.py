@@ -948,8 +948,28 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
                else f"Agitation prévue ±{round(mv * 100)} %" if mv else "Prévision à un mois")
             + (f", risque de chute {round(ch_t * 100)} %." if isinstance(ch_t, (int, float)) else ".")
             + " Gratuit, vérifié.")
+    # version 101 : Search Console — beaucoup d'affichages, peu de clics (0,3 %). L'avis de l'IA est la vraie raison de
+    # cliquer : on l'ajoute juste après le cours (même chiffre que sur la fiche), puis on raccourcit si besoin.
+    _av = ""
+    if isinstance(t.get("proba_hausse"), (int, float)):
+        try:   # exactement la phrase du haut de la fiche (_verdict_titre)
+            from .hebdo import avis_ia
+            _pa, _sens, _c = avis_ia(t)
+            _av = (f"Avis de l'IA : {'hausse' if _sens > 0 else 'baisse'}, "
+                   f"{round((_pa if _sens > 0 else 1 - _pa) * 100)} chances sur 100. ")
+        except Exception:
+            _av = ""
+    if _av:
+        _i = desc.find(f" le {date}. ")
+        if _i > 0:
+            _j = _i + len(f" le {date}. ")
+            desc = desc[:_j] + _av + desc[_j:]
     if len(desc) > 160:
         desc = desc.replace(" Gratuit, vérifié.", "")
+    if len(desc) > 160:
+        desc = re.sub(r", risque de chute \d+ %\.", ".", desc)
+    if len(desc) > 160:
+        desc = desc.replace(" 8 fois sur 10.", ".")
     chemin = f"titres/{slug(tk)}.html"
     lien_app = f"../index.html#{re.sub(r'[^A-Za-z0-9._-]', '', tk)}"
     perf = t.get("perf", {})
