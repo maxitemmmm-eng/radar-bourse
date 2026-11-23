@@ -5,8 +5,8 @@ Présente toujours le site comme **un outil pour apprendre**, jamais comme « le
 c'est plus honnête, mieux accepté sur les forums, et ça évite les ennuis.
 Poste sous le pseudo **maxitemmmm**, sans nom ni photo. Pour le contact, renvoie vers les « Issues » GitHub.
 
-Adresse à coller partout : https://maxitemmmm-eng.github.io/radar-bourse/
-Appli en anglais : https://maxitemmmm-eng.github.io/radar-bourse/app-en.html
+Adresse à coller partout : https://radarbourse.fr/
+Appli en anglais : https://radarbourse.fr/app-en.html
 
 ## 1. Google (gratuit, effet durable)
 - Fais l'étape **Google Search Console** du README (10 minutes). C'est ce qui compte le plus.
@@ -19,7 +19,7 @@ Lis les règles de chaque forum avant de poster : certains interdisent l'autopro
 Texte prêt à adapter :
 
 > **J'ai codé un site gratuit qui montre honnêtement ce qu'une IA sait (et ne sait pas) prévoir en Bourse**
-> Salut ! En apprenant Python, j'ai construit un site qui analyse chaque heure plus de 200 actions, ETF et cryptos.
+> Salut ! En apprenant Python, j'ai construit un site qui analyse chaque heure environ 460 actions, ETF et cryptos.
 > Ce que j'ai appris en le testant sur 20 ans d'historique : la **direction** d'un prix à un mois, c'est presque
 > pile ou face, et le site le dit. En revanche, **de combien un prix peut bouger**, ça se prévoit nettement mieux
 > (plus proche de la réalité que « comme le mois dernier » 6 fois sur 10, toutes les années testées).
@@ -33,7 +33,7 @@ Texte prêt à adapter :
 r/SideProject accepte l'autopromotion. Sur r/learnpython, insiste sur ce que tu as appris.
 
 > **I built a free stock & crypto forecast site that is honest about what AI can't predict**
-> I've been learning Python and built Radar Bourse: every hour it analyses 200+ stocks, ETFs and cryptos and
+> I've been learning Python and built Radar Bourse: every hour it analyses about 460 stocks, ETFs and cryptos and
 > publishes one-month forecasts. The twist: it measures and shows its own reliability.
 > What 20 years of walk-forward testing taught me: predicting the *direction* of a price is close to a coin toss
 > (and the site says so, market by market). Predicting *how much* a price will move works much better: closer to
@@ -41,7 +41,7 @@ r/SideProject accepte l'autopromotion. Sur r/learnpython, insiste sur ce que tu 
 > Also: a "go back in time" game against the AI, a virtual portfolio, free calculators (if I had invested,
 > compound interest, crypto converter). Static site on GitHub Pages, no ads, no sign-up.
 > Feedback welcome, especially on the methodology!
-> https://maxitemmmm-eng.github.io/radar-bourse/app-en.html
+> https://radarbourse.fr/app-en.html
 
 ## 4. Hacker News (« Show HN »)
 Va sur https://news.ycombinator.com/submit. Titre court et factuel, sans superlatif :
@@ -66,7 +66,7 @@ Il faut un compte : crée-le toi-même avec ton pseudo. Fiche prête :
 - **Nom :** Radar Bourse
 - **Accroche (60 caractères max) :** `Free AI stock & crypto forecasts that show their own errors`
 - **Description :**
-  > One-month forecasts for 200+ stocks, ETFs and cryptos, updated every hour. Each forecast shows how reliable
+  > One-month forecasts for about 460 stocks, ETFs and cryptos, updated every hour. Each forecast shows how reliable
   > the AI really was on years it had never seen, and every published forecast is checked a month later.
   > Includes a "beat the AI" history game, a virtual portfolio, and free calculators. No ads, no sign-up.
 - **Images :** les vignettes de `partage/pages/` (1200 × 630) : fonctionnalités, arène, simulateur, outils.

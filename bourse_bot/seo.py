@@ -992,6 +992,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
 <h1>{"Action " if titre.startswith("Action ") else ""}{_e(nom)} ({_e(aff_tk(tk))}) : cours, prévision et analyse</h1>
 <p class="muted">Mise à jour automatique · cours au {_e(date)}{f" · entreprise d'origine : {_e(config.PAYS_MONDE[tk])}, cotée à New York en dollars" if tk in config.PAYS_MONDE else ""}</p>
 {_verdict_titre(t, nom)}
+{_partage_fiche(t, nom, base, f"titres/{slug(tk)}.html")}
 {_graphique_titre(t, horizon)}
 <div class="carte grille">
   <div class="k"><b>{_px(prix, dev)}</b><span>dernier cours</span></div>
@@ -1831,6 +1832,39 @@ def _profil(fd):
     return (f"<h2>L'entreprise en chiffres</h2>{intro}<div class='carte'><table>{''.join(lignes)}</table></div>"
             "<p class='muted' style='font-size:14px'>Données publiques des derniers comptes. Le PER indique combien le marché paie "
             "chaque euro de bénéfice ; une dette au-dessus de 200 % des capitaux propres est élevée.</p>")
+
+
+def _partage_fiche(t, nom, base, chemin):
+    """Version 102 (marketing) : un visiteur sur deux arrive sur une fiche ; il n'y avait aucun moyen simple de la partager.
+    Le message partagé reprend l'avis affiché en haut de la fiche (même calcul), avec le lien. Chaque partage est compté
+    dans GoatCounter (événement « partage/… ») et les visites qu'il amène apparaissent dans « Campaigns » (utm_campaign)."""
+    if not base:
+        base = ""
+    try:
+        from .hebdo import avis_ia
+        pa, sens, _c = avis_ia(t)
+        avis = f"L'IA voit {nom} à la {'hausse' if sens > 0 else 'baisse'} : {round((pa if sens > 0 else 1 - pa) * 100)} chances sur 100 pour le mois qui vient."
+    except Exception:
+        avis = f"Prévision de {nom} pour le mois qui vient."
+    url = f"{base}{chemin}?utm_campaign=partage-fiche"
+    texte = f"{avis} Prévisions vérifiées en public, gratuit :"
+    from urllib.parse import quote
+    wa = "https://wa.me/?text=" + quote(f"{texte} {url}")
+    x = "https://x.com/intent/post?text=" + quote(texte) + "&url=" + quote(url)
+    return (f"<div class='partage-fiche' data-url='{_e(url)}' data-texte='{_e(texte)}' style='display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:-4px 0 18px'>"
+            "<span class='muted' style='font-size:14px'>Partager cet avis :</span>"
+            "<button type='button' class='btn ghost' data-canal='natif' style='padding:6px 12px;font-size:14px'>Partager</button>"
+            f"<a class='btn ghost' data-canal='whatsapp' href='{_e(wa)}' target='_blank' rel='noopener' style='padding:6px 12px;font-size:14px'>WhatsApp</a>"
+            f"<a class='btn ghost' data-canal='x' href='{_e(x)}' target='_blank' rel='noopener' style='padding:6px 12px;font-size:14px'>X</a>"
+            "<button type='button' class='btn ghost' data-canal='copie' style='padding:6px 12px;font-size:14px'>Copier le lien</button></div>"
+            "<script>(function(){var z=document.currentScript.previousElementSibling,n=z.querySelector('[data-canal=natif]');"
+            "try{z.dataset.url=new URL(z.dataset.url,location.href).href;}catch(_){}"
+            "if(!navigator.share)n.remove();"
+            "z.addEventListener('click',async function(e){var b=e.target.closest('[data-canal]');if(!b)return;var c=b.dataset.canal;"
+            "try{if(window.goatcounter&&goatcounter.count)goatcounter.count({path:'partage/'+c,title:document.title,event:true});}catch(_){}"
+            "if(c==='natif'){e.preventDefault();try{await navigator.share({title:document.title,text:z.dataset.texte,url:z.dataset.url});}catch(_){}}"
+            "else if(c==='copie'){e.preventDefault();try{await navigator.clipboard.writeText(z.dataset.texte+' '+z.dataset.url);b.textContent='Lien copié ✓';}"
+            "catch(_){b.textContent=z.dataset.url;}}});})();</script>")
 
 
 LIB_CONF_FAQ = {"faible": "confiance faible", "moyenne": "confiance moyenne", "forte": "confiance forte"}

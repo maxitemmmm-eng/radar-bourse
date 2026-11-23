@@ -48,7 +48,7 @@ Tous les jours (2 min) : `campagne_google.bat`, pour les 10 demandes d'indexatio
 > - **Risque de chute de plus de 10 % en un mois** : là, ça marche. Les titres jugés les plus risqués chutent 21,8 % du temps, contre 8,6 % en moyenne.
 > - **Agitation** (de combien ça va bouger) : plus proche de la réalité que la méthode simple 61 % du temps.
 >
-> Tout est publié sur le site, ratés compris : https://maxitemmmm-eng.github.io/radar-bourse/resultats.html
+> Tout est publié sur le site, ratés compris : https://radarbourse.fr/resultats.html
 >
 > Je suis preneur de critiques sur la méthode de test (walk-forward, calibration par année, bootstrap par mois).
 
@@ -62,12 +62,12 @@ Tous les jours (2 min) : `campagne_google.bat`, pour les 10 demandes d'indexatio
 > Je ne prétends pas deviner si ça monte : je l'ai testé et sur les cryptos, l'IA fait même moins bien que « ça monte toujours ». Le site l'affiche honnêtement.
 > Par contre, le risque de chute est bien repéré sur les années testées.
 >
-> Classement du jour : https://maxitemmmm-eng.github.io/radar-bourse/classements/cryptos-agitees.html
+> Classement du jour : https://radarbourse.fr/classements/cryptos-agitees.html
 > Pas un conseil, juste des chiffres. Retours bienvenus.
 
 ## Texte C : Discord (court)
 
-> Salut ! J'ai fait un site gratuit (sans pub ni compte) qui montre chaque jour l'agitation prévue et le risque de forte chute d'environ 185 actions et cryptos, avec ses vrais résultats publiés, ratés compris. Il y a aussi des duels genre « Airbus ou Safran », « BTC ou ETH ». Si ça vous intéresse : https://maxitemmmm-eng.github.io/radar-bourse/ ; dites-moi ce qui manque.
+> Salut ! J'ai fait un site gratuit (sans pub ni compte) qui montre chaque jour l'agitation prévue et le risque de forte chute d'environ 185 actions et cryptos, avec ses vrais résultats publiés, ratés compris. Il y a aussi des duels genre « Airbus ou Safran », « BTC ou ETH ». Si ça vous intéresse : https://radarbourse.fr/ ; dites-moi ce qui manque.
 
 ## Texte D : anglais (r/algotrading ou Show HN)
 
@@ -77,7 +77,7 @@ Tous les jours (2 min) : `campagne_google.bat`, pour les 10 demandes d'indexatio
 > - 1-month direction: ~56%, same as "always up". No edge.
 > - Risk of a >10% drop next month: AUC 0.69; top decile drops 21.8% of the time vs 8.6% base.
 > - Volatility forecast beats last-month baseline 61% of the time.
-> Everything (including failures) is published: https://maxitemmmm-eng.github.io/radar-bourse/en/index.html
+> Everything (including failures) is published: https://radarbourse.fr/en/index.html
 > Feedback on the methodology welcome.
 
 ---
