@@ -697,7 +697,7 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 {barre_partage(base, chemin, titre)}
 <footer class="pied"><nav class="pied-liens" aria-label="Pied de page"><a href="{prefixe}questions-bourse.html">Vos questions</a><a href="{prefixe}fonctionnalites.html">Fonctionnalités</a><a href="{prefixe}journal-ia.html">Journal de l'IA</a><a href="{prefixe}simulateur-boursier.html">Simulateur</a><a href="{prefixe}outils.html">Outils gratuits</a><a href="{prefixe}mon-espace.html">Mon espace</a><a href="{prefixe}a-propos.html">À propos</a><a href="{prefixe}contact.html">Contact</a></nav>
 <p class="pied-legal"><b>Rien n'est sûr en Bourse.</b> Projet éducatif et indépendant : les avis de l'IA peuvent se tromper et ne sont pas des conseils en investissement ; on peut perdre tout l'argent investi. <a href="{prefixe}index.html#conditions">Conditions</a></p>
-<p class="pied-credits">© {__import__("bourse_bot.credits", fromlist=["x"]).annees()} {NOM} · <a href="{prefixe}credits.html">Crédits et sources</a> · <a href="{prefixe}donnees-ouvertes.html">Données ouvertes</a> · marques citées à des fins d'identification</p></footer>
+<p class="pied-credits">© {__import__("bourse_bot.credits", fromlist=["x"]).annees()} {NOM} · <a href="{prefixe}credits.html">Crédits et sources</a> · <a href="{prefixe}donnees-ouvertes.html">Données ouvertes</a>{f' · <a href="{_e(config.SOUTIEN)}" target="_blank" rel="noopener noreferrer">Soutenir le projet</a>' if config.SOUTIEN else ""} · marques citées à des fins d'identification</p></footer>
 </div>
 {SCRIPT_BOUTON}
 {_JS_VT}

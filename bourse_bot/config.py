@@ -256,3 +256,14 @@ if GOATCOUNTER and not __import__("re").fullmatch(r"[a-z0-9][a-z0-9-]{1,48}", GO
 # GitHub, modérables par toi). Vides = pas de discussions affichées. Voir TUTO_DISCUSSIONS.md.
 GISCUS = {"repo": _os.environ.get("GISCUS_REPO", "").strip(), "repo_id": _os.environ.get("GISCUS_REPO_ID", "").strip(),
           "categorie_id": _os.environ.get("GISCUS_CATEGORY_ID", "").strip()}
+
+# Version 108 : lien discret « Soutenir le projet » (dons libres, sans contrepartie, sans entreprise). Vide = rien d'affiché.
+# Seules des plateformes de dons connues sont acceptées (sécurité : jamais un lien arbitraire).
+def _soutien():
+    import re as _r
+    u = _os.environ.get("RADAR_SOUTIEN", "").strip() or "https://ko-fi.com/supporteradarbourse"   # page Ko-fi de l'éditrice
+    ok = _r.fullmatch(r"https://(www\.)?(ko-fi\.com|tipeee\.com|fr\.tipeee\.com|en\.tipeee\.com|buymeacoffee\.com|liberapay\.com|paypal\.me)/[A-Za-z0-9_.\-/]{1,80}", u)
+    return u if ok else ""
+
+
+SOUTIEN = _soutien()

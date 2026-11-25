@@ -159,6 +159,9 @@ def _page_a_propos(base, payload, csp):
              "<h2>En savoir plus</h2><ul><li><a href='fonctionnalites.html'>Toutes les fonctionnalités</a></li>"
              "<li><a href='fiche-technique-ia.html'>La fiche technique de l'IA</a></li><li><a href='resultats.html'>Les résultats réels</a></li>"
              "<li><a href='credits.html'>Sources des données et crédits</a></li><li><a href='index.html#conditions'>Conditions d'utilisation et mentions légales</a></li></ul>")
+    if config.SOUTIEN:   # version 108 : une phrase discrète, sans contrepartie
+        corps += (f"<p class='muted' style='font-size:14px'>Le site est et restera gratuit, sans publicité et sans compte. Si tu as envie d'aider à le faire vivre, "
+                  f"tu peux <a href='{seo._e(config.SOUTIEN)}' target='_blank' rel='noopener noreferrer'>soutenir le projet</a> : c'est facultatif et ne débloque rien.</p>")
     url = (base + chemin) if base else None
     jl = {"@context": "https://schema.org", "@graph": [
         {"@type": "AboutPage", "name": "À propos de Radar Bourse", "url": url, "inLanguage": "fr",

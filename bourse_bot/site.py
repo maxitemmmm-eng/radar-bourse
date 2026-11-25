@@ -496,6 +496,8 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
     import re as _re
     _m = _re.search(r'<svg class="logo".*?</svg>', gabarit, _re.S)
     _logo = _re.sub(r"(id=|url\(#|href=)(['\"]?#?)(rb\w+)", lambda m: m.group(1) + m.group(2) + m.group(3) + "s", _m.group(0)) if _m else ""
+    gabarit = gabarit.replace("<!--__SOUTIEN__-->", (f'    <p class="credits-ligne">Projet gratuit et sans publicité : <a href="{config.SOUTIEN}" target="_blank" '
+                                                      'rel="noopener noreferrer">soutenir le projet</a> (facultatif)</p>') if config.SOUTIEN else "", 1)
     from . import abonnement as _ab
     if not _ab.analyse_ouverte():   # version 107 : pas de lien vers l'analyse approfondie tant que son serveur n'est pas installé
         gabarit = gabarit.replace('<a href="analyse-approfondie.html" class="lien-site"><b>Analyse approfondie à la demande</b></a>', "", 1)
