@@ -9,6 +9,13 @@ on:
   schedule:
     - cron: "40 2 * * *"        # chaque nuit à 2 h 40 UTC (marchés fermés)
   workflow_dispatch:            # bouton « Run workflow » pour le lancer à la main
+    inputs:
+      duree:
+        description: "Durée de la séance (rapide ≈ 20 min, normal ≈ 50 min, expert ≈ 2 h 30 : session d'amélioration)"
+        required: false
+        default: "normal"
+        type: choice
+        options: [rapide, normal, expert]
 
 permissions: {}
 
@@ -20,7 +27,7 @@ concurrency:
 jobs:
   apprendre:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 200   # version 106 : la séance « expert » dure environ 2 h 30
     permissions:
       contents: write   # enregistrer les connaissances de l'IA
       actions: write    # relancer la mise à jour du site si l'IA a progressé
@@ -48,10 +55,14 @@ jobs:
 
       - name: Entraîner l'IA
         id: entrainement
+        env:
+          DUREE_DEMANDEE: ${{ github.event.inputs.duree }}
         run: |
           set -o pipefail
           DUREE=rapide
-          if [ "$(date -u +%u)" = "7" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then DUREE=normal; fi
+          if [ "$(date -u +%u)" = "7" ]; then DUREE=normal; fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then DUREE="${DUREE_DEMANDEE:-normal}"; fi
+          case "$DUREE" in rapide|normal|expert) ;; *) DUREE=normal ;; esac
           echo "Durée choisie : $DUREE"
           python entrainement_ia.py --console --auto --duree "$DUREE" | tee journal_entrainement.txt
           echo "change=$(grep -o 'AUTO_CHANGE=[01]' journal_entrainement.txt | tail -1 | cut -d= -f2)" >> "$GITHUB_OUTPUT"

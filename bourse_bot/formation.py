@@ -336,7 +336,8 @@ def _page_chapitre(seo, base, csp, ch, i):
              f"<p class='pp-tout'><a href='#' id='pp-tout'>Tout afficher sur une seule page</a></p>"
              f"<div class='pp' id='pp'>{plan_html}<div class='pp-etapes'>{''.join(etapes)}</div></div>"
              f"{sources}{auteur}</article>{nav}"
-             f"<script>document.body.dataset.chap={json.dumps(ch['id'])};</script>{JS_QUIZ}{JS_PAS}")
+             f"<script>document.body.dataset.chap={json.dumps(ch['id'])};</script>{JS_QUIZ}{JS_PAS}"
+             + __import__("bourse_bot.abonnement", fromlist=["x"]).script_limite(ch["id"]))
     chemin = f"formation/{ch['id']}.html"
     jl = {"@context": "https://schema.org", "@graph": [
         {"@type": "LearningResource", "name": ch["titre"], "description": ch["desc"], "inLanguage": "fr",
@@ -375,6 +376,7 @@ def _page_chapitre_app(seo, base, csp, ch, i):
     lecons = avec_lexique("".join(f"<!--L{k}-->{h}" for k, (t, h) in enumerate(ch["sections"]))).split("<!--L")[1:]
     lecons = [x.split("-->", 1)[1] for x in lecons]
     corps = academie.lecon(seo, ch, i, CHAPITRES, NIVEAUX, EXOS[ch["id"]], _graphes().get(ch["id"], []), lecons, VERIFIE_LE)
+    corps += __import__("bourse_bot.abonnement", fromlist=["x"]).script_limite(ch["id"])   # version 104 : 3 grandes leçons par jour en gratuit
     chemin, jl = _page_chapitre(_Capture(seo), base, csp, ch, i)   # mêmes données structurées que la page de cours
     n_lecons = len(ch["sections"])
     titre = f"{ch['titre']} | Cours de Bourse débutant gratuit"
@@ -386,6 +388,12 @@ def _page_chapitre_app(seo, base, csp, ch, i):
 def _page_hub_app(seo, base, csp):
     from . import academie
     corps = f"<style>{CSS_LEX}</style>" + academie.parcours(CHAPITRES, NIVEAUX, VERIFIE_LE, seo.NOM)
+    # version 107 : après les bases, le parcours avancé (gratuit) et l'analyse approfondie
+    corps += ("<section style='max-width:900px;margin:24px auto;padding:0 16px'><div class='carte' style='border:1px solid var(--line);border-radius:14px;padding:16px 18px'>"
+              "<h2 style='margin-top:0'>Et après les bases ?</h2><p>Le <a href='academie-plus.html'><b>parcours Analyste</b></a> : lire un bilan, "
+              "valoriser une entreprise (DCF), repérer les pièges statistiques. Gratuit, avec exercices corrigés."
+              + (" Puis mets tout en pratique avec une <a href='analyse-approfondie.html'><b>analyse approfondie</b></a> de l'action de ton choix."
+                 if __import__("bourse_bot.abonnement", fromlist=["x"]).analyse_ouverte() else "") + "</p></div></section>")
     jl = _page_hub(_Capture(seo), base, csp)
     return academie.page(seo, base, f"Apprendre la Bourse de zéro : formation gratuite pour débutants | {seo.NOM}",
                          f"Formation Bourse gratuite façon appli : {len(CHAPITRES)} chapitres, {sum(len(c['sections']) for c in CHAPITRES)} mini-leçons avec exercices, "

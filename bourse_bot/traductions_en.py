@@ -2,6 +2,24 @@
 Un texte absent reste en français : la traduction ne peut pas casser l'appli."""
 
 EN = {
+"Par où commencer ?": "Where to start?",
+"Voir les prévisions": "See the forecasts",
+"L'avis de l'IA sur chaque action, crypto et l'or, pour le mois qui vient.": "The AI's view on every stock, crypto and gold for the month ahead.",
+"Vérifier l'IA": "Check the AI",
+"Ses vrais résultats, ratés compris, contrôlés un mois plus tard.": "Its real results, misses included, checked one month later.",
+"Apprendre la Bourse": "Learn the stock market",
+"L'Académie gratuite, de zéro, avec exercices et certificat.": "The free Academy, from scratch, with exercises and a certificate.",
+"Le Défi du jour": "Today's Challenge",
+"Analyse un vrai graphique masqué et bats l'IA.": "Analyse a real hidden chart and beat the AI.",
+"Mode simple : l'essentiel d'abord.": "Simple mode: the essentials first.",
+"Afficher aussi les cartes, bulles, jauges et signaux": "Also show maps, bubbles, gauges and signals",
+"Top 10 des actions": "Top 10 stocks",
+"Les 10 grandes Bourses du monde": "The world's 10 largest stock exchanges",
+"Cours de l'or": "Gold price",
+"Simulateur de stop-loss": "Stop-loss simulator",
+"Grandes Bourses": "Major exchanges",
+"L'or": "Gold",
+
 "Onglets précédents": "Previous tabs",
 "Onglets suivants": "Next tabs",
 "Aller au contenu": "Skip to content",

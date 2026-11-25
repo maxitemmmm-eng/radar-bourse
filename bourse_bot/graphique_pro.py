@@ -67,11 +67,13 @@ function init(fig){
   var D;try{D=JSON.parse(fig.querySelector(".gp-data").textContent);}catch(e){return;}
   var S=D.serie,n=S.c.length;if(n<20)return;
   var zone=fig.querySelector(".gp-zone"),bulle=fig.querySelector(".gp-bulle"),prixEl=fig.querySelector(".gp-prix");
-  var etat={periode:D.periode||126,type:"ligne",moy:false,prev:true,passes:true,curseur:null};
+  var etat={periode:D.periode||126,type:"ligne",moy:false,prev:true,passes:true,boll:false,hl:false,rsi:false,ech:"prix",curseur:null};
   var aOHLC=S.o&&S.h&&S.l&&S.o.length===n;
   if(!aOHLC){var bt=fig.querySelector("[data-type=bougies]");if(bt)bt.remove();}
   if(!(S.sma50&&S.sma50.some(function(v){return v!=null;}))){var bm=fig.querySelector("[data-opt=moy]");if(bm)bm.remove();}
   if(!(D.passes&&D.passes.length)){var bp=fig.querySelector("[data-opt=passes]");if(bp)bp.remove();}
+  if(!(S.bbh&&S.bbb)){var bb=fig.querySelector("[data-opt=boll]");if(bb)bb.remove();}
+  if(!(S.rsi&&S.rsi.some(function(v){return v!=null;}))){var br=fig.querySelector("[data-opt=rsi]");if(br)br.remove();}
   var premier=true,geo=null;
   function entete(i){var c=S.c,j=i==null?n-1:i,v=c[j],ref=j>0?c[j-1]:null;
     var hors=i==null;var debut=c[Math.max(0,n-etat.periode)];
@@ -80,31 +82,40 @@ function init(fig){
     prixEl.innerHTML="<b>"+fmtPrix(v,D.devise)+"</b><span><span class='"+cls+"'>"+varTxt+"</span> · "+fmtDate(S.t[j])+"</span>";}
   function dessiner(){
     var W=Math.max(320,zone.clientWidth||700),H=W<560?300:380,pl=8,pr=W<560?62:78,pt=16,pb=26;
-    var hv=etat.type==="bougies"||S.v?Math.round(H*0.16):0;
+    var hv=etat.type==="bougies"||S.v||etat.rsi?Math.round(H*(etat.rsi?0.2:0.16)):0;
     var i0=Math.max(0,n-etat.periode),idx=[];for(var i=i0;i<n;i++)idx.push(i);
     var cone=etat.prev&&D.cone&&D.cone.mediane?D.cone:null,nf=cone?cone.mediane.length-1:0;
     var total=idx.length-1+nf,X=function(k){return pl+(W-pl-pr)*k/Math.max(1,total);};
     var vals=[];idx.forEach(function(i){vals.push(S.c[i]);if(etat.type==="bougies"&&aOHLC){vals.push(S.h[i],S.l[i]);}
-      if(etat.moy){if(S.sma50&&S.sma50[i]!=null)vals.push(S.sma50[i]);if(S.sma200&&S.sma200[i]!=null)vals.push(S.sma200[i]);}});
+      if(etat.moy){if(S.sma50&&S.sma50[i]!=null)vals.push(S.sma50[i]);if(S.sma200&&S.sma200[i]!=null)vals.push(S.sma200[i]);}
+      if(etat.boll&&S.bbh&&S.bbb){if(S.bbh[i]!=null)vals.push(S.bbh[i]);if(S.bbb[i]!=null)vals.push(S.bbb[i]);}});
     if(cone){vals=vals.concat(cone.haut,cone.bas);}
     var pas=etat.passes&&D.passes?D.passes.filter(function(p){return p.i1>=i0;}):[];
     pas.forEach(function(p){vals.push(p.bas,p.haut);});
-    vals=vals.filter(function(v){return v!=null&&isFinite(v);});
-    var lo=Math.min.apply(null,vals),hi=Math.max.apply(null,vals),m=(hi-lo)*0.06||hi*0.02;lo-=m;hi+=m;
-    var yb=H-pb-hv,Y=function(v){return pt+(yb-pt)*(1-(v-lo)/(hi-lo));};
+    vals=vals.filter(function(v){return v!=null&&isFinite(v)&&(etat.ech!=="log"||v>0);});
+    var base0=S.c[i0],tv=function(v){return etat.ech==="pct"?v/base0-1:etat.ech==="log"?Math.log(Math.max(v,1e-12)):v;};
+    vals=vals.map(tv);
+    var lo=Math.min.apply(null,vals),hi=Math.max.apply(null,vals),m=(hi-lo)*0.06||Math.abs(hi)*0.02||0.01;lo-=m;hi+=m;
+    var yb=H-pb-hv,Y=function(v){return pt+(yb-pt)*(1-(tv(v)-lo)/(hi-lo));};
+    var lib=function(u){return etat.ech==="pct"?fmtPct(u):fmtPrix(etat.ech==="log"?Math.exp(u):u,D.devise);};
     zone.innerHTML="";var svg=el("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":D.titre});zone.appendChild(svg);zone.appendChild(bulle);
     var defs=el("defs",{},svg),g1=el("linearGradient",{id:"gpg"+D.id,x1:0,y1:0,x2:0,y2:1},defs);
     el("stop",{offset:"0","stop-color":"var(--accent)","stop-opacity":"1"},g1);el("stop",{offset:"1","stop-color":"var(--accent)","stop-opacity":"0"},g1);
-    for(var q=0;q<=4;q++){var v=lo+(hi-lo)*q/4,y=Y(v);el("line",{x1:pl,x2:W-pr,y1:y,y2:y,"class":"gr"},svg);
-      var tx=el("text",{x:W-pr+6,y:y+4,"class":"ax"},svg);tx.textContent=fmtPrix(v,D.devise);}
+    for(var q=0;q<=4;q++){var u=lo+(hi-lo)*q/4,y=pt+(yb-pt)*(1-q/4);el("line",{x1:pl,x2:W-pr,y1:y,y2:y,"class":"gr"},svg);
+      var tx=el("text",{x:W-pr+6,y:y+4,"class":"ax"},svg);tx.textContent=lib(u);}
     var nbD=W<560?3:5;for(var q2=0;q2<nbD;q2++){var k=Math.round((idx.length-1)*q2/(nbD-1)),t=el("text",{x:X(k),y:H-8,"class":"ax","text-anchor":q2===0?"start":q2===nbD-1?"end":"middle"},svg);t.textContent=fmtDate(S.t[idx[k]],true);}
     var xAuj=X(idx.length-1);
     if(cone){el("rect",{x:xAuj,y:pt,width:W-pr-xAuj,height:yb-pt,"class":"futur"},svg);}
-    if(hv&&S.v){var vmax=Math.max.apply(null,idx.map(function(i){return S.v[i]||0;}))||1,bw=Math.max(1,(W-pl-pr)/Math.max(1,total)*0.7);
+    if(hv&&etat.rsi&&S.rsi){var yr=function(r){return H-pb-4-(hv-10)*r/100;};
+      [30,70].forEach(function(r){el("line",{x1:pl,x2:W-pr,y1:yr(r),y2:yr(r),"class":"gr","stroke-dasharray":"3 4"},svg);var tr=el("text",{x:W-pr+6,y:yr(r)+4,"class":"ax"},svg);tr.textContent="RSI "+r;});
+      var dr="";idx.forEach(function(i,k){if(S.rsi[i]!=null)dr+=(dr?" L":"M")+X(k).toFixed(1)+","+yr(S.rsi[i]).toFixed(1);});if(dr)el("path",{d:dr,fill:"none",stroke:"#c98bff","stroke-width":1.5},svg);}
+    else if(hv&&S.v){var vmax=Math.max.apply(null,idx.map(function(i){return S.v[i]||0;}))||1,bw=Math.max(1,(W-pl-pr)/Math.max(1,total)*0.7);
       idx.forEach(function(i,k){var vv=S.v[i]||0,h=(hv-6)*vv/vmax,up=k===0||S.c[i]>=S.c[idx[k-1]];
         el("rect",{x:X(k)-bw/2,y:H-pb-h,width:bw,height:h,"class":"vol",fill:up?"var(--up)":"var(--down)"},svg);});}
     if(etat.moy){[["sma50","m50"],["sma200","m200"]].forEach(function(p){var a=S[p[0]];if(!a)return;var d="";idx.forEach(function(i,k){if(a[i]!=null)d+=(d?" L":"M")+X(k).toFixed(1)+","+Y(a[i]).toFixed(1);});
       if(d)el("path",{d:d,"class":p[1]},svg);});}
+    if(etat.boll&&S.bbh&&S.bbb){[S.bbh,S.bbb].forEach(function(a){var d="";idx.forEach(function(i,k){if(a[i]!=null)d+=(d?" L":"M")+X(k).toFixed(1)+","+Y(a[i]).toFixed(1);});
+      if(d)el("path",{d:d,fill:"none",stroke:"#5fb3c9","stroke-width":1.3,"stroke-dasharray":"4 3"},svg);});}
     var coul=D.sens>0?"var(--up)":D.sens<0?"var(--down)":"var(--muted)";
     if(etat.type==="bougies"&&aOHLC){var cw=Math.max(1.5,(W-pl-pr)/Math.max(1,total)*0.62);
       idx.forEach(function(i,k){var up=S.c[i]>=S.o[i],c=up?"var(--up)":"var(--down)",x=X(k);
@@ -122,6 +133,9 @@ function init(fig){
       var L=cone.mediane.length-1,etq=[[Y(cone.haut[L]),cone.haut[L]],[Y(cone.mediane[L]),cone.mediane[L]],[Y(cone.bas[L]),cone.bas[L]]];
       if(etq[1][0]-etq[0][0]<15)etq[0][0]=etq[1][0]-15;if(etq[2][0]-etq[1][0]<15)etq[2][0]=etq[1][0]+15;
       etq.forEach(function(e,k){var tt=el("text",{x:fx(L)-4,y:e[0]+(k===0?-4:k===2?12:-7),"class":"lab","text-anchor":"end",fill:k===1?coul:"var(--muted)"},gF);tt.textContent=fmtPrix(e[1],D.devise);});}
+    if(etat.hl){var kH=0,kB=0;idx.forEach(function(i,k){if(S.c[i]>S.c[idx[kH]])kH=k;if(S.c[i]<S.c[idx[kB]])kB=k;});
+      [[kH,"Plus haut",-8],[kB,"Plus bas",16]].forEach(function(e){var i=idx[e[0]],x=X(e[0]),y=Y(S.c[i]);el("circle",{cx:x,cy:y,r:4,fill:"none",stroke:"var(--ink)","stroke-width":1.5},svg);
+        var tt=el("text",{x:Math.min(W-pr-4,Math.max(pl+4,x)),y:y+e[2],"class":"lab","text-anchor":x<W/3?"start":x>W*2/3?"end":"middle",fill:"var(--ink)"},svg);tt.textContent=e[1]+" "+fmtPrix(S.c[i],D.devise);});}
     el("line",{x1:xAuj,x2:xAuj,y1:pt,y2:yb,"class":"auj"},svg);
     el("circle",{cx:xAuj,cy:Y(S.c[n-1]),r:4.5,fill:"var(--accent)",stroke:"var(--surface)","stroke-width":2},svg);
     var gP=el("g",{"class":premier?"fondu":""},svg);
@@ -159,6 +173,8 @@ function init(fig){
     fig.querySelectorAll("[data-type]").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});dessiner();});});
   fig.querySelectorAll("[data-opt]").forEach(function(b){b.addEventListener("click",function(){var o=b.dataset.opt;etat[o]=!etat[o];b.setAttribute("aria-pressed",etat[o]?"true":"false");
     var lg=fig.querySelector("[data-leg="+o+"]");if(lg)lg.hidden=!etat[o];dessiner();});});
+  fig.querySelectorAll("[data-ech]").forEach(function(b){b.addEventListener("click",function(){etat.ech=b.dataset.ech;
+    fig.querySelectorAll("[data-ech]").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});dessiner();});});
   var rt;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(dessiner,150);});
   fig.querySelector(".gp-barre").hidden=false;dessiner();
 }
@@ -236,7 +252,7 @@ def bloc(t: dict, svg_fixe: str, horizon: int, stats: dict | None = None, sens: 
     if n < 30 or not svg_fixe:
         return svg_fixe
     ps = passes(t, horizon)
-    garder = ("t", "o", "h", "l", "c", "v", "sma50", "sma200")
+    garder = ("t", "o", "h", "l", "c", "v", "sma50", "sma200", "bbh", "bbb", "rsi")   # version 103 : Bollinger et RSI
     data = {"id": abs(hash(t.get("ticker"))) % 100000, "titre": f"Cours de {t.get('nom')} et prévision de l'IA", "devise": t.get("devise", ""),
             "serie": {k: s[k] for k in garder if s.get(k)}, "cone": {k: (t.get("cone") or {}).get(k) for k in ("t", "bas", "mediane", "haut")} if t.get("cone") else None,
             "passes": ps, "sens": sens, "periode": min(126, n)}
@@ -257,11 +273,19 @@ def bloc(t: dict, svg_fixe: str, horizon: int, stats: dict | None = None, sens: 
             "<button type='button' data-type='bougies' aria-pressed='false'>Bougies</button></span>"
             "<span class='gp-groupe' role='group' aria-label='Affichage'><button type='button' data-opt='prev' aria-pressed='true'>Prévision</button>"
             "<button type='button' data-opt='passes' aria-pressed='true'>Vérifications</button>"
-            "<button type='button' data-opt='moy' aria-pressed='false'>Moyennes</button></span></div></div>"
+            "<button type='button' data-opt='moy' aria-pressed='false'>Moyennes</button>"
+            "<button type='button' data-opt='boll' aria-pressed='false' title='Bandes de Bollinger : la zone où le prix évolue d’habitude'>Bandes</button>"
+            "<button type='button' data-opt='hl' aria-pressed='false' title='Plus haut et plus bas de la période'>Haut/bas</button>"
+            "<button type='button' data-opt='rsi' aria-pressed='false' title='RSI : élan acheteur ou vendeur, de 0 à 100'>RSI</button></span>"
+            "<span class='gp-groupe' role='group' aria-label='Échelle'><button type='button' data-ech='prix' aria-pressed='true'>Prix</button>"
+            "<button type='button' data-ech='pct' aria-pressed='false' title='Variation en % depuis le début de la période'>%</button>"
+            "<button type='button' data-ech='log' aria-pressed='false' title='Échelle logarithmique : une même hausse en % a la même hauteur'>Log</button></span></div></div>"
             f"<div class='gp-zone' tabindex='0' aria-label='Graphique : déplace-toi avec les flèches gauche et droite'>{svg_fixe}<div class='gp-bulle' aria-hidden='true'></div></div>"
             "<div class='gp-legende'><span><i style='background:var(--accent)'></i>Cours</span>"
             "<span data-leg='prev'><i style='background:currentColor;opacity:.3'></i>Prévision : 8 fois sur 10 (clair), 1 fois sur 2 (foncé), pointillés = le plus probable</span>"
             "<span data-leg='passes'><i style='background:var(--up)'></i>Prévision passée tenue <i style='background:var(--down);margin-left:8px'></i>non tenue</span>"
-            "<span data-leg='moy' hidden><i style='background:#e0a43a'></i>Moyenne 50 jours <i style='background:#b07cff;margin-left:8px'></i>200 jours</span></div>"
+            "<span data-leg='moy' hidden><i style='background:#e0a43a'></i>Moyenne 50 jours <i style='background:#b07cff;margin-left:8px'></i>200 jours</span>"
+            "<span data-leg='boll' hidden><i style='background:#5fb3c9'></i>Bandes de Bollinger : le prix reste entre les deux la plupart du temps</span>"
+            "<span data-leg='rsi' hidden><i style='background:#c98bff'></i>RSI en bas : au-dessus de 70, élan acheteur très fort ; sous 30, très vendeur</span></div>"
             f"<p class='gp-fiab'>{fiab_titre}{fiab_glob}<a href='../resultats.html'>Toutes les vérifications</a></p>"
             f"<script type='application/json' class='gp-data'>{donnees}</script></figure>")

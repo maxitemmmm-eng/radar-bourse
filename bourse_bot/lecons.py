@@ -116,4 +116,36 @@ LECONS = [
      "Le temps, la régularité et la diversification comptent plus que la recherche du coup parfait.",
      "Vaut-il mieux attendre le « meilleur moment » pour investir une grosse somme, ou investir un peu chaque mois ?",
      "Personne ne sait prédire le meilleur moment ; investir régulièrement lisse le prix d'achat et évite de dépendre de la chance."),
+    # version 103 : deux cours demandés — le stop-loss (avec son simulateur sur de vrais cours) et les fonds propres
+    ("stop-loss", "Le stop-loss : limiter ses pertes", "Ce qu'est un ordre stop, comment le placer, et ses vrais pièges (glissement, faux signaux).", 6,
+     """<p>Un <b>stop-loss</b> (ordre « stop ») est une consigne donnée à l'avance à ton courtier : <i>si le cours descend jusqu'à tel prix, vends</i>. Il sert à fixer la perte maximale que tu acceptes sur une position, avant que l'émotion ne s'en mêle.</p>
+<h2>Comment ça marche</h2>
+<p>Tu achètes une action 100 €. Tu places un stop à 92 € : tu acceptes de perdre environ 8 %. Si le cours touche 92 €, l'ordre devient un <b>ordre de vente au marché</b> et s'exécute au prix disponible à ce moment-là.</p>
+<h2>Les trois pièges</h2>
+<ul><li><b>Le glissement</b> : si l'action ouvre directement à 85 € (mauvaise nouvelle pendant la nuit), tu vends à 85 €, pas à 92 €. Le stop ne garantit pas le prix.</li>
+<li><b>Le stop trop serré</b> : une action normale bouge de plusieurs % par semaine. Un stop à −2 % se déclenche souvent pour rien, puis le cours remonte sans toi.</li>
+<li><b>Le stop trop large</b> : à −40 %, il ne protège plus grand-chose.</li></ul>
+<h2>Placer un stop raisonnable</h2>
+<p>Une méthode courante : regarder l'<b>agitation habituelle</b> du titre (sa volatilité) et placer le stop au-delà des mouvements ordinaires, par exemple sous un plus bas récent ou à 2 fois le mouvement moyen d'une semaine. Le <b>stop suiveur</b> (trailing stop) remonte tout seul quand le cours monte, pour protéger une partie des gains.</p>
+<p>Essaie sur de vrais cours avec le <a href='../outils/simulateur-stop-loss.html'>simulateur de stop-loss</a> : tu verras combien de fois un stop trop serré se déclenche pour rien.</p>
+<p>Ces informations sont générales et éducatives, pas un conseil en investissement.</p>""",
+     "Un stop-loss fixe ta perte maximale à l'avance, mais il ne garantit pas le prix de vente et ne doit pas être plus serré que l'agitation normale du titre.",
+     "Tu as placé un stop à 92 € sur une action achetée 100 €. Elle ouvre le lendemain à 86 € après une mauvaise nouvelle. À quel prix vends-tu ?",
+     "Vers 86 € (ou au prix disponible à l'ouverture) : le stop devient un ordre au marché, il ne garantit pas les 92 €. C'est le glissement."),
+    ("fonds-propres", "Les fonds propres d'une entreprise", "Ce qui appartient vraiment aux actionnaires, le price-to-book et comment les lire sans se tromper.", 5,
+     """<p>Les <b>fonds propres</b> (ou capitaux propres) sont ce qui appartient vraiment aux actionnaires. C'est une soustraction du bilan : <b>tout ce que l'entreprise possède − tout ce qu'elle doit</b>.</p>
+<h2>Un exemple simple</h2>
+<p>Une entreprise possède des usines, des stocks et de la trésorerie pour 500 millions d'euros. Elle doit 300 millions (emprunts, fournisseurs). Ses fonds propres valent <b>200 millions</b>. Si elle a 10 millions d'actions, chaque action « contient » 20 € de fonds propres : c'est la <b>valeur comptable par action</b>.</p>
+<h2>Le price-to-book</h2>
+<p>On compare le cours à cette valeur : si l'action cote 40 €, le <b>price-to-book</b> vaut 40 ÷ 20 = 2. Le marché paie 2 € pour 1 € de fonds propres, parce qu'il espère des bénéfices futurs. Sous 1, l'action vaut moins en Bourse que ses fonds propres : c'est soit une bonne affaire, soit le signe que le marché doute de la valeur réelle des actifs (ou s'attend à des pertes).</p>
+<h2>Les liens avec les autres chiffres</h2>
+<ul><li><b>ROE</b> (rentabilité des capitaux propres) = bénéfice ÷ fonds propres. Il mesure ce que l'entreprise fait de l'argent des actionnaires.</li>
+<li><b>Dette / fonds propres</b> : au-dessus de 200 %, l'entreprise dépend beaucoup de ses créanciers.</li>
+<li><b>Fonds propres négatifs</b> : l'entreprise doit plus qu'elle ne possède. Ce n'est pas toujours mortel (certaines rachètent beaucoup leurs actions), mais il faut comprendre pourquoi.</li></ul>
+<h2>Attention</h2>
+<p>Les fonds propres sont une valeur <b>comptable</b>, pas un prix de vente : une marque célèbre ou un logiciel valent souvent bien plus que ce qu'indique le bilan, et une usine vieillissante peut valoir moins. Compare toujours avec des entreprises du même secteur.</p>
+<p>Tu trouves les fonds propres, le price-to-book et la dette de chaque action dans sa fiche, partie « L'entreprise en chiffres ».</p>""",
+     "Fonds propres = ce que l'entreprise possède moins ce qu'elle doit. Le price-to-book compare le cours à cette valeur, à juger toujours avec le secteur.",
+     "Une entreprise a 800 M€ d'actifs, 600 M€ de dettes et 20 millions d'actions cotées 25 €. Quel est son price-to-book ?",
+     "Fonds propres = 800 − 600 = 200 M€, soit 10 € par action. Price-to-book = 25 ÷ 10 = 2,5."),
 ]

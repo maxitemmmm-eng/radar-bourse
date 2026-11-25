@@ -874,6 +874,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   .plus-large{display:none}.plus-mobile-t{display:inline}
   .plus-mobile{display:inline-grid;gap:3px}.plus-mobile i{display:block;width:16px;height:2px;border-radius:2px;background:currentColor}
   .plus-panneau{position:fixed;left:12px;right:12px;width:auto;top:calc(var(--tete,118px) + 4px);max-height:calc(100vh - var(--tete,118px) - 20px);overflow-y:auto}
+  /* version 103 : sur téléphone le menu passait sous la barre du bas et sous le bouton « ? » ; la page défilait derrière */
+  .plus-panneau{z-index:70;max-height:calc(100dvh - var(--tete,118px) - 16px);overscroll-behavior:contain;box-shadow:0 0 0 100vmax rgba(5,10,20,.55),0 18px 50px rgba(0,0,0,.4)}
+  body:has(.plus[open]){overflow:hidden}
   .top .wrap:first-child{padding-right:112px}
   .top .live{display:none}
   html.defile .top .wrap:first-child{display:flex!important}
@@ -915,6 +918,20 @@ section[id],[id^="h-"]{scroll-margin-top:calc(var(--tete,118px) + 10px)}
 .mode button{border:0;background:var(--surface);color:var(--muted);padding:5px 10px;font-size:12.5px;font-weight:600;cursor:pointer}
 .mode button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
 html.simple .expert{display:none!important}
+/* version 103 : quatre chemins clairs, et un mode simple vraiment simple (les visualisations avancées repliées) */
+.chemins{margin:18px 0 6px}
+.chemins-grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px}
+.chemin{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none;transition:border-color .15s,transform .15s}
+.chemin:hover,.chemin:focus-visible{border-color:var(--accent);transform:translateY(-1px)}
+.chemin b{font-size:16.5px}.chemin span:not(.ch-ic){font-size:14px;color:var(--muted);line-height:1.4}.ch-ic{font-size:22px}
+.chemins-simple{display:none;font-size:14px;margin:10px 2px 0}
+html.simple .chemins-simple{display:block}
+.lien-btn{background:none;border:0;padding:0;color:var(--accent);font:inherit;text-decoration:underline;cursor:pointer}
+html.simple:not(.tout-voir) :is(#carte-sec,#bulles,#jauges,#signaux,#simulation){display:none!important}
+html.simple.tout-voir .chemins-simple{display:none}
+@media (max-width:600px){.chemins-grille{grid-template-columns:1fr 1fr;gap:8px}.chemin{padding:10px 12px;flex-direction:row;align-items:center;gap:8px}
+  .chemin span:not(.ch-ic){display:none}.chemin b{font-size:14.5px;line-height:1.25}.ch-ic{font-size:20px}}
+
 
 /* Version 53 : sur téléphone, le bandeau des marchés devient un panneau qu'on fait glisser (et qui défile tout seul) */
 @media (max-width:640px){
@@ -983,6 +1000,9 @@ section.repliable.replie .replier{background:var(--ink);color:var(--surface);bor
 
 /* Grille de 100 points : « sur 100 situations comme celle-ci… » */
 .points100{display:grid;grid-template-columns:repeat(20,minmax(0,1fr));gap:3px;width:min(260px,100%)}
+.split100{width:min(280px,100%)}.sp-chiffre{display:flex;align-items:baseline;gap:6px}.sp-chiffre b{font-family:var(--m);font-size:34px;line-height:1}.sp-chiffre span{color:var(--muted);font-size:14px}
+.sp-barre{height:12px;border-radius:99px;background:var(--down);overflow:hidden;margin:8px 0 6px;opacity:.9}.sp-barre i{display:block;height:100%;background:var(--up);border-radius:99px 0 0 99px}
+.sp-leg{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600}
 .freq{width:100%;justify-items:center}
 .points100 i{aspect-ratio:1;border-radius:50%;background:var(--down-soft);border:1px solid var(--down)}
 .points100 i.h{background:var(--up);border-color:var(--up)}
@@ -1122,7 +1142,7 @@ html.calme *{animation:none!important;transition:none!important}
         <div class="te-q-choix"><button type="button" data-r="1">Vrai</button><button type="button" data-r="0">Faux</button></div><p class="te-q-rep" id="te-q-rep" role="status"></p></div>
     </section>
     <nav class="te-raccourcis" aria-label="Raccourcis">
-      <a href="prediction-crypto.html">Prédiction crypto</a><a href="prediction-bourse.html">Prédiction bourse</a><a href="#defi" data-ferme="1">Défi du jour</a><a href="#prono" data-ferme="1">Pronostic du jour</a>
+      <a href="prediction-crypto.html">Prédiction crypto</a><a href="prediction-bourse.html">Prédiction bourse</a><a href="defi-du-jour.html">Défi du jour</a><a href="top-10-actions.html">Top 10 des actions</a><a href="prevision-or.html">L'or</a><a href="grandes-bourses.html">Grandes Bourses</a><a href="#prono" data-ferme="1">Pronostic du jour</a>
       <a href="toutes-les-actions.html">Toutes les actions</a><a href="formation/test-de-niveau.html">Test de niveau</a><a href="formation/revision.html">Révisions express</a>
       <a href="formation/examen.html">Examen final</a><a href="avis-surs-verifies.html">Résultats vérifiés</a>
     </nav>
@@ -1156,11 +1176,13 @@ html.calme *{animation:none!important;transition:none!important}
 <details class="plus" id="nav-plus"><summary><span class="plus-large">Plus ▾</span><span class="plus-mobile" aria-hidden="true"><i></i><i></i><i></i></span><span class="plus-mobile-t">Plus</span></summary><div class="plus-panneau">
   <div class="plus-groupe"><span class="plus-titre">Prédictions de l'IA</span>
     <a href="prediction-crypto.html" class="lien-site">Prédiction crypto</a><a href="prediction-bourse.html" class="lien-site">Prédiction bourse</a>
-    <a href="toutes-les-actions.html" class="lien-site">Toutes les actions (2 000+)</a><a href="themes.html" class="lien-site">Actions par thème</a>
+    <a href="toutes-les-actions.html" class="lien-site">Toutes les actions</a><a href="themes.html" class="lien-site">Actions par thème</a>
+    <a href="analyse-approfondie.html" class="lien-site"><b>Analyse approfondie à la demande</b></a>    <a href="top-10-actions.html" class="lien-site">Top 10 des actions</a><a href="grandes-bourses.html" class="lien-site">Les 10 grandes Bourses du monde</a>
+    <a href="prevision-or.html" class="lien-site">Cours de l'or</a>
     <a href="#previsions">Prévisions du mois</a><a href="#tous">Tous les titres suivis</a></div>
   <div class="plus-groupe"><span class="plus-titre">Jouer et s'entraîner</span>
-    <a href="#defi">Défi du jour</a><a href="#prono">Pronostic du jour</a><a href="#remonte">L'Arène : joue contre l'IA</a><a href="#portefeuille">Portefeuille virtuel</a>
-    <a href="#simulation">Simulation : à combien dans un mois ?</a><a href="comparer.html" class="lien-site">Comparer deux titres</a><a href="outils.html" class="lien-site">Outils gratuits</a></div>
+    <a href="defi-du-jour.html" class="lien-site"><b>Le Défi du jour</b></a><a href="#prono">Pronostic du jour</a><a href="#remonte">L'Arène : joue contre l'IA</a><a href="#portefeuille">Portefeuille virtuel</a>
+    <a href="#simulation">Simulation : à combien dans un mois ?</a><a href="comparer.html" class="lien-site">Comparer deux titres</a><a href="outils/simulateur-stop-loss.html" class="lien-site">Simulateur de stop-loss</a><a href="academie-plus.html" class="lien-site">Parcours Analyste (cours avancés)</a><a href="outils.html" class="lien-site">Outils gratuits</a></div>
   <div class="plus-groupe"><span class="plus-titre">L'IA est-elle fiable ?</span>
     <a href="avis-surs-verifies.html" class="lien-site">Avis vérifiés en public</a><a href="resultats.html" class="lien-site">Résultats réels</a>
     <a href="#confiance">Fiabilité de l'IA</a><a href="journal-ia.html" class="lien-site">Journal de l'IA</a><a href="connaissances.html" class="lien-site">Ce que sait l'IA</a></div>
@@ -1229,7 +1251,17 @@ html.calme *{animation:none!important;transition:none!important}
     </div>
   </section>
 
-  <section aria-labelledby="h-assist" id="assistant">
+  <section class="chemins" aria-labelledby="h-chemins">
+  <h2 id="h-chemins" class="sr">Par où commencer ?</h2>
+  <div class="chemins-grille">
+    <a href="#previsions" class="chemin"><span class="ch-ic" aria-hidden="true">📈</span><b>Voir les prévisions</b><span>L'avis de l'IA sur chaque action, crypto et l'or, pour le mois qui vient.</span></a>
+    <a href="avis-surs-verifies.html" class="chemin"><span class="ch-ic" aria-hidden="true">✅</span><b>Vérifier l'IA</b><span>Ses vrais résultats, ratés compris, contrôlés un mois plus tard.</span></a>
+    <a href="formation.html" class="chemin"><span class="ch-ic" aria-hidden="true">🎓</span><b>Apprendre la Bourse</b><span>L'Académie gratuite, de zéro, avec exercices et certificat.</span></a>
+    <a href="defi-du-jour.html" class="chemin"><span class="ch-ic" aria-hidden="true">🎯</span><b>Le Défi du jour</b><span>Analyse un vrai graphique masqué et bats l'IA.</span></a>
+  </div>
+  <p class="chemins-simple muted">Mode simple : l'essentiel d'abord. <button type="button" id="tout-voir" class="lien-btn">Afficher aussi les cartes, bulles, jauges et signaux</button></p>
+</section>
+<section aria-labelledby="h-assist" id="assistant">
     <div class="sec-head"><h2 id="h-assist">Ton assistant</h2>
       <p>Écris ta question ou choisis-en une : la réponse vient des vrais chiffres de l'IA, mis à jour chaque heure.</p></div>
     <div class="panel assistant">
@@ -1504,6 +1536,7 @@ html.calme *{animation:none!important;transition:none!important}
         <a class="lien-site" href="outils.html">Outils gratuits (simulateur, convertisseur, intérêts composés)</a>
         <a class="lien-site" href="simulateur-boursier.html">Simulateur boursier</a>
         <a class="lien-site" href="fonctionnalites.html">Toutes les fonctionnalités</a>
+        <a class="lien-site" href="academie-plus.html">Parcours Analyste (cours avancés gratuits)</a>
         <a class="lien-site" href="a-propos.html">À propos</a>
         <a class="lien-site" href="contact.html">Contact</a>
         <a href="#engagements">Nos engagements</a>
@@ -1814,6 +1847,18 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 let MODE = "simple";
 try{ if(localStorage.getItem("radar-mode") === "expert") MODE = "expert"; }catch(e){}
 document.documentElement.classList.toggle("simple", MODE === "simple");
+/* version 103 : en mode simple, les visualisations avancées sont repliées ; un lien vers l'une d'elles les affiche toutes */
+(function(){
+  const CACHEES = ["carte-sec","bulles","jauges","signaux","simulation","nuage"];
+  const html = document.documentElement;
+  const voir = () => { html.classList.add("tout-voir"); try{ sessionStorage.setItem("rb-tout-voir","1"); }catch(e){} };
+  try{ if(sessionStorage.getItem("rb-tout-voir")) html.classList.add("tout-voir"); }catch(e){}
+  const b = document.getElementById("tout-voir"); if(b) b.addEventListener("click", () => { voir(); const c = document.getElementById("carte-sec") || document.getElementById("bulles"); if(c) c.scrollIntoView({behavior:"smooth"}); });
+  const cible = () => { const h = decodeURIComponent(location.hash.slice(1)); if(!h) return; const el = document.getElementById(h);
+    if(CACHEES.includes(h) || (el && CACHEES.some(id => { const s = document.getElementById(id); return s && s.contains(el); }))){ voir(); setTimeout(() => { const e2 = document.getElementById(h); if(e2) e2.scrollIntoView(); }, 50); } };
+  window.addEventListener("hashchange", cible); cible();
+})();
+
 /* Réglages d'accessibilité mémorisés (taille du texte, contraste, texte aéré, sans animation) */
 let ACCES = {taille: "100", contraste: false, lisible: false, calme: false};
 try{ ACCES = {...ACCES, ...(JSON.parse(localStorage.getItem("radar-acces") || "{}") || {})}; }catch(e){}
@@ -1865,8 +1910,10 @@ const DEFS = {
 const aide = cle => DEFS[cle] ? `<button class="def" data-def="${cle}" aria-label="C'est quoi : ${esc(DEFS[cle][0])} ?" aria-expanded="false">?</button>` : "";
 /* Grille de 100 points : la façon la plus claire de lire une probabilité */
 function points100(p){
+  /* version 105 : la grille de 100 points (jugée peu lisible) devient une barre simple, avec le chiffre en grand */
   const n = Math.round(p * 100);
-  return `<div class="points100" role="img" aria-label="${n} points verts sur 100">${Array.from({length:100}, (_, i) => `<i class="${i < n ? "h" : ""}"></i>`).join("")}</div>`;
+  return `<div class="split100" role="img" aria-label="${n} sur 100 plus haut, ${100 - n} sur 100 plus bas"><div class="sp-chiffre"><b class="${n >= 50 ? "up" : "down"}">${n}</b><span>sur 100</span></div>`
+    + `<div class="sp-barre"><i style="width:${n}%"></i></div><div class="sp-leg"><span class="up">▲ plus haut : ${n}</span><span class="down">plus bas : ${100 - n} ▼</span></div></div>`;
 }
 const marge = ic => ic && ic[0] != null ? ` <span class="muted">(marge : ${Math.round(ic[0]*100)} à ${Math.round(ic[1]*100)})</span>` : "";
 /* Barre horizontale avec sa marge d'erreur (0 à 100 %) */
@@ -1878,7 +1925,7 @@ function barreStat(lib, v, ic, ref = false){
 }
 
 /* ---------- En-tête ---------- */
-$("#demo").hidden = !DATA.demo;
+{ const _dm = $("#demo"); if(_dm) _dm.hidden = !DATA.demo; }
 function rendreTape(){
   $("#tape").innerHTML = DATA.indices.map(i => `<div class="tick"><span class="n">${esc(i.nom)}</span>${spark(i.spark)}<span><span class="p num" data-px="${esc(i.ticker)}">${px(i.prix,i.devise)}</span> <span data-j1="${esc(i.ticker)}">${pct(i.var_jour,2)}</span></span></div>`).join("");
 }
@@ -4549,7 +4596,8 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
 
 /* ---------- Version 53 : sections repliables (accueil plus court et plus clair) ---------- */
 (function(){
-  const REPLIEES = ["carte-sec", "h-ctx", "h-graph", "signaux", "robots", "simulation", "remonte", "confiance", "tous", "engagements", "h-faq", "prevention"];
+  const REPLIEES = ["carte-sec", "h-ctx", "h-graph", "signaux", "robots", "simulation", "remonte", "confiance", "tous", "engagements", "h-faq", "prevention"]
+    .concat(MODE === "simple" ? ["defi", "prono", "portefeuille"] : []);   // version 105 : mode simple encore plus court (un clic pour ouvrir)
   let etat = {}; try{ etat = JSON.parse(localStorage.getItem("radar-sections") || "{}") || {}; }catch(e){}
   const sauver = () => { try{ localStorage.setItem("radar-sections", JSON.stringify(etat)); }catch(e){} };
   const sections = [];

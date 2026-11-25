@@ -181,6 +181,91 @@ function calc(){
 
 
 # ---------------------------------------------------------------------------------------------------------------
+# 5. Simulateur de stop-loss (version 103) — sur les vrais cours quotidiens (ouverture, plus haut, plus bas, clôture)
+# ---------------------------------------------------------------------------------------------------------------
+def _page_stop_loss(base, D, csp):
+    chemin = "outils/simulateur-stop-loss.html"
+    nom = "Simulateur de stop-loss sur les vrais cours"
+    faq = [("Un stop-loss garantit-il mon prix de vente ?",
+            "Non. Quand le cours touche le stop, l'ordre devient une vente au marché. Si l'action ouvre directement plus bas (mauvaise nouvelle pendant la nuit), "
+            "tu vends au prix d'ouverture : le simulateur en tient compte (c'est le « glissement »)."),
+           ("Quelle taille de stop choisir ?",
+            "Il n'y a pas de bonne réponse universelle. Un stop plus serré que l'agitation normale du titre se déclenche souvent pour rien. Le tableau "
+            "« tous les points de départ » montre, pour ce titre, combien de fois chaque taille de stop a fait vendre alors que le cours a fini plus haut."),
+           ("C'est quoi un stop suiveur ?",
+            "Un stop qui remonte avec le plus haut atteint depuis l'achat (par exemple toujours 8 % sous le plus haut). Il protège une partie des gains, mais il se déclenche aussi plus souvent.")]
+    L = [[t["s"], t["n"], t["a"], t["d"], t["m"]] for t in D["titres"]]
+    corps = ("<h1>Simulateur de stop-loss</h1>"
+             "<p>Achète virtuellement un titre à une date passée, place un <b>stop-loss</b> (fixe ou suiveur) et regarde ce qui se serait passé, "
+             f"jour par jour, sur les <b>vrais cours</b> (données au {_e(_date_fr(D['maj']))}). Le calcul tient compte des ouvertures en baisse "
+             "(le stop ne garantit pas le prix). <a href='../lecons/stop-loss.html'>Le cours sur le stop-loss</a>.</p>"
+             "<div class='carte'><form class='outil' id='f' onsubmit='return false'>"
+             "<label>Titre<select id='tk'></select></label>"
+             "<label>Somme<input id='m' type='number' min='1' step='1' value='1000' inputmode='decimal'></label>"
+             "<label>Achat il y a<select id='per'><option value='20'>1 mois</option><option value='60'>3 mois</option><option value='125' selected>6 mois</option>"
+             "<option value='250'>1 an</option></select></label>"
+             "<label>Stop à −<input id='pct' type='number' min='1' max='60' step='0.5' value='8' inputmode='decimal'> %</label></form>"
+             "<p class='choix-mode' role='group' aria-label='Type de stop'><button type='button' data-mode='fixe' aria-pressed='true'>Stop fixe</button>"
+             "<button type='button' data-mode='suiveur' aria-pressed='false'>Stop suiveur</button></p></div>"
+             "<div class='carte res' aria-live='polite'><div id='res'><p class='muted'>Chargement des cours…</p></div><div id='g'></div></div>"
+             "<h2>Sur tous les points de départ possibles</h2>"
+             "<p>Une seule date peut tromper. Ici, on refait le test en achetant <b>chaque jour</b> de l'historique et en gardant 3 mois, pour chaque taille de stop.</p>"
+             "<div class='carte' style='overflow-x:auto'><div id='tab'></div></div>"
+             "<p class='muted'>Simulation éducative sur le passé : sans frais, sans dividendes, sans impôts. Ce n'est pas un conseil d'investissement, "
+             "et ce qui s'est passé ne dit pas ce qui va se passer.</p>"
+             "<p>Voir aussi : <a href='si-javais-investi.html'>si j'avais investi…</a> · <a href='../simulateur-boursier.html'>simulateur boursier</a> · "
+             "<a href='../lecons/risque.html'>gérer son risque</a></p>" + _faq_html(faq))
+    js = r"""<script>
+const L=__L__;const sel=document.getElementById('tk');let mode='fixe';const cache={};
+const grp={};L.forEach(t=>{const g=t[4]==='crypto'?'Cryptos':t[4]==='etf'?'ETF, indices et or':'Actions';(grp[g]=grp[g]||[]).push(t)});
+['Actions','ETF, indices et or','Cryptos'].forEach(g=>{if(!grp[g])return;const og=document.createElement('optgroup');og.label=g;grp[g].forEach(t=>{const o=document.createElement('option');o.value=t[0];o.textContent=t[1]+' ('+t[2]+')';og.appendChild(o)});sel.appendChild(og)});
+const q=new URLSearchParams(location.search);sel.value=(q.get('t')&&L.some(t=>t[0]===q.get('t')))?q.get('t'):(L.some(t=>t[0]==='mc-pa')?'mc-pa':L[0][0]);
+if(q.get('pct'))document.getElementById('pct').value=q.get('pct');if(q.get('mode')==='suiveur')mode='suiveur';
+document.querySelectorAll('[data-mode]').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.mode===mode);b.onclick=()=>{mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(x=>x.setAttribute('aria-pressed',x===b));calc()}});
+async function serie(s){if(cache[s])return cache[s];const r=await fetch('../donnees/'+s+'.json');if(!r.ok)throw new Error('cours');const j=await r.json();const S=j.serie||{};
+  const c=S.c||[],o=S.o||[],h=S.h||[],l=S.l||[],t=S.t||[];const out={t:[],o:[],h:[],l:[],c:[]};
+  for(let i=0;i<c.length;i++){if(!(c[i]>0))continue;out.t.push(t[i]);out.c.push(c[i]);out.o.push(o[i]>0?o[i]:c[i]);out.h.push(h[i]>0?h[i]:c[i]);out.l.push(l[i]>0?l[i]:c[i])}
+  return cache[s]=out}
+// Simulation : achat à la clôture du jour d, stop vérifié chaque jour suivant (ouverture sous le stop = vente à l'ouverture)
+function sim(S,d,fin,p,suiv){const e=S.c[d];let stop=e*(1-p),haut=e,stops=[stop];
+  for(let i=d+1;i<=fin;i++){if(S.o[i]<=stop)return{i,px:S.o[i],stops,glisse:true};if(S.l[i]<=stop)return{i,px:stop,stops};
+    if(suiv){haut=Math.max(haut,S.h[i]);stop=Math.max(stop,haut*(1-p))}stops.push(stop)}
+  return{i:null,px:S.c[fin],stops}}
+async function calc(){
+  const t=L.find(x=>x[0]===sel.value);if(!t)return;const dev=t[3];let S;
+  try{S=await serie(t[0])}catch(e){document.getElementById('res').innerHTML='<p>Cours indisponibles pour ce titre.</p>';return}
+  const M=Math.max(0,+document.getElementById('m').value||0),p=Math.min(.6,Math.max(.01,(+document.getElementById('pct').value||8)/100));
+  const n=S.c.length,d=Math.max(0,n-1-(+document.getElementById('per').value)),fin=n-1,suiv=mode==='suiveur';
+  const r=sim(S,d,fin,p,suiv),e=S.c[d],parts=M/e,avec=parts*r.px,sans=parts*S.c[fin];
+  const dt=i=>new Date(S.t[i]).toLocaleDateString('fr-FR');
+  let html=`<p>${fmtM(M,dev)} investis dans ${t[1]} le ${dt(d)} à ${fmtM(e,dev)}, stop ${suiv?'suiveur':'fixe'} à −${fmt(p*100,1)} %.</p>`;
+  if(r.i!==null){html+=`<p><b>Le stop s'est déclenché le ${dt(r.i)}</b> : vente à ${fmtM(r.px,dev)}${r.glisse?' (ouverture sous le stop : <b>glissement</b>, vendu plus bas que prévu)':''}.</p>`+
+      `<p>Avec le stop : <span class="gros ${avec>=M?'up':'down'}">${fmtM(avec,dev)}</span> · sans stop (gardé jusqu'à aujourd'hui) : <b class="${sans>=M?'up':'down'}">${fmtM(sans,dev)}</b></p>`+
+      `<p class="muted">${sans>avec?'Ici, le stop a coûté '+fmtM(sans-avec,dev)+' : le cours est remonté après la vente.':'Ici, le stop a fait mieux que de garder : '+fmtM(avec-sans,dev)+' de plus.'}</p>`}
+  else html+=`<p><b>Le stop ne s'est jamais déclenché.</b> Valeur aujourd'hui : <span class="gros ${sans>=M?'up':'down'}">${fmtM(sans,dev)}</span></p>`;
+  html+=`<p class="muted"><a href="../titres/${t[0]}.html">Prévision et analyse de ${t[1]}</a></p>`;
+  document.getElementById('res').innerHTML=html;
+  const xs=S.t.slice(d),prix=S.c.slice(d),st=r.stops.slice(0,xs.length);
+  courbe(document.getElementById('g'),xs,[{v:prix,c:'var(--accent)'},{v:st,c:'var(--down)',tiret:1}],'Cours (trait plein) et niveau du stop (tirets rouges)');
+  // tableau : toutes les dates de départ, horizon 3 mois (60 séances)
+  const H=60,tailles=[3,5,8,12,15,20,30];let lignes='';
+  for(const pc of tailles){let nb=0,decl=0,pourRien=0,gAvec=0,gSans=0;
+    for(let d0=0;d0+H<n;d0++){const rr=sim(S,d0,d0+H,pc/100,suiv);nb++;gAvec+=rr.px/S.c[d0]-1;gSans+=S.c[d0+H]/S.c[d0]-1;
+      if(rr.i!==null){decl++;if(S.c[d0+H]>rr.px)pourRien++}}
+    if(!nb)continue;lignes+=`<tr${Math.abs(pc-p*100)<.01?' style="font-weight:700"':''}><td>−${pc} %</td><td class="m">${fmt(decl/nb*100,0)} %</td><td class="m">${decl?fmt(pourRien/decl*100,0)+' %':'–'}</td><td class="m ${gAvec>=0?'up':'down'}">${fmt(gAvec/nb*100,1)} %</td><td class="m ${gSans>=0?'up':'down'}">${fmt(gSans/nb*100,1)} %</td></tr>`}
+  document.getElementById('tab').innerHTML=lignes?`<table><thead><tr><th>Stop ${suiv?'suiveur':'fixe'}</th><th>Déclenché</th><th>…puis le cours a fini plus haut</th><th>Résultat moyen avec stop</th><th>Sans stop</th></tr></thead><tbody>${lignes}</tbody></table><p class="muted" style="font-size:14px">Sur ${t[1]}, achat chaque jour possible, revente au bout de 3 mois (ou au stop). « …puis le cours a fini plus haut » : part des déclenchements où il aurait mieux valu ne pas vendre.</p>`:'<p class="muted">Historique trop court pour ce test.</p>';
+  const u=new URL(location.href);u.searchParams.set('t',t[0]);u.searchParams.set('pct',fmt(p*100,1).replace(',','.'));u.searchParams.set('mode',mode);history.replaceState(null,'',u);
+}
+['tk','m','per','pct'].forEach(id=>document.getElementById(id).addEventListener('input',calc));calc();
+</script>""".replace("__L__", _json(L))
+    page = seo._page(base, f"Simulateur de stop-loss gratuit sur les vrais cours | {NOM}",
+                     "Teste un stop-loss fixe ou suiveur sur les vrais cours d'une action, d'un ETF, de l'or ou d'une crypto : quand il se déclenche, "
+                     "le glissement, et combien de fois il fait vendre pour rien.", chemin, CSS_OUTIL + corps + JS_COMMUN + js,
+                     _jsonld(base, chemin, nom, "Simulateur gratuit de stop-loss fixe et suiveur sur les vrais cours quotidiens.", faq), csp=csp)
+    return chemin, page
+
+
+# ---------------------------------------------------------------------------------------------------------------
 # 2. Convertisseur crypto / action ↔ euro / dollar
 # ---------------------------------------------------------------------------------------------------------------
 def _page_convertisseur(base, D, csp):
@@ -321,13 +406,15 @@ function calc(){const pa=+$('pa').value||0,pv=+$('pv').value||0,q=+$('q').value|
 OUTILS = [("outils/si-javais-investi.html", "Si j'avais investi…", "Combien vaudrait aujourd'hui 100 € placés il y a un an dans le bitcoin, une action ou un ETF ? Sur les vrais cours, en une fois ou chaque mois."),
           ("outils/convertisseur.html", "Convertisseur crypto et actions", "Bitcoin, ether, actions : la valeur en euros et en dollars, dans les deux sens."),
           ("outils/interets-composes.html", "Calculateur d'intérêts composés", "Ce que deviendra ton épargne avec un versement chaque mois, ou combien épargner pour un objectif."),
-          ("outils/plus-value.html", "Calcul de plus-value et flat tax", "Ton gain après frais et l'impôt à prévoir en 2026, pour les actions et les cryptos.")]
+          ("outils/plus-value.html", "Calcul de plus-value et flat tax", "Ton gain après frais et l'impôt à prévoir en 2026, pour les actions et les cryptos."),
+          ("outils/simulateur-stop-loss.html", "Simulateur de stop-loss", "Teste un stop fixe ou suiveur sur les vrais cours : quand il se déclenche, le glissement, et combien de fois il vend pour rien.")]
 
 
 def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
     os.makedirs(os.path.join(dossier, "outils"), exist_ok=True)
     D = _cours(payload)
-    pages = [_page_investi(base, D, csp), _page_convertisseur(base, D, csp), _page_interets(base, csp), _page_plus_value(base, csp)]
+    pages = [_page_investi(base, D, csp), _page_convertisseur(base, D, csp), _page_interets(base, csp), _page_plus_value(base, csp),
+             _page_stop_loss(base, D, csp)]
     urls = []
     os.makedirs(os.path.join(dossier, "en", "tools"), exist_ok=True)
     try:

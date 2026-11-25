@@ -43,6 +43,17 @@ jobs:
       GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
       # Statistiques de visites privées (facultatif)
       GOATCOUNTER_CODE: ${{ vars.GOATCOUNTER_CODE }}
+      # Fils de discussion Giscus (facultatif, voir TUTO_DISCUSSIONS.md) : les 3 valeurs données par giscus.app
+      GISCUS_REPO: ${{ vars.GISCUS_REPO }}
+      GISCUS_REPO_ID: ${{ vars.GISCUS_REPO_ID }}
+      GISCUS_CATEGORY_ID: ${{ vars.GISCUS_CATEGORY_ID }}
+      # Radar Bourse+ (abonnement, voir TUTO_ABONNEMENT.md) : rien n'est vendu tant que ces 5 valeurs ne sont pas remplies
+      RADAR_PLUS_API: ${{ vars.RADAR_PLUS_API }}
+      RADAR_VENTE: ${{ vars.RADAR_VENTE }}   # « 1 » pour rallumer la vente (mise de côté tant qu'il n'y a pas de SIRET)
+      VENDEUR_NOM: ${{ vars.VENDEUR_NOM }}
+      VENDEUR_SIRET: ${{ vars.VENDEUR_SIRET }}
+      VENDEUR_ADRESSE: ${{ vars.VENDEUR_ADRESSE }}
+      VENDEUR_EMAIL: ${{ vars.VENDEUR_EMAIL }}
       # Nom de domaine personnalisé (facultatif, réglé par nom_de_domaine.bat)
       RADAR_DOMAINE: ${{ vars.RADAR_DOMAINE }}
       PYTHONUTF8: "1"

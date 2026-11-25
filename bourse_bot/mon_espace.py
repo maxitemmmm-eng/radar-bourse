@@ -14,7 +14,8 @@ import os
 
 CLES = ["radar-profil", "radar-bourse-portefeuille-v1", "radar-bourse-favoris", "radar-bourse-favoris-etat-v1", "radar-bourse-defis-v1",
         "radar-prono-v1", "radar-academie", "radar-scanner", "radar-bourse-arene-v1", "radar-theme", "radar-mode", "radar-acces",
-        "radar-dossier", "radar-sections", "radar-bourse-avertissement-v2", "radar-depart-vu", "radar-dernier-espace"]
+        "radar-dossier", "radar-sections", "radar-bourse-avertissement-v2", "radar-depart-vu", "radar-dernier-espace",
+        "rb-plus-code", "rb-analyses"]   # version 106 : le code Radar Bourse+ et les analyses suivent le transfert d'appareil
 
 CSS = """<style>
 .me-tete{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:8px 0 4px}
@@ -171,6 +172,12 @@ def page(seo, base, dossier, csp) -> list:
              "<option value='comprendre'>Comprendre ce que vaut l'IA</option></select></label>"
              "<div><span class='muted' style='font-size:13.5px'>Ma couleur</span><div class='me-couleurs' id='me-couleurs' role='group' aria-label='Couleur du profil'></div></div>"
              "<div><button class='btn' type='submit'>Enregistrer le profil</button></div></form></section>"
+             + ("" if not __import__("bourse_bot.abonnement", fromlist=["x"]).actif() else
+             "<section class='carte' id='me-statut'><h2 style='margin-top:0'>Mon statut</h2><p id='me-statut-t'>Compte <b>classique</b> (gratuit).</p>"
+             "<ul class='liste' id='me-statut-l'><li>Radar, fiches, prévisions, outils : <b>illimités</b></li><li>Académie : <b>3 grandes leçons par jour</b></li>"
+             "<li>Analyse approfondie : <b>1 offerte</b></li><li>Parcours Analyste : <b>aperçu</b></li></ul>"
+             "<p class='me-actions'><a class='btn' id='me-plus-a' href='radar-bourse-plus.html'>Passer à Radar Bourse+ (1 mois offert)</a>"
+             "<a class='btn ghost' href='analyse-approfondie.html'>Mes analyses approfondies</a></p></section>") +
              "<h2>Ce que j'ai fait</h2><p class='muted' id='me-n'></p><div class='me-grille' id='me-bilan' aria-live='polite'></div>"
              "<section class='carte'><h2 style='margin-top:0'>Changer d'appareil</h2>"
              "<p>Pour retrouver ton espace sur ton téléphone ou un autre ordinateur, emporte-le avec un fichier ou un code. "
@@ -188,7 +195,13 @@ def page(seo, base, dossier, csp) -> list:
              "et ce que tu fais sur le site. On a choisi de ne rien collecter : pas de fichier client, pas de fuite possible, pas de publicité. "
              "En échange, c'est à toi d'emporter ton espace quand tu changes d'appareil.</p>"
              "<p id='me-eff-zone'><button class='btn ghost me-danger' type='button' id='me-effacer'>Tout effacer de cet appareil</button></p></section>"
-             + JS.replace("__CLES__", str(CLES).replace("'", '"')))
+             + JS.replace("__CLES__", str(CLES).replace("'", '"'))
+             + __import__("bourse_bot.abonnement", fromlist=["x"])._js()
+             + """<script>(async function(){if(!RBP.code()||!document.getElementById('me-statut'))return;const v=await RBP.verifier();if(!v.ok)return;
+const d=t=>t?new Date(t*1000).toLocaleDateString('fr-FR',{day:'numeric',month:'long'}):'';
+document.getElementById('me-statut-t').innerHTML='Compte <b>Radar Bourse+</b> ✨'+(v.statut==='trialing'&&v.fin_essai?' : essai gratuit jusqu\u2019au '+d(v.fin_essai):'')+(v.annule?' (résilié, actif jusqu\u2019au '+d(v.fin_periode)+')':'')+'.';
+document.getElementById('me-statut-l').innerHTML='<li>Radar, fiches, prévisions, outils : <b>illimités</b></li><li>Académie : <b>sans limite</b></li><li>Analyses approfondies : <b>illimitées</b> (10 par jour)</li><li>Parcours Analyste : <b>complet</b></li>';
+const a=document.getElementById('me-plus-a');a.textContent='Gérer mon abonnement';})();</script>""")
     chemin = "mon-espace.html"
     with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
         f.write(seo._page(base, f"Mon espace : profil, portefeuille, favoris, Académie | {seo.NOM}",

@@ -147,6 +147,12 @@ ETFS = {
     "FXI": "Chine grandes valeurs (ETF iShares)", "INDA": "Inde (ETF iShares)", "TLT": "Obligations US 20 ans (ETF iShares)",
     "IWM": "Petites entreprises US (ETF Russell 2000)", "DIA": "Dow Jones (ETF SPDR)", "SLV": "Argent métal (ETF iShares)",
     "VNQ": "Immobilier US (ETF Vanguard)",
+    # version 103 : l'or en direct (cours de l'once en dollars, contrat à terme le plus proche) et les grandes Bourses du
+    # monde qui manquaient, suivies par un ETF coté en dollars (achetable, compatible portefeuille virtuel).
+    "GC=F": "Or (once, cours en dollars)",
+    "ASHR": "Chine continentale, Shanghai et Shenzhen (ETF Xtrackers CSI 300)", "EWH": "Hong Kong (ETF iShares)",
+    "EWU": "Royaume-Uni, Bourse de Londres (ETF iShares)", "EWC": "Canada, Bourse de Toronto (ETF iShares)",
+    "EWG": "Allemagne, Bourse de Francfort (ETF iShares)", "EWT": "Taïwan (ETF iShares)", "EWY": "Corée du Sud (ETF iShares)",
 }
 
 UNIVERS = {"fr": ACTIONS_FR, "eu": ACTIONS_EU, "us": ACTIONS_US, "monde": ACTIONS_MONDE, "crypto": CRYPTOS, "etf": ETFS}
@@ -245,3 +251,8 @@ TELEGRAM_CHAINE = _os.environ.get("TELEGRAM_CHAINE", "")
 GOATCOUNTER = _os.environ.get("GOATCOUNTER_CODE", "").strip().lower()
 if GOATCOUNTER and not __import__("re").fullmatch(r"[a-z0-9][a-z0-9-]{1,48}", GOATCOUNTER):
     GOATCOUNTER = ""
+
+# Version 103 : fils de discussion (Giscus, gratuit, open source : les messages sont stockés dans les « Discussions » du dépôt
+# GitHub, modérables par toi). Vides = pas de discussions affichées. Voir TUTO_DISCUSSIONS.md.
+GISCUS = {"repo": _os.environ.get("GISCUS_REPO", "").strip(), "repo_id": _os.environ.get("GISCUS_REPO_ID", "").strip(),
+          "categorie_id": _os.environ.get("GISCUS_CATEGORY_ID", "").strip()}

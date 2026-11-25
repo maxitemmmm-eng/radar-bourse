@@ -23,7 +23,13 @@ CHAMPS = {
     "debtToEquity": ("Dette / capitaux propres", "ratio", "Poids de la dette. Au-dessus de 200 % : entreprise très endettée."),
     "dividendYield": ("Rendement du dividende", "pct_brut", "Dividende annuel rapporté au prix de l'action."),
     "freeCashflow": ("Trésorerie disponible (free cash-flow)", "montant", "Argent réellement généré après les investissements."),
+    # version 103 : les fonds propres (ce qui appartient vraiment aux actionnaires) et le bilan simplifié
+    "priceToBook": ("Cours / fonds propres (price-to-book)", "x", "Prix payé en Bourse pour 1 € de fonds propres. Sous 1 : l'action vaut moins que ses fonds propres."),
+    "totalCash": ("Trésorerie au bilan", "montant", "Argent disponible sur les comptes de l'entreprise."),
+    "totalDebt": ("Dette totale", "montant", "Tout ce que l'entreprise a emprunté."),
 }
+# calculé : fonds propres = valeur comptable par action × nombre d'actions (même devise que les comptes)
+CHAMPS_CALCULES = {"fondsPropres": ("Fonds propres (capitaux propres)", "montant", "Ce qui resterait aux actionnaires si l'entreprise vendait tout et remboursait toutes ses dettes.")}
 
 
 def _demo(ticker: str) -> dict:
@@ -34,7 +40,8 @@ def _demo(ticker: str) -> dict:
         "marketCap": f(5e9, 3e12, 1), "trailingPE": f(8, 45, 3), "forwardPE": f(8, 35, 5),
         "pegRatio": f(0.5, 3, 7), "revenueGrowth": f(-0.05, 0.3, 9), "profitMargins": f(0.02, 0.35, 11),
         "returnOnEquity": f(0.03, 0.45, 13), "debtToEquity": f(10, 250, 15), "dividendYield": f(0, 4, 17),
-        "freeCashflow": f(1e8, 9e10, 19)},
+        "freeCashflow": f(1e8, 9e10, 19), "priceToBook": f(0.6, 9, 21), "totalCash": f(1e8, 6e10, 23),
+        "totalDebt": f(1e8, 9e10, 25), "fondsPropres": f(1e9, 2e11, 27)},
         "resultats_le": (datetime.now() + timedelta(days=jours)).strftime("%Y-%m-%d")}
 
 
@@ -66,8 +73,12 @@ def recuperer(ticker: str, marche: str) -> dict | None:
             break
     # version 63 : comptes publiés dans une autre devise que le cours (ex. Toyota en yens, cotée en dollars) :
     # les montants seraient faux (« -3 600 Md $ »), on ne garde que les ratios et la capitalisation (dans la devise du cours)
+    bv, nb = info.get("bookValue"), info.get("sharesOutstanding")
+    if isinstance(bv, (int, float)) and isinstance(nb, (int, float)) and bv == bv and nb > 0:
+        valeurs["fondsPropres"] = float(bv) * float(nb)
     if info.get("financialCurrency") and info.get("currency") and info["financialCurrency"] != info["currency"]:
-        valeurs.pop("freeCashflow", None)
+        for k in ("freeCashflow", "totalCash", "totalDebt", "fondsPropres"):   # montants dans une autre devise : on ne les montre pas
+            valeurs.pop(k, None)
     if not valeurs and not resultats:
         return None
     return {"secteur": info.get("sector") or "", "devise": "€" if info.get("currency") == "EUR" else "$",

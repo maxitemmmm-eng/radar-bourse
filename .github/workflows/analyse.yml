@@ -1,0 +1,49 @@
+# Version 106 : l'analyse approfondie d'un titre, demandée par un visiteur sur le site.
+# Lancée uniquement par le serveur Radar Bourse+ (jeton GitHub limité « Actions »), jamais à la main par un inconnu.
+# Le résultat est renvoyé au serveur (secret DEPOT_SECRET), qui le montre au visiteur.
+name: Analyse approfondie
+
+on:
+  workflow_dispatch:
+    inputs:
+      ticker:
+        description: "Symbole (ex. MC.PA)"
+        required: true
+      id:
+        description: "Identifiant de la demande"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: analyse-${{ github.event.inputs.id }}
+  cancel-in-progress: false
+
+jobs:
+  analyser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONUTF8: "1"
+      RADAR_PLUS_API: ${{ vars.RADAR_PLUS_API }}
+      DEPOT_SECRET: ${{ secrets.DEPOT_SECRET }}
+      # les entrées passent par des variables d'environnement, jamais collées dans une commande (anti-injection)
+      TICKER: ${{ github.event.inputs.ticker }}
+      DEMANDE: ${{ github.event.inputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+      - name: Vérifier la demande
+        run: |
+          echo "$TICKER" | grep -Eq '^[A-Za-z0-9.^=-]{1,20}$' || { echo "Symbole refusé"; exit 1; }
+          echo "$DEMANDE" | grep -Eq '^[a-z0-9]{12,40}$' || { echo "Identifiant refusé"; exit 1; }
+      - name: Analyser et renvoyer le résultat
+        run: python -m bourse_bot.analyse_profonde --ticker "$TICKER" --id "$DEMANDE" --envoyer

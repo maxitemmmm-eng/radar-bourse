@@ -396,10 +396,13 @@ def _decouper(payload: dict, dossier: str) -> dict:
     leger = dict(payload)
     leger["titres"] = []
     for t in payload["titres"]:
+        nom = f"donnees/{seo.slug(t['ticker'])}.json"
         if t["ticker"] in TOUJOURS_COMPLETS:
+            # version 103 : le fichier détail existe aussi pour eux (le simulateur de stop-loss le lit)
+            with open(os.path.join(dossier, nom), "w", encoding="utf-8") as f:
+                json.dump({k: t.get(k) for k in CHAMPS_DETAIL}, f, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
             leger["titres"].append(t)
             continue
-        nom = f"donnees/{seo.slug(t['ticker'])}.json"
         with open(os.path.join(dossier, nom), "w", encoding="utf-8") as f:
             json.dump({k: t.get(k) for k in CHAMPS_DETAIL}, f, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
         court = {k: v for k, v in t.items() if k not in CHAMPS_DETAIL and k not in INUTILES_APPLI}
@@ -475,6 +478,13 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
         payload = {**payload, "defi_5j": defi.mettre_a_jour(payload, ecrire=avance and not pour_artifact)}
     except Exception as e:
         print(f"Défi 5 jours non mis à jour : {e}")
+    if os.environ.get("RADAR_SAUVER_PAYLOAD"):   # version 103 : pour tester une page sans tout recalculer (développement)
+        try:
+            import pickle
+            with open(os.environ["RADAR_SAUVER_PAYLOAD"], "wb") as _f:
+                pickle.dump(payload, _f)
+        except Exception as e:
+            print(f"Payload non sauvé : {e}")
     gabarit = resources.files(__package__).joinpath("site_template.html").read_text(encoding="utf-8")
     from . import chiffres   # version 92 : une seule source de vérité pour tous les chiffres publics
     _c = chiffres.calculer(payload)
@@ -486,6 +496,13 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
     import re as _re
     _m = _re.search(r'<svg class="logo".*?</svg>', gabarit, _re.S)
     _logo = _re.sub(r"(id=|url\(#|href=)(['\"]?#?)(rb\w+)", lambda m: m.group(1) + m.group(2) + m.group(3) + "s", _m.group(0)) if _m else ""
+    from . import abonnement as _ab
+    if not _ab.analyse_ouverte():   # version 107 : pas de lien vers l'analyse approfondie tant que son serveur n'est pas installé
+        gabarit = gabarit.replace('<a href="analyse-approfondie.html" class="lien-site"><b>Analyse approfondie à la demande</b></a>', "", 1)
+    if not payload.get("demo"):
+        # version 103 : le bandeau « données fictives » était caché mais présent dans la page : les robots et les IA
+        # (ChatGPT) le lisaient et croyaient que le site en ligne ne marchait pas. Il n'existe plus hors mode démo.
+        gabarit = _re.sub(r'<div class="demo gutter" id="demo"[^>]*><div class="wrap">.*?</div></div>\n?', "", gabarit, 1, _re.S)
     gabarit = (gabarit.replace("<!--__DEFI__-->", defi_dossier.HTML, 1).replace("/*__DEFI_CSS__*/", defi_dossier.CSS + transitions.CSS + pronos_coque.CSS + visuels_pro.CSS + visite_guidee.CSS, 1)
                .replace("/*__DEFI_JS__*/", defi_dossier.JS + transitions.CODE + pronos_coque.JS + visuels_pro.JS + visite_guidee.js(), 1)
                .replace('  <section aria-labelledby="h-ctx" class="expert">', visuels_pro.HTML + '  <section aria-labelledby="h-ctx" class="expert">', 1)

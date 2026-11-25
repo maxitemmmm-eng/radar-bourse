@@ -56,7 +56,7 @@ def fonctionnalites(payload):
         ("Suivi du risque de chute", "Chaque mois, les titres jugés à risque : ont-ils vraiment chuté ?", "suivi-chute.html", "suivi-chute.html"),
         ("L'Académie : apprendre de zéro", f"{n_chap} chapitres courts avec exercices corrigés, {n_labos} simulateurs à manipuler, "
          "un entraînement de 3 minutes par jour, des fiches de révision et un examen final avec certificat.", "formation.html", "formation.html"),
-        ("Guides et mini-cours", "Plus de 90 guides honnêtes et 8 mini-cours pour débuter en Bourse et en crypto.", "guides.html", "guides.html"),
+        ("Guides et mini-cours", "Plus de 90 guides honnêtes et 10 mini-cours pour débuter en Bourse et en crypto.", "guides.html", "guides.html"),
         (f"En {n_langues} langues", "Les prévisions en anglais, espagnol, allemand, arabe, chinois, japonais…", "en/index.html", "fonction:langues"),
     ]
 

@@ -149,6 +149,8 @@ CSS_PAGE = """:root{--bg:#eef1f5;--surface:#fff;--surface-2:#f6f8fb;--ink:#0f1b2
   .plus-large{display:none}.plus-mobile-t{display:inline}
   .plus-mobile{display:inline-grid;gap:3px}.plus-mobile i{display:block;width:16px;height:2px;border-radius:2px;background:currentColor}
   .plus-panneau{position:fixed;left:12px;right:12px;width:auto!important;top:58px;max-height:calc(100vh - 72px);overflow-y:auto}
+  .plus-panneau{z-index:70;max-height:calc(100dvh - 70px);overscroll-behavior:contain;box-shadow:0 0 0 100vmax rgba(5,10,20,.55),0 18px 50px rgba(0,0,0,.4)}
+  body:has(.plus[open]){overflow:hidden}
   .plus-principal{display:flex}.plus-principal-plat{display:grid}
   .plus-seul{display:block}
   .brand b{overflow:hidden;text-overflow:ellipsis}
@@ -311,22 +313,39 @@ def barre_partage(base: str, chemin: str, titre: str, libelle: str = "Partager c
         f"<a href='{_e(h)}' target='_blank' rel='noopener noreferrer'>{n}</a>" for n, h in liens) + "</p>")
 
 
+def _analyse_ouverte() -> bool:
+    try:
+        from . import abonnement
+        return bool(abonnement.reglages()["api"])
+    except Exception:
+        return False
+
+
+def _vente() -> bool:
+    try:
+        from . import abonnement
+        return abonnement.actif()
+    except Exception:
+        return False
+
+
 def liens_fr() -> list:
     # version 69.1 : les 7 premiers forment le menu (les vraies pages d'abord, comme sur l'appli) ; les autres vont dans « Plus ▾ », rangés par thème
     return [("Accueil", "index.html"), ("Prédiction crypto", "prediction-crypto.html"), ("Prédiction bourse", "prediction-bourse.html"),
             ("Académie", "formation.html"), ("Toutes les actions", "toutes-les-actions.html"), ("Par thème", "themes.html"),
             ("Résultats vérifiés", "avis-surs-verifies.html"),
             ("Tous les titres suivis", "titres.html"), ("Prévisions du mois", "index.html#previsions"), (f"Prévisions {datetime.now().year}", "previsions.html"),
+            *([("Analyse approfondie à la demande", "analyse-approfondie.html")] if _analyse_ouverte() else []), ("Top 10 des actions", "top-10-actions.html"), ("Les 10 grandes Bourses du monde", "grandes-bourses.html"), ("Cours de l'or", "prevision-or.html"),
             ("Actions que l'IA voit monter", "classements.html"), ("Sélection IA du mois", "portefeuille.html"),
             ("Prédiction bitcoin par IA", "titres/btc-usd.html"), ("Avis IA : LVMH", "titres/mc-pa.html"), ("Avis IA : Nvidia", "titres/nvda.html"),
             ("Avis IA : Tesla", "titres/tsla.html"), ("Avis IA : TotalEnergies", "titres/tte-pa.html"), ("Avis IA : Airbus", "titres/air-pa.html"),
-            ("Pronostic du jour", "index.html#prono"), ("Portefeuille virtuel gratuit", "index.html#portefeuille"),
+            ("Le Défi du jour", "defi-du-jour.html"), ("Pronostic du jour", "index.html#prono"), ("Portefeuille virtuel gratuit", "index.html#portefeuille"),
             ("Simulateur de trading sans argent réel", "simulateur-boursier.html"), ("Si j'avais investi…", "outils/si-javais-investi.html"),
             ("Comparateur d'actions", "comparer.html"), ("Calendrier des résultats", "calendrier-resultats.html"),
             ("Outils gratuits", "outils.html"),
             ("Entraînement du jour", "formation/entrainement.html"), ("Test de niveau", "formation/test-de-niveau.html"),
             ("Acheter son premier ETF", "formation/etf-debutant.html"), ("PEA ou compte-titres", "formation/pea-cto-assurance-vie.html"),
-            ("Simulateur d'intérêts composés", "outils/interets-composes.html"), ("Calcul flat tax 2026 (31,4 %)", "outils/plus-value.html"),
+            ("Simulateur de stop-loss", "outils/simulateur-stop-loss.html"), ("Simulateur d'intérêts composés", "outils/interets-composes.html"), ("Calcul flat tax 2026 (31,4 %)", "outils/plus-value.html"),
             ("La Bourse va-t-elle baisser ?", "questions-bourse.html#baisse"), ("Faut-il acheter du bitcoin maintenant ?", "questions-bourse.html#bitcoin"),
             ("Combien rapportent 100 € par mois ?", "questions-bourse.html#cent-euros"), ("La Bourse, c'est risqué ?", "questions-bourse.html#risque"),
             ("Reconnaître une arnaque au trading", "questions-bourse.html#arnaque"), ("Toutes les questions", "questions-bourse.html"),
@@ -336,23 +355,26 @@ def liens_fr() -> list:
             ("Le point du jour", "point.html"), ("La semaine en Bourse", "bourse-cette-semaine.html"), ("Actu bourse", "actu-bourse.html"),
             ("Actu bitcoin", "actu-bitcoin.html"), ("Risque de krach aujourd'hui", "krach-boursier.html"), ("Carte des risques", "index.html#nuage"),
             ("Quiz : examen de l'Académie", "formation/examen.html"), ("Guides", "guides.html"), ("Mini-cours", "apprendre.html"), ("Lexique de la Bourse", "glossaire.html"), ("Les mini-robots", "robots.html"),
+            *([("Discussions", "discussions.html")] if giscus_actif() else []),
+            *([("Radar Bourse+", "radar-bourse-plus.html"), ("Conditions de vente", "cgv.html")] if _vente() else []),
+            ("Parcours Analyste (cours avancés)", "academie-plus.html"),
             ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"), ("Contact", "contact.html"),
             ("English", "en/index.html", 'hreflang="en" lang="en"')]
 
 
 N_MENU_FR = 7
 # version 69.1 : rangement du menu « Plus ▾ » par thème (pages françaises)
-GROUPES_FR = [("Prédictions et IA", ["titres.html", "index.html#previsions", "previsions.html", "classements.html", "portefeuille.html", "titres/btc-usd.html",
+GROUPES_FR = [("Prédictions et IA", ["analyse-approfondie.html", "top-10-actions.html", "grandes-bourses.html", "prevision-or.html", "titres.html", "index.html#previsions", "previsions.html", "classements.html", "portefeuille.html", "titres/btc-usd.html",
                                       "titres/mc-pa.html", "titres/nvda.html", "titres/tsla.html", "titres/tte-pa.html", "titres/air-pa.html"]),
               ("Académie", ["formation.html", "formation/entrainement.html", "formation/test-de-niveau.html", "formation/examen.html", "formation/etf-debutant.html",
-                            "formation/pea-cto-assurance-vie.html", "outils/interets-composes.html", "outils/plus-value.html", "guides.html", "apprendre.html", "glossaire.html", "robots.html"]),
-              ("Outils et entraînement", ["mon-espace.html", "index.html#prono", "index.html#portefeuille", "simulateur-boursier.html", "outils/si-javais-investi.html", "comparer.html",
+                            "formation/pea-cto-assurance-vie.html", "outils/simulateur-stop-loss.html", "outils/interets-composes.html", "outils/plus-value.html", "guides.html", "apprendre.html", "glossaire.html", "robots.html"]),
+              ("Outils et entraînement", ["defi-du-jour.html", "mon-espace.html", "index.html#prono", "index.html#portefeuille", "simulateur-boursier.html", "outils/si-javais-investi.html", "comparer.html",
                                           "calendrier-resultats.html", "outils.html"]),
               ("Vos questions", ["questions-bourse.html#baisse", "questions-bourse.html#bitcoin", "questions-bourse.html#cent-euros", "questions-bourse.html#risque",
                                  "questions-bourse.html#arnaque", "questions-bourse.html"]),
               ("L'IA est-elle fiable ?", ["resultats.html", "registre-previsions.html", "journal-ia.html", "connaissances.html", "fiche-technique-ia.html", "chiffres-du-site.html", "donnees-ouvertes.html"]),
               ("Marchés et actualités", ["point.html", "bourse-cette-semaine.html", "actu-bourse.html", "actu-bitcoin.html", "krach-boursier.html", "index.html#nuage"]),
-              ("Le site", ["fonctionnalites.html", "a-propos.html", "contact.html", "en/index.html"])]
+              ("Le site", ["radar-bourse-plus.html", "academie-plus.html", "fonctionnalites.html", "a-propos.html", "contact.html", "cgv.html", "en/index.html"])]
 
 
 def url_site() -> str:
@@ -534,7 +556,40 @@ if(document.body)setTimeout(go,900);else document.addEventListener('DOMContentLo
 }catch(e){}})();</script>"""
 
 
+def giscus_actif() -> bool:
+    G = getattr(config, "GISCUS", {}) or {}
+    return bool(G.get("repo") and G.get("repo_id") and G.get("categorie_id"))
+
+
+def bloc_discussion(terme: str, titre: str = "Discussion", intro: str = "") -> str:
+    """Version 103 : un fil de discussion (Giscus). Lecture libre ; pour écrire, un compte GitHub gratuit.
+    Charte affichée au-dessus : pas de liens, pas de pub, pas de « signal » à acheter ; modération par l'éditrice."""
+    if not giscus_actif():
+        return ""
+    G = config.GISCUS
+    return (f"<section class='carte discussion' aria-labelledby='h-disc'><h2 id='h-disc'>{_e(titre)}</h2>"
+            + (f"<p>{intro}</p>" if intro else "")
+            + "<details><summary style='cursor:pointer;color:var(--accent)'>Les règles du fil (à lire avant d'écrire)</summary><ul class='liste'>"
+            "<li><b>Pas de liens</b> ni de publicité : ils sont supprimés.</li>"
+            "<li>Pas de « signal » d'achat, de promesse de gain ou de demande d'argent : supprimé, et l'auteur peut être bloqué.</li>"
+            "<li>Respect : on critique des idées, pas des personnes.</li>"
+            "<li>Ce qui est écrit ici n'est jamais un conseil en investissement.</li></ul>"
+            "<p class='muted'>Lire est libre. Pour écrire, il faut un compte GitHub gratuit (les messages sont stockés sur GitHub et modérés).</p></details>"
+            f"<script src='https://giscus.app/client.js' data-repo='{_e(G['repo'])}' data-repo-id='{_e(G['repo_id'])}' data-category-id='{_e(G['categorie_id'])}' "
+            f"data-mapping='specific' data-term='{_e(terme)}' data-strict='1' data-reactions-enabled='1' data-emit-metadata='0' data-input-position='top' "
+            "data-theme='preferred_color_scheme' data-lang='fr' data-loading='lazy' crossorigin='anonymous' async></script></section>")
+
+
 def csp_avec_stats(csp: str) -> str:
+    try:   # version 104 : le serveur Radar Bourse+ (vérification de l'abonnement), seulement s'il est réglé
+        from . import abonnement as _ab
+        if csp and _ab.reglages()["api"] and _ab.reglages()["api"] not in csp:
+            csp = csp.replace("connect-src 'self'", f"connect-src 'self' {_ab.reglages()['api']}", 1)
+    except Exception:
+        pass
+    if csp and giscus_actif():
+        csp = csp.replace("script-src 'self' 'unsafe-inline'", "script-src 'self' 'unsafe-inline' https://giscus.app", 1)
+        csp = csp.rstrip("; ") + "; frame-src https://giscus.app"
     code = config.GOATCOUNTER
     if not code or not csp:
         return csp
@@ -944,7 +999,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     fr_ = t.get("fourchette") or []
     de_ = "Cours du " if est_crypto else ("Cours d'" if nom_c[:1].upper() in "AEIOUYÉÈH" else "Cours de ")
     desc = (f"{de_}{base_t} : {_px(t.get('prix'), t.get('devise', ''))} le {date}. "
-            + (f"Dans un mois, entre {_px(fr_[0], t.get('devise', ''))} et {_px(fr_[1], t.get('devise', ''))} 8 fois sur 10" if len(fr_) == 2
+            + (f"Fourchette probable à un mois : {_px(fr_[0], t.get('devise', ''))} à {_px(fr_[1], t.get('devise', ''))}" if len(fr_) == 2
                else f"Agitation prévue ±{round(mv * 100)} %" if mv else "Prévision à un mois")
             + (f", risque de chute {round(ch_t * 100)} %." if isinstance(ch_t, (int, float)) else ".")
             + " Gratuit, vérifié.")
@@ -969,7 +1024,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     if len(desc) > 160:
         desc = re.sub(r", risque de chute \d+ %\.", ".", desc)
     if len(desc) > 160:
-        desc = desc.replace(" 8 fois sur 10.", ".")
+        desc = desc.replace("Fourchette probable à un mois : ", "Dans un mois : ")
     chemin = f"titres/{slug(tk)}.html"
     lien_app = f"../index.html#{re.sub(r'[^A-Za-z0-9._-]', '', tk)}"
     perf = t.get("perf", {})
@@ -993,6 +1048,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
 <p class="muted">Mise à jour automatique · cours au {_e(date)}{f" · entreprise d'origine : {_e(config.PAYS_MONDE[tk])}, cotée à New York en dollars" if tk in config.PAYS_MONDE else ""}</p>
 {_verdict_titre(t, nom)}
 {_partage_fiche(t, nom, base, f"titres/{slug(tk)}.html")}
+{f'<p style="margin:-8px 0 16px"><a class="btn ghost" href="../analyse-approfondie.html?t={_e(tk)}" style="font-size:14px;padding:7px 12px">🔬 Analyse approfondie de {_e(nom)} (quelques minutes)</a></p>' if _analyse_ouverte() else ""}
 {_graphique_titre(t, horizon)}
 <div class="carte grille">
   <div class="k"><b>{_px(prix, dev)}</b><span>dernier cours</span></div>
@@ -1006,7 +1062,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
 <p>Pour le mois qui vient, le radar voit {_e(nom)} <b>{verdict}</b>.
 {f"Scénario central : environ <b class='m'>{_px(med, dev)}</b>. " if med else ""}
 {f"Dans 8 cas sur 10, le cours devrait rester entre <b class='m'>{_px(f[0], dev)}</b> et <b class='m'>{_px(f[1], dev)}</b>." if len(f) == 2 else ""}
-{f"Cette promesse a été tenue {round(modele['fourchette']['couverture'] * 100)} fois sur 100 sur les années testées (<a href='../fiche-technique-ia.html'>fiche technique</a>)." if len(f) == 2 and ((modele or {}).get('fourchette') or {}).get('couverture') else ""}
+{f"Cette promesse a été tenue {round(modele['fourchette']['couverture'] * 100)} fois sur 100 sur les années testées (<a href='../fiche-technique-ia.html'>fiche technique</a>)." if len(f) == 2 and ((modele or {}).get('fourchette') or {}).get('couverture') else ""}{_fourchette_reelle(suivi) if len(f) == 2 else ""}
 {"<b>Signal fort</b> : le modèle et la tendance technique vont dans le même sens." if t.get("signal_fort") else ""}
 {f"Probabilité de faire mieux que {_e(t.get('indice_nom') or 'son marché')} sur la même période : <b>{round(t['proba_marche'] * 100)} %</b>." if t.get("proba_marche") is not None else ""}
 {"Fourchette élargie par prudence : l'entreprise publie ses résultats avant l'échéance." if t.get("fourchette_elargie") else ""}</p>
@@ -1041,6 +1097,8 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     jsonld = {"@context": "https://schema.org", "@graph": [{k: v for k, v in g.items() if k != "@context"} for g in graphe]}
     img = f"partage/{slug(tk)}.png" if t.get("_image_ok") else "partage.png"
     from . import langues as _lg
+    corps += bloc_discussion(f"titre-{slug(tk)}", f"Discussion sur {nom}",
+                             f"Pose une question ou partage ton analyse de {_e(nom)}. Fil modéré : pas de liens, pas de signaux d'achat.")
     # version 99 : mise à jour de Google (novembre 2026) — pour un sujet « argent », Google regarde qui écrit et si c'est
     # vérifiable. On le dit clairement sur chaque fiche, avec les preuves à un clic (texte vrai : voir a-propos.html).
     corps += ("<aside class='carte' aria-labelledby='h-qui'><h2 id='h-qui'>Qui a fait cette analyse ?</h2>"
@@ -1820,7 +1878,10 @@ def _profil(fd):
                       ("returnOnEquity", "Rentabilité des capitaux (ROE)", lambda x: f"{x * 100:.1f} %".replace(".", ",")),
                       ("debtToEquity", "Dette / capitaux propres", lambda x: f"{x:.0f} %"),
                       ("dividendYield", "Rendement du dividende", lambda x: f"{x:.2f} %".replace(".", ",")),
-                      ("freeCashflow", "Trésorerie disponible (free cash-flow)", montant)):
+                      ("freeCashflow", "Trésorerie disponible (free cash-flow)", montant),
+                      ("fondsPropres", "Fonds propres (capitaux propres)", montant),
+                      ("priceToBook", "Cours / fonds propres (price-to-book)", lambda x: f"{x:.2f}".replace(".", ",")),
+                      ("totalCash", "Trésorerie au bilan", montant), ("totalDebt", "Dette totale", montant)):
         x = v.get(k)
         if isinstance(x, (int, float)) and x == x:
             lignes.append(f"<tr><td>{lib}</td><td class='m'>{f(x)}</td></tr>")
@@ -1831,7 +1892,10 @@ def _profil(fd):
     intro = f"<p>Secteur : <b>{_e(secteur)}</b>.</p>" if secteur else ""
     return (f"<h2>L'entreprise en chiffres</h2>{intro}<div class='carte'><table>{''.join(lignes)}</table></div>"
             "<p class='muted' style='font-size:14px'>Données publiques des derniers comptes. Le PER indique combien le marché paie "
-            "chaque euro de bénéfice ; une dette au-dessus de 200 % des capitaux propres est élevée.</p>")
+            "chaque euro de bénéfice ; une dette au-dessus de 200 % des capitaux propres est élevée. Les <b>fonds propres</b> sont ce qui "
+            "appartient vraiment aux actionnaires (ce qui resterait si l'entreprise vendait tout et remboursait ses dettes) : un "
+            "price-to-book sous 1 veut dire que la Bourse valorise l'entreprise moins cher que ses fonds propres "
+            "(<a href='../lecons/fonds-propres.html'>comprendre les fonds propres</a>).</p>")
 
 
 def _partage_fiche(t, nom, base, chemin):
@@ -1865,6 +1929,19 @@ def _partage_fiche(t, nom, base, chemin):
             "if(c==='natif'){e.preventDefault();try{await navigator.share({title:document.title,text:z.dataset.texte,url:z.dataset.url});}catch(_){}}"
             "else if(c==='copie'){e.preventDefault();try{await navigator.clipboard.writeText(z.dataset.texte+' '+z.dataset.url);b.textContent='Lien copié ✓';}"
             "catch(_){b.textContent=z.dataset.url;}}});})();</script>")
+
+
+def _fourchette_reelle(suivi):
+    """Version 103 : les tests sur le passé disent ~80 %, mais en conditions réelles le prix est moins souvent resté dans la
+    fourchette. On affiche le vrai chiffre à côté, dès qu'il y a assez de prévisions vérifiées (honnêteté avant tout)."""
+    F = (((suivi or {}).get("detail") or {}).get("fourchette")) or {}
+    nb, tx = F.get("nb") or 0, F.get("taux")
+    if nb < 100 or tx is None:
+        return ""
+    nbt = f"{nb:,}".replace(",", "\u202f")
+    return (f" <b>En conditions réelles</b>, sur {nbt} prévisions déjà vérifiées, le prix est resté dans la fourchette "
+            f"<b>{round(tx * 100)} fois sur 100</b>{' : la fourchette est donc moins fiable qu’annoncé, garde de la marge' if tx < .72 else ''} "
+            "(<a href='../resultats.html'>résultats réels</a>).")
 
 
 LIB_CONF_FAQ = {"faible": "confiance faible", "moyenne": "confiance moyenne", "forte": "confiance forte"}
@@ -2725,14 +2802,17 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
         with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
             f.write(_page(base, f"{titre_l} | Apprendre la Bourse avec {NOM}", desc_l, chemin, corps, jsonld, csp))
         urls.append((chemin, "monthly", "0.7"))
-    corps = ("<h1>Apprendre la Bourse</h1><p class='muted'>Huit mini-cours gratuits pour comprendre les marchés, "
-             "lire les graphiques et éviter les pièges. Environ 30 minutes au total.</p><ol>"
+    corps = ("<h1>Apprendre la Bourse</h1><div class='carte'><b>Le cours complet, c'est l'Académie.</b> Ces mini-cours sont des "
+             "fiches rapides ; pour apprendre de zéro avec un parcours, des exercices et un certificat, va sur "
+             "<a href='formation.html'>l'Académie Radar Bourse</a>.</div>"
+             f"<p class='muted'>{len(LECONS)} mini-cours gratuits pour comprendre les marchés, "
+             f"lire les graphiques et éviter les pièges. Environ {sum(l[3] for l in LECONS)} minutes au total.</p><ol>"
              + "".join(f"<li style='margin:10px 0'><a href='lecons/{l[0]}.html'><b>{_e(l[1])}</b></a><br>"
                        f"<span class='muted'>{_e(l[2])} · {l[3]} min</span></li>" for l in LECONS) + "</ol>"
              "<p>Ensuite, entraîne-toi sans risque avec le <a href='index.html#portefeuille'>portefeuille virtuel</a> "
              "et consulte le <a href='glossaire.html'>glossaire</a>.</p>")
     with open(os.path.join(dossier, "apprendre.html"), "w", encoding="utf-8") as f:
-        f.write(_page(base, f"Apprendre la Bourse : 8 mini-cours gratuits | {NOM}",
+        f.write(_page(base, f"Apprendre la Bourse : {len(LECONS)} mini-cours gratuits | {NOM}",
                       "Cours gratuits et simples pour débuter en Bourse : actions, cryptos, graphiques en bougies, RSI, gestion du risque et pièges à éviter.",
                       "apprendre.html", corps, csp=csp))
     urls.append(("apprendre.html", "monthly", "0.8"))
@@ -2845,6 +2925,22 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
         urls += mon_espace.page(_sys.modules[__name__], base, dossier, csp)
     except Exception as e:
         print(f"Registre / chiffres du site non générés : {e}")
+    try:   # version 104 : Radar Bourse+ (abonnement : pages, CGV, parcours Analyste)
+        from . import abonnement
+        urls += abonnement.generer(dossier, csp, base)
+        if _analyse_ouverte():   # version 106/107 : la page n'existe que si le serveur d'analyse est installé
+            from . import analyse_page
+            _c, _p = analyse_page.page(base, payload, csp)
+            with open(os.path.join(dossier, _c), "w", encoding="utf-8") as f:
+                f.write(_p)
+            urls.append((_c, "weekly", "0.8"))
+    except Exception as e:
+        print(f"Pages Radar Bourse+ non générées : {e}")
+    try:   # version 103 : top 10, grandes Bourses du monde, or
+        from . import pages_monde
+        urls += pages_monde.generer(payload, dossier, csp, base)
+    except Exception as e:
+        print(f"Pages top 10 / Bourses / or non générées : {e}")
     try:   # version 57 : krach boursier, actu bourse, actu bitcoin (+ mémoire quotidienne du marché)
         from . import pages_marche
         urls += pages_marche.generer(payload, dossier, csp, base)
@@ -2965,7 +3061,11 @@ Points importants pour bien citer le site :
 - [Prédiction bourse du mois]({u}prediction-bourse.html): actions vues en hausse ou en baisse
 - [Prédiction crypto du mois]({u}prediction-crypto.html): bitcoin, ether et autres cryptos
 - [Tous les titres suivis]({u}titres.html): une fiche par action, ETF ou crypto
-
+- [Top 10 des actions]({u}top-10-actions.html): ce que l'IA voit monter, plus fortes hausses et baisses du mois
+- [Les 10 grandes Bourses du monde]({u}grandes-bourses.html): tendance et avis de l'IA pour chaque grande place
+- [Cours de l'or et prévision]({u}prevision-or.html)
+- [Le Défi du jour]({u}defi-du-jour.html): analyser un vrai graphique masqué et comparer son score à l'IA
+{f"- [Analyse approfondie à la demande]({u}analyse-approfondie.html): l'IA analyse tout l'historique d'un titre au choix (fourchettes testées, simulations, risques)" + chr(10) if _analyse_ouverte() else ""}
 ## Preuves et méthode
 - [Résultats réels de l'IA]({u}resultats.html)
 - [Registre scellé des prévisions]({u}registre-previsions.html)
@@ -2974,8 +3074,10 @@ Points importants pour bien citer le site :
 
 ## Apprendre et simuler
 - [Formation gratuite à la Bourse]({u}formation.html)
+- [Parcours Analyste : cours avancés gratuits]({u}academie-plus.html): lire un bilan, DCF, pièges statistiques
 - [Simulateur boursier (argent fictif)]({u}simulateur-boursier.html)
 - [Si j'avais investi…]({u}outils/si-javais-investi.html)
+- [Simulateur de stop-loss]({u}outils/simulateur-stop-loss.html)
 - [Vos questions sur la Bourse]({u}questions-bourse.html)
 
 ## English

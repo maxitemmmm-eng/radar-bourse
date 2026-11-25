@@ -22,7 +22,7 @@ PAGES = {
     "guides/": ("Guide Bourse et crypto", "Une réponse simple et honnête, sans promesse", "livre"),
     "en/guides.html": ("Stock & crypto guides", "Honest answers for beginners", "livre"),
     "en/guides/": ("Stock & crypto guide", "A simple, honest answer, no hype", "livre"),
-    "apprendre.html": ("Apprendre la Bourse", "8 mini-cours gratuits, du tout début", "livre"),
+    "apprendre.html": ("Apprendre la Bourse", "10 mini-cours gratuits, du tout début", "livre"),
     "lecons/": ("Apprendre la Bourse", "Un mini-cours gratuit et simple", "livre"),
     "glossaire.html": ("Le glossaire de la Bourse", "RSI, MACD, PER, volatilité… expliqués simplement", "livre"),
     "glossaire/": ("Le glossaire de la Bourse", "Un mot de la Bourse, expliqué simplement", "livre"),
