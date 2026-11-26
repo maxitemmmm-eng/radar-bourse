@@ -178,6 +178,8 @@ def bilan(donnees: dict[str, pd.DataFrame], horizon: int = config.HORIZON_PREDIC
         "premiere": str(v["date"].min()), "derniere": str(v["date"].max()),
         # palmarès par titre : [prévisions vérifiées, justes]
         "par_titre": {str(t): [int(len(g)), int(g["juste"].sum())] for t, g in v.groupby("ticker")},
+        # version 112 : fourchette tenue, titre par titre (pour l'analyse approfondie) : [vérifiées, tenues]
+        "fourchette_par_titre": {str(t): [int(len(g)), int(g["dans_fourchette"].astype(bool).sum())] for t, g in fourch.groupby("ticker")},
         "mois": {m: _bilan_mois(g, attente_mois.get(m, 0)) for m, g in v.groupby("mois") if len(g) >= 30},
     }
     colonnes = ["date", "ticker", "proba", "signal", "fort", "rendement_reel", "juste", "dans_fourchette"]

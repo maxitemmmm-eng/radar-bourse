@@ -313,10 +313,21 @@ def barre_partage(base: str, chemin: str, titre: str, libelle: str = "Partager c
         f"<a href='{_e(h)}' target='_blank' rel='noopener noreferrer'>{n}</a>" for n, h in liens) + "</p>")
 
 
+def bloc_soutien(prefixe: str = "", texte: str = "") -> str:
+    """Version 111 : un encart de soutien clair mais calme (pas de pop-up) : le site reste gratuit, le don ne débloque rien."""
+    if not config.SOUTIEN:
+        return ""
+    return (f"<aside class='carte soutien' style='display:flex;gap:14px;align-items:center;flex-wrap:wrap;border-left:4px solid #e0a43a'>"
+            f"<span style='font-size:30px' aria-hidden='true'>☕</span><div style='flex:1 1 240px'><b>Radar Bourse est gratuit, sans pub et sans compte.</b><br>"
+            f"<span class='muted'>{_e(texte or 'Si le site t’aide, tu peux offrir un café pour le faire vivre. C’est facultatif et ne débloque rien.')}</span></div>"
+            f"<a class='btn' href='{_e(config.SOUTIEN)}' target='_blank' rel='noopener noreferrer' data-soutien='1'>Soutenir le projet</a></aside>"
+            "<script>document.currentScript.previousElementSibling.querySelector('[data-soutien]').addEventListener('click',()=>{try{goatcounter.count({path:'soutien/clic',title:document.title,event:true})}catch(e){}});</script>")
+
+
 def _analyse_ouverte() -> bool:
     try:
         from . import abonnement
-        return bool(abonnement.reglages()["api"])
+        return abonnement.analyse_ouverte()
     except Exception:
         return False
 
@@ -329,13 +340,19 @@ def _vente() -> bool:
         return False
 
 
+def _lien_bourse_mois():
+    from .pages_monde import MOIS_NOMS, MOIS_SLUGS
+    k = datetime.now().month % 12
+    return (f"La Bourse en {MOIS_NOMS[k]}", f"bourse-en-{MOIS_SLUGS[k]}.html")
+
+
 def liens_fr() -> list:
     # version 69.1 : les 7 premiers forment le menu (les vraies pages d'abord, comme sur l'appli) ; les autres vont dans « Plus ▾ », rangés par thème
     return [("Accueil", "index.html"), ("Prédiction crypto", "prediction-crypto.html"), ("Prédiction bourse", "prediction-bourse.html"),
             ("Académie", "formation.html"), ("Toutes les actions", "toutes-les-actions.html"), ("Par thème", "themes.html"),
             ("Résultats vérifiés", "avis-surs-verifies.html"),
             ("Tous les titres suivis", "titres.html"), ("Prévisions du mois", "index.html#previsions"), (f"Prévisions {datetime.now().year}", "previsions.html"),
-            *([("Analyse approfondie à la demande", "analyse-approfondie.html")] if _analyse_ouverte() else []), ("Top 10 des actions", "top-10-actions.html"), ("Les 10 grandes Bourses du monde", "grandes-bourses.html"), ("Cours de l'or", "prevision-or.html"),
+            *([("Analyse approfondie à la demande", "analyse-approfondie.html")] if _analyse_ouverte() else []), ("Top 10 des actions", "top-10-actions.html"), _lien_bourse_mois(), ("Les 10 grandes Bourses du monde", "grandes-bourses.html"), ("Cours de l'or", "prevision-or.html"),
             ("Actions que l'IA voit monter", "classements.html"), ("Sélection IA du mois", "portefeuille.html"),
             ("Prédiction bitcoin par IA", "titres/btc-usd.html"), ("Avis IA : LVMH", "titres/mc-pa.html"), ("Avis IA : Nvidia", "titres/nvda.html"),
             ("Avis IA : Tesla", "titres/tsla.html"), ("Avis IA : TotalEnergies", "titres/tte-pa.html"), ("Avis IA : Airbus", "titres/air-pa.html"),
@@ -697,7 +714,7 @@ def _page(base, titre, description, chemin, corps, jsonld=None, csp="", alternat
 {barre_partage(base, chemin, titre)}
 <footer class="pied"><nav class="pied-liens" aria-label="Pied de page"><a href="{prefixe}questions-bourse.html">Vos questions</a><a href="{prefixe}fonctionnalites.html">Fonctionnalités</a><a href="{prefixe}journal-ia.html">Journal de l'IA</a><a href="{prefixe}simulateur-boursier.html">Simulateur</a><a href="{prefixe}outils.html">Outils gratuits</a><a href="{prefixe}mon-espace.html">Mon espace</a><a href="{prefixe}a-propos.html">À propos</a><a href="{prefixe}contact.html">Contact</a></nav>
 <p class="pied-legal"><b>Rien n'est sûr en Bourse.</b> Projet éducatif et indépendant : les avis de l'IA peuvent se tromper et ne sont pas des conseils en investissement ; on peut perdre tout l'argent investi. <a href="{prefixe}index.html#conditions">Conditions</a></p>
-<p class="pied-credits">© {__import__("bourse_bot.credits", fromlist=["x"]).annees()} {NOM} · <a href="{prefixe}credits.html">Crédits et sources</a> · <a href="{prefixe}donnees-ouvertes.html">Données ouvertes</a>{f' · <a href="{_e(config.SOUTIEN)}" target="_blank" rel="noopener noreferrer">Soutenir le projet</a>' if config.SOUTIEN else ""} · marques citées à des fins d'identification</p></footer>
+<p class="pied-credits">© {__import__("bourse_bot.credits", fromlist=["x"]).annees()} {NOM} · <a href="{prefixe}credits.html">Crédits et sources</a> · <a href="{prefixe}donnees-ouvertes.html">Données ouvertes</a>{f' · <a href="{_e(config.SOUTIEN)}" target="_blank" rel="noopener noreferrer">☕ Soutenir le projet</a>' if config.SOUTIEN else ""} · marques citées à des fins d'identification</p></footer>
 </div>
 {SCRIPT_BOUTON}
 {_JS_VT}
@@ -1048,7 +1065,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
 <p class="muted">Mise à jour automatique · cours au {_e(date)}{f" · entreprise d'origine : {_e(config.PAYS_MONDE[tk])}, cotée à New York en dollars" if tk in config.PAYS_MONDE else ""}</p>
 {_verdict_titre(t, nom)}
 {_partage_fiche(t, nom, base, f"titres/{slug(tk)}.html")}
-{f'<p style="margin:-8px 0 16px"><a class="btn ghost" href="../analyse-approfondie.html?t={_e(tk)}" style="font-size:14px;padding:7px 12px">🔬 Analyse approfondie de {_e(nom)} (quelques minutes)</a></p>' if _analyse_ouverte() else ""}
+{f'<p style="margin:-8px 0 16px"><a class="btn ghost" href="../analyse-approfondie.html?t={_e(tk)}" style="font-size:14px;padding:7px 12px">🔬 Analyse approfondie de {_e(nom)}</a></p>' if _analyse_ouverte() else ""}
 {_graphique_titre(t, horizon)}
 <div class="carte grille">
   <div class="k"><b>{_px(prix, dev)}</b><span>dernier cours</span></div>
@@ -1108,6 +1125,7 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
               "<p><a href='../fiche-technique-ia.html'>Comment l'IA calcule</a> · <a href='../registre-previsions.html'>Le registre scellé</a> · "
               "<a href='../resultats.html'>Les résultats réels</a> · <a href='../a-propos.html'>À propos</a></p>"
               "<p class='muted'>Une information, pas un conseil en investissement : investir comporte un risque de perte en capital.</p></aside>")
+    corps += bloc_soutien("../")
     try:   # version 95 : « Et maintenant ? » — donner envie d'une deuxième page
         from . import visite_guidee
         corps += visite_guidee.suite_fiche(t, voisins[0] if voisins else None)
@@ -1883,6 +1901,8 @@ def _profil(fd):
                       ("priceToBook", "Cours / fonds propres (price-to-book)", lambda x: f"{x:.2f}".replace(".", ",")),
                       ("totalCash", "Trésorerie au bilan", montant), ("totalDebt", "Dette totale", montant)):
         x = v.get(k)
+        if k == "dividendYield" and isinstance(x, (int, float)) and x > 25:
+            continue   # version 109 : rendement incohérent (ancien format Yahoo) : on n'affiche rien plutôt qu'un faux chiffre
         if isinstance(x, (int, float)) and x == x:
             lignes.append(f"<tr><td>{lib}</td><td class='m'>{f(x)}</td></tr>")
     if not lignes:

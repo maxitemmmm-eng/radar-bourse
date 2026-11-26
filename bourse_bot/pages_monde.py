@@ -252,6 +252,69 @@ def _page_or(base, payload, csp):
     return chemin, page
 
 
+MOIS_NOMS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+MOIS_SLUGS = ["janvier", "fevrier", "mars", "avril", "mai", "juin", "juillet", "aout", "septembre", "octobre", "novembre", "decembre"]
+EFFETS = {11: "l'« effet Père Noël » (le rallye de fin d'année)", 0: "l'« effet janvier »", 4: "le dicton « Sell in May and go away »",
+          8: "la réputation de septembre, souvent présenté comme le pire mois"}
+
+
+def _page_mois(base, payload, k, csp):
+    """Version 111 : « La Bourse en <mois> » — ce que disent les dernières années, calculé sur tous les titres suivis (vrais chiffres)."""
+    from datetime import datetime as _dt
+    nom, sl = MOIS_NOMS[k], MOIS_SLUGS[k]
+    chemin = f"bourse-en-{sl}.html"
+    lignes, tous = [], []
+    for t in payload.get("titres", []):
+        sa = t.get("saison") or {}
+        vals = [(a, m[k]) for a, m in zip(sa.get("annees") or [], sa.get("m") or []) if len(m) > k and isinstance(m[k], (int, float))]
+        if len(vals) < 3 or t.get("marche") == "tendances":
+            continue
+        tous += [v for _, v in vals]
+        lignes.append((t, vals))
+    if len(lignes) < 20:
+        return None
+    hausse = sum(1 for v in tous if v > 0) / len(tous)
+    moy = sum(tous) / len(tous)
+    cles = [("^FCHI", "CAC 40"), ("SPY", "S&P 500"), ("QQQ", "Nasdaq 100"), ("BTC-USD", "Bitcoin"), ("GC=F", "Or"), ("ETH-USD", "Ether")]
+    par_tk = {t["ticker"]: vals for t, vals in lignes}
+    annees = sorted({a for _, vals in lignes for a, _ in vals})
+    tab = ("<div class='carte' style='overflow-x:auto'><table class='pm-table'><thead><tr><th></th>" + "".join(f"<th>{a}</th>" for a in annees) + "</tr></thead><tbody>"
+           + "".join(f"<tr><td><a href='titres/{seo.slug(tk)}.html'>{_e(lib)}</a></td>" + "".join(
+               (lambda v: f"<td class='m {'up' if v > 0 else 'down'}'>{seo._pct(v)}</td>" if v is not None else "<td class='m muted'>–</td>")(dict(par_tk[tk]).get(a))
+               for a in annees) + "</tr>" for tk, lib in cles if tk in par_tk) + "</tbody></table></div>")
+    reg = sorted([(t, vals) for t, vals in lignes if len(vals) >= 4 and t.get("marche") in ("fr", "eu", "us", "monde", "etf", "crypto")],
+                 key=lambda x: (-sum(1 for _, v in x[1] if v > 0) / len(x[1]), -sum(v for _, v in x[1]) / len(x[1])))[:10]
+    top = "".join(f"<tr><td><a href='titres/{seo.slug(t['ticker'])}.html'>{_e(t.get('nom') or t['ticker'])}</a></td><td class='m'>{sum(1 for _, v in vals if v > 0)} / {len(vals)}</td>"
+                  f"<td class='m'>{seo._pct(sum(v for _, v in vals) / len(vals))}</td></tr>" for t, vals in reg)
+    effet = EFFETS.get(k)
+    corps = (CSS + f"<h1>La Bourse en {nom} : ce que disent les dernières années</h1>"
+             f"<p>Chaque année, on entend parler de {effet + ' ' if effet else 'tendances saisonnières '}: les marchés ont-ils vraiment tendance à monter ou à baisser en {nom} ? "
+             f"Plutôt que de croire un dicton, voici les vrais chiffres de {len(lignes)} actions, ETF et cryptos suivis par Radar Bourse, sur {len(annees)} années.</p>"
+             "<div class='pm-grille'>"
+             f"<div class='pm-carte'><p class='muted' style='margin:0'>Part des {nom}s en hausse</p><p style='font-size:32px;font-weight:700;margin:4px 0' class='{'up' if hausse >= .5 else 'down'}'>{round(hausse * 100)} %</p>"
+             f"<p class='muted' style='margin:0'>sur {len(tous)} cas (titre × année)</p></div>"
+             f"<div class='pm-carte'><p class='muted' style='margin:0'>Variation moyenne en {nom}</p><p style='font-size:32px;font-weight:700;margin:4px 0' class='{'up' if moy >= 0 else 'down'}'>{seo._pct(moy)}</p>"
+             "<p class='muted' style='margin:0'>tous titres confondus</p></div></div>"
+             f"<h2>Les grands marchés, {nom} par {nom}</h2>" + tab
+             + f"<h2>Les titres qui ont le plus souvent monté en {nom}</h2><div class='carte' style='overflow-x:auto'><table class='pm-table'><thead><tr><th>Titre</th>"
+             f"<th>Années en hausse</th><th>Variation moyenne</th></tr></thead><tbody>{top}</tbody></table></div>"
+             f"<div class='carte'><b>À garder en tête :</b> {len(annees)} années, c'est très peu pour parler de règle. Un mois souvent vert peut très bien être rouge cette année, "
+             "et classer des titres sur 4 ou 5 années, c'est presque du hasard. Ces chiffres servent à remettre les dictons à leur place, pas à décider un achat. "
+             "<a href='plus/pieges-statistiques.html'>Pourquoi se méfier des petits échantillons</a>.</div>"
+             f"<p>Pour aller plus loin : <a href='analyse-approfondie.html'>l'analyse approfondie d'un titre</a> (avec sa saisonnalité) · <a href='top-10-actions.html'>top 10 des actions</a> · "
+             "<a href='prevision-or.html'>l'or</a> · <a href='grandes-bourses.html'>les grandes Bourses du monde</a></p>")
+    titre = f"La Bourse en {nom} : hausse ou baisse ? Les vrais chiffres | {NOM}"
+    desc = (f"La Bourse monte-t-elle en {nom} ? Part des hausses et variation moyenne en {nom} pour {len(lignes)} actions, ETF et cryptos, "
+            f"CAC 40, S&P 500, bitcoin et or, année par année.")
+    return chemin, seo._page(base, titre, desc, chemin, corps, csp=csp)
+
+
+def _pages_mois(base, payload, csp):
+    from datetime import datetime as _dt
+    m = _dt.now().month - 1
+    return [x for x in (_page_mois(base, payload, m, csp), _page_mois(base, payload, (m + 1) % 12, csp)) if x]
+
+
 def _page_discussions(base, payload, csp):
     """Le forum du site (Giscus) : un fil général et un fil par sujet. Créée seulement si les discussions sont activées."""
     if not seo.giscus_actif():
@@ -300,6 +363,13 @@ _DOSSIER = {}
 def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
     _DOSSIER["d"] = dossier
     urls = []
+    try:
+        for chemin, page in _pages_mois(base, payload, csp):
+            with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
+                f.write(page)
+            urls.append((chemin, "daily", "0.8"))
+    except Exception as e:
+        print(f"Pages « la Bourse en … » non générées : {e}")
     for fn in (_page_top, _page_bourses, _page_or, _page_discussions, _page_defi):
         try:
             r = fn(base, payload, csp)

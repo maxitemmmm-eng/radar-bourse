@@ -62,9 +62,13 @@ def recuperer(ticker: str, marche: str) -> dict | None:
         v = info.get(k)
         if isinstance(v, (int, float)) and v == v:
             valeurs[k] = float(v)
-    # Yahoo a changé le format du rendement du dividende (parfois 0,03, parfois 3) : on unifie en %
-    if "dividendYield" in valeurs and valeurs["dividendYield"] < 0.5:
-        valeurs["dividendYield"] *= 100
+    # Rendement du dividende en % : Yahoo a changé plusieurs fois de format (0,0041 ou 0,41 pour 0,41 %), ce qui affichait
+    # « 31 % » pour Apple. Version 109 : on le recalcule nous-mêmes (dividende annuel ÷ cours), sinon on garde le format en %.
+    dr, px = info.get("dividendRate") or info.get("trailingAnnualDividendRate"), info.get("currentPrice") or info.get("regularMarketPrice")
+    if isinstance(dr, (int, float)) and isinstance(px, (int, float)) and px > 0 and dr >= 0:
+        valeurs["dividendYield"] = float(dr) / float(px) * 100
+    elif "dividendYield" in valeurs and valeurs["dividendYield"] > 25:
+        valeurs.pop("dividendYield")   # valeur incohérente : on préfère ne rien afficher
     resultats = None
     for cle in ("earningsTimestamp", "earningsTimestampStart"):
         ts = info.get(cle)
@@ -109,7 +113,7 @@ def enrichir(analyses) -> None:
         if data.DEMO:
             a.fondamentaux = recuperer(a.ticker, a.marche)
         else:   # les fondamentaux changent peu : une fois par jour suffit (cache de 20 h)
-            a.fondamentaux = data.cache_json("fondamentaux", a.ticker, 20,
+            a.fondamentaux = data.cache_json("fondamentaux2", a.ticker, 20,   # version 109 : nouveau cache (fonds propres, dividende corrigé)
                                              lambda: appel.append(1) or recuperer(a.ticker, a.marche))
         date = (a.fondamentaux or {}).get("resultats_le")
         if date:

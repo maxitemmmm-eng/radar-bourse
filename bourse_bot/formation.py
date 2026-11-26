@@ -393,7 +393,8 @@ def _page_hub_app(seo, base, csp):
               "<h2 style='margin-top:0'>Et après les bases ?</h2><p>Le <a href='academie-plus.html'><b>parcours Analyste</b></a> : lire un bilan, "
               "valoriser une entreprise (DCF), repérer les pièges statistiques. Gratuit, avec exercices corrigés."
               + (" Puis mets tout en pratique avec une <a href='analyse-approfondie.html'><b>analyse approfondie</b></a> de l'action de ton choix."
-                 if __import__("bourse_bot.abonnement", fromlist=["x"]).analyse_ouverte() else "") + "</p></div></section>")
+                 if __import__("bourse_bot.abonnement", fromlist=["x"]).analyse_ouverte() else "") + "</p></div>"
+              + __import__("bourse_bot.seo", fromlist=["x"]).bloc_soutien("", "L’Académie est gratuite et le restera. Si elle t’aide à apprendre, tu peux soutenir le projet.") + "</section>")
     jl = _page_hub(_Capture(seo), base, csp)
     return academie.page(seo, base, f"Apprendre la Bourse de zéro : formation gratuite pour débutants | {seo.NOM}",
                          f"Formation Bourse gratuite façon appli : {len(CHAPITRES)} chapitres, {sum(len(c['sections']) for c in CHAPITRES)} mini-leçons avec exercices, "

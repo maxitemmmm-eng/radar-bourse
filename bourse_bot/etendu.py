@@ -94,7 +94,19 @@ def _stats(close, dates) -> dict | None:
         "sma50": sma(50), "sma200": sma(200),
         "f10": q(0.10), "f90": q(0.90), "pire": mois[0], "meilleur": mois[-1],
         "serie": {"t": dates[-130:], "c": [round(v, 6) for v in c[-130:]]},
+        # version 112 : les 2 ans de cours, compacts (date de départ + écarts en jours), pour l'analyse approfondie dans le navigateur
+        "long": _compact(c, dates),
     }
+
+
+def _compact(c, dates):
+    from datetime import date as _d
+    try:
+        j = [_d.fromisoformat(x[:10]) for x in dates]
+        return {"t0": dates[0][:10], "dt": [0] + [(j[i] - j[i - 1]).days for i in range(1, len(j))],
+                "c": [float(f"{v:.6g}") for v in c]}
+    except Exception:
+        return None
 
 
 def _telecharger(tickers: list) -> dict:
@@ -315,7 +327,10 @@ def _page_fr(seo, base, t, csp, voisins, date, rangs=(None, None, 0)):
     corps = (f"<p class='muted'><a href='../toutes-les-actions.html'>Toutes les actions</a> · {e(pays_fr)}</p>"
              f"<h1>{e(nom)} ({e(sym)}) : cours de l'action et analyse</h1>"
              f"<p class='muted'>Cours au {e(seo.date_longue(t['date']))}, mis à jour chaque jour · fiche simple</p>"
-             f"{_rc_ia(t, True, px) or rc}{courbe}{graph}<h2>Les chiffres clés</h2><div class='carte' style='overflow-x:auto' tabindex='0' role='region' "
+             f"{_rc_ia(t, True, px) or rc}{courbe}"
+             + (f"<p><a class='btn' href='../analyse-approfondie.html?t={__import__('urllib.parse', fromlist=['x']).quote(tk)}' data-goatcounter-click='analyse/fiche-simple'>🔬 Analyse approfondie de {e(nom)}</a> "
+                "<span class='muted' style='font-size:14px'>fourchettes testées, 3 000 simulations, pires chutes (gratuit)</span></p>" if t.get("long") else "")
+             + f"{graph}<h2>Les chiffres clés</h2><div class='carte' style='overflow-x:auto' tabindex='0' role='region' "
              f"aria-label='Chiffres clés'><table class='kv'>{table}</table></div>{faq_html}{voisins_html}"
              "<p class='muted'>Fiche simple calculée automatiquement à partir des cours publics (Yahoo Finance). "
              "Les chiffres clés sont des faits passés ; l'avis de l'IA est une prévision, pas une certitude. Projet éducatif, pas un conseil en investissement. "
@@ -445,6 +460,20 @@ def generer(seo, anglais, base, dossier, csp, date) -> list:
                               f"{len(E)} of the best-known stocks worldwide: price, chart, trend and volatility, updated daily.",
                               "en/all-stocks.html", corps_en, csp, alt))
     urls += [("toutes-les-actions.html", "daily", "0.7"), ("en/all-stocks.html", "daily", "0.5")]
+    # Version 112 : les cours compacts de chaque fiche simple, pour l'analyse approfondie (chargés seulement à la demande)
+    os.makedirs(os.path.join(dossier, "donnees-e"), exist_ok=True)
+    for t in E.values():
+        lg = t.get("long")
+        if not lg or seo.slug(t["ticker"]) in pris:
+            continue
+        ia = t.get("ia") or {}
+        try:
+            with open(os.path.join(dossier, "donnees-e", seo.slug(t["ticker"]) + ".json"), "w", encoding="utf-8") as f:
+                json.dump({**lg, "nom": t["nom"], "dev": _devise(t), "sec": t.get("secteur") or "",
+                           "ia": {"p": ia.get("p"), "c": ia.get("c")} if ia.get("p") is not None else None},
+                          f, ensure_ascii=False, separators=(",", ":"))
+        except Exception as ex:
+            print(f"Cours compacts {t['ticker']} non écrits : {ex}")
     # Recherche : la liste légère, chargée seulement quand on tape dans la barre de recherche
     with open(os.path.join(dossier, "recherche-etendue.json"), "w", encoding="utf-8") as f:
         json.dump([[t["nom"], t["ticker"], seo.slug(t["ticker"]), pays(t["ticker"]),

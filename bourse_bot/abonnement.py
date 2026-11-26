@@ -35,7 +35,8 @@ VENTE = os.environ.get("RADAR_VENTE", "0") == "1"   # version 107 : la vente est
 
 
 def analyse_ouverte() -> bool:
-    return bool(reglages()["api"])
+    # version 110 : toujours ouverte — sans serveur, elle tourne dans le navigateur du visiteur (titres suivis)
+    return True
 
 
 def actif() -> bool:

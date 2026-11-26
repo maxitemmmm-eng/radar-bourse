@@ -496,6 +496,8 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
     import re as _re
     _m = _re.search(r'<svg class="logo".*?</svg>', gabarit, _re.S)
     _logo = _re.sub(r"(id=|url\(#|href=)(['\"]?#?)(rb\w+)", lambda m: m.group(1) + m.group(2) + m.group(3) + "s", _m.group(0)) if _m else ""
+    gabarit = gabarit.replace("<!--__SOUTIEN_ACCUEIL__-->", (f'<p class="muted" style="font-size:14px;margin:10px 2px 0">☕ Radar Bourse est gratuit, sans pub et sans compte. '
+                                                              f'Si le site t\u2019aide : <a href="{config.SOUTIEN}" target="_blank" rel="noopener noreferrer">soutenir le projet</a>.</p>') if config.SOUTIEN else "", 1)
     gabarit = gabarit.replace("<!--__SOUTIEN__-->", (f'    <p class="credits-ligne">Projet gratuit et sans publicité : <a href="{config.SOUTIEN}" target="_blank" '
                                                       'rel="noopener noreferrer">soutenir le projet</a> (facultatif)</p>') if config.SOUTIEN else "", 1)
     from . import abonnement as _ab
