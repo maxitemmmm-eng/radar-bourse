@@ -1259,7 +1259,10 @@ def _page_duel(base, a, b, date, csp):
         {"@type": "WebPage", "name": f"{na} ou {nb}", "inLanguage": "fr-FR"},
         {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": re.sub(r"<[^>]+>", "", r)}} for q, r in faq]},
         _jsonld_fil(base, [(NOM, ""), ("Comparer", "comparer.html"), (f"{na} ou {nb}", chemin)])]}
-    return chemin, _page(base, titre, desc, chemin, corps, jsonld, csp)
+    # version 113 : 450 pages « X ou Y » fabriquées sur le même modèle (22 impressions et 1 clic en 12 jours) : en ligne pour les
+    # visiteurs, mais plus proposées à Google, pour ne pas faire passer le site pour du contenu fabriqué en masse.
+    return chemin, re.sub(r'<meta name="robots" content="[^"]*">', '<meta name="robots" content="noindex, follow">',
+                          _page(base, titre, desc, chemin, corps, jsonld, csp), 1)
 
 
 def _exemple_du_jour(mot, payload):
@@ -2704,7 +2707,6 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
             chemin, page = _page_duel(base, a_, b_, date, csp)
             with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
                 f.write(page)
-            urls.append((chemin, "daily", "0.6"))
         corps = ("<h1>Comparer deux titres</h1><p class='muted'>Les comparaisons les plus demandées, avec les chiffres du jour : "
                  "cours, risque, agitation prévue et avis des IA.</p><ul class='liste'>"
                  + "".join(f"<li><a href='{_chemin_duel(a_, b_)}'>{_e(a_['nom'])} ou {_e(b_['nom'])}</a></li>" for a_, b_ in duels) + "</ul>")

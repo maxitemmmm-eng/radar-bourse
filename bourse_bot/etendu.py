@@ -10,6 +10,7 @@ réécrivent les pages à partir de ce cache, sans rien retélécharger.
 from __future__ import annotations
 
 import json
+import re
 import math
 import os
 import time
@@ -105,6 +106,61 @@ def _compact(c, dates):
         j = [_d.fromisoformat(x[:10]) for x in dates]
         return {"t0": dates[0][:10], "dt": [0] + [(j[i] - j[i - 1]).days for i in range(1, len(j))],
                 "c": [float(f"{v:.6g}") for v in c]}
+    except Exception:
+        return None
+
+
+def _analyse_long(lg) -> dict | None:
+    """Version 113 : des chiffres propres à chaque fiche simple, calculés sur ses 2 ans de cours (même méthode que l'analyse
+    approfondie v112) : fourchette à un mois testée sur son passé, pire chute et rattrapage, risque de chute de 10 %, mois en hausse."""
+    try:
+        import numpy as np
+        from datetime import date as _d, timedelta
+        c = np.asarray(lg["c"], dtype=float)
+        if len(c) < 260 or not np.all(c > 0):
+            return None
+        jours, d = [], _d.fromisoformat(lg["t0"])
+        for g in lg["dt"]:
+            d = d + timedelta(days=g)
+            jours.append(d)
+        n, lr = len(c), np.diff(np.log(c))
+        sig = np.empty(len(lr))
+        v = float(np.mean(lr[:20] ** 2))
+        for i, r in enumerate(lr):
+            v = 0.94 * v + 0.06 * r * r
+            sig[i] = v ** 0.5
+        cs, c2 = np.concatenate([[0], np.cumsum(lr)]), np.concatenate([[0], np.cumsum(lr ** 2)])
+        se = lambda i: max(sig[i - 1], 0.8 * (max(0.0, c2[i] / i - (cs[i] / i) ** 2)) ** 0.5)
+        h, q = 21, 0.09
+        idx = list(range(60, n - h))
+        z = np.array([np.log(c[i + h] / c[i]) / (se(i) * h ** 0.5) for i in idx])
+        dedans = nb = 0
+        for k in range(80, len(idx), 3):
+            passe = z[:max(0, k - h + 1)]
+            if len(passe) < 60:
+                continue
+            nb += 1
+            dedans += int(np.quantile(passe, q) <= z[k] <= np.quantile(passe, 1 - q))
+        sn = se(n - 1) * h ** 0.5
+        bas, haut = c[-1] * np.exp(np.quantile(z, q) * sn), c[-1] * np.exp(np.quantile(z, 1 - q) * sn)
+        pic, ip, pire, i_pic, i_creux = c[0], 0, 0.0, 0, 0
+        for i in range(n):
+            if c[i] > pic:
+                pic, ip = c[i], i
+            if c[i] / pic - 1 < pire:
+                pire, i_pic, i_creux = c[i] / pic - 1, ip, i
+        rattrape = next((i for i in range(i_creux, n) if c[i] >= c[i_pic]), None)
+        chute10 = float(np.mean([c[i + 1:i + 21].min() / c[i] - 1 < -0.10 for i in range(n - 21)]))
+        fins = {}
+        for i, j in enumerate(jours):
+            fins[(j.year, j.month)] = c[i]
+        cles = sorted(fins)
+        mens = [(cles[k][1], fins[cles[k]] / fins[cles[k - 1]] - 1) for k in range(1, len(cles) - 1)]
+        return {"bas": float(bas), "haut": float(haut), "reussite": dedans / nb if nb else None,
+                "pire": pire, "pic": jours[i_pic].isoformat(), "creux": jours[i_creux].isoformat(),
+                "rattrape": (jours[rattrape] - jours[i_creux]).days if rattrape is not None else None,
+                "chute10": chute10, "mois_hausse": sum(1 for _, r in mens if r > 0) / len(mens) if mens else None,
+                "nb_mois": len(mens), "debut": jours[0].isoformat()}
     except Exception:
         return None
 
@@ -321,7 +377,25 @@ def _page_fr(seo, base, t, csp, voisins, date, rangs=(None, None, 0)):
                    f"des {ng} actions de ce pays suivies par le radar, et son agitation récente est plus forte que celle de "
                    f"<b>{round(rv * 100)} %</b> d'entre elles : c'est une action {'plutôt agitée' if rv > .66 else 'plutôt calme' if rv < .33 else 'moyennement agitée'} "
                    f"pour son marché.</p>")
-    faq_html = compare + "<h2>Questions fréquentes</h2>" + "".join(f"<h3>{e(q)}</h3><p>{e(a)}</p>" for q, a in faq)
+    A = _analyse_long(t["long"]) if t.get("long") else None
+    bloc_a = ""
+    if A:
+        dl = seo.date_longue
+        bloc_a = (f"<h2>Ce que disent ses deux ans de cours</h2><div class='carte'><ul class='liste'>"
+                  f"<li><b>Dans un mois</b>, fourchette probable (8 fois sur 10 en principe) : <b>{px(A['bas'], dev)} à {px(A['haut'], dev)}</b>"
+                  + (f". Sur son propre passé, cette méthode a vu juste <b>{round(A['reussite'] * 100)} fois sur 100</b>" if A["reussite"] is not None else "")
+                  + ".</li>"
+                  f"<li><b>Pire chute</b> sur la période : <b>{pct(A['pire'], 0)}</b>, du {e(dl(A['pic']))} au {e(dl(A['creux']))}"
+                  + (f", rattrapée en {A['rattrape']} jours." if A["rattrape"] is not None else ", pas encore rattrapée.") + "</li>"
+                  f"<li>Une baisse de plus de 10 % en moins d'un mois est arrivée <b>{round(A['chute10'] * 100)} fois sur 100</b> (en partant d'un jour pris au hasard).</li>"
+                  + (f"<li>Il a fini en hausse <b>{round(A['mois_hausse'] * A['nb_mois'])} mois sur {A['nb_mois']}</b>.</li>" if A["mois_hausse"] is not None else "")
+                  + "</ul><p class='muted' style='font-size:14px'>Chiffres calculés sur les cours réels depuis le "
+                  f"{e(dl(A['debut']))}. Le passé ne garantit rien. <a href='../analyse-approfondie.html?t={__import__('urllib.parse', fromlist=['x']).quote(tk)}'>Analyse complète (3 000 simulations, titres proches…)</a></p></div>")
+        faq.insert(1, (f"Jusqu'où peut aller l'action {nom} dans un mois ?",
+                       f"D'après ses deux ans de cours, la fourchette probable à un mois va de {px(A['bas'], dev)} à {px(A['haut'], dev)} "
+                       f"(8 fois sur 10 en principe ; sur son passé, la méthode a vu juste {round((A['reussite'] or 0) * 100)} fois sur 100). "
+                       f"Sa pire chute sur la période a été de {round(A['pire'] * 100)} %. Ce n'est pas une promesse ni un conseil."))
+    faq_html = bloc_a + compare + "<h2>Questions fréquentes</h2>" + "".join(f"<h3>{e(q)}</h3><p>{e(re.sub(r'<[^>]+>', '', a))}</p>" for q, a in faq)
     voisins_html = ("<h2>Autres actions du même pays</h2><ul class='liste'>"
                     + "".join(f"<li><a href='{seo.slug(v['ticker'])}.html'>{e(v['nom'])}</a></li>" for v in voisins) + "</ul>") if voisins else ""
     corps = (f"<p class='muted'><a href='../toutes-les-actions.html'>Toutes les actions</a> · {e(pays_fr)}</p>"
@@ -350,7 +424,7 @@ def _page_fr(seo, base, t, csp, voisins, date, rangs=(None, None, 0)):
     chemin = f"titres/{seo.slug(tk)}.html"
     t2 = dict(t, marche="etendu")
     return chemin, seo._page(base, titre, desc, chemin, corps, jsonld, csp,
-                             alternates={"fr": chemin, "en": f"en/stocks/{seo.slug(tk)}.html", "x-default": chemin},
+                             alternates={"fr": chemin, "x-default": chemin},
                              mots=seo.mots_titre(t2))
 
 
@@ -398,9 +472,12 @@ def _page_en(seo, anglais, base, t, csp, voisins):
             f"trend {tend}, usual move ±{round(mvt * 100)}% a month.")
     titre = next((x for x in (f"{nom} ({sym}) stock: price and analysis | {seo.NOM}", f"{nom} ({sym}) stock: price and analysis",
                               f"{nom} ({sym}) stock price", f"{nom} stock price") if len(x) <= 62), f"{nom[:50]} stock price")
-    return chemin, anglais._page(base, titre, desc, chemin, corps, csp,
-                                 {"fr": f"titres/{seo.slug(tk)}.html", "en": chemin, "x-default": f"titres/{seo.slug(tk)}.html"},
-                                 mots=seo.mots_titre(dict(t, marche="etendu"), "en"))
+    page = anglais._page(base, titre, desc, chemin, corps, csp, None, mots=seo.mots_titre(dict(t, marche="etendu"), "en"))
+    # version 113 : ~2 000 fiches simples en anglais = 73 % des impressions Google mais 2 clics en 12 jours (positions 40 à 70) :
+    # du contenu fabriqué en masse aux yeux de la mise à jour de novembre 2026, qui a fait chuter tout le site. Elles restent
+    # en ligne pour les visiteurs, mais ne sont plus proposées à Google (comme les autres langues depuis la version 97).
+    page = re.sub(r'<meta name="robots" content="[^"]*">', '<meta name="robots" content="noindex, follow">', page, 1)
+    return chemin, page
 
 
 def generer(seo, anglais, base, dossier, csp, date) -> list:
@@ -432,7 +509,6 @@ def generer(seo, anglais, base, dossier, csp, date) -> list:
             chemin, page = _page_en(seo, anglais, base, t, csp, voisins)
             with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
                 f.write(page)
-            urls.append((chemin, "daily", "0.4"))
         except Exception as ex:
             print(f"Fiche simple {tk} non générée : {ex}")
     # Index : toutes les actions, par pays
@@ -459,7 +535,7 @@ def generer(seo, anglais, base, dossier, csp, date) -> list:
         f.write(anglais._page(base, f"All stocks: prices and analysis | {seo.NOM}",
                               f"{len(E)} of the best-known stocks worldwide: price, chart, trend and volatility, updated daily.",
                               "en/all-stocks.html", corps_en, csp, alt))
-    urls += [("toutes-les-actions.html", "daily", "0.7"), ("en/all-stocks.html", "daily", "0.5")]
+    urls += [("toutes-les-actions.html", "daily", "0.7")]
     # Version 112 : les cours compacts de chaque fiche simple, pour l'analyse approfondie (chargés seulement à la demande)
     os.makedirs(os.path.join(dossier, "donnees-e"), exist_ok=True)
     for t in E.values():
