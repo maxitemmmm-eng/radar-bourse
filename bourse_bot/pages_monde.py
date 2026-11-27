@@ -116,7 +116,22 @@ def _carte_titre(t, titre=None, texte=""):
             f"<div><b>{seo._pct(perf.get('1 mois'))}</b><span>sur 1 mois</span></div>"
             f"<div><b>{'±' + str(round(mv * 100)) + ' %' if isinstance(mv, (int, float)) else '–'}</b><span>agitation prévue</span></div></div>"
             f"<p style='font-size:14.5px'>{_analyse(t)}</p>"
-            f"<p style='margin-bottom:0'><a href='titres/{s}.html'>Analyse complète et graphique →</a></p></article>")
+            f"<p style='margin-bottom:0;display:flex;gap:8px;flex-wrap:wrap;align-items:center'><a class='btn' style='font-size:14px;padding:7px 12px' "
+            f"href='analyse-approfondie.html?t={__import__('urllib.parse', fromlist=['x']).quote(t['ticker'])}'>🔬 Réanalyser</a>"
+            f"<a href='titres/{s}.html'>Fiche et graphique complet</a></p></article>")
+
+
+def cartes_cryptos(payload, n=10):
+    """Version 114 : les 10 grandes cryptos en cartes (mini-graphique 6 mois, avis, agitation, bouton Réanalyser)."""
+    from . import config
+    par_tk = {t["ticker"]: t for t in payload.get("titres", [])}
+    ordre = ["BTC-USD", "ETH-USD", "XRP-USD", "BNB-USD", "SOL-USD", "DOGE-USD", "TRX-USD", "ADA-USD", "LINK-USD", "AVAX-USD",
+             "XLM-USD", "SUI20947-USD", "BCH-USD", "HBAR-USD", "LTC-USD"]
+    tks = [tk for tk in ordre if tk in par_tk][:n]
+    if not tks:
+        return ""
+    return (CSS + "<h2>Les 10 grandes cryptos en graphiques</h2><div class='pm-grille'>"
+            + "".join(_carte_titre(par_tk[tk], config.CRYPTOS.get(tk)) for tk in tks) + "</div>")
 
 
 def _actions(payload):
@@ -206,7 +221,10 @@ def _page_bourses(base, payload, csp):
              "<a href='krach-boursier.html'>le radar du risque de krach</a></p>")
     page = seo._page(base, f"Les 10 grandes Bourses du monde : tendance et avis de l'IA | {NOM}",
                      "New York, Nasdaq, Shanghai, Tokyo, Inde, Hong Kong, Paris, Londres, Toronto, Francfort : la tendance, l'agitation prévue et "
-                     "l'avis de l'IA pour chaque grande Bourse, chaque heure.", chemin, corps, csp=csp)
+                     "l'avis de l'IA pour chaque grande Bourse, chaque heure.", chemin, corps, csp=csp,
+                     mots="grandes bourses du monde, bourses mondiales, plus grandes places boursières, bourse de New York, Nasdaq, bourse de Shanghai, "
+                          "bourse de Tokyo, Nikkei, bourse indienne, Hong Kong Hang Seng, CAC 40, bourse de Londres, FTSE, bourse de Toronto, DAX, "
+                          "bourse Taïwan, bourse Corée, prévision bourses mondiales, tendance marchés mondiaux, avis IA indices boursiers")
     return chemin, page
 
 

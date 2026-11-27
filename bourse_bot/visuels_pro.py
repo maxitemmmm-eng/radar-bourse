@@ -273,7 +273,7 @@ JS = r"""
   const pc = (v, d = 1) => v == null ? "–" : (v >= 0 ? "+" : "−") + Math.abs(v * 100).toFixed(d).replace(".", ",") + " %";
   const rgba = (c, a, def) => { const m = /^#([0-9a-f]{6})$/i.exec(c || ""); const h = m ? m[1] : def;
     return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${a})`; };
-  const court = tk => tk.endsWith("-USD") ? tk.replace(/\d*-USD$/, "") : (window.affTk ? affTk(tk) : tk);
+  const court = tk => tk.endsWith("-USD") ? tk.replace(/(\d{4,})?-USD$/, "") : (window.affTk ? affTk(tk) : tk);
   /* ===== Bulles ===== */
   const zone = document.getElementById("vp-zone"), cv = document.getElementById("vp-canvas");
   if(zone && cv){

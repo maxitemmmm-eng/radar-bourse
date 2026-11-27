@@ -4023,7 +4023,7 @@ setInterval(appliquer, 1000);
 
 function demarrerBinance(){
   const parSymbole = {};
-  for(const tk of Object.keys(OBJETS)) if(tk.endsWith("-USD")) (parSymbole[tk.replace(/\d*-USD$/,"USDT")] ||= []).push(tk);
+  for(const tk of Object.keys(OBJETS)) if(tk.endsWith("-USD")) (parSymbole[tk.replace(/(\d{4,})?-USD$/,"USDT")] ||= []).push(tk);
   const syms = Object.keys(parSymbole);
   if(!syms.length) return;
   let essais = 0, secoursLance = false;
@@ -4048,7 +4048,7 @@ function demarrerBinance(){
   // version 47 : les cryptos absentes de Binance (Monero, Kaspa…) passent par CryptoCompare, toutes les 30 s
   setTimeout(() => {
     const manquants = {};
-    for(const tk of Object.keys(OBJETS)) if(tk.endsWith("-USD") && !RECUS.has(tk)) (manquants[tk.replace(/\d*-USD$/,"")] ||= []).push(tk);
+    for(const tk of Object.keys(OBJETS)) if(tk.endsWith("-USD") && !RECUS.has(tk)) (manquants[tk.replace(/(\d{4,})?-USD$/,"")] ||= []).push(tk);
     const noms = Object.keys(manquants);
     if(!noms.length) return;
     const tour = () => { if(document.hidden) return setTimeout(tour, 30000);

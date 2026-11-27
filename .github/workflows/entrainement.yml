@@ -21,7 +21,9 @@ permissions: {}
 
 # même file d'attente que la mise à jour du site : jamais deux calculs en même temps
 concurrency:
-  group: radar
+  # version 114 : file d'attente à part. Avant, l'entraînement (jusqu'à 2 h 30) bloquait les mises à jour horaires du site
+  # (« les prévisions datent de 7 heures »). Les deux enregistrent leurs fichiers avec « git pull --rebase » : pas de conflit.
+  group: entrainement
   cancel-in-progress: false
 
 jobs:

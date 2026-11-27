@@ -19,23 +19,34 @@ _I = {
     "simulation": "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M4 20V10M10 20V4M16 20v-7M22 20H2'/></svg>",
     "resultats": "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M9 12l2 2 4-4'/><path d='M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z'/></svg>",
     "journal": "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z'/><path d='M9 9h6M9 13h6'/></svg>",
+    "analyse": "<svg viewBox='0 0 24 24' aria-hidden='true'><circle cx='10.5' cy='10.5' r='6.5'/><path d='M15.5 15.5 21 21M7.5 12l2-2.5 2 1.5 2-3'/></svg>",
+    "bourses": "<svg viewBox='0 0 24 24' aria-hidden='true'><circle cx='12' cy='12' r='9'/><path d='M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z'/></svg>",
+    "soutien": "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z'/><path d='M17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 3v3M12 3v3'/></svg>",
     "questions": "<svg viewBox='0 0 24 24' aria-hidden='true'><circle cx='12' cy='12' r='9'/><path d='M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17h.01'/></svg>",
 }
 
 MENU = [
-    ("Prédictions de l'IA", [("accueil", "#contenu", "Accueil des pronos"), ("crypto", "prediction-crypto.html", "Prédiction crypto"),
-                             ("bourse", "prediction-bourse.html", "Prédiction bourse"), ("liste", "toutes-les-actions.html", "Toutes les actions"),
-                             ("themes", "themes.html", "Actions par thème")]),
+    ("Prédictions de l'IA", [("accueil", "#contenu", "Accueil des pronos"), ("analyse", "analyse-approfondie.html", "Réanalyser un titre"),
+                             ("crypto", "prediction-crypto.html", "Prédiction crypto"),
+                             ("bourse", "prediction-bourse.html", "Prédiction bourse"), ("bourses", "grandes-bourses.html", "Les grandes Bourses"),
+                             ("liste", "toutes-les-actions.html", "Toutes les actions"), ("themes", "themes.html", "Actions par thème")]),
     ("Jouer et s'entraîner", [("defi", "#defi", "Défi du jour"), ("prono", "#prono", "Pronostic du jour"), ("arene", "#remonte", "L'Arène contre l'IA"),
                               ("portefeuille", "#portefeuille", "Portefeuille virtuel"), ("simulation", "#simulation", "Simulation")]),
     ("L'IA est-elle fiable ?", [("resultats", "avis-surs-verifies.html", "Résultats vérifiés"), ("journal", "journal-ia.html", "Journal de l'IA"),
                                 ("questions", "questions-bourse.html", "Vos questions")]),
+    ("Le projet", [("soutien", "__SOUTIEN__", "Soutenir le projet ☕")]),   # version 114 : les dons, discrets mais toujours là
 ]
+
+
+def _soutien():
+    from . import config
+    return config.SOUTIEN
 
 
 def html(logo_svg: str) -> str:
     nav = "".join(f"<p class='p-groupe'>{g}</p><nav class='p-nav' aria-label=\"{g}\">"
-                  + "".join(f"<a href='{h}'{' aria-current=\"page\"' if k == 'accueil' else ''} data-pk='{k}'>{_I[k]}<span>{t}</span></a>" for k, h, t in items)
+                  + "".join(f"<a href='{_soutien() if h == '__SOUTIEN__' else h}'{' aria-current=\"page\"' if k == 'accueil' else ''}"
+                            f"{' target=\"_blank\" rel=\"noopener\" data-goatcounter-click=\"soutien/clic\"' if h == '__SOUTIEN__' else ''} data-pk='{k}'>{_I[k]}<span>{t}</span></a>" for k, h, t in items)
                   + "</nav>" for g, items in MENU)
     parties = ("<nav class='trois p-parties' aria-label='Les trois parties du site'>"
                f"<a href='#menu' data-partie='menu'>{SVG['menu']}<span>Menu</span></a>"

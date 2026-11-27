@@ -23,7 +23,9 @@ def _ligne(seo, t, prefixe=""):
     fl = "↑ hausse" if sens > 0 else "↓ baisse"
     rp = t.get("risque_prevu") or {}
     return (f"<tr><td><a href='{prefixe}titres/{slug(t['ticker'])}.html'>{e(t['nom'])}</a> "
-            f"<span class='muted'>{e(aff(t['ticker']))}</span></td>"
+            f"<span class='muted'>{e(aff(t['ticker']))}</span> "
+            f"<a href='{prefixe}analyse-approfondie.html?t={__import__('urllib.parse', fromlist=['x']).quote(t['ticker'])}' title='Réanalyser {e(t['nom'])}' "
+            f"aria-label='Réanalyser {e(t['nom'])}' style='text-decoration:none'>🔬</a></td>"
             f"<td class='m'>{seo._px(t['prix'], t['devise'])}</td>"
             f"<td class='m {'up' if sens > 0 else 'down'}'><b>{fl}</b></td>"
             f"<td class='m'>{ch}/100</td><td>{e(conf)}</td>"
@@ -114,6 +116,8 @@ def generer(seo, base, payload, dossier, csp, date) -> list:
                  f"<p class='muted'>Avis de l'IA mis à jour automatiquement · cours au {e(date)}</p>{intro}"
                  + _graph(seo, vedettes or cryptos[:8], "Les grandes cryptos : chances selon l'IA",
                           "Vert : l'IA penche pour la hausse. Rouge : pour la baisse. Plus la barre est longue, plus l'avis est marqué.")
+                 + __import__("bourse_bot.pages_monde", fromlist=["x"]).cartes_cryptos(payload)
+                 + "<p><a class='btn' href='analyse-approfondie.html'>🔬 Réanalyser n'importe quelle crypto</a></p>"
                  + "<h2>Les grandes cryptos</h2>" + _tableau(seo, vedettes, "Prédiction des grandes cryptos")
                  + ("<h2>Toutes les autres cryptos suivies</h2>" + _tableau(seo, autres, "Prédiction des autres cryptos") if autres else "")
                  + _faq_html(faq) + AVERTISSEMENT.format(p="")
@@ -131,7 +135,9 @@ def generer(seo, base, payload, dossier, csp, date) -> list:
                               alternates={"fr": chemin, "en": "en/crypto-prediction.html", "x-default": chemin},
                               mots=f"prédiction crypto, prédiction bitcoin, prévision bitcoin, bitcoin va-t-il monter, prédiction ethereum, "
                                    f"crypto qui va monter, prédiction crypto {m.year}, prévision crypto {mois_an}, prédiction bitcoin IA, crypto qui va exploser avis honnête, "
-                                   f"faut-il acheter du bitcoin maintenant, volatilité crypto prévision, site prédiction crypto sans inscription"))
+                                   f"faut-il acheter du bitcoin maintenant, volatilité crypto prévision, site prédiction crypto sans inscription, "
+                                   f"graphique crypto, cours crypto en direct, top 10 crypto, meilleures cryptos {m.year}, analyse crypto gratuite, "
+                                   f"liste des cryptomonnaies, {len(cryptos)} cryptos, altcoin prévision, fan token prévision"))
         faits.append(chemin)
 
     # 2. Prédiction bourse (actions)

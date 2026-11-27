@@ -309,7 +309,17 @@ def page(base, payload, csp):
              + NAV.replace("__LISTE__", json.dumps(_liste_nav(payload), ensure_ascii=False).replace("</", "<\\/"))
                   .replace("__MODELE__", json.dumps(_modele(payload)))
              + JS)
+    jl = {"@context": "https://schema.org", "@type": "WebApplication", "name": "Analyse approfondie Radar Bourse",
+          "applicationCategory": "FinanceApplication", "operatingSystem": "Web", "inLanguage": "fr-FR",
+          "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
+          "description": "Analyse statistique gratuite d'une action, d'un ETF, d'une crypto ou de l'or : 3 ans de cours, fourchettes testées, "
+                         "3 000 simulations, pires chutes, comparaison avec des titres proches.",
+          "url": (base + chemin) if base else None}
     return chemin, seo._page(base, f"Analyse approfondie d'une action par l'IA, à la demande | {NOM}",
                              "Choisis une action, une crypto ou l'or : l'IA analyse 3 ans de cours (fourchettes testées, 3 000 simulations, "
                              "risques, titres proches). Plus de 2 000 titres, gratuit, sans compte.",
-                             chemin, corps, csp=abonnement._csp(csp))
+                             chemin, corps, jsonld=jl, csp=abonnement._csp(csp),
+                             mots="analyse action gratuite, analyse approfondie action, analyser une action, analyse crypto gratuite, analyse bitcoin, "
+                                  "réanalyse action IA, analyse technique gratuite, fourchette de prix action, simulation Monte-Carlo action, "
+                                  "pire chute action, volatilité action, comparer actions même secteur, date de résultats action, analyse bourse IA, "
+                                  "analyse action en ligne sans inscription, prévision cours action un mois, analyse or, analyse ETF")

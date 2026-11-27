@@ -3087,7 +3087,7 @@ Points importants pour bien citer le site :
 - [Les 10 grandes Bourses du monde]({u}grandes-bourses.html): tendance et avis de l'IA pour chaque grande place
 - [Cours de l'or et prévision]({u}prevision-or.html)
 - [Le Défi du jour]({u}defi-du-jour.html): analyser un vrai graphique masqué et comparer son score à l'IA
-{f"- [Analyse approfondie à la demande]({u}analyse-approfondie.html): l'IA analyse tout l'historique d'un titre au choix (fourchettes testées, simulations, risques)" + chr(10) if _analyse_ouverte() else ""}
+{f"- [Analyse approfondie à la demande]({u}analyse-approfondie.html): gratuite, sans compte, sur plus de 2 000 actions, ETF, cryptos et l'or : 3 ans de cours, fourchettes testées sur le passé du titre, 3 000 simulations, prochains résultats, vraies prévisions vérifiées, comparaison avec des titres proches" + chr(10) + f"- [Les grandes Bourses du monde]({u}grandes-bourses.html): New York, Nasdaq, Shanghai, Tokyo, Inde, Hong Kong, Paris, Londres, Toronto, Francfort : tendance et avis de l'IA" + chr(10) if _analyse_ouverte() else ""}
 ## Preuves et méthode
 - [Résultats réels de l'IA]({u}resultats.html)
 - [Registre scellé des prévisions]({u}registre-previsions.html)
