@@ -375,7 +375,7 @@ def liens_fr() -> list:
             *([("Discussions", "discussions.html")] if giscus_actif() else []),
             *([("Radar Bourse+", "radar-bourse-plus.html"), ("Conditions de vente", "cgv.html")] if _vente() else []),
             ("Parcours Analyste (cours avancés)", "academie-plus.html"),
-            ("Fonctionnalités", "fonctionnalites.html"), ("À propos", "a-propos.html"), ("Contact", "contact.html"),
+            ("Fonctionnalités", "fonctionnalites.html"), ("Mettre l'avis de l'IA sur ton site", "integrer.html"), ("À propos", "a-propos.html"), ("Contact", "contact.html"),
             ("English", "en/index.html", 'hreflang="en" lang="en"')]
 
 
@@ -964,14 +964,31 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
     tkc = re.sub(r"-USD$|\.[A-Z]{1,3}$|^\^", "", aff_tk(tk))
     nom_c = re.sub(r"\s*\((?:ETF|indice)[^)]*\)", "", nom).strip() or nom
     base_t = nom_c if tkc.lower() == nom_c.lower().replace(" ", "") else f"{nom_c} ({tkc})"
+    # version 118 : après le 20, la prévision porte surtout sur le mois suivant (« prévision décembre » cherché fin novembre) ;
+    # et le titre donne le chiffre de l'IA (unique à chaque fiche, il donne une raison de cliquer). Moins de 62 caractères.
+    if maintenant.day >= 20:
+        _m = maintenant.month % 12
+        mois_an = f"{MOIS[_m]} {maintenant.year + (1 if maintenant.month == 12 else 0)}"
+    try:
+        from .hebdo import avis_ia as _av
+        _p, _s, _c = _av(t)
+        avis_t = f"IA {'↑' if _s > 0 else '↓'} {round((_p if _s > 0 else 1 - _p) * 100)} %" if _p is not None else ""
+    except Exception:
+        avis_t = ""
     if est_crypto:   # version 68 : « prédiction bitcoin », « bitcoin va-t-il monter » : les mots tapés pour les cryptos
-        titre = f"Prédiction {base_t} {mois_an} : hausse ou baisse ?"
-        titre = titre + f" | {NOM}" if len(titre) <= 58 else titre
+        choix = ([f"Prédiction {base_t} {mois_an} : {avis_t}"] if avis_t else []) + [f"Prédiction {base_t} {mois_an} : hausse ou baisse ?",
+                                                                                      f"Prédiction {base_t} {mois_an}"]
+        titre = next((x for x in choix if len(x) <= 62), choix[-1])
+        titre = titre + f" | {NOM}" if len(titre) <= 46 else titre
     elif t.get("marche") in ("fr", "eu", "us", "monde") or (t.get("fondamentaux") or {}).get("valeurs"):
-        titre = f"Action {base_t} : cours et prévision {mois_an}"
-        titre = (titre if len(titre) <= 62 else f"{base_t} : cours et prévision {mois_an}") + f" | {NOM}"
+        choix = ([f"Action {base_t} : prévision {mois_an} ({avis_t})", f"{base_t} : prévision {mois_an} ({avis_t})"] if avis_t else []) + \
+                [f"Action {base_t} : cours et prévision {mois_an}", f"{base_t} : cours et prévision {mois_an}"]
+        titre = next((x for x in choix if len(x) <= 62), choix[-1])
+        titre = titre + f" | {NOM}" if len(titre) <= 46 else titre
     else:
-        titre = f"{base_t} : cours et prévision {mois_an} | {NOM}"
+        titre = (f"{base_t} : prévision {mois_an} ({avis_t})" if avis_t and len(f"{base_t} : prévision {mois_an} ({avis_t})") <= 62
+                 else f"{base_t} : cours et prévision {mois_an}")
+        titre = titre + f" | {NOM}" if len(titre) <= 46 else titre
     faq = _faq_titre(t, nom, date, verdict)
     # version 52 : « si j'avais investi 100 il y a un an » (vrais cours) + lien vers le simulateur
     investi_html = ""
@@ -1809,6 +1826,50 @@ a{{color:inherit;text-decoration:none}} .w{{display:block;border:1px solid var(-
 """
         with open(os.path.join(dossier, "widget", f"{slug(t['ticker'])}.html"), "w", encoding="utf-8") as f:
             f.write(page)
+
+
+def _page_integrer(base, payload, dossier, csp):
+    """Version 118 : « Mettre l'avis de l'IA sur ton site » : les encadrés à intégrer, présentés en un seul endroit, avec aperçu
+    et code à copier. Chaque blog ou site qui en intègre un fait un lien vers Radar Bourse (ce qui aide Google)."""
+    par = {t["ticker"]: t for t in payload.get("titres", []) if t.get("prix")}
+    vedettes = [tk for tk in ("BTC-USD", "ETH-USD", "^FCHI", "SPY", "GC=F", "MC.PA", "AAPL", "NVDA", "TTE.PA", "AIR.PA", "SOL-USD", "TSLA") if tk in par][:9]
+    if not vedettes:
+        return []
+    u = base or "https://radarbourse.fr/"
+    code = lambda tk: f'<iframe src="{u}widget/{slug(tk)}.html" width="320" height="150" style="border:0" title="{par[tk]["nom"]} · {NOM}" loading="lazy"></iframe>'
+    cartes = "".join(
+        f"<div class='carte' style='padding:12px'><iframe src='widget/{slug(tk)}.html' width='100%' height='150' style='border:0;max-width:320px' "
+        f"title='Aperçu : {_e(par[tk]['nom'])}' loading='lazy'></iframe>"
+        f"<pre class='code' style='white-space:pre-wrap;word-break:break-all;font-size:12px;margin:8px 0'>{_e(code(tk))}</pre>"
+        f"<button type='button' class='btn ghost' data-copie='{_e(code(tk))}'>Copier le code</button></div>" for tk in vedettes)
+    options = "".join(f"<option value='{_e(slug(tk))}'>{_e(t['nom'])}</option>" for tk, t in sorted(par.items(), key=lambda x: x[1]["nom"].lower()))
+    corps = (f"<h1>Mettre l'avis de l'IA sur ton site ou ton blog</h1>"
+             "<p>Tu as un blog, un site, un forum ou un Notion public sur la Bourse ou la crypto ? Tu peux y afficher gratuitement un petit "
+             "encadré Radar Bourse : le cours, l'agitation prévue et l'avis de l'IA, mis à jour automatiquement chaque heure. Copie le code "
+             "et colle-le dans ta page (bloc HTML). Aucun compte, aucun cookie, aucune pub.</p>"
+             "<div class='carte'><label for='w-choix'><b>Choisis n'importe quel titre suivi</b></label><br>"
+             f"<select id='w-choix' style='margin:8px 0;padding:9px;border-radius:9px;max-width:100%'>{options}</select>"
+             "<div id='w-apercu'></div><pre class='code' id='w-code' style='white-space:pre-wrap;word-break:break-all;font-size:12px'></pre>"
+             "<button type='button' class='btn' id='w-copier'>Copier le code</button></div>"
+             f"<h2>Les plus demandés</h2><div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px'>{cartes}</div>"
+             "<p class='muted'>L'encadré renvoie vers la fiche complète du titre. Il ne donne pas de conseil d'investissement : c'est une "
+             "information statistique, comme sur le site. Une question ? <a href='contact.html'>Contact</a>.</p>"
+             "<script>(function(){const U=" + json.dumps(u) + ",N=" + json.dumps(NOM) + ";const s=document.getElementById('w-choix'),c=document.getElementById('w-code'),a=document.getElementById('w-apercu');"
+             "const maj=()=>{const o=s.options[s.selectedIndex];const code='<iframe src=\"'+U+'widget/'+s.value+'.html\" width=\"320\" height=\"150\" style=\"border:0\" title=\"'+o.text+' · '+N+'\" loading=\"lazy\"></iframe>';"
+             "c.textContent=code;a.innerHTML='<iframe src=\"widget/'+s.value+'.html\" width=\"100%\" height=\"150\" style=\"border:0;max-width:320px\" title=\"Aperçu\"></iframe>'};"
+             "s.addEventListener('change',maj);const b=[...s.options].findIndex(o=>o.value==='btc-usd');if(b>=0)s.selectedIndex=b;maj();"
+             "const copier=async(t,bt)=>{try{await navigator.clipboard.writeText(t);bt.textContent='Code copié ✓'}catch(e){bt.textContent='Sélectionne le code et copie-le'}"
+             "try{goatcounter.count({path:'widget/copie',event:true})}catch(e){}};"
+             "document.getElementById('w-copier').onclick=e=>copier(c.textContent,e.target);"
+             "document.querySelectorAll('[data-copie]').forEach(b=>b.onclick=()=>copier(b.dataset.copie,b))})();</script>")
+    chemin = "integrer.html"
+    with open(os.path.join(dossier, chemin), "w", encoding="utf-8") as f:
+        f.write(_page(base, f"Widget bourse et crypto gratuit pour ton site : l'avis de l'IA | {NOM}",
+                      "Ajoute gratuitement sur ton blog ou ton site un encadré avec le cours, l'agitation prévue et l'avis de l'IA "
+                      "(Bitcoin, CAC 40, LVMH, Apple…), mis à jour chaque heure. Sans compte ni cookie.", chemin, corps, csp=csp,
+                      mots="widget bourse gratuit, widget crypto gratuit, widget bitcoin site, intégrer cours bourse site, widget cours action, "
+                           "encadré bourse blog, iframe cours bitcoin, widget prévision bourse"))
+    return [(chemin, "weekly", "0.5")]
 
 
 def _page_previsions(base, payload, dossier, csp, date):
@@ -2747,6 +2808,7 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     # Encadrés à intégrer sur d'autres sites (chaque intégration = un lien vers le site)
     try:
         _widgets(base, payload, dossier, date)
+        urls += _page_integrer(base, payload, dossier, csp)
     except Exception as e:
         print(f"Encadrés non générés : {e}")
 
