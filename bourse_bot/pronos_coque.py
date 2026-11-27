@@ -27,7 +27,7 @@ _I = {
 
 MENU = [
     ("Prédictions de l'IA", [("accueil", "#contenu", "Accueil des pronos"), ("analyse", "analyse-approfondie.html", "Réanalyser un titre"),
-                             ("crypto", "prediction-crypto.html", "Prédiction crypto"),
+                             ("crypto", "prediction-crypto.html", "Prédiction crypto"), ("crypto", "analyser-une-crypto.html", "Analyser une crypto (10 000+)"),
                              ("bourse", "prediction-bourse.html", "Prédiction bourse"), ("bourses", "grandes-bourses.html", "Les grandes Bourses"),
                              ("liste", "toutes-les-actions.html", "Toutes les actions"), ("themes", "themes.html", "Actions par thème")]),
     ("Jouer et s'entraîner", [("defi", "#defi", "Défi du jour"), ("prono", "#prono", "Pronostic du jour"), ("arene", "#remonte", "L'Arène contre l'IA"),

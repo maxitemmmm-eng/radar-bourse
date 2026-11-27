@@ -117,7 +117,8 @@ def generer(seo, base, payload, dossier, csp, date) -> list:
                  + _graph(seo, vedettes or cryptos[:8], "Les grandes cryptos : chances selon l'IA",
                           "Vert : l'IA penche pour la hausse. Rouge : pour la baisse. Plus la barre est longue, plus l'avis est marqué.")
                  + __import__("bourse_bot.pages_monde", fromlist=["x"]).cartes_cryptos(payload)
-                 + "<p><a class='btn' href='analyse-approfondie.html'>🔬 Réanalyser n'importe quelle crypto</a></p>"
+                 + "<p><a class='btn' href='analyse-approfondie.html'>🔬 Réanalyser n'importe quelle crypto</a> "
+                   "<a class='btn ghost' href='analyser-une-crypto.html'>Les 1 000 plus grandes cryptos</a></p>"
                  + "<h2>Les grandes cryptos</h2>" + _tableau(seo, vedettes, "Prédiction des grandes cryptos")
                  + ("<h2>Toutes les autres cryptos suivies</h2>" + _tableau(seo, autres, "Prédiction des autres cryptos") if autres else "")
                  + _faq_html(faq) + AVERTISSEMENT.format(p="")

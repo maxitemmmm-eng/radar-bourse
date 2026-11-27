@@ -58,7 +58,17 @@ function longue(d,crypto){const S=d.serie||{};const t=[],c=[];(S.c||[]).forEach(
   const tp=new Array(pre);let dt=new Date(t[0]+'T12:00:00Z');for(let k=pre-1;k>=0;k--){do{dt=new Date(dt.getTime()-864e5)}while(!crypto&&(dt.getUTCDay()===0||dt.getUTCDay()===6));tp[k]=iso(dt)}
   if(!cp.every(x=>x>0&&isFinite(x)))return {t,c,approx:0};
   return {t:tp.concat(t),c:cp.concat(c),approx:pre}}
-async function charger(tk){const it=L.find(x=>x[0]===tk);
+// version 116 : n'importe quelle crypto CoinGecko (plus de 10 000), un an de cours quotidiens, demandés par le navigateur du visiteur
+const CG='https://api.coingecko.com/api/v3/';
+async function cgJson(u){const k='cg:'+u;try{const v=JSON.parse(sessionStorage.getItem(k)||'null');if(v&&Date.now()-v.t<36e5)return v.d}catch(e){}
+  const r=await fetch(CG+u);if(r.status===429)throw new Error('quota');if(!r.ok)throw new Error('cours');const d=await r.json();try{sessionStorage.setItem(k,JSON.stringify({t:Date.now(),d}))}catch(e){}return d}
+async function chercherCG(q){try{const s=await cgJson('search?query='+encodeURIComponent(q));return (s.coins||[]).slice(0,8)}catch(e){return []}}
+window.APChercherCG=chercherCG;
+async function chargerCG(id){const [info,mc]=await Promise.all([cgJson('coins/'+encodeURIComponent(id)+'?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false').catch(()=>null),cgJson('coins/'+encodeURIComponent(id)+'/market_chart?vs_currency=usd&days=365')]);
+  const parJour={};(mc.prices||[]).forEach(([ms,v])=>{if(v>0)parJour[iso(new Date(ms))]=v});const t=Object.keys(parJour).sort(),c=t.map(d=>parJour[d]);
+  const vol=(mc.total_volumes||[]).at(-1)?.[1],cap=(mc.market_caps||[]).at(-1)?.[1];const nom=(info&&info.name)||id,sym=String((info&&info.symbol)||id).toUpperCase();
+  return {it:['cg:'+id,nom,'','btc-usd',0,null,'faible','Bitcoin','$','crypto',[0,0,0,0]],d:{fondamentaux:null},t,c,approx:0,simple:true,coingecko:{id,sym,vol,cap,rang:info&&info.market_cap_rank}}}
+async function charger(tk){if(tk.startsWith('cg:'))return chargerCG(tk.slice(3));const it=L.find(x=>x[0]===tk);
   if(it){const r=await fetch('donnees/'+it[2]+'.json');if(!r.ok)throw new Error('cours');const d=await r.json();const s=longue(d,/-USD$/.test(tk));return {it,d,...s,simple:false}}
   const E=await etendu();const e=E.find(x=>x[1]===tk);if(!e)return null;
   const r=await fetch('donnees-e/'+e[2]+'.json');if(!r.ok)throw new Error('cours');const d=await r.json();
@@ -81,7 +91,8 @@ function resume(c){const n=c.length,lr=c.slice(1).map((v,i)=>Math.log(v/c[i])),a
 async function etape(n){if(window.APEtape)window.APEtape(n);await new Promise(r=>setTimeout(r,200))}
 window.analyserNav=async function(tk){
   await etape(1);const X=await charger(tk);if(!X)return {ok:false,erreur:"Ce titre n'est pas encore disponible : choisis-le dans la liste."};
-  const {it,d,t,c,approx,simple}=X;const n=c.length;if(n<150)return {ok:false,erreur:"Historique trop court pour une analyse sérieuse."};
+  const {it,d,t,c,approx,simple}=X;const n=c.length;if(n<150)return {ok:false,erreur:"Historique trop court pour une analyse sérieuse (moins de 150 jours de cours)."};
+  const CGI=X.coingecko||null;
   await etape(2);
   const lr=c.slice(1).map((v,i)=>Math.log(v/c[i]));const sig=ewma(lr);
   // 1. situation
@@ -114,7 +125,7 @@ window.analyserNav=async function(tk){
     for(let i=0;i<n;i++){if(pris.has(i)){hm=0;ihm=-1;continue}if(c[i]>hm){hm=c[i];ihm=i}const dd=c[i]/hm-1;if(dd<best){best=dd;ib=i;ih=ihm}}
     if(best>-.05)break;let fin=null;for(let i=ib;i<n;i++)if(c[i]>=c[ih]){fin=i;break}
     const dte=i=>(i<approx?'≈ ':'')+t[i];
-    pires.push({debut:dte(ih),creux:dte(ib),chute:best,recupere:fin!=null?t[fin]:null,jours_recuperation:fin!=null?Math.round((fin-ib)*(/-USD$/.test(tk)?1:365/252)):null});
+    pires.push({debut:dte(ih),creux:dte(ib),chute:best,recupere:fin!=null?t[fin]:null,jours_recuperation:fin!=null?Math.round((fin-ib)*(/-USD$/.test(tk)||tk.startsWith('cg:')?1:365/252)):null});
     for(let i=ih;i<=(fin??n-1);i++)pris.add(i)}
   let c10=0,n10=0;for(let i=0;i+20<n;i++){n10++;let mn=Infinity;for(let k=i+1;k<=i+20;k++)if(c[k]<mn)mn=c[k];if(mn/c[i]-1<-.10)c10++}
   const RI={pires_chutes:pires,chute10_mois_historique:n10?c10/n10:null};
@@ -147,10 +158,12 @@ window.analyserNav=async function(tk){
   if(EV)syn.push(`Publication des résultats le ${EV.resultats_le.split('-').reverse().join('/')} : ce jour-là, le cours peut sauter plus loin que la fourchette.`);
   const top=sc[21].reduce((a,b)=>b.proba>a.proba?b:a);syn.push(`Scénario le plus fréquent dans les simulations à un mois : « ${top.nom} » (${Math.round(top.proba*100)} %).`);
   if(D.ia_radar)syn.push(`L'IA du radar le voit ${D.sens>0?'plutôt à la hausse':'plutôt à la baisse'} (${D.chances} chances sur 100, confiance ${D.confiance}).`);
-  if(pires[0])syn.push(`Pire chute sur 3 ans : ${Math.round(pires[0].chute*100)} % (du ${pires[0].debut} au ${pires[0].creux})`+(pires[0].jours_recuperation!=null?`, rattrapée en ${pires[0].jours_recuperation} jours environ.`:', pas encore rattrapée.'));
+  if(pires[0])syn.push(`Pire chute sur la période : ${Math.round(pires[0].chute*100)} % (du ${pires[0].debut} au ${pires[0].creux})`+(pires[0].jours_recuperation!=null?`, rattrapée en ${pires[0].jours_recuperation} jours environ.`:', pas encore rattrapée.'));
   if(MA.beta!=null)syn.push(`Lien avec ${MA.reference} : bêta ${String(MA.beta).replace('.',',')}.`);
   if(PR.length>1){const me=PR[0],o=PR.slice(1);const plus=o.filter(p=>p.vol<me.vol).length;syn.push(`Face à ${o.map(p=>p.nom).join(', ')} : ${plus===o.length?'le plus agité':plus===0?'le plus calme':'agitation dans la moyenne'} du groupe.`)}
-  return {ok:true,ticker:tk,slug:it[2],nom:it[1],devise:it[8],genere_le:new Date().toISOString(),source:simple?'cours publics (2 ans, mis à jour chaque jour)':'cours du radar (3 ans, mis à jour chaque heure)',seances:n,debut:(approx?'≈ ':'')+t[0],
+  let LIQ=null;if(CGI){const v=CGI.vol||0,cp=CGI.cap||0;if(v<1e6||cp<2e7)LIQ={vol:v,cap:cp,rang:CGI.rang};
+    if(LIQ)syn.unshift(`Petite crypto : ${Math.round(v).toLocaleString('fr-FR')} $ échangés en 24 h${cp?', capitalisation '+Math.round(cp/1e6).toLocaleString('fr-FR')+' M$':''}. Cours facile à manipuler : prudence.`)}
+  return {ok:true,ticker:CGI?CGI.sym:tk,cle:tk,slug:it[2],nom:it[1],devise:it[8],genere_le:new Date().toISOString(),liquidite:LIQ,coingecko:CGI,source:CGI?'CoinGecko (1 an de cours quotidiens)':simple?'cours publics (2 ans, mis à jour chaque jour)':'cours du radar (3 ans, mis à jour chaque heure)',seances:n,debut:(approx?'≈ ':'')+t[0],
     verdict,situation:S,fourchettes:F,monte_carlo:MC,direction:D,bilan:BILAN,evenement:EV,risques:RI,marche:MA,pairs:PR,saisonnalite:Z,fondamentaux:d.fondamentaux,synthese:syn,serie:{t,c},
     simple,periode_courte:true,avertissement:'Analyse statistique calculée dans ton navigateur, éducative, pas un conseil en investissement.'};
 };
@@ -173,14 +186,17 @@ function liste(){const l=mes();$('#ap-mes').innerHTML=l.length?'<h2>Mes analyses
 const NAVE=["Préparation","Lecture de 3 ans de cours","Situation et agitation","Fourchettes testées sur le passé du titre","3 000 simulations des 3 prochains mois","Avis de l’IA, vraies prévisions vérifiées, événements à venir","Pires chutes, marché, titres proches, saisonnalité","Rédaction du rapport"];
 window.APEtape=k=>{const ul=$('#ap-etapes');ul.hidden=false;ul.innerHTML=NAVE.map((e,i)=>`<li class="${i<k?'fait':i===k?'encours':''}">${e}</li>`).join('')};
 async function trouver(v){const L=(window.APNav||{}).liste||[];const x=v.trim().toLowerCase();if(!x)return null;
+ if(x.startsWith('cg:'))return 'cg:'+x.slice(3);
  const f=(A,tk,nm)=>A.find(i=>tk(i).toLowerCase()===x)||A.find(i=>nm(i).toLowerCase()===x)||A.find(i=>nm(i).toLowerCase().startsWith(x))||A.find(i=>nm(i).toLowerCase().includes(x)||tk(i).toLowerCase().startsWith(x));
- const a=f(L,i=>i[0],i=>i[1]);if(a)return a[0];const E=window.APEtendu?await window.APEtendu():[];const b=f(E,i=>i[1],i=>i[0]);return b?b[1]:null}
+ const a=f(L,i=>i[0],i=>i[1]);if(a)return a[0];const E=window.APEtendu?await window.APEtendu():[];const b=f(E,i=>i[1],i=>i[0]);if(b)return b[1];
+ if(x.length<2||!window.APChercherCG)return null;const C=await window.APChercherCG(v.trim());window.APChoixCG=C;
+ const e=C.find(c=>c.symbol.toLowerCase()===x||c.name.toLowerCase()===x)||C[0];return e?'cg:'+e.id:null}
 async function lancerNav(){const tk=await trouver($('#ap-tk').value);const b=$('#ap-go');$('#ap-msg').textContent='';
- if(!tk){$('#ap-msg').textContent='Titre introuvable : tape son nom ou son symbole (LVMH, AAPL, BTC-USD…).';return}
+ if(!tk){$('#ap-msg').textContent='Titre introuvable : tape son nom ou son symbole (LVMH, AAPL, BTC-USD, Fartcoin…).';return}
  b.disabled=true;$('#ap-res').innerHTML='';window.APEtape(1);
- try{const R=await window.analyserNav(tk);$('#ap-etapes').hidden=true;rapport(R)}catch(e){$('#ap-etapes').hidden=true;$('#ap-res').innerHTML='<p>Les cours de ce titre n’ont pas pu être chargés. Réessaie dans un instant.</p>'}
+ try{const R=await window.analyserNav(tk);$('#ap-etapes').hidden=true;rapport(R)}catch(e){$('#ap-etapes').hidden=true;$('#ap-res').innerHTML=String(e&&e.message)==='quota'?'<p>Trop de demandes en ce moment chez CoinGecko (la source des cours des petites cryptos) : réessaie dans une minute.</p>':'<p>Les cours de ce titre n’ont pas pu être chargés. Réessaie dans un instant.</p>'}
  b.disabled=false;try{const u=new URL(location.href);u.searchParams.set('t',tk);history.replaceState(null,'',u)}catch(e){}}
-async function etat(){const z=$('#ap-quota');if(!RBP.api){z.innerHTML='Gratuit, sans compte et sans limite : l’analyse est calculée en quelques secondes <b>directement dans ton navigateur</b>, sur plus de 2 000 actions, ETF, cryptos et l’or.';return}
+async function etat(){const z=$('#ap-quota');if(!RBP.api){z.innerHTML='Gratuit, sans compte et sans limite : l’analyse est calculée en quelques secondes <b>directement dans ton navigateur</b>, sur plus de 2 000 actions et ETF, l’or et plus de 10 000 cryptos.';return}
  try{const q=await RBP.appel('/quota',{code:RBP.code(),appareil:app});
   if(q.active===false){z.innerHTML='<b>Bientôt disponible.</b>';$('#ap-go').disabled=true;return}
   if(q.mode_gratuit){z.innerHTML=q.restant>0?'Gratuit et sans compte : il te reste <b>'+q.restant+' analyse'+(q.restant>1?'s':'')+'</b> aujourd\u2019hui.':'Tu as utilisé tes analyses du jour : reviens demain !';$('#ap-go').disabled=!(q.restant>0);return}
@@ -211,6 +227,8 @@ function rapport(R){const box=$('#ap-res');if(!R||!R.ok){box.innerHTML='<p>'+esc
  const S=R.situation||{},dev=R.devise,F=R.fourchettes||{},MC=R.monte_carlo||{},D=R.direction||{},RI=R.risques||{},M=R.marche||{},Z=R.saisonnalite||{},BL=R.bilan||{},EV=R.evenement,PR=R.pairs||[];
  let h=`<h2>${esc(R.nom)} (${esc(R.ticker)}) : le rapport complet</h2><p class="muted">Calculé le ${new Date(R.genere_le).toLocaleString('fr-FR')} sur ${R.seances} séances depuis le ${esc(R.debut)} · source : ${esc(R.source)} · ${esc(R.avertissement)}</p>`;
  if(R.verdict)h+=`<div class="ap-carte ap-verdict"><p>${esc(R.verdict)}</p></div>`;
+ if(R.liquidite)h+=`<div class="ap-carte ap-alerte"><h3>⚠️ Petite crypto : prudence</h3><p>${Math.round(R.liquidite.vol).toLocaleString('fr-FR')} $ échangés en 24 h${R.liquidite.cap?', capitalisation de '+Math.round(R.liquidite.cap/1e6).toLocaleString('fr-FR')+' millions de $':''}${R.liquidite.rang?' (rang '+R.liquidite.rang+')':''}. Avec si peu d’échanges, quelques acheteurs ou vendeurs suffisent à faire bondir ou chuter le cours : les fourchettes et simulations ci-dessous peuvent être largement dépassées.</p></div>`;
+ const AC=(window.APChoixCG||[]).filter(c=>'cg:'+c.id!==R.cle).slice(0,5);if(R.coingecko&&AC.length)h+=`<p class="muted" style="font-size:14px">Ce n’est pas la bonne crypto ? ${AC.map(c=>`<a href="analyse-approfondie.html?t=cg:${encodeURIComponent(c.id)}">${esc(c.name)} (${esc(String(c.symbol).toUpperCase())})</a>`).join(' · ')}</p>`;
  if(EV)h+=`<div class="ap-carte ap-alerte"><h3>📅 Résultats de l’entreprise ${EV.jours===0?'aujourd’hui':EV.jours===1?'demain':'dans '+EV.jours+' jours'} (${esc(EV.resultats_le.split('-').reverse().join('/'))})</h3><p>Le jour d’une publication, le cours peut sauter bien plus que d’habitude, dans un sens comme dans l’autre. ${EV.avant_echeance_mois?'La publication tombe avant l’échéance d’un mois : la fourchette ci-dessous est calculée sur des mois « normaux », garde de la marge.':'Elle tombe après l’échéance d’un mois.'}</p></div>`;
  h+=`<div class="ap-grille"><div class="ap-carte"><h3>La situation</h3><div class="ap-k"><div><b>${px(S.prix,dev)}</b><span>cours au ${esc(S.date)}</span></div><div><b>${pct((S.perf||{})['1 mois'])}</b><span>sur 1 mois</span></div><div><b>${pct((S.perf||{})['1 an'])}</b><span>sur 1 an</span></div>`
   +`<div><b>${S.au_dessus_200==null?'–':S.au_dessus_200?'Haussière':'Baissière'}</b><span>tendance de fond</span></div><div><b>${Math.round((S.vol_actuelle||0)*100)} %</b><span>agitation / an</span></div><div><b>${pct(S.recul_plus_haut_1an)}</b><span>depuis le plus haut 1 an</span></div></div></div>`;
@@ -235,9 +253,9 @@ function rapport(R){const box=$('#ap-res');if(!R||!R.ok){box.innerHTML='<p>'+esc
  h+=`<details class="ap-plus"><summary>Voir tout le détail : avis de l’IA, scénarios, chutes, marché, titres proches, saisonnalité</summary>${det}</details>`;
  h+=`<p style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" id="ap-partager">Partager ce rapport</button></p>`;
  h+=window.APSoutien||'';
- h+=`<p><a href="titres/${esc(R.slug||'')}.html">Fiche du titre</a> · <a href="outils/simulateur-stop-loss.html">Tester un stop-loss</a> · <a href="lecons/stop-loss.html">Comprendre les risques</a></p>`;
+ h+=`<p>${R.slug?`<a href="titres/${esc(R.slug)}.html">Fiche du titre</a> · `:''}<a href="outils/simulateur-stop-loss.html">Tester un stop-loss</a> · <a href="lecons/stop-loss.html">Comprendre les risques</a></p>`;
  box.innerHTML=h;box.scrollIntoView({behavior:'smooth'});
- const bp=document.getElementById('ap-partager');if(bp)bp.onclick=async()=>{const u=new URL(location.href);u.hash='';u.searchParams.set('t',R.ticker);u.searchParams.set('utm_campaign','partage-analyse');
+ const bp=document.getElementById('ap-partager');if(bp)bp.onclick=async()=>{const u=new URL(location.href);u.hash='';u.searchParams.set('t',R.cle||R.ticker);u.searchParams.set('utm_campaign','partage-analyse');
   const txt='Analyse approfondie de '+R.nom+' : fourchettes, 3 000 simulations, risques (gratuit)';try{goatcounter.count({path:'partage/analyse',title:R.ticker,event:true})}catch(e){}
   if(navigator.share){try{await navigator.share({title:txt,url:u.href});return}catch(e){}}try{await navigator.clipboard.writeText(txt+' '+u.href);bp.textContent='Lien copié ✓'}catch(e){bp.textContent=u.href}}}
 const go=()=>RBP.api?lancer():lancerNav();
@@ -293,7 +311,7 @@ def page(base, payload, csp):
     opts = "".join(f"<option value='{_e(t['ticker'])}'>{_e(t.get('nom') or t['ticker'])}</option>"
                    for t in payload.get("titres", []) if t.get("marche") != "tendances")
     corps = (CSS + "<h1>Analyse approfondie d'une action, d'une crypto ou de l'or</h1>"
-             "<p>Choisis un titre parmi plus de 2 000 : l'analyse reprend jusqu'à 3 ans de cours et les passe au crible. Fourchettes testées sur son propre passé, "
+             "<p>Choisis un titre parmi plus de 2 000 actions et ETF et plus de 10 000 cryptos (<a href='analyser-une-crypto.html'>les 1 000 plus grandes</a>) : l'analyse reprend jusqu'à 3 ans de cours et les passe au crible. Fourchettes testées sur son propre passé, "
              "3 000 simulations des 3 prochains mois, avis de l'IA et ses vraies prévisions vérifiées, prochains résultats, pires chutes, "
              "comparaison avec des titres proches, saisonnalité et chiffres de l'entreprise. Chaque résultat dit à quel point il est fiable.</p>"
              "<div class='ap-carte'><div class='ap-form'><label for='ap-tk'><b>Titre</b> (nom ou symbole : MC.PA, AAPL, BTC-USD, GC=F…)"
@@ -316,10 +334,11 @@ def page(base, payload, csp):
                          "3 000 simulations, pires chutes, comparaison avec des titres proches.",
           "url": (base + chemin) if base else None}
     return chemin, seo._page(base, f"Analyse approfondie d'une action par l'IA, à la demande | {NOM}",
-                             "Choisis une action, une crypto ou l'or : l'IA analyse 3 ans de cours (fourchettes testées, 3 000 simulations, "
+                             "Choisis une action, l'or ou l'une des 10 000 cryptos : l'IA analyse jusqu'à 3 ans de cours (fourchettes testées, 3 000 simulations, "
                              "risques, titres proches). Plus de 2 000 titres, gratuit, sans compte.",
-                             chemin, corps, jsonld=jl, csp=abonnement._csp(csp),
+                             chemin, corps, jsonld=jl, csp=abonnement._csp(csp).replace("connect-src 'self'", "connect-src 'self' https://api.coingecko.com", 1),
                              mots="analyse action gratuite, analyse approfondie action, analyser une action, analyse crypto gratuite, analyse bitcoin, "
                                   "réanalyse action IA, analyse technique gratuite, fourchette de prix action, simulation Monte-Carlo action, "
                                   "pire chute action, volatilité action, comparer actions même secteur, date de résultats action, analyse bourse IA, "
-                                  "analyse action en ligne sans inscription, prévision cours action un mois, analyse or, analyse ETF")
+                                  "analyse action en ligne sans inscription, prévision cours action un mois, analyse or, analyse ETF, "
+                                  "analyse memecoin, analyse altcoin, analyse petite crypto, analyser n'importe quelle crypto, 10 000 cryptos")

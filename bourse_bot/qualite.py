@@ -30,7 +30,19 @@ def _prix_binance() -> dict[str, float]:
         req = urllib.request.Request("https://data-api.binance.vision/api/v3/ticker/price",
                                      headers={"User-Agent": "radar-bourse"})
         with urllib.request.urlopen(req, timeout=15) as r:
-            return {x["symbol"]: float(x["price"]) for x in json.load(r)}
+            prix = {x["symbol"]: float(x["price"]) for x in json.load(r)}
+        # version 114 : seulement les paires qui s'échangent vraiment. Une paire suspendue (XMR, EOS…) garde un vieux prix figé,
+        # ce qui donnait de fausses alertes (« écart de 1103 % entre Yahoo et Binance »).
+        try:
+            req = urllib.request.Request("https://data-api.binance.vision/api/v3/exchangeInfo?permissions=SPOT",
+                                         headers={"User-Agent": "radar-bourse"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                actives = {x["symbol"] for x in json.load(r).get("symbols", []) if x.get("status") == "TRADING"}
+            if actives:
+                prix = {k: v for k, v in prix.items() if k in actives}
+        except Exception:
+            pass
+        return prix
     except Exception:
         return {}
 
@@ -52,11 +64,18 @@ def controler(donnees: dict[str, pd.DataFrame]) -> dict:
             attendu = np.busday_count(an.index[0].date(), an.index[-1].date())
             if attendu and len(an) < 0.85 * attendu:
                 problemes.append(f"{attendu - len(an)} séances manquantes sur un an")
-        sauts = an["Close"].pct_change().abs()
-        n_sauts = int((sauts > SAUT_MAX["crypto" if crypto else "autre"]).sum())
-        if n_sauts:
-            problemes.append(f"{n_sauts} variation(s) quotidienne(s) anormale(s) sur un an")
-        if an["Close"].iloc[-5:].nunique() == 1:
+        # version 114 : une vraie envolée (petite crypto, rachat d'entreprise…) n'est pas une erreur. La signature d'une erreur de
+        # données, c'est l'aller-retour : un saut énorme effacé dès le lendemain. On ne signale que ça (ou des sauts en rafale).
+        r = an["Close"].pct_change()
+        seuil = SAUT_MAX["crypto" if crypto else "autre"]
+        gros = r.abs() > seuil
+        retour = (gros & ((1 + r) * (1 + r.shift(-1)) - 1).abs().lt(seuil / 3)).sum()
+        n_retours, n_gros = int(retour), int(gros.sum())
+        if n_retours:
+            problemes.append(f"{n_retours} aller(s)-retour(s) anormal(aux) du cours sur un an (probable erreur de données)")
+        elif n_gros >= 4:
+            problemes.append(f"{n_gros} variations quotidiennes anormales sur un an")
+        if an["Close"].iloc[-5:].nunique() == 1 and float(an["Close"].iloc[-1]) > 1e-5:   # les cours minuscules (BTTC) bougent par paliers
             problemes.append("cours figé depuis 5 séances")
         if crypto and binance:
             sym = config.symbole_binance(t)

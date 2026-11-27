@@ -352,7 +352,7 @@ def liens_fr() -> list:
             ("Académie", "formation.html"), ("Toutes les actions", "toutes-les-actions.html"), ("Par thème", "themes.html"),
             ("Résultats vérifiés", "avis-surs-verifies.html"),
             ("Tous les titres suivis", "titres.html"), ("Prévisions du mois", "index.html#previsions"), (f"Prévisions {datetime.now().year}", "previsions.html"),
-            *([("Analyse approfondie à la demande", "analyse-approfondie.html")] if _analyse_ouverte() else []), ("Top 10 des actions", "top-10-actions.html"), _lien_bourse_mois(), ("Les 10 grandes Bourses du monde", "grandes-bourses.html"), ("Cours de l'or", "prevision-or.html"),
+            *([("Analyse approfondie à la demande", "analyse-approfondie.html"), ("Analyser une crypto (10 000+)", "analyser-une-crypto.html")] if _analyse_ouverte() else []), ("Top 10 des actions", "top-10-actions.html"), _lien_bourse_mois(), ("Les 10 grandes Bourses du monde", "grandes-bourses.html"), ("Cours de l'or", "prevision-or.html"),
             ("Actions que l'IA voit monter", "classements.html"), ("Sélection IA du mois", "portefeuille.html"),
             ("Prédiction bitcoin par IA", "titres/btc-usd.html"), ("Avis IA : LVMH", "titres/mc-pa.html"), ("Avis IA : Nvidia", "titres/nvda.html"),
             ("Avis IA : Tesla", "titres/tsla.html"), ("Avis IA : TotalEnergies", "titres/tte-pa.html"), ("Avis IA : Airbus", "titres/air-pa.html"),
@@ -3087,7 +3087,7 @@ Points importants pour bien citer le site :
 - [Les 10 grandes Bourses du monde]({u}grandes-bourses.html): tendance et avis de l'IA pour chaque grande place
 - [Cours de l'or et prévision]({u}prevision-or.html)
 - [Le Défi du jour]({u}defi-du-jour.html): analyser un vrai graphique masqué et comparer son score à l'IA
-{f"- [Analyse approfondie à la demande]({u}analyse-approfondie.html): gratuite, sans compte, sur plus de 2 000 actions, ETF, cryptos et l'or : 3 ans de cours, fourchettes testées sur le passé du titre, 3 000 simulations, prochains résultats, vraies prévisions vérifiées, comparaison avec des titres proches" + chr(10) + f"- [Les grandes Bourses du monde]({u}grandes-bourses.html): New York, Nasdaq, Shanghai, Tokyo, Inde, Hong Kong, Paris, Londres, Toronto, Francfort : tendance et avis de l'IA" + chr(10) if _analyse_ouverte() else ""}
+{f"- [Analyse approfondie à la demande]({u}analyse-approfondie.html): gratuite, sans compte, sur plus de 2 000 actions et ETF, l'or et plus de 10 000 cryptos (liste des 1 000 plus grandes : {u}analyser-une-crypto.html) : jusqu'à 3 ans de cours, fourchettes testées sur le passé du titre, 3 000 simulations, prochains résultats, vraies prévisions vérifiées, comparaison avec des titres proches" + chr(10) + f"- [Les grandes Bourses du monde]({u}grandes-bourses.html): New York, Nasdaq, Shanghai, Tokyo, Inde, Hong Kong, Paris, Londres, Toronto, Francfort : tendance et avis de l'IA" + chr(10) if _analyse_ouverte() else ""}
 ## Preuves et méthode
 - [Résultats réels de l'IA]({u}resultats.html)
 - [Registre scellé des prévisions]({u}registre-previsions.html)

@@ -1,4 +1,5 @@
 <title>Radar Bourse</title>
+<script>/* version 117 : mode et thème posés avant le premier affichage (la page ne « saute » plus) */try{var _d=document.documentElement;if(localStorage.getItem("radar-mode")!=="expert")_d.classList.add("simple");var _t=localStorage.getItem("radar-theme");if(_t)_d.dataset.theme=_t}catch(e){document.documentElement.classList.add("simple")}</script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <!--META-->
 <meta name="description" content="Radar Bourse : analyse technique et prévisions statistiques à un mois sur les actions françaises, américaines et les cryptos. Projet éducatif.">
@@ -62,7 +63,7 @@ button{font:inherit;color:inherit}
 .top .wrap{display:flex;align-items:center;gap:16px;padding-block:12px;flex-wrap:wrap}
 .brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
 .brand h1{font-size:24px;font-weight:700;white-space:nowrap}
-@media (max-width:520px){.brand{flex-wrap:wrap;row-gap:0}.brand .stamp{flex-basis:100%;margin-left:0}}
+@media (max-width:520px){.brand{flex-wrap:wrap;row-gap:0}.brand .stamp{flex-basis:100%;margin-left:0;min-height:18px;display:block}}  /* version 117 : place réservée (l'en-tête ne grandit plus après le chargement) */
 .brand .logo{width:26px;height:26px;flex:none;align-self:center}
 @media (max-width:440px){.brand .logo{display:none}}
 .stamp{font-size:13px;color:var(--muted)}
@@ -1844,7 +1845,7 @@ const px = (v, cur) => {
   return `${v.toLocaleString('fr-FR', opts)} ${cur}`;
 };
 const token = t => t.replace(/[^A-Za-z0-9._-]/g, "");
-const affTk = tk => String(tk).replace(/\d+(-USD)$/, "$1");   // TON11419-USD → TON-USD (numéro interne de Yahoo)
+const affTk = tk => String(tk).replace(/\d{4,}(-USD)$/, "$1");   // TON11419-USD → TON-USD (numéro interne de Yahoo)
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 /* Mode d'affichage : « simple » (par défaut, pour tout le monde) ou « expert » (tous les indicateurs) */
 let MODE = "simple";
@@ -2611,7 +2612,9 @@ function rendreCarte(){
 document.querySelectorAll("[data-carte]").forEach(b => b.onclick = () => {
   document.querySelectorAll("[data-carte]").forEach(x => x.setAttribute("aria-pressed", x === b));
   PERIODE_CARTE = b.dataset.carte; rendreCarte(); });
-rendreCarte();
+// version 117 : la carte du marché (1 400 éléments) n'est dessinée que lorsqu'elle devient visible (section repliée par défaut)
+(function(){ const el = $("#carte"); if(!el) return; if(!("IntersectionObserver" in window)){ rendreCarte(); return; }
+  const io = new IntersectionObserver(es => { if(es.some(e => e.isIntersecting)){ io.disconnect(); rendreCarte(); } }, {rootMargin: "400px"}); io.observe(el); })();
 
 /* ---------- Tonalité des actus ---------- */
 function ton(v){
@@ -2913,6 +2916,11 @@ function rendre(){
   $("#aff-nb").textContent = nbCrit ? `· ${nbCrit} critère${nbCrit > 1 ? "s" : ""}, ${L.length} titre${L.length > 1 ? "s" : ""}` : "";
   L.sort((a,b) => { const x=val(a,tri.k), y=val(b,tri.k);
     return (typeof x==="string" ? x.localeCompare(y) : (x??-9)-(y??-9)) * (tri.asc?1:-1); });
+  // version 117 : on ne construit que les 25 premières lignes tant que la liste complète n'est pas demandée
+  // (avant : ~19 000 éléments cachés construits à chaque chargement, d'où les ralentissements sur téléphone)
+  const plein = ($("#tous") && $("#tous").classList.contains("tout")) || q || nbCrit || (filtre && filtre !== "all");
+  $("#rows").dataset.total = L.length;
+  if(!plein) L = L.slice(0, 25);
   $("#rows").innerHTML = L.map(t => `<tr data-t="${esc(t.ticker)}" tabindex="0">
     <td><div class="tk">${FAV.has(t.ticker) ? '<span class="etoile" title="Dans tes favoris">★</span>' : ""}${esc(affTk(t.ticker))}${t.qualite_ok === false ? ' <span title="Données à vérifier : exclu des signaux" style="color:var(--warn)">⚠</span>' : ""}</div><div class="nm">${esc(t.nom)}${marqueSur(t)}</div></td>
     <td class="num" data-px="${esc(t.ticker)}">${px(t.prix,t.devise)}${t.live?'<span class="src">direct</span>':''}</td><td data-j1="${esc(t.ticker)}">${pct(t.perf["1 jour"],2)}</td><td>${pct(t.perf["1 mois"])}</td>
@@ -2933,6 +2941,7 @@ document.querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
   document.querySelectorAll("th").forEach(x => x.removeAttribute("aria-sort"));
   th.setAttribute("aria-sort", tri.asc ? "ascending" : "descending"); rendre(); });
 rendre();
+window.rendreTous = rendre;
 scanMes();
 { const h = decodeURIComponent(location.hash.slice(1)); if(h.startsWith("scan=")){ $("#affiner").open = true; scanAppliquer(h.slice(5)); setTimeout(() => $("#tous").scrollIntoView({block: "start"}), 300); } }
 pfAfficher();
@@ -4633,8 +4642,8 @@ document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-press
   if(tous && rows){
     const bt = document.createElement("button"); bt.type = "button"; bt.className = "btn ghost voir-tout";
     tous.querySelector(".tablewrap").after(bt);
-    const majBt = () => { const n = rows.children.length; bt.hidden = n <= 25 || tous.classList.contains("tout"); bt.textContent = `Afficher les ${n} titres`; };
-    bt.onclick = () => { tous.classList.add("tout"); majBt(); };
+    const majBt = () => { const n = +rows.dataset.total || rows.children.length; bt.hidden = n <= 25 || tous.classList.contains("tout"); bt.textContent = `Afficher les ${n} titres`; };
+    bt.onclick = () => { tous.classList.add("tout"); try{ window.rendreTous && window.rendreTous(); }catch(e){} majBt(); };
     new MutationObserver(majBt).observe(rows, {childList: true}); majBt();
     const q = document.getElementById("q"); if(q) q.addEventListener("input", () => { if(q.value) tous.classList.add("tout"); majBt(); });
   }
@@ -4907,10 +4916,10 @@ document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#legal"
   const z = document.getElementById("titre-ecran"); if(!z) return;
   let vu = false; try{ vu = sessionStorage.getItem("radar-titre-vu") === "1"; }catch(e){}
   const robot = /bot|crawl|spider|slurp|lighthouse|headless|preview/i.test(navigator.userAgent) || navigator.webdriver;
+  const cartes = [...z.querySelectorAll(".te-carte")]; let i = 0;   // version 117 : état partagé entre les ouvertures
+  const choisir = k => { if(!cartes.length) return; i = (k + cartes.length) % cartes.length; cartes.forEach((c, j) => c.setAttribute("aria-selected", j === i)); cartes[i].focus({preventScroll: true}); };
   const ouvrir = () => {
-    const cartes = [...z.querySelectorAll(".te-carte")]; let i = 0;
-    try{ if(localStorage.getItem("radar-dernier-espace") === "academie") i = 1; }catch(e){}
-    const choisir = k => { i = (k + cartes.length) % cartes.length; cartes.forEach((c, j) => c.setAttribute("aria-selected", j === i)); cartes[i].focus({preventScroll: true}); };
+    i = 0; try{ if(localStorage.getItem("radar-dernier-espace") === "academie") i = 1; }catch(e){}
     const n = (DATA.titres || []).filter(t => t.marche !== "tendances").length + (DATA.nb_etendu || 0);
     if(n > 0) $("#te-radar-info").textContent = `${n.toLocaleString("fr-FR")} ${"titres suivis · mis à jour chaque heure"}`;
     try{ const a = JSON.parse(localStorage.getItem("radar-academie") || "{}") || {}; const f = Object.values(a).filter(x => x && x.fait).length;
@@ -4918,7 +4927,7 @@ document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#legal"
     const fermer = () => { z.hidden = true; document.body.classList.remove("titre-ouvert"); try{ sessionStorage.setItem("radar-titre-vu", "1"); }catch(e){} };
     // version 81 : « Aujourd'hui » — le climat du jour, le bitcoin, l'agitation, la fiabilité vérifiée, ta série ; et une question du jour
     if(document.documentElement.lang === "en"){ const j = z.querySelector(".te-jour"); if(j) j.hidden = true; }
-    else try{
+    else if(!z.dataset.jour) try{ z.dataset.jour = "1";
       const T = (DATA.titres || []).filter(t => t.marche !== "tendances" && t.proba_hausse != null);
       const fmtP = (v, dev) => v == null ? "–" : v.toLocaleString("fr-FR", {maximumFractionDigits: v >= 1000 ? 0 : 2}) + (dev === "EUR" || dev === "€" ? " €" : dev === "USD" || dev === "$" ? " $" : dev ? " " + dev : "");
       const tuiles = [];
@@ -4957,6 +4966,9 @@ document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#legal"
         box.querySelectorAll("button").forEach(x => { x.disabled = true; if(+x.dataset.r === q[1]) x.classList.add("ok"); else if(x === b) x.classList.add("ko"); });
         $("#te-q-rep").innerHTML = (bon ? "<b>Bien vu.</b> " : "<b>Raté.</b> ") + q[2] + " <a href='formation.html' style='color:#86a8ff'>Apprendre à l'Académie</a>"; });
     }catch(e){}
+    // version 117 : les écouteurs ne sont posés qu'une fois (avant, chaque appui sur « Menu » les doublait : flèches qui sautent
+    // plusieurs cartes, clics traités plusieurs fois, menu de plus en plus lent)
+    if(!z.dataset.pret){ z.dataset.pret = "1";
     cartes.forEach((c, j) => { c.addEventListener("mouseenter", () => choisir(j)); c.addEventListener("click", e => {
       try{ localStorage.setItem("radar-dernier-espace", c.dataset.choix); sessionStorage.setItem("radar-titre-vu", "1"); }catch(e2){}
       if(c.dataset.choix === "radar"){ e.preventDefault(); fermer(); }
@@ -4969,6 +4981,7 @@ document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#legal"
     });
     $("#te-passer").onclick = fermer;
     z.querySelectorAll("[data-ferme]").forEach(a => a.addEventListener("click", () => fermer()));
+    }
     z.hidden = false; document.body.classList.add("titre-ouvert"); setTimeout(() => choisir(i), 60);
   };
   window.ouvrirEcranTitre = ouvrir;

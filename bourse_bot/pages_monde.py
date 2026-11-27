@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import os
+import re
 
 from . import seo
 
@@ -132,6 +133,89 @@ def cartes_cryptos(payload, n=10):
         return ""
     return (CSS + "<h2>Les 10 grandes cryptos en graphiques</h2><div class='pm-grille'>"
             + "".join(_carte_titre(par_tk[tk], config.CRYPTOS.get(tk)) for tk in tks) + "</div>")
+
+
+def _top_coingecko():
+    """Version 116 : les ~1 000 plus grandes cryptos (CoinGecko, une fois par jour, en cache). [id, nom, symbole, rang]."""
+    from . import config, data
+    if data.DEMO:
+        return [["bitcoin", "Bitcoin", "BTC", 1], ["ethereum", "Ethereum", "ETH", 2], ["fartcoin", "Fartcoin", "FARTCOIN", 272],
+                ["pudgy-penguins", "Pudgy Penguins", "PENGU", 60], ["monero", "Monero", "XMR", 20]]
+
+    def calc():
+        import time as _t
+        out = []
+        for page in range(1, 5):
+            j = data._json_web("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc"
+                               f"&per_page=250&page={page}&sparkline=false", timeout=25)
+            if not isinstance(j, list):
+                break
+            out += [[c["id"], c["name"], str(c["symbol"]).upper(), c.get("market_cap_rank")] for c in j
+                    if c.get("id") and c.get("name") and c.get("market_cap_rank")]
+            _t.sleep(4)
+        return out or None
+    r = data.cache_json("coingecko", "top1000", 20, calc)
+    if r:
+        try:   # copie de secours gardée dans l'historique (le cache peut disparaître sur GitHub)
+            import json as _j
+            with open(os.path.join(config.DOSSIER_HISTORIQUE, "coingecko_top.json"), "w", encoding="utf-8") as f:
+                _j.dump(r, f, ensure_ascii=False, separators=(",", ":"))
+        except Exception:
+            pass
+        return r
+    try:
+        import json as _j
+        with open(os.path.join(config.DOSSIER_HISTORIQUE, "coingecko_top.json"), encoding="utf-8") as f:
+            return _j.load(f)
+    except Exception:
+        return []
+
+
+STABLES = re.compile(r"usd|dai$|eur|tether|gold|bridged|wrapped|staked|liquid staking|-wormhole", re.I)
+
+
+def _page_cryptos(base, payload, csp):
+    """Version 116 : « Analyser une crypto » : les ~1 000 plus grandes cryptos, chacune analysable en un clic (calcul dans le
+    navigateur à partir des cours CoinGecko). Une seule page (pas 1 000 pages fabriquées en masse)."""
+    from . import config
+    top = [c for c in _top_coingecko() if not STABLES.search(c[0] + " " + c[1])]
+    if len(top) < 5:   # CoinGecko injoignable et pas de cache : la page existe quand même, avec les cryptos suivies par le radar
+        top = [[tk, nom, re.sub(r"\d{4,}$", "", tk[:-4]), i + 1] for i, (tk, nom) in enumerate(config.CRYPTOS.items())]
+    suivis = {}
+    for tk, nom in config.CRYPTOS.items():
+        suivis[re.sub(r"\d{4,}$", "", tk[:-4]).upper()] = (tk, nom)
+    lignes = []
+    for cid, nom, sym, rang in top:
+        s_ = suivis.get(sym)
+        if s_ and s_[1].split(" (")[0].lower()[:5] == nom.lower()[:5]:
+            lien = f"titres/{seo.slug(s_[0])}.html"
+            extra = " <span class='muted' style='font-size:13px'>avis de l'IA</span>"
+        else:
+            lien, extra = "", ""
+        lignes.append(f"<tr><td class='m pm-rang'>{rang}</td><td><b>{_e(nom)}</b> <span class='muted'>{_e(sym)}</span>{extra}</td>"
+                      f"<td><a href='analyse-approfondie.html?t={_e(cid if cid.endswith('-USD') else 'cg:' + cid)}'>🔬 Analyser</a>"
+                      + (f" · <a href='{lien}'>fiche</a>" if lien else "") + "</td></tr>")
+    noms = ", ".join(f"analyse {c[1]}" for c in top[:40])
+    corps = (CSS + f"<h1>Analyser une crypto : les {len(top)} plus grandes, gratuitement</h1>"
+             "<p>Choisis n'importe quelle crypto : l'analyse approfondie se lance en quelques secondes, directement dans ton navigateur, "
+             "à partir de ses cours sur un an (source CoinGecko) : fourchettes testées sur son passé, 3 000 simulations des 3 prochains mois, "
+             "pires chutes, lien avec le bitcoin, comparaison avec Bitcoin, Ethereum et Solana. Plus de 10 000 cryptos sont analysables "
+             "en tapant leur nom sur la <a href='analyse-approfondie.html'>page d'analyse</a>.</p>"
+             "<p class='muted'>Les petites cryptos s'échangent peu : leur cours est facile à manipuler, et le rapport le signale. "
+             "Information, pas conseil en investissement.</p>"
+             "<p><label for='pm-filtre'><b>Chercher dans la liste</b></label><br><input id='pm-filtre' type='search' placeholder='Nom ou symbole…' "
+             "style='width:100%;max-width:420px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:16px'></p>"
+             "<div class='carte' style='overflow-x:auto'><table class='pm-table' id='pm-cryptos'><thead><tr><th>Rang</th><th>Crypto</th><th>Analyse</th></tr></thead>"
+             f"<tbody>{''.join(lignes)}</tbody></table></div>"
+             "<script>(function(){const f=document.getElementById('pm-filtre'),r=[...document.querySelectorAll('#pm-cryptos tbody tr')];"
+             "f.addEventListener('input',()=>{const q=f.value.trim().toLowerCase();r.forEach(x=>x.hidden=q&&!x.cells[1].textContent.toLowerCase().includes(q))})})();</script>")
+    chemin = "analyser-une-crypto.html"
+    page = seo._page(base, f"Analyse crypto gratuite : les {len(top)} plus grandes cryptos | {NOM}",
+                     f"Analyse gratuite de n'importe quelle crypto parmi les {len(top)} plus grandes (et plus de 10 000 en tout) : fourchettes "
+                     "testées, 3 000 simulations, pires chutes, lien avec le bitcoin. Sans compte.", chemin, corps, csp=csp,
+                     mots="analyse crypto gratuite, analyser une crypto, analyse altcoin, analyse memecoin, liste des cryptomonnaies, "
+                          "classement crypto, top 1000 crypto, analyse technique crypto gratuite, " + noms)
+    return chemin, page
 
 
 def _actions(payload):
@@ -388,7 +472,7 @@ def generer(payload: dict, dossier: str, csp: str, base: str) -> list:
             urls.append((chemin, "daily", "0.8"))
     except Exception as e:
         print(f"Pages « la Bourse en … » non générées : {e}")
-    for fn in (_page_top, _page_bourses, _page_or, _page_discussions, _page_defi):
+    for fn in (_page_top, _page_bourses, _page_or, _page_discussions, _page_defi, _page_cryptos):
         try:
             r = fn(base, payload, csp)
         except Exception as e:
