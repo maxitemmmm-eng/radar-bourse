@@ -27,7 +27,7 @@ NOM_WORKER = "radar-communaute"
 RESUME = os.path.join(ICI, "communaute_installee.json")   # rien de secret dedans
 
 
-def installer_cloudflare(jeton, site, nouvelle_cle):
+def installer_cloudflare(jeton, site, nouvelle_cle, google_id=""):
     s, r = ia.cf(jeton, "GET", "accounts")
     comptes = ia.verifier(s, r, "Cloudflare (compte)").get("result") or []
     if not comptes:
@@ -45,7 +45,8 @@ def installer_cloudflare(jeton, site, nouvelle_cle):
     with open(os.path.join(ICI, "serveur_communaute", "worker.js"), "rb") as f:
         code = f.read()
     meta = {"main_module": "worker.js", "compatibility_date": "2026-01-01", "keep_bindings": ["secret_text"],
-            "bindings": [{"type": "kv_namespace", "name": "COMMU", "namespace_id": kv}, {"type": "plain_text", "name": "SITE", "text": site}]}
+            "bindings": [{"type": "kv_namespace", "name": "COMMU", "namespace_id": kv}, {"type": "plain_text", "name": "SITE", "text": site}]
+            + ([{"type": "plain_text", "name": "GOOGLE_CLIENT_ID", "text": google_id}] if google_id else [])}
     bord = "----radarcommu" + uuid.uuid4().hex
     corps = (f"--{bord}\r\nContent-Disposition: form-data; name=\"metadata\"\r\nContent-Type: application/json\r\n\r\n{json.dumps(meta)}\r\n"
              f"--{bord}\r\nContent-Disposition: form-data; name=\"worker.js\"; filename=\"worker.js\"\r\nContent-Type: application/javascript+module\r\n\r\n").encode() \
@@ -95,13 +96,17 @@ def main():
     nouvelle = False
     if ancien:
         nouvelle = ia.demander("Créer une NOUVELLE clé de modération (o/N) ? (si tu as perdu l'ancienne)", "n", obligatoire=False).lower().startswith("o")
+    ia.dire("\nConnexion avec Google (facultatif, voir TUTO_COMMUNAUTE.md) : colle l'« ID client » qui finit par .apps.googleusercontent.com")
+    google_id = ia.demander("  ID client Google (Entrée pour passer)", ancien.get("google_id", ""), obligatoire=False).strip()
+    if google_id and not google_id.endswith(".apps.googleusercontent.com"):
+        raise ia.Erreur("Ce n'est pas un ID client Google (il finit par .apps.googleusercontent.com).")
     ia.dire("\nClés (rien ne s'affiche quand tu tapes, c'est normal) :")
     jeton_cf = ia.demander("  Jeton API Cloudflare", secret=True)
     deja_gh = bool(ancien.get("serveur"))
     jeton_gh = ia.demander("  Jeton GitHub (droit Variables)" + (" — déjà réglé : appuie juste sur Entrée" if deja_gh else ""),
                            secret=True, obligatoire=not deja_gh)
     ia.dire("\n1/2 Cloudflare")
-    url, cle = installer_cloudflare(jeton_cf, site, nouvelle)
+    url, cle = installer_cloudflare(jeton_cf, site, nouvelle, google_id)
     ia.dire("2/2 GitHub")
     if jeton_gh:
         installer_github(jeton_gh, depot, url)
@@ -109,7 +114,7 @@ def main():
         ia.dire("  ✓ Déjà réglé sur GitHub (rien à changer)")
     else:
         raise ia.Erreur("L'adresse du serveur a changé : relance avec un jeton GitHub (droit Variables).")
-    json.dump({"site": site, "depot": depot, "serveur": url}, open(RESUME, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    json.dump({"site": site, "depot": depot, "serveur": url, "google_id": google_id}, open(RESUME, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     ia.dire("\n✅ Terminé.")
     ia.dire(f"   Serveur : {url}")
     if cle:

@@ -31,6 +31,22 @@ def api() -> str:
     return u if re.fullmatch(r"https://[a-z0-9.-]{3,120}(/[a-z0-9._-]{0,40})?", u, re.I) else ""
 
 
+def google_id() -> str:
+    """Version 121 : identifiant client Google (public, ce n'est pas un secret) pour « Continuer avec Google »."""
+    from . import config
+    g = (os.environ.get("RADAR_GOOGLE_ID", "") or getattr(config, "GOOGLE_CLIENT_ID", "")).strip()
+    return g if re.fullmatch(r"[0-9]{5,20}-[a-z0-9]{10,40}\.apps\.googleusercontent\.com", g) else ""
+
+
+def csp_google(c: str) -> str:
+    if not c or not google_id():
+        return c
+    c = c.replace("script-src 'self' 'unsafe-inline'", "script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client", 1)
+    c = c.replace("style-src 'self' 'unsafe-inline'", "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style", 1)
+    c = c.replace("connect-src 'self'", "connect-src 'self' https://accounts.google.com/gsi/", 1)
+    return c.rstrip("; ") + "; frame-src https://accounts.google.com/gsi/"
+
+
 def actif() -> bool:
     return bool(api())
 
@@ -125,7 +141,16 @@ def _page_compte(base, csp_):
     corps = (CSS + "<h1>Mon compte Radar Bourse</h1>"
              "<p>Un compte gratuit, <b>sans adresse e-mail</b> : un pseudo et un mot de passe suffisent. Il sert à commenter, à discuter "
              "avec les autres membres et à <b>retrouver ta progression sur tous tes appareils</b> (Académie, portefeuille virtuel, favoris, défis…).</p>"
-             "<div id='cpt-dehors'><div class='cpt-onglets' role='tablist'>"
+             "<div id='cpt-dehors'>"
+             + (f"<div class='carte' id='cpt-google' style='max-width:420px'><p style='margin:0 0 10px'><b>Le plus simple :</b></p><div id='g-bouton'></div>"
+                "<div id='g-pseudo' hidden style='margin-top:12px'><label class='cpt-form' style='display:grid;gap:8px'><span>Choisis ton pseudo (il sera visible par les autres membres)</span>"
+                "<input id='g-p' maxlength='20' autocomplete='nickname'></label><label style='display:flex;gap:8px;align-items:flex-start;margin:8px 0'><input type='checkbox' id='g-regles' style='margin-top:3px'> "
+                "<span>J'accepte les <a href='regles-communaute.html' target='_blank'>règles de la communauté</a>.</span></label>"
+                "<button class='btn' type='button' id='g-ok'>Terminer l'inscription</button></div><p class='cpt-msg' id='g-msg' role='status'></p>"
+                "<p class='muted' style='font-size:13px;margin:8px 0 0'>Google confirme seulement que c'est toi : le site ne garde ni ton e-mail ni ton nom.</p></div>"
+                "<p class='muted' style='margin:14px 0 4px'>Ou avec un pseudo et un mot de passe :</p>"
+                f"<script src='https://accounts.google.com/gsi/client' async defer></script>" if google_id() else "")
+             + "<div class='cpt-onglets' role='tablist'>"
              "<button type='button' role='tab' data-o='creer' aria-selected='true'>Créer un compte</button>"
              "<button type='button' role='tab' data-o='entrer' aria-selected='false'>Se connecter</button>"
              "<button type='button' role='tab' data-o='secours' aria-selected='false'>Mot de passe oublié</button></div>"
@@ -171,11 +196,21 @@ def _page_compte(base, csp_):
              "$('cpt-recup').onclick=async()=>{const r=await RBC.appel('GET','/donnees');if(!r.ok){$('cpt-msg2').textContent=r.erreur||'Erreur';return}"
              "const d=r.donnees||{};let n=0;Object.entries(d).forEach(([k,v])=>{if(CLES.includes(k)&&typeof v==='string'){try{localStorage.setItem(k,v);n++}catch(e){}}});"
              "$('cpt-msg2').textContent=n?n+' éléments récupérés ✓ : recharge les pages pour les voir.':'Rien à récupérer : sauvegarde d’abord depuis ton autre appareil.'};"
-             "document.addEventListener('rbc-change',etat);etat()};"
+             "document.addEventListener('rbc-change',etat);etat();"
+             "const GID=" + json.dumps(google_id()) + ";let cred='';"
+             "const gEnvoyer=async(extra)=>{const r=await RBC.appel('POST','/google',Object.assign({credential:cred},extra||{}));"
+             "if(r.nouveau){$('g-pseudo').hidden=false;$('g-msg').textContent=r.erreur;$('g-p').focus();return}"
+             "if(!r.ok){$('g-msg').className='cpt-msg cpt-ko';$('g-msg').textContent=r.erreur||'Erreur';return}"
+             "RBC.entrer(r);try{goatcounter.count({path:'compte/google',event:true})}catch(e){}etat();if(retour&&retour.startsWith('/'))location.href=retour};"
+             "if(GID&&$('g-bouton')){const init=()=>{if(!window.google||!google.accounts){return setTimeout(init,300)}"
+             "google.accounts.id.initialize({client_id:GID,callback:x=>{cred=x.credential;gEnvoyer()},ux_mode:'popup',use_fedcm_for_prompt:true});"
+             "google.accounts.id.renderButton($('g-bouton'),{theme:'outline',size:'large',text:'continue_with',locale:'fr',shape:'pill'})};init();"
+             "$('g-ok').onclick=()=>{if(!$('g-regles').checked){$('g-msg').textContent='Coche la case des règles.';return}gEnvoyer({pseudo:$('g-p').value.trim(),regles:true})}}"
+             "};"
              "document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>setTimeout(go,0)):setTimeout(go,0)})();</script>")
     return "compte.html", seo._page(base, f"Mon compte : commenter et garder sa progression | {seo.NOM}",
                                     "Crée ton compte Radar Bourse gratuit, sans e-mail : commente, discute avec les autres membres et retrouve ta "
-                                    "progression sur tous tes appareils.", "compte.html", balises("") + corps, csp=csp(csp_))
+                                    "progression sur tous tes appareils.", "compte.html", balises("") + corps, csp=csp_google(csp(csp_)))
 
 
 def _page_regles(base, csp_):
@@ -193,7 +228,8 @@ def _page_regles(base, csp_):
              "Les commentaires qui ne respectent pas les règles sont supprimés, et les comptes qui insistent sont suspendus. "
              "Tu peux supprimer tes propres commentaires à tout moment.</p>"
              "<h2>Ce qui est enregistré</h2><ul><li>Ton <b>pseudo</b> et une <b>empreinte</b> de ton mot de passe et de ton code de secours (impossible à "
-             "inverser : personne ne peut lire ton mot de passe, pas même nous).</li><li>Tes <b>commentaires</b> (publics) et, si tu l'utilises, la "
+             "inverser : personne ne peut lire ton mot de passe, pas même nous). Si tu passes par <b>« Continuer avec Google »</b>, Google confirme "
+             "seulement que c'est toi : on ne garde ni ton e-mail ni ton nom, juste une empreinte non réversible de ton identifiant Google.</li><li>Tes <b>commentaires</b> (publics) et, si tu l'utilises, la "
              "<b>sauvegarde de ta progression</b>.</li><li><b>Aucune adresse e-mail</b>, aucun nom, aucune publicité, aucun traçage. Contre les abus, "
              "une empreinte de ton adresse IP (non réversible) est gardée 24 heures au plus.</li></ul>"
              "<p>Les données sont hébergées par Cloudflare. Tu peux <b>tout supprimer</b> toi-même depuis <a href='compte.html'>Mon compte</a> "

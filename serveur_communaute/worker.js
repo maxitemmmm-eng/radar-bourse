@@ -64,6 +64,27 @@ async function nouvelleSession(env, pseudo) {
 }
 const estAdmin = (req, env) => { const h = req.headers.get("Authorization") || ""; return !!env.ADMIN_KEY && env.ADMIN_KEY.length >= 24 && egal(h, "Bearer " + env.ADMIN_KEY); };
 
+// ---------------------------------------------------------------- version 121 : connexion avec Google (jeton d'identité vérifié ici)
+let CERTS = null, CERTS_T = 0;
+async function clesGoogle() {
+  if (CERTS && Date.now() - CERTS_T < 3600e3) return CERTS;
+  const r = await fetch("https://www.googleapis.com/oauth2/v3/certs"); if (!r.ok) throw new Error("certs");
+  CERTS = (await r.json()).keys || []; CERTS_T = Date.now(); return CERTS;
+}
+const deB64 = t => Uint8Array.from(atob(t.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((t.length + 3) % 4)), c => c.charCodeAt(0));
+async function verifierGoogle(jeton, client) {
+  const p = String(jeton || "").split("."); if (p.length !== 3 || !client) return null;
+  let tete, corps; try { tete = JSON.parse(new TextDecoder().decode(deB64(p[0]))); corps = JSON.parse(new TextDecoder().decode(deB64(p[1]))); } catch (e) { return null; }
+  if (tete.alg !== "RS256") return null;
+  const jwk = (await clesGoogle()).find(k => k.kid === tete.kid); if (!jwk) return null;
+  const cle = await crypto.subtle.importKey("jwk", jwk, {name: "RSASSA-PKCS1-v1_5", hash: "SHA-256"}, false, ["verify"]);
+  const ok = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", cle, deB64(p[2]), enc.encode(p[0] + "." + p[1]));
+  if (!ok) return null;
+  if (!["accounts.google.com", "https://accounts.google.com"].includes(corps.iss) || corps.aud !== client) return null;
+  if (!(corps.exp * 1000 > Date.now()) || !corps.sub) return null;
+  return corps;
+}
+
 function filtrer(texte) {
   const t = String(texte || "").replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
   if (t.length < 2) return [null, "Message trop court."];
@@ -96,14 +117,40 @@ export default {
         await ecrireJ(env, k, {pseudo, sel: b64(sel), h: await empreinte(mdp, sel), s2: b64(sel2), hs: await empreinte(secours, sel2), cree: Date.now()});
         return reponse(env, req, {ok: true, pseudo, jeton: await nouvelleSession(env, pseudo), secours});
       }
+      if (ch === "/google" && req.method === "POST") {
+        if (!env.GOOGLE_CLIENT_ID) return erreur(env, req, "La connexion avec Google n'est pas activée.", 404);
+        const ip = await ipEmpreinte(req, env);
+        if (await limite(env, "gg:" + ip, 40, 3600)) return erreur(env, req, "Trop d'essais : attends une heure.", 429);
+        const g = await verifierGoogle(corps.credential, env.GOOGLE_CLIENT_ID);
+        if (!g) return erreur(env, req, "Connexion Google refusée : réessaie.", 401);
+        const gk = "g:" + (await sha("google|" + g.sub + "|" + (env.SEL || ""))).slice(0, 40);   // on ne garde ni l'e-mail ni l'identifiant Google en clair
+        const lie = await env.COMMU.get(gk);
+        if (lie) {
+          const u = await lireJ(env, "u:" + lie); if (!u) { await env.COMMU.delete(gk); return erreur(env, req, "Compte introuvable : réessaie.", 404); }
+          if (u.banni) return erreur(env, req, "Ce compte a été suspendu pour non-respect des règles.", 403);
+          return reponse(env, req, {ok: true, pseudo: u.pseudo, jeton: await nouvelleSession(env, u.pseudo)});
+        }
+        const pseudo = String(corps.pseudo || "").trim();
+        if (!pseudo) return reponse(env, req, {ok: false, nouveau: true, erreur: "Choisis ton pseudo pour terminer l'inscription."});
+        if (!PSEUDO.test(pseudo)) return erreur(env, req, "Pseudo : 3 à 20 caractères, lettres, chiffres, - et _ seulement.");
+        if (RESERVES.some(r => pseudo.toLowerCase().includes(r))) return erreur(env, req, "Ce pseudo est réservé.");
+        if (corps.regles !== true) return erreur(env, req, "Il faut accepter les règles de la communauté.");
+        if (await limite(env, "insc:" + ip, 5)) return erreur(env, req, "Trop de comptes créés aujourd'hui depuis cette connexion. Réessaie demain.", 429);
+        const k = "u:" + pseudo.toLowerCase();
+        if (await env.COMMU.get(k)) return erreur(env, req, "Ce pseudo est déjà pris.");
+        await ecrireJ(env, k, {pseudo, google: gk, cree: Date.now()});
+        await env.COMMU.put(gk, pseudo.toLowerCase());
+        return reponse(env, req, {ok: true, pseudo, jeton: await nouvelleSession(env, pseudo)});
+      }
       if (ch === "/connexion" && req.method === "POST") {
         const pseudo = String(corps.pseudo || "").trim(), mdp = String(corps.mdp || "");
         const ip = await ipEmpreinte(req, env);
         if (await limite(env, "cx:" + ip, 30, 3600)) return erreur(env, req, "Trop d'essais : attends une heure.", 429);
         const u = PSEUDO.test(pseudo) ? await lireJ(env, "u:" + pseudo.toLowerCase()) : null;
-        const sel = u ? Uint8Array.from(atob(u.sel.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)) : alea(16);
+        const sel = u && u.sel ? Uint8Array.from(atob(u.sel.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)) : alea(16);
         const h = await empreinte(mdp, sel);   // calcul fait même si le compte n'existe pas (même durée de réponse)
-        if (!u || !egal(h, u.h)) return erreur(env, req, "Pseudo ou mot de passe incorrect.", 401);
+        if (u && !u.h && u.google) return erreur(env, req, "Ce compte se connecte avec le bouton Google.", 401);
+        if (!u || !u.h || !egal(h, u.h)) return erreur(env, req, "Pseudo ou mot de passe incorrect.", 401);
         if (u.banni) return erreur(env, req, "Ce compte a été suspendu pour non-respect des règles.", 403);
         return reponse(env, req, {ok: true, pseudo: u.pseudo, jeton: await nouvelleSession(env, u.pseudo)});
       }
@@ -112,9 +159,10 @@ export default {
         if (await limite(env, "sec:" + await ipEmpreinte(req, env), 10, 3600)) return erreur(env, req, "Trop d'essais : attends une heure.", 429);
         if (mdp.length < 8) return erreur(env, req, "Nouveau mot de passe : 8 caractères au moins.");
         const u = PSEUDO.test(pseudo) ? await lireJ(env, "u:" + pseudo.toLowerCase()) : null;
-        const s2 = u ? Uint8Array.from(atob(u.s2.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)) : alea(16);
+        if (u && u.google && !u.hs) return erreur(env, req, "Ce compte se connecte avec le bouton Google : pas besoin de code de secours.", 400);
+        const s2 = u && u.s2 ? Uint8Array.from(atob(u.s2.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)) : alea(16);
         const h = await empreinte(code, s2);
-        if (!u || !egal(h, u.hs)) return erreur(env, req, "Pseudo ou code de secours incorrect.", 401);
+        if (!u || !u.hs || !egal(h, u.hs)) return erreur(env, req, "Pseudo ou code de secours incorrect.", 401);
         const sel = alea(16), secours = hex(alea(10)).toUpperCase().match(/.{4}/g).join("-"), sel2 = alea(16);
         Object.assign(u, {sel: b64(sel), h: await empreinte(mdp, sel), s2: b64(sel2), hs: await empreinte(secours, sel2)});
         await ecrireJ(env, "u:" + pseudo.toLowerCase(), u);
@@ -122,7 +170,7 @@ export default {
       }
       if (ch === "/moi" && req.method === "GET") {
         const s = await session(req, env); if (!s) return erreur(env, req, "Non connecté.", 401);
-        return reponse(env, req, {ok: true, pseudo: s.pseudo, cree: s.u.cree});
+        return reponse(env, req, {ok: true, pseudo: s.pseudo, cree: s.u.cree, google: !!s.u.google});
       }
       if (ch === "/deconnexion" && req.method === "POST") {
         const s = await session(req, env); if (s) await env.COMMU.delete("s:" + s.jeton);
@@ -132,6 +180,7 @@ export default {
         const s = await session(req, env); if (!s) return erreur(env, req, "Non connecté.", 401);
         const mes = await lireJ(env, "mes:" + s.pseudo.toLowerCase(), []);
         for (const [page, id] of mes) { const L = await lireJ(env, "c:" + page, []); await ecrireJ(env, "c:" + page, L.filter(c => c.id !== id)); }
+        if (s.u.google) await env.COMMU.delete(s.u.google);
         await Promise.all(["u:", "d:", "mes:"].map(p => env.COMMU.delete(p + s.pseudo.toLowerCase())));
         if (corps.semaine && /^\d{4}-S\d{2}$/.test(corps.semaine)) { const C = await lireJ(env, "cl:" + corps.semaine, {}); delete C[s.pseudo]; await ecrireJ(env, "cl:" + corps.semaine, C); }
         await env.COMMU.delete("s:" + s.jeton);

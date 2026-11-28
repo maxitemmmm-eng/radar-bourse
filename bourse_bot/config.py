@@ -288,3 +288,6 @@ def _soutien():
 
 
 SOUTIEN = _soutien()
+
+# version 121 : identifiant client Google pour « Continuer avec Google » (public : ce n'est pas un secret). Vide = bouton caché.
+GOOGLE_CLIENT_ID = ""
