@@ -388,6 +388,7 @@ def _page_chapitre_app(seo, base, csp, ch, i):
 def _page_hub_app(seo, base, csp):
     from . import academie
     corps = f"<style>{CSS_LEX}</style>" + academie.parcours(CHAPITRES, NIVEAUX, VERIFIE_LE, seo.NOM)
+    corps += __import__("bourse_bot.academie_social", fromlist=["x"]).bloc_hub()   # version 120 : objectifs, cas réels, classement
     # version 107 : après les bases, le parcours avancé (gratuit) et l'analyse approfondie
     corps += ("<section style='max-width:900px;margin:24px auto;padding:0 16px'><div class='carte' style='border:1px solid var(--line);border-radius:14px;padding:16px 18px'>"
               "<h2 style='margin-top:0'>Et après les bases ?</h2><p>Le <a href='academie-plus.html'><b>parcours Analyste</b></a> : lire un bilan, "
@@ -405,7 +406,7 @@ def _page_profil(seo, base, csp):
     from . import academie
     chemin = "formation/profil.html"
     return chemin, academie.page(seo, base, f"Mon profil | Académie {seo.NOM}", "Ta progression dans l'Académie Radar Bourse : série, XP, badges et chapitres validés.",
-                                 chemin, academie.profil(NIVEAUX, CHAPITRES), None, csp=csp)
+                                 chemin, academie.profil(NIVEAUX, CHAPITRES) + __import__("bourse_bot.academie_social", fromlist=["x"]).bloc_classement(), None, csp=csp)
 
 
 def _page_hub(seo, base, csp):

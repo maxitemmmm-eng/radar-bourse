@@ -2991,6 +2991,11 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
         for chemin in formation.generer(__import__(__name__, fromlist=["x"]), base, dossier, csp):
             if chemin != "formation/profil.html":   # page personnelle, sans intérêt pour Google
                 urls.append((chemin, "weekly", "0.9" if chemin == "formation.html" else "0.7"))
+        try:   # version 120 : parcours par objectif et cas pratiques réels (chiffres du jour)
+            from . import academie_social
+            urls += academie_social.generer(__import__(__name__, fromlist=["x"]), base, payload, dossier, csp)
+        except Exception as e:
+            print(f"Objectifs / cas réels non générés : {e}")
     except Exception as e:
         if e.__class__.__name__ == "AcademieInvalide":   # version 77 : erreur dans le contenu du cours → on arrête tout, rien n'est publié
             raise

@@ -10,6 +10,7 @@ Avant de le lancer, il te faut (voir TUTO_COMMUNAUTE.md) :
     dans le tableau de bord pour choisir ton sous-domaine ;
   - un jeton GitHub « fine-grained » limité au dépôt du site, avec le droit « Variables » (lecture et écriture).
 Tu peux le relancer sans risque : rien n'est créé en double, les comptes et commentaires existants sont gardés.
+Pour une MISE À JOUR du serveur (nouvelles fonctions), seul un jeton Cloudflare est nécessaire : le réglage GitHub est déjà fait.
 """
 from __future__ import annotations
 
@@ -96,11 +97,18 @@ def main():
         nouvelle = ia.demander("Créer une NOUVELLE clé de modération (o/N) ? (si tu as perdu l'ancienne)", "n", obligatoire=False).lower().startswith("o")
     ia.dire("\nClés (rien ne s'affiche quand tu tapes, c'est normal) :")
     jeton_cf = ia.demander("  Jeton API Cloudflare", secret=True)
-    jeton_gh = ia.demander("  Jeton GitHub (droit Variables)", secret=True)
+    deja_gh = bool(ancien.get("serveur"))
+    jeton_gh = ia.demander("  Jeton GitHub (droit Variables)" + (" — déjà réglé : appuie juste sur Entrée" if deja_gh else ""),
+                           secret=True, obligatoire=not deja_gh)
     ia.dire("\n1/2 Cloudflare")
     url, cle = installer_cloudflare(jeton_cf, site, nouvelle)
     ia.dire("2/2 GitHub")
-    installer_github(jeton_gh, depot, url)
+    if jeton_gh:
+        installer_github(jeton_gh, depot, url)
+    elif ancien.get("serveur") == url:
+        ia.dire("  ✓ Déjà réglé sur GitHub (rien à changer)")
+    else:
+        raise ia.Erreur("L'adresse du serveur a changé : relance avec un jeton GitHub (droit Variables).")
     json.dump({"site": site, "depot": depot, "serveur": url}, open(RESUME, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     ia.dire("\n✅ Terminé.")
     ia.dire(f"   Serveur : {url}")

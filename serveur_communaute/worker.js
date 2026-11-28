@@ -133,6 +133,7 @@ export default {
         const mes = await lireJ(env, "mes:" + s.pseudo.toLowerCase(), []);
         for (const [page, id] of mes) { const L = await lireJ(env, "c:" + page, []); await ecrireJ(env, "c:" + page, L.filter(c => c.id !== id)); }
         await Promise.all(["u:", "d:", "mes:"].map(p => env.COMMU.delete(p + s.pseudo.toLowerCase())));
+        if (corps.semaine && /^\d{4}-S\d{2}$/.test(corps.semaine)) { const C = await lireJ(env, "cl:" + corps.semaine, {}); delete C[s.pseudo]; await ecrireJ(env, "cl:" + corps.semaine, C); }
         await env.COMMU.delete("s:" + s.jeton);
         return reponse(env, req, {ok: true});
       }
@@ -198,6 +199,29 @@ export default {
         await ecrireJ(env, "signales", S.slice(0, 200));
         return reponse(env, req, {ok: true, cache: !!c.cache});
       }
+      // ---------------------------------------------------------------- version 120 : classement de la semaine de l'Académie
+      // Les points sont ceux que l'appareil déclare (pas de calcul côté serveur) : plafonnés et limités dans le temps, c'est un jeu.
+      if (ch === "/xp" && req.method === "POST") {
+        const s = await session(req, env); if (!s) return erreur(env, req, "Connecte-toi pour entrer dans le classement.", 401);
+        const sem = String(corps.semaine || ""), xp = Math.floor(+corps.xp || 0);
+        if (!/^\d{4}-S\d{2}$/.test(sem)) return erreur(env, req, "Semaine inconnue.");
+        if (!(xp >= 0 && xp <= 5000)) return erreur(env, req, "Points impossibles.");
+        const pk = s.pseudo.toLowerCase();
+        if (await env.COMMU.get("xpr:" + pk)) return reponse(env, req, {ok: true, attente: true});
+        await env.COMMU.put("xpr:" + pk, "1", {expirationTtl: 300});
+        const C = await lireJ(env, "cl:" + sem, {});
+        if ((C[s.pseudo] || 0) < xp) { C[s.pseudo] = xp; await ecrireJ(env, "cl:" + sem, C, {expirationTtl: 40 * 86400}); }
+        return reponse(env, req, {ok: true});
+      }
+      if (ch === "/classement" && req.method === "GET") {
+        const sem = String(url.searchParams.get("semaine") || "");
+        if (!/^\d{4}-S\d{2}$/.test(sem)) return erreur(env, req, "Semaine inconnue.");
+        const C = await lireJ(env, "cl:" + sem, {});
+        const L = Object.entries(C).sort((a, b) => b[1] - a[1]);
+        const moi = String(url.searchParams.get("moi") || "").toLowerCase();
+        const rang = moi ? L.findIndex(x => x[0].toLowerCase() === moi) + 1 : 0;
+        return reponse(env, req, {ok: true, total: L.length, top: L.slice(0, 20).map(([p, x]) => ({p, x})), rang, moi_xp: rang ? L[rang - 1][1] : 0});
+      }
       // ---------------------------------------------------------------- modération (toi seule, avec la clé ADMIN_KEY)
       if (ch.startsWith("/admin/")) {
         if (!estAdmin(req, env)) return erreur(env, req, "Clé de modération incorrecte.", 401);
@@ -218,6 +242,7 @@ export default {
           const pk = String(corps.pseudo || "").toLowerCase(); const u = await lireJ(env, "u:" + pk);
           if (!u) return erreur(env, req, "Compte introuvable.", 404);
           u.banni = corps.banni !== false; await ecrireJ(env, "u:" + pk, u);
+          if (u.banni && corps.semaine && /^\d{4}-S\d{2}$/.test(corps.semaine)) { const C = await lireJ(env, "cl:" + corps.semaine, {}); delete C[u.pseudo]; await ecrireJ(env, "cl:" + corps.semaine, C); }
           return reponse(env, req, {ok: true, banni: u.banni});
         }
       }

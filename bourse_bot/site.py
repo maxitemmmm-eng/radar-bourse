@@ -559,6 +559,7 @@ def ecrire(payload: dict, dossier: str = config.DOSSIER_SITE, pour_artifact: boo
                 "<script>try{var t=localStorage.getItem(\"radar-theme\");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>\n"
                 "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
                 + securite + tete.replace("<!--__LIB__-->", lib) + "\n</head>\n<body class=\"partie-pronos\">\n" + corps
+                + __import__("bourse_bot.academie_social", fromlist=["x"]).JS_SERIE   # version 120 : rappel de série (flottant)
                 + "\n</body>\n</html>\n")
     os.makedirs(dossier, exist_ok=True)
     chemin = os.path.join(dossier, "index.html")

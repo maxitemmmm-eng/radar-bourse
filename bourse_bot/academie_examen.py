@@ -270,8 +270,29 @@ document.getElementById("x-fin").onclick=()=>{
    <p><button class="a-btn ghost" type="button" onclick="location.reload()">Repasser l'examen (nouveaux chiffres)</button></p>`
    +(reussi?`<div class="x-certif"><p class="muted">Certificat</p><h2>Académie Radar Bourse · niveau expert</h2><p>Ce certificat atteste que</p><p><input aria-label="Ton prénom" placeholder="Ton prénom"></p>
      <p>a réussi l'examen final (lecture de graphiques, méthodes de calcul, cas d'application, règles et pièges) avec <b>${ok} / ${N}</b>, le ${new Date().toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})}.</p>
-     <p class="muted" style="font-size:13px">Formation éducative gratuite. Ce certificat n'est pas un diplôme officiel.</p><button class="a-btn" type="button" onclick="print()">Imprimer ou enregistrer en PDF</button></div>`:"");
+     <p class="muted" style="font-size:13px">Formation éducative gratuite. Ce certificat n'est pas un diplôme officiel.</p>
+     <p style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center"><button class="a-btn" type="button" id="x-img">Télécharger l'image du certificat</button><button class="a-btn ghost" type="button" id="x-part">Partager</button><button class="a-btn ghost" type="button" onclick="print()">Imprimer ou PDF</button></p></div>`:"");
   res.hidden=false; res.scrollIntoView({behavior:"smooth",block:"start"});
+  // version 120 : certificat en image (1200 × 630, format des réseaux sociaux), à télécharger ou partager
+  if(reussi){const ch=res.querySelector('.x-certif input');try{ch.value=localStorage.getItem('rb-pseudo')||((JSON.parse(localStorage.getItem('radar-profil')||'{}')||{}).pseudo)||''}catch(e){}
+   const dessiner=()=>{const c=document.createElement('canvas');c.width=1200;c.height=630;const g=c.getContext('2d');
+    const fond=g.createLinearGradient(0,0,1200,630);fond.addColorStop(0,'#0e1628');fond.addColorStop(1,'#1c3576');g.fillStyle=fond;g.fillRect(0,0,1200,630);
+    g.strokeStyle='#86a8ff';g.lineWidth=4;g.strokeRect(30,30,1140,570);g.strokeStyle='rgba(134,168,255,.35)';g.lineWidth=1.5;g.strokeRect(44,44,1112,542);
+    g.textAlign='center';g.fillStyle='#86a8ff';g.font='600 26px system-ui,sans-serif';g.fillText('ACADÉMIE RADAR BOURSE · CERTIFICAT',600,118);
+    g.fillStyle='#ffffff';g.font='700 64px Georgia,serif';const nom=(ch.value||'Un·e investisseur·se').trim().slice(0,32);g.fillText(nom,600,250);
+    g.fillStyle='#dbe3f5';g.font='30px system-ui,sans-serif';g.fillText('a réussi l’examen final de l’Académie, niveau expert',600,320);
+    g.fillStyle='#44e09c';g.font='700 54px system-ui,sans-serif';g.fillText(ok+' / '+N,600,405);
+    g.fillStyle='#dbe3f5';g.font='24px system-ui,sans-serif';g.fillText('graphiques · calculs · cas pratiques · règles et pièges',600,452);
+    g.fillStyle='#8c9bbd';g.font='22px system-ui,sans-serif';g.fillText(new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+' · radarbourse.fr · formation gratuite, pas un diplôme officiel',600,545);
+    return c};
+   const fichier=()=>new Promise(r=>dessiner().toBlob(b=>r(new File([b],'certificat-radar-bourse.png',{type:'image/png'})),'image/png'));
+   document.getElementById('x-img').onclick=async()=>{const f=await fichier();const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();a.remove();
+     try{goatcounter.count({path:'certificat/image',event:true})}catch(e){}};
+   document.getElementById('x-part').onclick=async e=>{const f=await fichier();const txt='J’ai réussi l’examen final de l’Académie Radar Bourse ('+ok+' / '+N+') 🎓 Formation gratuite pour apprendre la Bourse :';
+     const url=location.origin+'/formation.html?utm_source=certificat&utm_campaign=certificat';try{goatcounter.count({path:'certificat/partage',event:true})}catch(x){}
+     if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],text:txt+' '+url});return}catch(x){}}
+     if(navigator.share){try{await navigator.share({text:txt,url});return}catch(x){}}
+     window.open('https://www.linkedin.com/sharing/share-offsite/?url='+encodeURIComponent(url),'_blank','noopener');e.target.textContent='Ajoute aussi l’image téléchargée à ton post'}}
 };
 })();
 """

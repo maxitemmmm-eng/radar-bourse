@@ -441,6 +441,7 @@ def page(seo, base, titre, description, chemin, corps, jsonld=None, csp="", mots
 {contenu}
 {JS_STATS}
 {__import__("bourse_bot.transitions", fromlist=["JS"]).JS}
+{"" if lecon else __import__("bourse_bot.academie_social", fromlist=["x"]).scripts(prefixe)}
 </body></html>
 """
 
@@ -825,6 +826,9 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
            "<div><b data-f='xp'>0</b><span>points gagnés</span></div><div><b data-f='serie' style='color:var(--a-or)'>0</b><span>de série</span></div></div>"
            "<ul class='l-deblocage' data-f='deblocage' hidden></ul>"
            + (f"<p class='l-pratique'><b>Mets en pratique</b>{_e(PRATIQUE[ch['id']][0])} <a href='../{PRATIQUE[ch['id']][1]}'>J'y vais</a></p>" if ch["id"] in PRATIQUE else "") +
+           # version 120 : on donne envie d'enchaîner (seuls 8 visiteurs sur 21 passaient du chapitre 1 au chapitre 2)
+           (f"<div class='l-suite-ch'><p class='muted' style='margin:0 0 4px'>Prochain chapitre · environ {_min(suiv)} min</p><h3 style='margin:0 0 4px'>{_e(suiv['titre'])}</h3>"
+              f"<p style='margin:0 0 10px'>{_e(suiv['desc'])}</p><a class='a-btn' href='{suiv['id']}.html'>Commencer maintenant</a></div>" if suiv else "") +
            "<p><button class='a-btn ghost' type='button' data-f='refaire' hidden>Recommencer le chapitre</button></p>"
            "<p class='muted' style='font-size:14.5px'>Les notions de ce chapitre reviendront dans l'<a href='entrainement.html'>entraînement du jour</a> et les <a href='revision.html'>révisions</a>, au bon moment pour ne pas les oublier.</p></section>")
     plan = ("<aside class='l-plan' aria-label='Plan du chapitre'><h2>Plan du chapitre</h2><ol>"
@@ -838,12 +842,16 @@ def lecon(seo, ch, i, chapitres, niveaux, exos, graphes, lexique, verifie_le):
              "<div class='a-auteur' style='margin-top:30px'><span class='av' aria-hidden='true'>M</span><p style='margin:0'>Écrit et vérifié par <b>maxitemmmm</b>. "
              f"Chiffres relus le {verifie_le}. Sources : "
              + ", ".join(f"<a href='{_e(u)}'" + ("" if u.startswith("..") else " rel='noopener noreferrer'") + f">{_e(n)}</a>" for n, u in ch["sources"])
-             + ". Une erreur ? <a href='../contact.html'>Signale-la</a>.</p></div></main></div>"
+             + ". Une erreur ? <a href='../contact.html'>Signale-la</a>.</p></div>"
+             + __import__("bourse_bot.communaute", fromlist=["x"]).section(f"formation/{ch['id']}", "Une question sur ce chapitre ?")
+             + "</main></div>"
              "<div class='l-bas' id='l-bas'><div class='in'><div class='l-retour' id='l-retour' role='status' aria-live='polite'></div>"
              "<button class='a-btn' id='l-action' type='button'>Continuer</button></div></div>"
              f"<script>document.body.dataset.chap={json.dumps(ch['id'])};document.body.dataset.suite={json.dumps((suiv['id'] + '.html') if suiv else '../formation.html')};"
              f"Object.assign(document.body.dataset,{json.dumps(donnees, ensure_ascii=False)});</script>"
-             + JS_LECON + (academie_labo.JS_LABO if labos else ""))
+             + JS_LECON + (academie_labo.JS_LABO if labos else "")
+             + __import__("bourse_bot.communaute", fromlist=["x"]).balises("../")
+             + "<style>.l-suite-ch{border:1px solid var(--a-ligne,rgba(127,127,127,.3));border-radius:14px;padding:14px 16px;margin:14px 0}</style>")
     return corps
 
 
