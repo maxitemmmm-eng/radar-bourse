@@ -375,7 +375,7 @@ def liens_fr() -> list:
             *([("Discussions", "discussions.html")] if giscus_actif() else []),
             *([("Radar Bourse+", "radar-bourse-plus.html"), ("Conditions de vente", "cgv.html")] if _vente() else []),
             ("Parcours Analyste (cours avancés)", "academie-plus.html"),
-            ("Fonctionnalités", "fonctionnalites.html"), ("Mettre l'avis de l'IA sur ton site", "integrer.html"), ("À propos", "a-propos.html"), ("Contact", "contact.html"),
+            ("Fonctionnalités", "fonctionnalites.html"), ("Mettre l'avis de l'IA sur ton site", "integrer.html"), *_liens_communaute(), ("À propos", "a-propos.html"), ("Contact", "contact.html"),
             ("English", "en/index.html", 'hreflang="en" lang="en"')]
 
 
@@ -597,7 +597,20 @@ def bloc_discussion(terme: str, titre: str = "Discussion", intro: str = "") -> s
             "data-theme='preferred_color_scheme' data-lang='fr' data-loading='lazy' crossorigin='anonymous' async></script></section>")
 
 
+def _liens_communaute():
+    try:
+        from . import communaute as _cm
+        return [("Discussions", "discussions.html"), ("Mon compte", "compte.html")] if _cm.actif() else []
+    except Exception:
+        return []
+
+
 def csp_avec_stats(csp: str) -> str:
+    try:   # version 119 : serveur de la communauté (comptes, commentaires), seulement s'il est installé
+        from . import communaute as _cm
+        csp = _cm.csp(csp)
+    except Exception:
+        pass
     try:   # version 104 : le serveur Radar Bourse+ (vérification de l'abonnement), seulement s'il est réglé
         from . import abonnement as _ab
         if csp and _ab.reglages()["api"] and _ab.reglages()["api"] not in csp:
@@ -1142,6 +1155,11 @@ def _page_titre(base, t, horizon, date, csp, modele, suivi=None, voisins=()):
               "<p><a href='../fiche-technique-ia.html'>Comment l'IA calcule</a> · <a href='../registre-previsions.html'>Le registre scellé</a> · "
               "<a href='../resultats.html'>Les résultats réels</a> · <a href='../a-propos.html'>À propos</a></p>"
               "<p class='muted'>Une information, pas un conseil en investissement : investir comporte un risque de perte en capital.</p></aside>")
+    try:   # version 119 : commentaires des membres (si la communauté est installée)
+        from . import communaute as _cm
+        corps += _cm.section(f"titres/{slug(tk)}", f"Commentaires sur {nom}") + _cm.balises("../")
+    except Exception:
+        pass
     corps += bloc_soutien("../")
     try:   # version 95 : « Et maintenant ? » — donner envie d'une deuxième page
         from . import visite_guidee
@@ -3023,6 +3041,8 @@ def generer(payload: dict, dossier: str, csp: str) -> None:
     try:   # version 103 : top 10, grandes Bourses du monde, or
         from . import pages_monde
         urls += pages_monde.generer(payload, dossier, csp, base)
+        from . import communaute   # version 119 : compte, discussions, règles, modération (si installée)
+        urls += communaute.generer(base, dossier, csp)
     except Exception as e:
         print(f"Pages top 10 / Bourses / or non générées : {e}")
     try:   # version 57 : krach boursier, actu bourse, actu bitcoin (+ mémoire quotidienne du marché)

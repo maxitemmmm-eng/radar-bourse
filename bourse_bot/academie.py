@@ -391,7 +391,9 @@ def coque(seo, prefixe, chemin, corps):
             "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z'/><path d='M17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 3v3M12 3v3'/></svg>"
             "<span>Soutenir le projet ☕</span></a>"
             f"<a href='{prefixe}analyse-approfondie.html'><svg viewBox='0 0 24 24' aria-hidden='true'><circle cx='10.5' cy='10.5' r='6.5'/><path d='M15.5 15.5 21 21'/></svg>"
-            "<span>Réanalyser un titre</span></a></nav>")
+            "<span>Réanalyser un titre</span></a>"
+            + (f"<a href='{prefixe}discussions.html'><svg viewBox='0 0 24 24' aria-hidden='true'><path d='M4 5h16v11H9l-5 4z'/></svg><span>Discussions</span></a>"
+               if __import__("bourse_bot.communaute", fromlist=["x"]).actif() else "") + "</nav>")
     tabs = "".join(f"<a href='{prefixe}{h}'{' aria-current=\"page\"' if k == actif else ''}>{SVG[k]}<span>{t.replace('Entraînement du jour', 'Du jour').replace('Ma progression', 'Suivi')}</span></a>"
                    for k, h, t in TOUS if k in ("programme", "entrainement", "revision", "profil"))
     logo = f"<a class='a-logo' href='{prefixe}formation.html'>{seo.LOGO}<span><b>Radar Bourse</b><small>Académie</small></span></a>"

@@ -11,3 +11,5 @@ rapports/
 .cache_modeles/
 .cache_etendu/
 *.zip
+communaute_installee.json
+radar_bourse_cle_moderation*.txt

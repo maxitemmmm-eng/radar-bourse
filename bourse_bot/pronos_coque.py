@@ -34,7 +34,8 @@ MENU = [
                               ("portefeuille", "#portefeuille", "Portefeuille virtuel"), ("simulation", "#simulation", "Simulation")]),
     ("L'IA est-elle fiable ?", [("resultats", "avis-surs-verifies.html", "Résultats vérifiés"), ("journal", "journal-ia.html", "Journal de l'IA"),
                                 ("questions", "questions-bourse.html", "Vos questions")]),
-    ("Le projet", [("soutien", "__SOUTIEN__", "Soutenir le projet ☕")]),   # version 114 : les dons, discrets mais toujours là
+    ("Le projet", [("questions", "discussions.html", "Discussions"), ("accueil", "compte.html", "Mon compte"),
+                   ("soutien", "__SOUTIEN__", "Soutenir le projet ☕")]),   # version 114 : les dons, discrets mais toujours là
 ]
 
 
@@ -43,11 +44,21 @@ def _soutien():
     return config.SOUTIEN
 
 
+def _menu():
+    try:
+        from . import communaute
+        if communaute.actif():
+            return MENU
+    except Exception:
+        pass
+    return [(g, [x for x in items if x[1] not in ("discussions.html", "compte.html")]) for g, items in MENU]
+
+
 def html(logo_svg: str) -> str:
     nav = "".join(f"<p class='p-groupe'>{g}</p><nav class='p-nav' aria-label=\"{g}\">"
                   + "".join(f"<a href='{_soutien() if h == '__SOUTIEN__' else h}'{' aria-current=\"page\"' if k == 'accueil' else ''}"
                             f"{' target=\"_blank\" rel=\"noopener\" data-goatcounter-click=\"soutien/clic\"' if h == '__SOUTIEN__' else ''} data-pk='{k}'>{_I[k]}<span>{t}</span></a>" for k, h, t in items)
-                  + "</nav>" for g, items in MENU)
+                  + "</nav>" for g, items in _menu())
     parties = ("<nav class='trois p-parties' aria-label='Les trois parties du site'>"
                f"<a href='#menu' data-partie='menu'>{SVG['menu']}<span>Menu</span></a>"
                f"<a href='#contenu' data-partie='pronos' aria-current='page'>{SVG['pronos']}<span>Pronos</span></a>"

@@ -49,6 +49,7 @@ jobs:
       GISCUS_CATEGORY_ID: ${{ vars.GISCUS_CATEGORY_ID }}
       # Radar Bourse+ (abonnement, voir TUTO_ABONNEMENT.md) : rien n'est vendu tant que ces 5 valeurs ne sont pas remplies
       RADAR_PLUS_API: ${{ vars.RADAR_PLUS_API }}
+      RADAR_COMMU_API: ${{ vars.RADAR_COMMU_API }}
       RADAR_SOUTIEN: ${{ vars.RADAR_SOUTIEN }}   # lien Ko-fi / Tipeee / Buy Me a Coffee / Liberapay (facultatif, discret)
       RADAR_VENTE: ${{ vars.RADAR_VENTE }}   # « 1 » pour rallumer la vente (mise de côté tant qu'il n'y a pas de SIRET)
       VENDEUR_NOM: ${{ vars.VENDEUR_NOM }}

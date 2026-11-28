@@ -165,7 +165,10 @@ def page(seo, base, dossier, csp) -> list:
              "<div class='me-tete'><div class='me-av' id='me-av' aria-hidden='true'>?</div><div><h1 id='me-nom'>Mon espace</h1>"
              "<p class='muted'>Ton compte Radar Bourse, sans inscription ni mot de passe : tout reste dans ce navigateur, rien n'est envoyé sur Internet.</p></div></div>"
              "<p id='me-bloque' class='carte' hidden>Ton navigateur bloque l'enregistrement (navigation privée ou stockage désactivé) : rien ne pourra être gardé ici.</p>"
-             "<section class='carte'><h2 style='margin-top:0'>Mon profil</h2><form id='me-form' class='me-profil'>"
+             + ("<section class='carte'><h2 style='margin-top:0'>🔄 Sur tous tes appareils</h2><p>Avec un compte gratuit (sans e-mail), sauvegarde tout ce "
+                "qu'il y a ici et retrouve-le sur ton téléphone ou ton ordinateur, et participe aux <a href='discussions.html'>discussions</a>.</p>"
+                "<p><a class='btn' href='compte.html'>Mon compte</a></p></section>" if __import__("bourse_bot.communaute", fromlist=["x"]).actif() else "")
+             + "<section class='carte'><h2 style='margin-top:0'>Mon profil</h2><form id='me-form' class='me-profil'>"
              "<label>Pseudo<input id='me-pseudo' maxlength='24' autocomplete='nickname' placeholder='ex. Max'></label>"
              "<label>Mon objectif<select id='me-objectif'><option value=''>Choisir…</option><option value='apprendre'>Apprendre la Bourse de zéro</option>"
              "<option value='suivre'>Suivre des actions et des cryptos</option><option value='entrainer'>M'entraîner sans risque</option>"
